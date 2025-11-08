@@ -22,13 +22,13 @@ The MVP establishes a decentralized federation where participating networks main
 **Strategic Goals (NLNet Impact)**
 
 1. **Establish a trusted digital commons** for makerspace data that communities actively maintain because it's their authoritative listing and people rely on it
-2. **Demonstrate that decentralized data governance works** when communities have clear ownership, visibility, and accountability
+2. **Investigate whether decentralized data governance works** when communities have clear ownership, visibility, and accountability
 3. **Create infrastructure for ecosystem transparency** where freshness and activity signals restore trust in distributed maker networks
 4. **Build a scalable federation model** that enables regional networks to control their data while contributing to a global resource
 
 **Technical Goals (NLNet Feasibility)**
 
-5. **Prove decentralized architecture viability** using IPFS/distributed storage + open identity standards (SOLID/A2A/blockchain)
+5. **Test decentralized architecture viability** using IPFS/distributed storage + open identity standards (SOLID/A2A/blockchain)
 6. **Enable agent-driven data stewardship** through A2A protocol compatibility, allowing LLM agents to assist in validation and updates
 7. **Ensure data portability and interoperability** via open standards (JSON/Pydantic schemas) and Apache license
 

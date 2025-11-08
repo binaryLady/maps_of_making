@@ -24,7 +24,7 @@
 **Rationale for Selection**:
 Maps of Making aligns with NGI Zero Commons priorities by:
 - Creating **digital commons infrastructure** (federated makerspace data) governed by participating communities
-- Demonstrating **decentralized data stewardship** where communities maintain authoritative listings of their own resources
+- Investigating **decentralized data stewardship** where communities maintain authoritative listings of their own resources
 - Enabling **ecosystem transparency** through open standards and freshness metrics
 - Building **scalable, interoperable infrastructure** for distributed maker networks globally
 
@@ -74,7 +74,7 @@ Maps of Making establishes a **decentralized digital commons** where participati
    - JSON/Pydantic schemas for interoperability
    - Reusable for other distributed resource mapping (repair networks, tool libraries, etc.)
 
-**Impact**: Proves that decentralized data governance works when communities have clear ownership, visibility, and accountability—foundational for NGI digital commons vision.
+**Impact**: Tests whether decentralized data governance works when communities have clear ownership, visibility, and accountability—foundational research for NGI digital commons vision.
 
 ---
 
