@@ -21,16 +21,16 @@ The MVP establishes a decentralized federation where participating networks main
 
 **Strategic Goals (NLNet Impact)**
 
-1. **Establish a trusted digital commons** for makerspace data that communities actively maintain because it's their authoritative listing and people rely on it
-2. **Investigate whether decentralized data governance works** when communities have clear ownership, visibility, and accountability
-3. **Create infrastructure for ecosystem transparency** where freshness and activity signals restore trust in distributed maker networks
-4. **Build a scalable federation model** that enables regional networks to control their data while contributing to a global resource
+1. **Eliminate duplicate data entry effort** by creating a single, shared source of truth—one verification powers discoverability across the entire ecosystem, not scattered across competing maps
+2. **Design and pilot a sustainable commons** for makerspace infrastructure, grounded in Elinor Ostrom's principles for polycentric governance: clear boundaries, collective decision-making, community accountability, and graduated conflict resolution
+3. **Enable effortless community engagement** through continuous, low-friction verification signals (magic links, webhooks, local device pings) that make maintaining current data the path of least resistance
+4. **Build a decentralized federation model** where participating networks and spaces own their data while contributing to a shared, globally visible resource
 
 **Technical Goals (NLNet Feasibility)**
 
-5. **Test decentralized architecture viability** using IPFS/distributed storage + open identity standards (SOLID/A2A/blockchain)
-6. **Enable agent-driven data stewardship** through A2A protocol compatibility, allowing LLM agents to assist in validation and updates
-7. **Ensure data portability and interoperability** via open standards (JSON/Pydantic schemas) and Apache license
+5. **Prove MVP-first decentralized architecture** using IPFS snapshots + graph-based network intelligence, demonstrating that communities can coordinate without platform gatekeeping
+6. **Demonstrate A2A-compatible agent integration** with natural language queries ("Ask the map") as a hero feature that proves data is machine-readable and reveals network intelligence beyond traditional location-based maps
+7. **Ensure data portability and community sovereignty** via open standards (JSON/Pydantic schemas), Apache 2.0 license, and federation protocols that enable local replication
 
 ---
 
@@ -49,25 +49,57 @@ The MVP establishes a decentralized federation where participating networks main
    - Outdated maps lead to wasted travel, time, money
    - No way to know if information is current or abandoned
 
-3. **Ecosystem Perspective (Death Spiral)**
-   - Failed maps reduce trust in mapping solutions
-   - Networks stop updating because other maps are already stale
-   - Each abandoned map reinforces the cycle
-   - The ecosystem loses transparent infrastructure
+3. **Ecosystem Perspective (Lost Learning)**
+   - Failed spaces close, but their data disappears—no record of why or what was learned
+   - Networks can't share lessons from failures across regions (knowledge stays siloed)
+   - Platforms like Fablab.io keep inactive spaces visible but provide no context (when? why? what happened?)
+   - The ecosystem loses a critical learning resource: how do innovation spaces evolve, adapt, or fail?
 
-### The Insight: Incentive Misalignment
+### The Insight: Incentive Misalignment + Lost Knowledge
 
-Previous map projects failed not due to technology, but because they **divorced data maintenance from data value.** Spaces maintained their data once (to be discovered), then had no reason to keep it current.
+Previous map projects failed not due to technology, but because they:
+1. **Divorced data maintenance from data value** (spaces maintained data once, then had no reason to keep it current)
+2. **Prevented learning from failure** (when spaces closed, their history was erased or hidden, so networks couldn't learn from the experience)
 
-### Our Approach: Align Incentives Through Decentralization
+### Our Approach: Eliminate Coordination Costs, Enable Community Livelyness
 
-- **Single source of truth**: One authoritative listing per space, not scattered across multiple maps
-- **Visible freshness**: Decay-based metrics (countdown from last verification) show data age and trigger re-verification
-- **Activity signals**: Optional integration with space sensors/systems shows communities are actually alive
-- **Community ownership**: Spaces control their data (decentralized), building accountability
-- **Usefulness**: Embedded everywhere (websites, APIs, agent queries), proving the resource is essential
+**The Problem We Solve:**
+Spaces waste effort updating 5+ separate map platforms. Each update feels disconnected from impact. No feedback loop showing "yes, people are actually using this." Result: abandonment.
 
-**Result**: Maintaining current data becomes **rationally justified** because it's their reputation, their discoverability, and the communities rely on it.
+**Our Strategy:**
+
+- **Single verification point**: Update once → visible everywhere across the ecosystem. Zero duplicate effort.
+- **Effortless freshness signals**: Magic links (30 seconds), webhooks (automated), local device pings (fun, effortless). Maintenance becomes low-friction.
+- **Real-time livelyness feedback**: Activity webhook → instant freshness update on map. Communities see their verification matters immediately.
+- **Community ownership**: Networks and spaces control their data, decide their own participation rules (Ostrom principles).
+- **Network intelligence**: Graph reveals collaborations, skills, partnerships—transforming static location data into living ecosystem maps.
+
+**Why It Works:**
+Communities stay engaged because:
+1. **Effort is minimal** (one verification, optional webhooks)
+2. **Impact is visible** (instant map updates, global discoverability)
+3. **They're trusted** (they own their data, not a platform)
+4. **It's self-reinforcing** (their community relies on current data, so they maintain it)
+
+---
+
+### Grounding in Ostrom Commons Theory
+
+Maps of Making applies Elinor Ostrom's principles for sustainable commons management, proven across fisheries, forests, and community resources worldwide:
+
+| Ostrom Principle | Implementation in Maps of Making |
+|------------------|----------------------------------|
+| **1. Clear boundaries** | Federated networks define membership; spaces opt-in to participate. Data ownership rules explicit. |
+| **2. Collective decision-making** | Networks set verification standards, governance rules, conflict resolution (Phase 4). |
+| **3. Monitoring & accountability** | Freshness signals, activity logs, immutable ledger prove participation. Community can report closures. |
+| **4. Graduated sanctions** | Status lifecycle (Fresh → Aging → Zombie → Dead) incentivizes timely verification. |
+| **5. Conflict resolution** | Closure reports, dispute mechanisms, community trust signals. |
+| **6. Recognition** | Each network governs their own data (not top-down platform control). |
+| **7. Polycentric governance** | Networks can host federation replicas, participate in governance, apply same rules to their scale. |
+| **8. Nested enterprises** | Pilot networks → Regional federations → Global ecosystem (Phase 4+). |
+
+**Why This Matters for NLNet:**
+Commons designed to Ostrom principles are **proven to sustain** across decades without external funding or platform gatekeeping. This isn't just a map—it's infrastructure designed to outlive any grant funding.
 
 ---
 
@@ -116,6 +148,23 @@ Previous map projects failed not due to technology, but because they **divorced 
 - **FR025**: Freshness lifecycle: Fresh (✅) → Aging (⚠️) → Zombie (🧟) → Dead (💀)
 - **FR026**: State transitions logged as permanent records
 - **FR027**: GDPR-compliant anonymization (delete personal data, preserve structural integrity)
+- **FR028**: Preserve temporal context for all spaces (created_at, first_verified, closed_at, closure_reason, reopen_date)
+- **FR029**: Timestamp all events in immutable ledger (verifications, state changes, collaborations, partnerships) for ecosystem learning analysis
+- **FR030**: Enable rich knowledge graph construction during data ingestion (using graph technology like Graphiti) to preserve context about space evolution, failures, and ecosystem patterns
+
+#### Activity Signals & Webhooks (Phase 3 MVP + Nice-to-Have PoC)
+
+- **FR031**: MVP Phase 3: Magic-link + email verification only (primary verification method)
+- **FR031A** (Nice-to-have PoC): Optional webhook URL registration on space profile (Phase 3)
+- **FR031B** (Nice-to-have PoC): Mock endpoint `POST /spaces/{space_id}/ping` for testing webhook freshness updates (Phase 3)
+- **FR031C** (Future Phase 4+): Real webhook integrations (door sensors, booking systems, MQTT bridge)
+
+#### Network Metadata (Avoids Tech Debt)
+
+- **FR032**: Store network metadata in unified schema (name, website, contact_email, logo_url, region, description)
+- **FR033**: Support network data ingestion from CSV/JSON or parallel backend project API
+- **FR034**: Render network detail views (Phase 2+): network profile, member count, location map
+- **FR035**: Network-branded embeddable widgets (Phase 3+): networks embed map showing only their spaces
 
 ---
 
@@ -250,6 +299,28 @@ Previous map projects failed not due to technology, but because they **divorced 
 
 ---
 
+### Epic 5: Temporal Ecosystem Analysis & Time-Based Visualization (Phase 4+ - Advanced Learning)
+
+**Goal**: Enable networks to learn from ecosystem evolution by analyzing and visualizing makerspace history across time ranges.
+
+**Why It Matters**:
+- Innovation spaces fail—this is normal and valuable learning. We don't erase failures; we preserve them.
+- Networks need to understand: Why did spaces close? What patterns exist across regions? What conditions enable success?
+- Temporal player enables research on maker ecosystem dynamics, failure patterns, and evolution strategies.
+
+**Success Criteria**:
+- Temporal player UI: Scrub through time to see ecosystem state at any date
+- Historical queries: "Show me ecosystem in January 2025" or "Which spaces closed in 2024?"
+- Pattern analysis: Identify regional trends, closure reasons, revival rates
+- Research export: Query results exportable for academic analysis
+- Animation: Watch ecosystem evolve over time (space openings, closures, collaborations forming)
+
+**Estimated Stories**: 8-12
+
+**Prerequisites (MVP Phase 1-3)**: Temporal data preservation (FR028-FR030), complete implementation ensures this epic is unblocked.
+
+---
+
 ## Out of Scope (MVP)
 
 - **Phase 4 Automation**: Scheduled updates, bot-assisted validation, webhook automation (future funding)
@@ -257,7 +328,7 @@ Previous map projects failed not due to technology, but because they **divorced 
 - **Identity Layer Details**: Full SOLID/A2A/blockchain implementation (V2)
 - **Community Fund/Incentives**: Monetary incentives, token systems (separate strategic discussion)
 - **Mobile Native Apps**: Web-first MVP; native apps considered for later phases
-- **Advanced Analytics**: Usage dashboards, member loss correlation studies (research phase)
+- **Temporal Player & Historical Analytics**: Time-based ecosystem visualization, pattern analysis, research exports (Phase 4+ - see Epic 5)
 - **Horizontal Expansion**: Focus on pilot networks first; global scaling in NGI phase
 
 ---

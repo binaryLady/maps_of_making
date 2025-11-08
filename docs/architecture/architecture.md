@@ -1,6 +1,6 @@
 # Architecture Document: Maps of Making
 
-**Project:** Maps of Making - Federated Makerspace Network Intelligence
+**Project:** Maps of Making - Federated Makerspace Data Commons
 **Version:** 1.0 (NLNet MVP Phase)
 **Date:** 2025-11-05
 **Level:** 3 Greenfield Software (Digital Commons Infrastructure)
@@ -9,13 +9,20 @@
 
 ## Executive Summary
 
-Maps of Making is a **federated graph-based network intelligence platform** for the global maker ecosystem. Unlike existing makerspace directories that only show locations, we reveal **relationships, collaborations, skill flows, and partnership networks**—transforming static maps into living graphs of civic innovation.
+Maps of Making eliminates coordination costs for makerspace networks by creating **one single verification point that powers global discoverability**. Communities verify data once → visible everywhere across the entire ecosystem.
+
+**The Problem We Solve:**
+Spaces waste effort updating 5+ separate maps (Fablab.io, Hackerspaces.org, Google Maps, regional databases). Maps go stale. Networks lose critical coordination infrastructure.
+
+**Why Graph Architecture Matters:**
+Beyond solving the duplication problem, we use Neo4j graph database to reveal **relationships, collaborations, skill flows, and partnerships** that SQL-based maps cannot express. This transforms static location data into living ecosystem intelligence.
 
 **Key Architectural Principles:**
-- **Graph-first:** Neo4j enables network intelligence (our differentiator)
-- **Decentralized:** IPFS replication ensures data commons resilience
-- **Trust-through-transparency:** Real-time freshness signals prove community livelyness
-- **Human + AI accessible:** Natural language console demonstrates agent-ready API
+- **Single source of truth:** One verification cascades everywhere (elimination of duplicate effort)
+- **Graph intelligence:** Neo4j reveals network relationships and enables natural language queries
+- **Effortless livelyness signals:** Magic links, webhooks, local device pings (<2 minutes per verification)
+- **Decentralized commons:** IPFS storage + validator node model ensures data stays in commons, not proprietary platform
+- **Agent-accessible:** Natural language API ("Ask the map") proves data is machine-readable and reveals intelligence
 
 **Technology Stack:**
 - Backend: Python + FastAPI + Neo4j (graph database)
@@ -32,25 +39,25 @@ Maps of Making is a **federated graph-based network intelligence platform** for 
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Maps of Making Platform                   │
+│                    Maps of Making Platform                  │
 ├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ┌──────────────┐      ┌──────────────┐    ┌─────────────┐ │
-│  │   Frontend   │◄────►│  API Layer   │◄──►│   Neo4j     │ │
-│  │ (Leaflet +   │      │  (FastAPI)   │    │  Graph DB   │ │
-│  │  NL Console) │      │              │    │             │ │
-│  └──────────────┘      └──────────────┘    └─────┬───────┘ │
-│                               │                   │         │
-│                               ▼                   │         │
-│                        ┌──────────────┐           │         │
-│                        │ LLM Gateway  │           │         │
-│                        │ (OpenAI/     │           │         │
-│                        │  Anthropic)  │           │         │
-│                        └──────────────┘           │         │
-│                                                    │         │
-└────────────────────────────────────────────────────┼─────────┘
-                                                     │
-                                                     ▼
+│                                                             │
+│  ┌──────────────┐      ┌──────────────┐    ┌─────────────┐  │
+│  │   Frontend   │◄────►│  API Layer   │◄──►│   Neo4j     │  │
+│  │ (Leaflet +   │      │  (FastAPI)   │    │  Graph DB   │  │
+│  │  NL Console) │      │              │    │             │  │
+│  └──────────────┘      └──────────────┘    └─────┬───────┘  │
+│                               │                  │          │
+│                               ▼                  │          │
+│                        ┌──────────────┐          │          │
+│                        │ LLM Gateway  │          │          │
+│                        │ (OpenAI/     │          │          │
+│                        │  Anthropic)  │          │          │
+│                        └──────────────┘          │          │
+│                                                  │          │
+└──────────────────────────────────────────────────┼──────────┘
+                                                   │
+                                                   ▼
                                             ┌─────────────────┐
                                             │  IPFS Network   │
                                             │  (Snapshots)    │
@@ -100,10 +107,16 @@ Maps of Making is a **federated graph-based network intelligence platform** for 
   "id": "fablab-network",
   "name": "Fab Lab Network",
   "region": "global",
-  "url": "https://fablabs.io",
-  "type": "fablab_network"
+  "website": "https://fablabs.io",
+  "contact_email": "hello@fablabs.io",
+  "logo_url": "https://fablabs.io/logo.png",
+  "description": "Global network of digital fabrication labs...",
+  "type": "fablab_network",
+  "created_at": "2014-01-01T00:00:00Z"
 }
 ```
+
+**Note**: Network metadata enables Phase 2+ features (network profiles, branded widgets) while avoiding tech debt. Initial population via CSV import or parallel backend API (Phase 1).
 
 **Skill** (Competencies/Equipment)
 ```python
@@ -209,6 +222,7 @@ Ensures schema consistency across federation.
 | **Frontend Base** | Vanilla JS | ES6+ | - | Zero dependencies, fast, easy embedding |
 | **LLM Gateway** | OpenAI SDK | 1.3+ | MIT | Powers natural language console (Phase 1: OpenAI, Phase 4: self-hosted options) |
 | **Data Validation** | Pydantic | 2.5+ | MIT | Schema validation before Neo4j ingestion |
+| **Knowledge Graph Construction** | Graphiti | latest | Apache 2.0 | Rich context extraction from unstructured data during ingestion phase (Phase 1) |
 | **Deployment** | Docker + Docker Compose | latest | Apache 2.0 | Reproducible environment, easy network replica deployment |
 
 **License Strategy:**
@@ -466,11 +480,20 @@ async def record_activity(
     return {"status": "recorded", "freshness": "updated"}
 ```
 
-**Signal Types (MVP):**
-1. **Manual ping:** "We're open today" button
-2. **Webhook:** Space systems (door, booking) send POST
-3. **Community reports:** Users can report space as "dead" or "permanently closed"
-4. **IoT sensors (Phase 4):** Light, motion, etc.
+**Signal Types (MVP Phase 3):**
+1. **Email verification (PRIMARY):** Magic-link verification resets freshness countdown
+2. **Community reports:** Users can report space as "dead" or "permanently closed"
+
+**Signal Types (Nice-to-have Phase 3 PoC):**
+3. **Mock webhook:** Optional webhook_url registration + `POST /spaces/{space_id}/ping` endpoint for testing
+   - Allows testing infrastructure without real sensors
+   - Spaces can manually trigger freshness updates via webhook for demo purposes
+   - Preparation for Phase 4 real integrations
+
+**Signal Types (Phase 4+):**
+4. **Real webhooks:** Space systems (door, booking, calendar) send POST to registered endpoint
+5. **IoT sensors:** Light, motion, presence detectors via MQTT bridge
+6. **Login logs:** Integration with space management systems
 
 **Community Trust Endpoint:**
 ```python
@@ -1093,30 +1116,36 @@ volumes:
 
 **For today's pitch deck:**
 
-1. **"We reveal the invisible network"**
+1. **"One update, everywhere"** (PRIMARY VALUE)
+   - Spaces update once → visible globally across ecosystem (Fablab.io, our map, regional networks, APIs)
+   - Eliminates duplicate effort across 5+ separate map platforms
+   - Single source of truth = communities want to maintain because they see immediate impact
+
+2. **"Effortless verification signals"** (ADOPTION DRIVER)
+   - Magic links, webhooks, local device pings—all under 2 minutes
+   - Real-time feedback: Activity update → instant freshness change on map
+   - Maintenance becomes self-reinforcing (communities rely on current data)
+
+3. **"We reveal the invisible network"** (SECONDARY DIFFERENTIATOR)
    - Other maps show locations
-   - We show collaborations, skills, partnerships
-   - Graph intelligence = our differentiator
+   - We show collaborations, skills, partnerships, ecosystem relationships
+   - Graph intelligence enables "Find spaces collaborating with schools in Spain" queries (impossible in SQL)
 
-2. **"Federated data commons"**
-   - Data lives on IPFS (not proprietary server)
-   - Networks can run validator nodes (hot-swap model)
-   - Apache 2.0 license (open source)
+4. **"Decentralized commons designed to outlive funding"** (NGI ALIGNMENT)
+   - Grounded in Elinor Ostrom's proven commons principles
+   - Data lives on IPFS (not proprietary platform)
+   - Networks can run validator nodes (decentralized governance layer)
+   - Apache 2.0 license (enables derivative funding from other NGI calls)
 
-3. **"Trust through real-time freshness"**
-   - Pheromone decay model (continuous trust gradient)
-   - Activity signals prove livelyness
-   - When you ping, map updates instantly
+5. **"Human + AI accessible"** (HERO FEATURE)
+   - Natural language API: "Find active spaces in Portugal" (live demo)
+   - Proves data is machine-readable and reveals intelligence
+   - Demonstrates A2A protocol compatibility
 
-4. **"Human + AI accessible"**
-   - Natural language console (live demo ready)
-   - Proves A2A protocol compatibility
-   - Non-technical users can query complex data
-
-5. **"Funding strategy aligned"**
-   - NLNet: MVP (data federation + map + verification)
-   - NGI: Scale (federated replicas, advanced graph)
-   - Erasmus+ KA220: Consortium expansion, governance
+6. **"Funding strategy aligned with ecosystem growth"**
+   - NLNet: MVP (data federation + map + verification) = proof of concept
+   - Phase 4: Erasmus+ KA220 (governance layer), Fediversity (decentralized scaling)
+   - Replication revenue: Communities license implementation support
 
 ---
 
