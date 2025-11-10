@@ -120,7 +120,7 @@ Commons designed to Ostrom principles are **proven to sustain** across decades w
 - **FR006**: Render unified makerspace dataset on interactive OpenStreetMap interface
 - **FR007**: Generate embeddable map widget for external websites/platforms
 - **FR008**: Expose API endpoints for programmatic access to makerspace data
-- **FR009**: Support A2A protocol compatibility for LLM agent queries
+- **FR009**: Support A2A protocol compatibility for LLM agent queries (Mistral AI integration, EU-compliant)
 - **FR010**: Display freshness metadata (last verified date, decay countdown)
 
 #### Data Verification & Community Maintenance (Phase 3)
@@ -170,12 +170,13 @@ Commons designed to Ostrom principles are **proven to sustain** across decades w
 
 ## Non-Functional Requirements
 
-- **NFR001**: Data must be queryable by LLM agents via standardized A2A-compatible interfaces
+- **NFR001**: Data must be queryable by LLM agents via standardized A2A-compatible interfaces (Mistral AI integration)
 - **NFR002**: All data and code released under Apache 2.0 license (open source)
 - **NFR003**: Decentralized architecture: no single point of failure for data availability
 - **NFR004**: Data portability: export all space data in standard formats (JSON with Pydantic schema)
 - **NFR005**: Interoperability: use open standards (OpenStreetMap, GeoJSON, JSON-LD) to enable third-party integrations
 - **NFR006**: Privacy-preserving: no personal data collection for basic features
+- **NFR007**: EU data sovereignty: use EU-based infrastructure (Hetzner hosting, Mistral AI) for GDPR-native compliance
 
 ---
 
@@ -355,6 +356,7 @@ Commons designed to Ostrom principles are **proven to sustain** across decades w
 - **Architecture**: Decentralized federation with IPFS storage, distributed across pilot networks
 - **Data Format**: JSON with Pydantic schemas for validation and portability
 - **Identity**: Magic links (MVP); SOLID/A2A/blockchain prepared for Phase 4
+- **Infrastructure**: EU-based (Hetzner hosting, Mistral AI for LLM queries, GDPR-native)
 - **License**: Apache 2.0 (enables NGI/Erasmus+ derivative funding)
 - **Standards**: OpenStreetMap, GeoJSON, A2A protocol, open formats
 

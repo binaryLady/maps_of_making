@@ -51,8 +51,8 @@ Beyond solving the duplication problem, we use Neo4j graph database to reveal **
 │                               ▼                  │          │
 │                        ┌──────────────┐          │          │
 │                        │ LLM Gateway  │          │          │
-│                        │ (OpenAI/     │          │          │
-│                        │  Anthropic)  │          │          │
+│                        │ (Mistral AI) │          │          │
+│                        │              │          │          │
 │                        └──────────────┘          │          │
 │                                                  │          │
 └──────────────────────────────────────────────────┼──────────┘
@@ -220,7 +220,7 @@ Ensures schema consistency across federation.
 | **Authentication** | PyJWT | 2.8+ | MIT | Stateless JWT for magic-link verification |
 | **Frontend Map** | Leaflet.js | 1.9+ | BSD-2 | Battle-tested OSM rendering, lightweight, no tracking |
 | **Frontend Base** | Vanilla JS | ES6+ | - | Zero dependencies, fast, easy embedding |
-| **LLM Gateway** | OpenAI SDK | 1.68.0+ | MIT | Powers natural language console (Phase 1: OpenAI, Phase 4: self-hosted options) |
+| **LLM Gateway** | Mistral AI SDK | 1.0+ | Apache 2.0 | Powers natural language console (EU-based, GDPR-native, supports embeddings + chat completions) |
 | **Data Validation** | Pydantic | 2.5+ | MIT | Schema validation before Neo4j ingestion |
 | **Knowledge Graph Construction** | Graphiti | latest | Apache 2.0 | Rich context extraction from unstructured data during ingestion phase (Phase 1) |
 | **Deployment** | Docker + Docker Compose | latest | Apache 2.0 | Reproducible environment, easy network replica deployment |
@@ -375,17 +375,17 @@ User types natural language query → LLM calls API → Results displayed on map
 
 **Backend Implementation:**
 ```python
-from openai import OpenAI
+from mistralai import Mistral
 
 @app.post("/api/agent/query")
 async def natural_language_query(query: str):
-    client = OpenAI(api_key=OPENAI_API_KEY)
+    client = Mistral(api_key=MISTRAL_API_KEY)
 
     # FastAPI auto-generates OpenAPI spec → LLM tools
     tools = app.openapi()  # Your API as function tools
 
-    response = client.chat.completions.create(
-        model="gpt-4",
+    response = client.chat.complete(
+        model="mistral-large-latest",
         messages=[{"role": "user", "content": query}],
         tools=tools
     )
@@ -784,7 +784,7 @@ maps-of-making/
 2. Space detail view → Popup component
 3. Embeddable widget → `embed.html`
 4. REST API → `api/spaces.py`
-5. Natural language console → `api/agent.py` + OpenAI integration
+5. Natural language console → `api/agent.py` + Mistral AI integration
 
 ---
 
@@ -918,7 +918,7 @@ volumes:
 - IoT sensors (MQTT bridge)
 
 **LLM Agent Integration (Phase 1):**
-- OpenAI function calling (natural language console)
+- Mistral AI function calling (natural language console)
 - OpenAPI spec → auto-discovery by agents
 
 **Embedding (Phase 2):**
@@ -1047,13 +1047,14 @@ volumes:
 
 **Context:** A2A protocol compatibility abstract; need demonstrable feature.
 
-**Decision:** Build natural language query console powered by OpenAI API.
+**Decision:** Build natural language query console powered by Mistral AI API.
 
 **Consequences:**
 - ✅ Proves API is agent-compatible (not theoretical)
 - ✅ Demonstrates graph intelligence
 - ✅ Accessible to non-technical users
-- ⚠️ OpenAI API cost (acceptable for MVP; Phase 4: self-hosted LLM)
+- ✅ EU-based infrastructure (GDPR-native, aligns with NLNet values)
+- ⚠️ Mistral AI API cost (acceptable for MVP; Phase 4: self-hosted LLM options)
 
 **Why Hero Feature:** Differentiates from SQL maps, shows NLNet reviewers the value.
 
@@ -1083,7 +1084,7 @@ volumes:
 
 1. **Federated Consensus:** How do multiple Neo4j replicas resolve conflicts?
 2. **Graph Visualization:** Best library for interactive network graph UI? (D3.js, Cytoscape, Graphistry)
-3. **Self-Hosted LLM:** Can we run Llama/Mistral locally to replace OpenAI? (cost + privacy)
+3. **Self-Hosted LLM:** Can we run Mistral/Llama locally to replace Mistral AI API? (cost + privacy)
 4. **Blockchain Identity:** SOLID vs. DID vs. wallet auth—which fits best?
 5. **Governance:** How do networks vote on data quality disputes?
 

@@ -195,34 +195,36 @@ pip install pyjwt>=2.8.0,<3.0.0
 
 ---
 
-## 6. LLM Integration: OpenAI Python SDK
+## 6. LLM Integration: Mistral AI Python SDK
 
 | Criterion | Status | Details |
 |-----------|--------|---------|
-| **Current Version** | ✅ 1.68.0+ | Latest stable |
-| **License** | ✅ MIT | Open source |
-| **Trust Score** | 9.1/10 | Official OpenAI project |
-| **Code Examples** | 335+ | Extensive coverage |
+| **Current Version** | ✅ 1.0+ | Latest stable |
+| **License** | ✅ Apache 2.0 | Open source |
+| **Trust Score** | 8.7/10 | Official Mistral AI project |
+| **Code Examples** | 566+ | Extensive coverage |
 | **Function Calling** | ✅ YES | For natural language console |
 | **Async Support** | ✅ YES | FastAPI native integration |
-| **Phase 4 Evolution** | ✅ PREPARED | Self-hosted LLM ready |
+| **EU Infrastructure** | ✅ GDPR-native | Aligns with NLNet values |
+| **Phase 4 Evolution** | ✅ PREPARED | Self-hosted Mistral ready |
 
 **Architecture Alignment:**
-- MVP (NLNet): OpenAI API for hero feature ("Ask the map")
-- Phase 4+: Self-hosted Llama/Mistral option
-- OpenAI SDK supports both ✅
+- MVP (NLNet): Mistral AI API for hero feature ("Ask the map")
+- EU-based infrastructure (GDPR-native, data sovereignty)
+- Phase 4+: Self-hosted Mistral/Llama option
+- Mistral AI SDK supports both ✅
 
 **Natural Language Console Implementation:**
 ```python
-from openai import OpenAI
+from mistralai import Mistral
 
-client = OpenAI(api_key=OPENAI_API_KEY)
+client = Mistral(api_key=MISTRAL_API_KEY)
 
 # FastAPI auto-generates OpenAPI spec → LLM tools
 tools = app.openapi()  # Your API endpoints as tools
 
-response = client.chat.completions.create(
-    model="gpt-4",
+response = client.chat.complete(
+    model="mistral-large-latest",
     messages=[{"role": "user", "content": "Find spaces in Berlin"}],
     tools=tools  # Function calling
 )
@@ -230,7 +232,7 @@ response = client.chat.completions.create(
 
 **Installation:**
 ```bash
-pip install openai>=1.68.0,<2.0.0
+pip install mistralai
 ```
 
 **Phase 4 Migration Path:**
@@ -313,7 +315,7 @@ def export_to_ipfs():
 | **Pydantic** | MIT | ✅ YES | Permissive |
 | **Leaflet.js** | BSD-2 | ✅ YES | Permissive |
 | **PyJWT** | MIT | ✅ YES | Permissive |
-| **OpenAI SDK** | MIT | ✅ YES | Permissive |
+| **Mistral AI SDK** | Apache 2.0 | ✅ YES | Direct match, EU-based |
 | **Docker** | Apache 2.0 | ✅ YES | Direct match |
 | **IPFS** | MIT/Apache | ✅ YES | Permissive |
 
@@ -389,10 +391,10 @@ FROM nginx:alpine  # Minimal, security-focused
 
 ### Self-Hosted LLM (Cost Reduction)
 ```python
-# Current (MVP): OpenAI API
-from openai import OpenAI
+# Current (MVP): Mistral AI API
+from mistralai import Mistral
 
-# Phase 4: Self-hosted Llama
+# Phase 4: Self-hosted Mistral/Llama
 from ollama import Ollama  # Drop-in compatible
 ```
 
@@ -404,7 +406,7 @@ from ollama import Ollama  # Drop-in compatible
 ### Identity Layer Enhancement
 - MVP: Magic links (stateless JWT)
 - Phase 4: SOLID protocol / DID / Blockchain wallet auth
-- SDK: OpenAI Agents SDK v0.2.9+ supports extended identity
+- Extended identity support for agent authentication
 
 ### Graphiti Alternative
 - If complexity grows: Migrate to **LangChain Neo4j** integration
@@ -421,7 +423,7 @@ from ollama import Ollama  # Drop-in compatible
 | Pydantic | ✅ VERIFIED | Context7 API + official repo | 2025-11-08 |
 | Leaflet.js | ✅ VERIFIED | Context7 API + official repo | 2025-11-08 |
 | PyJWT | ✅ VERIFIED | Context7 API (9.9/10 trust score) | 2025-11-08 |
-| OpenAI SDK | ✅ VERIFIED | Context7 API + official repo | 2025-11-08 |
+| Mistral AI SDK | ✅ VERIFIED | Context7 API + official repo | 2025-11-10 |
 | License chain | ✅ VERIFIED | Manual audit, all compatible | 2025-11-08 |
 
 ---
