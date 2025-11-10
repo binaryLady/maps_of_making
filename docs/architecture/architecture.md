@@ -215,12 +215,12 @@ Ensures schema consistency across federation.
 |-----------|-----------|---------|---------|-----------|
 | **Backend Framework** | FastAPI | 0.104+ | MIT | Modern Python async framework, auto-generates OpenAPI spec for agent compatibility |
 | **Graph Database** | Neo4j Community | 5.x | GPL3 | Graph-first architecture enables network intelligence queries |
-| **Python Driver** | neo4j-driver | 5.14+ | Apache 2.0 | Official Neo4j Python client |
+| **Python Driver** | neo4j | 5.14+ | Apache 2.0 | Official Neo4j Python client |
 | **Decentralized Storage** | IPFS | latest | MIT/Apache | Ensures data commons resilience, no single point of control |
 | **Authentication** | PyJWT | 2.8+ | MIT | Stateless JWT for magic-link verification |
 | **Frontend Map** | Leaflet.js | 1.9+ | BSD-2 | Battle-tested OSM rendering, lightweight, no tracking |
 | **Frontend Base** | Vanilla JS | ES6+ | - | Zero dependencies, fast, easy embedding |
-| **LLM Gateway** | OpenAI SDK | 1.3+ | MIT | Powers natural language console (Phase 1: OpenAI, Phase 4: self-hosted options) |
+| **LLM Gateway** | OpenAI SDK | 1.68.0+ | MIT | Powers natural language console (Phase 1: OpenAI, Phase 4: self-hosted options) |
 | **Data Validation** | Pydantic | 2.5+ | MIT | Schema validation before Neo4j ingestion |
 | **Knowledge Graph Construction** | Graphiti | latest | Apache 2.0 | Rich context extraction from unstructured data during ingestion phase (Phase 1) |
 | **Deployment** | Docker + Docker Compose | latest | Apache 2.0 | Reproducible environment, easy network replica deployment |
