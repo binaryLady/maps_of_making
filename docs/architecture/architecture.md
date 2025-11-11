@@ -96,8 +96,20 @@ Beyond solving the duplication problem, we use Neo4j graph database to reveal **
   "hours": "Mon-Fri 9:00-18:00",
   "description": "Digital fabrication laboratory...",
   "contact_email": "info@fablabbcn.org",
+
+  # Freshness & Activity Tracking
   "last_verified": "2025-11-03T10:30:00Z",
-  "last_activity": "2025-11-05T08:15:00Z"
+  "last_activity": "2025-11-05T08:15:00Z",
+  "status": "active",  # active | dormant | closed | relocated
+
+  # Temporal Data (Immutable history)
+  "created_at": "2015-03-01T00:00:00Z",
+  "first_verified": "2025-10-15T10:00:00Z",
+  "closed_at": null,
+  "closure_reason": null,
+  "reopen_date": null,
+  "relocated_from": null,  # Previous address if moved
+  "ownership_changed_at": null
 }
 ```
 
@@ -118,14 +130,31 @@ Beyond solving the duplication problem, we use Neo4j graph database to reveal **
 
 **Note**: Network metadata enables Phase 2+ features (network profiles, branded widgets) while avoiding tech debt. Initial population via CSV import or parallel backend API (Phase 1).
 
-**Skill** (Competencies/Equipment)
+**Skill** (Competencies - Anonymized Aggregates)
 ```python
 {
   "id": "laser-cutting",
   "name": "Laser Cutting",
-  "category": "fabrication"
+  "category": "fabrication",
+
+  # Note: Individual names not stored. Communities track anonymized counts.
 }
 ```
+
+**SpaceHasSkill** (Relationship: Space → Skill with proficiency levels)
+```python
+# Relationship properties (not separate node)
+{
+  "level": "advanced",  # novice | intermediate | advanced | professional
+  "professionals": 2,   # Anonymized count of professionals
+  "advanced": 5,        # Anonymized count at advanced level
+  "intermediate": 3,    # etc.
+  "novice": 1,
+  "verified_at": "2025-11-03T10:30:00Z"
+}
+```
+
+**Rationale:** Skills-first model instead of equipment. "Who teaches what at what level" is core community identity. Anonymized aggregates ("3 professionals teach advanced metalworking") tells ecosystem story without privacy burden.
 
 **Organization** (Partners: Schools, NGOs, Companies)
 ```python
@@ -154,27 +183,34 @@ Beyond solving the duplication problem, we use Neo4j graph database to reveal **
 // Network membership
 (Space)-[:MEMBER_OF]->(Network)
 
-// Skills and capabilities
-(Space)-[:HAS_SKILL]->(Skill)
+// Skills and capabilities (anonymized aggregates)
+(Space)-[:HAS_SKILL {level: "advanced", professionals: 2, advanced: 5, ...}]->(Skill)
 
-// Collaborations (the network intelligence layer)
+// Partnerships (bidirectional with handshake validation)
+(Space)-[:SUGGESTS_PARTNERSHIP {status: "pending", since: date}]->(Space)
+// Once both spaces validate:
+(Space)-[:PARTNERSHIP {type: "skill_exchange", since: date, ended_at: null}]->(Space)
+
+// Legacy: Collaborations (ecosystem connections)
 (Space)-[:COLLABORATES_WITH {since: date, project: "name"}]->(Space)
 
-// Partnerships (ecosystem connections)
+// Partners (external organizations)
 (Space)-[:PARTNERS_WITH {since: date, description: "..."}]->(Organization)
 
-// Trust signals
+// Trust signals (immutable ledger)
 (Space)-[:VERIFIED_BY {timestamp: datetime, verifier: "email"}]->(Network)
+(Space)-[:STATE_CHANGE {from: "active", to: "zombie", reason: "365_days_no_verification", timestamp: datetime}]->(StateLog)
+(Space)-[:HAS_CLOSURE_REPORT {timestamp: datetime, reporter: "email", reason: "..."}]->(ClosureReport)
 
 // Activity tracking
-(Space)-[:HAS_ACTIVITY {timestamp: datetime}]->(ActivitySignal)
+(Space)-[:HAS_ACTIVITY {timestamp: datetime, signal_type: "magic_link_verification"}]->(ActivitySignal)
 ```
 
 **Why Graph > SQL:**
-- SQL: "Where is Space X?"
-- Graph: "Who collaborates with Space X? Through which skills? What's the local ecosystem?"
+- SQL: "Where is Space X? Show 5 attributes."
+- Graph: "Who collaborates with Space X? Through which skills? What partnerships exist? Which spaces teach complementary skills? Show ecosystem evolution over time."
 
-**This is the differentiator.**
+**This is the differentiator.** Partnerships visualize as edges. Skill communities form natural clusters. Temporal queries reveal ecosystem birth/death/transformation patterns.
 
 ---
 
@@ -410,13 +446,23 @@ async def natural_language_query(query: str):
 
 ## 7. Freshness & Activity Signals
 
-### Real-Time Freshness Computation + Community Trust Signals
+### Activity-Based Freshness Decay (Option B)
 
-**Freshness States (Lifecycle):**
+**Design Philosophy:** Magic-link verification is primary. Activity signals (webhooks, pings) reset decay to keep spaces fresh without manual re-verification.
+
+**Freshness States & Transitions:**
 
 ```python
 def calculate_freshness(space: SpaceNode) -> dict:
-    days_since = (datetime.now() - space.last_verified).days
+    """
+    Activity-based decay model:
+    1. Magic-link verification (primary) resets freshness
+    2. Optional activity signals (pings) extend freshness
+    3. Time-based fallback ensures eventual notification
+    """
+
+    days_since_verified = (datetime.now() - space.last_verified).days
+    days_since_activity = (datetime.now() - space.last_activity).days if space.last_activity else days_since_verified
 
     # Check if user-reported dead or permanently closed
     if space.status == "dead" or space.status == "permanently_closed":
@@ -424,38 +470,61 @@ def calculate_freshness(space: SpaceNode) -> dict:
             "score": 0,
             "status": "dead",
             "icon": "💀",
-            "days_since": days_since,
+            "days_since_verified": days_since_verified,
             "message": "Confirmed closed or non-responsive",
             "reported_by": space.closure_report.user if space.closure_report else None
         }
 
-    # Time-based decay
-    score = max(0, 1 - (days_since / 365))  # 1-year decay window
+    # PRIMARY: Verification-based (magic-link)
+    # SECONDARY: Activity-based (webhooks, pings)
+    days_for_threshold = min(days_since_verified, days_since_activity)
 
-    # Thresholds
-    if days_since <= 90:
+    # Thresholds (Option B: Activity-based)
+    if days_for_threshold <= 14:
         status, icon = "fresh", "✅"
-    elif days_since <= 180:
+    elif days_for_threshold <= 30:
         status, icon = "aging", "⚠️"
-    elif days_since <= 365:
-        status, icon = "stale", "🧟"  # Zombie - might be alive, unclear
+    elif days_for_threshold <= 90:
+        status, icon = "zombie", "🧟"  # Unclear if alive
     else:
-        status, icon = "dead", "💀"  # Auto-marked dead after 1 year no response
+        status, icon = "dead", "💀"  # No activity or verification in 90+ days
+
+    # Continuous decay score (0-1) within 1-year window
+    score = max(0, 1 - (max(days_since_verified, days_since_activity) / 365))
 
     return {
         "score": round(score, 2),
         "status": status,
         "icon": icon,
-        "days_since": days_since,
-        "message": f"Last verified {days_since} days ago"
+        "days_since_verified": days_since_verified,
+        "days_since_activity": days_since_activity,
+        "message": f"Last verified {days_since_verified} days ago" +
+                  (f", activity {days_since_activity} days ago" if space.last_activity else ""),
+        "next_verification_due": (space.last_verified + timedelta(days=30)).isoformat(),
+        "next_critical": (space.last_verified + timedelta(days=90)).isoformat()
     }
 ```
 
+**Decay Timeline Example:**
+```
+Magic-link verification: Oct 15
+├─ Oct 15-29 (14 days): Fresh ✅ (yellow on map → nudge with tooltip)
+├─ Oct 29-Nov 15 (30 days): Aging ⚠️ (orange, send reminder email)
+├─ Nov 15-Jan 15 (90 days): Zombie 🧟 (red, "we haven't heard from you")
+└─ Jan 15+: Dead 💀 (auto-removed unless activity resumes)
+
+With Activity Signal (optional webhook):
+├─ Oct 15: verification
+├─ Nov 5: door sensor ping → resets activity counter
+├─ Result: Days-since-activity resets to 0, stays Fresh longer
+```
+
 **Why Real-Time (Not Pre-Computed):**
-- **Trust-building:** Activity webhook → instant freshness update
-- **Simple:** No background jobs, no cron
+- **Trust-building:** Activity webhook → instant freshness update on map
+- **Simple:** No background jobs, no cron jobs
 - **Fast enough:** Microsecond calculation at MVP scale
-- **Proof of livelyness:** Immediate feedback loop
+- **Proof of livelyness:** Immediate feedback loop for communities
+- **Incentive aligned:** "Keep pinging to stay fresh" becomes self-enforcing behavior
 
 ---
 
@@ -713,6 +782,150 @@ User query → backend LLM gateway → results highlighted on map.
 
 ---
 
+## 9. Embeddable Maps Strategy (Tiered by Contribution)
+
+### Phase 1 (MVP): Parametrized URL + Iframe
+
+**Simplest possible embedding.** Space operators go to dashboard → "Get embed code" → copy/paste.
+
+**URL Format:**
+```
+https://maps.making/embed?
+  center=50.8503,4.3517&
+  zoom=13&
+  network=brussels&
+  skills=metalworking&
+  skill_level=advanced&
+  freshness=30d&
+  partnerships=yes&
+  theme=light
+```
+
+**HTML Output (Copy-paste ready):**
+```html
+<iframe
+  src="https://maps.making/embed?center=50.8503,4.3517&zoom=13&network=brussels&freshness=30d"
+  width="600" height="400"
+  frameborder="0"
+  title="Maps of Making - Brussels Makerspaces"
+></iframe>
+```
+
+**Advantages:**
+- ✅ Zero JavaScript knowledge required
+- ✅ Works everywhere (Notion, WordPress, Wix, Medium, etc.)
+- ✅ URL is shareable ("Check out the metalworking cluster")
+- ✅ iframe sandbox = built-in security
+
+**API Endpoints (Backend):**
+```
+GET /api/embed?center=lat,lon&zoom=N&network=X&filters=...
+  → Returns: GeoJSON + minimal HTML/CSS for rendering
+
+GET /api/spaces?network=X&skills=Y&freshness=30d
+  → Returns: GeoJSON for programmatic access
+```
+
+---
+
+### Phase 2 (Advanced): Web Component Library
+
+**For developers who want customization.** JavaScript library with callbacks, event handlers, dynamic updates.
+
+**Usage:**
+```html
+<script src="https://maps.making/embed.js"></script>
+
+<div id="my-map"
+  data-center="50.8503,4.3517"
+  data-network="brussels"
+  data-filters="skill:metalworking"
+></div>
+
+<script>
+  MapsOfMaking.embed('#my-map', {
+    onSpaceClick: (space) => {
+      console.log(`Clicked: ${space.name}`);
+      updateCustomUI(space);
+    },
+    onPartnershipHover: (partnership) => {
+      highlight(partnership);
+    },
+    theme: 'dark',
+    showLegend: true,
+    autoCenter: true
+  });
+</script>
+```
+
+**Benefits:**
+- ✅ Fully customizable CSS
+- ✅ Event callbacks for custom behavior
+- ✅ Works with React/Vue/Svelte
+- ✅ Dynamic filter updates
+
+**Tied to Contribution Tiers:**
+- **Tier 1 (Basic):** iframe embeds only
+- **Tier 2+ (Contributors):** Web component library + API documentation
+
+---
+
+### Phase 1 Dashboard Feature
+
+**"Get Embed Code" for Space Operators**
+
+```
+1. Space operator logs in (via magic link)
+2. Dashboard shows: "Share your map on your website"
+3. Simple form:
+   - "Show only my network" (checkbox)
+   - "Show only verified in last X days" (dropdown)
+   - "Map size" (preset: small/medium/large)
+4. Live preview of the embed
+5. Copy-paste code provided:
+   <iframe src="https://maps.making/embed?..." />
+6. Analytics (optional, Phase 4): "This embed viewed 1.2k times"
+```
+
+---
+
+### Query Parameter Specification
+
+| Param | Type | Example | Purpose |
+|-------|------|---------|---------|
+| `center` | lat,lon | 50.8503,4.3517 | Map center |
+| `zoom` | int | 13 | Initial zoom level |
+| `network` | id | brussels | Filter by network |
+| `skills` | comma-list | metalworking,electronics | Filter by skills |
+| `skill_level` | enum | advanced | Minimum proficiency |
+| `freshness` | duration | 30d,90d | Verified within X |
+| `partnerships` | bool | yes/no | Show only connected spaces |
+| `status` | enum | active,dormant | Space status |
+| `view` | enum | map,graph,list | Visualization type |
+| `theme` | enum | light,dark | UI theme |
+| `show_legend` | bool | true/false | Show map legend |
+| `auto_fit` | bool | true/false | Auto-zoom to results |
+| `highlight_space` | id | space_123 | Pin specific space |
+
+**Example Use Cases:**
+
+1. **Space X: "Map of me + neighbors"**
+   ```
+   center=50.8503,4.3517&zoom=14&network=brussels&freshness=30d
+   ```
+
+2. **Network Y: "Advanced skills in our region"**
+   ```
+   network=brussels&skill_level=advanced&partnerships=yes
+   ```
+
+3. **Researcher: "Show all spaces with textile skills"**
+   ```
+   skills=textiles&view=graph&auto_fit=yes
+   ```
+
+---
+
 ## 9. Project Structure
 
 ```
@@ -858,6 +1071,105 @@ volumes:
 **Deployment Options:**
 - **MVP:** Single VPS (Hetzner, DigitalOcean)
 - **Phase 4:** Each network runs replica (Docker Compose on their infrastructure)
+
+---
+
+## 11. Admin Dashboard (Internal Operations)
+
+**Purpose:** Benchmark system health, monitor costs, detect data quality issues. Internal tool only (not user-facing).
+
+### Monitoring Metrics (Priority Order)
+
+#### **Priority 1: System Health** (Real-time visibility)
+- **API Response Times:** p50/p95/p99 latency by endpoint
+- **Error Rates:** 5xx errors per minute, specific error breakdown
+- **Uptime:** Service availability %, downtime incidents
+- **Database Health:** Neo4j connection pool, query times, slow queries
+- **IPFS Health:** Snapshot success rate, file upload/download health
+
+**Metrics Endpoint:**
+```python
+GET /admin/metrics
+  → {
+    "api_health": {"avg_response_ms": 45, "p95_ms": 120, "error_rate": 0.1},
+    "database": {"connections_active": 5, "pool_max": 10, "slow_queries": 2},
+    "ipfs": {"snapshot_success_rate": 98, "last_snapshot": "2025-11-11T14:00:00Z"},
+    "uptime_hours": 720
+  }
+```
+
+#### **Priority 2: Traffic & Costs** (Weekly review)
+- **API Request Volume:** Requests/hour by endpoint (spaces, embeds, queries)
+- **Mistral AI Token Usage:** Tokens/day by feature, cost/day
+- **Infrastructure Costs:** Hetzner, IPFS, Mistral API combined
+- **Embed Views:** Number of embedded maps viewed (tracking iframe loads)
+
+**Cost Dashboard:**
+```
+Mistral AI Usage This Week:
+├─ Natural language queries: 1,250 requests → 45,000 tokens → €0.23
+├─ Embeddings: 2,500 requests → 125,000 tokens → €0.42
+└─ Total: €0.65/week → €33/month budget
+
+Infrastructure (This Month):
+├─ Hetzner: €35
+├─ Mistral API (est.): €35
+├─ Bandwidth: €12
+└─ Total: €82
+```
+
+#### **Priority 3: Data Quality** (Daily monitoring)
+- **Freshness Distribution:** % of spaces in each state (Fresh/Aging/Zombie/Dead)
+- **Aging Spaces Alert:** Spaces crossing thresholds (send reminder emails)
+- **Verification Rate:** % of spaces verified in last 30 days by network
+- **Partnership Adoption:** % of spaces with pending/confirmed partnerships
+- **Unresolved Closure Reports:** Closure reports awaiting verification
+
+**Data Quality Dashboard:**
+```
+Freshness Status:
+├─ Fresh ✅: 68% (34 spaces) - great!
+├─ Aging ⚠️: 22% (11 spaces) - send reminders
+├─ Zombie 🧟: 8% (4 spaces) - escalate after 90 days
+└─ Dead 💀: 2% (1 space) - confirmed closed
+
+Participation by Network:
+├─ Brussels Network: 28 spaces, 89% verified in 30 days
+├─ Berlin Network: 15 spaces, 73% verified in 30 days
+└─ Barcelona Network: 12 spaces, 62% verified in 30 days
+
+Closure Reports (Awaiting Review):
+├─ Space X reported closed (2 reports) → escalate to network
+└─ Space Y no response (4 reports) → auto-mark zombie?
+```
+
+#### **Priority 4: Federation Health** (Weekly)
+- **IPFS Replication:** Snapshot reachability across networks
+- **Validator Node Status:** If Phase 4 replicas online, sync status
+- **Data Integrity:** Neo4j consistency checks
+
+### Dashboard UI Layout (Backend-First, Admin-Only)
+
+```python
+@app.get("/admin/dashboard")
+async def admin_dashboard(api_key: str):
+    """
+    Internal dashboard. Requires admin API key.
+    Returns JSON for custom dashboards or simple HTML view.
+    """
+    return {
+        "system": {...metrics...},
+        "costs": {...token_usage...},
+        "quality": {...freshness...},
+        "federation": {...ipfs_status...},
+        "generated_at": datetime.now().isoformat()
+    }
+```
+
+**Alerting (Phase 1 basic, Phase 4 advanced):**
+- Email alerts when metrics exceed thresholds
+- Slack webhook integration (Phase 2)
+- Health check endpoint for monitoring tools (Uptime Robot, etc.)
 
 ---
 

@@ -23,14 +23,16 @@ The MVP establishes a decentralized federation where participating networks main
 
 1. **Eliminate duplicate data entry effort** by creating a single, shared source of truth—one verification powers discoverability across the entire ecosystem, not scattered across competing maps
 2. **Design and pilot a sustainable commons** for makerspace infrastructure, grounded in Elinor Ostrom's principles for polycentric governance: clear boundaries, collective decision-making, community accountability, and graduated conflict resolution
-3. **Enable effortless community engagement** through continuous, low-friction verification signals (magic links, webhooks, local device pings) that make maintaining current data the path of least resistance
+3. **Enable effortless community engagement** through continuous, low-friction verification signals (magic links, optional webhooks, local device pings) that make maintaining current data the path of least resistance
 4. **Build a decentralized federation model** where participating networks and spaces own their data while contributing to a shared, globally visible resource
+5. **Reveal ecosystem intelligence** through graph-based network relationships (partnerships, skill communities, collaborations) that transform static location data into living ecosystem understanding
 
 **Technical Goals (NLNet Feasibility)**
 
-5. **Prove MVP-first decentralized architecture** using IPFS snapshots + graph-based network intelligence, demonstrating that communities can coordinate without platform gatekeeping
-6. **Demonstrate A2A-compatible agent integration** with natural language queries ("Ask the map") as a hero feature that proves data is machine-readable and reveals network intelligence beyond traditional location-based maps
-7. **Ensure data portability and community sovereignty** via open standards (JSON/Pydantic schemas), Apache 2.0 license, and federation protocols that enable local replication
+6. **Prove MVP-first decentralized architecture** using IPFS snapshots + graph-based network intelligence, demonstrating that communities can coordinate without platform gatekeeping
+7. **Demonstrate A2A-compatible agent integration** with natural language queries ("Ask the map") as a hero feature that proves data is machine-readable and reveals network intelligence beyond traditional location-based maps
+8. **Ensure data portability and community sovereignty** via open standards (JSON/Pydantic schemas), Apache 2.0 license, and federation protocols that enable local replication
+9. **Preserve ecosystem learning** by maintaining immutable history of space lifecycles (births, deaths, relocations, partnership evolutions) so networks can analyze patterns and learn from failures
 
 ---
 
@@ -140,31 +142,62 @@ Commons designed to Ostrom principles are **proven to sustain** across decades w
 - **FR020**: Magic-link one-time authentication for space data updates
 - **FR021**: Prepare infrastructure for future identity layer (SOLID/A2A/blockchain) in Phase 4+
 
+#### Skills & Capabilities (Anonymized Aggregates)
+
+- **FR021A**: Represent space capabilities as skills (not equipment) with proficiency levels
+- **FR021B**: Store anonymized skill community counts per space: "professionals", "advanced", "intermediate", "novice" per skill
+- **FR021C**: Enable skill-based filtering and graph queries: "Find spaces with advanced electronics + textiles instruction"
+- **FR021D**: Display skill diversity on map/profile without exposing individual names
+
+#### Partnerships (Bidirectional Validation)
+
+- **FR021E**: Space A can suggest partnership with Space B (creates pending relationship)
+- **FR021F**: Partnership requires Space B validation (handshake) before appearing on map
+- **FR021G**: Partnership type tracked (e.g., "skill_exchange", "mentorship", "co_hosting")
+- **FR021H**: Partnerships visualizable as graph edges (Phase 2+)
+- **FR021I**: Dissolution tracking (when did partnership end?) for temporal analysis
+
 #### Data Governance & Trust (Ledger Architecture)
 
 - **FR022**: Classify data as volatile (operational) vs permanent records (audit trail)
 - **FR023**: Version volatile data (keep last 3-5 changes for rollback)
-- **FR024**: Immutable ledger for trust-critical events (verifications, closures, partnerships)
-- **FR025**: Freshness lifecycle: Fresh (✅) → Aging (⚠️) → Zombie (🧟) → Dead (💀)
+- **FR024**: Immutable ledger for trust-critical events (verifications, closures, partnerships, relocations)
+- **FR025**: Freshness lifecycle with activity-based decay — **see architecture.md Section 7 for algorithm**
 - **FR026**: State transitions logged as permanent records
 - **FR027**: GDPR-compliant anonymization (delete personal data, preserve structural integrity)
-- **FR028**: Preserve temporal context for all spaces (created_at, first_verified, closed_at, closure_reason, reopen_date)
-- **FR029**: Timestamp all events in immutable ledger (verifications, state changes, collaborations, partnerships) for ecosystem learning analysis
-- **FR030**: Enable rich knowledge graph construction during data ingestion (using graph technology like Graphiti) to preserve context about space evolution, failures, and ecosystem patterns
+- **FR028**: Preserve temporal context for all spaces: created_at, first_verified, closed_at, closure_reason, reopen_date, **relocated_from, ownership_changed_at**
+- **FR029**: Timestamp all events in immutable ledger (verifications, state changes, partnerships, skill additions/removals, relocations) for ecosystem learning analysis
+- **FR030**: Enable rich knowledge graph construction during data ingestion to preserve context about space evolution, failures, and ecosystem patterns (Phase 1 optional enhancement)
 
-#### Activity Signals & Webhooks (Phase 3 MVP + Nice-to-Have PoC)
+#### Activity Signals & Webhooks (Tiered Implementation)
 
 - **FR031**: MVP Phase 3: Magic-link + email verification only (primary verification method)
-- **FR031A** (Nice-to-have PoC): Optional webhook URL registration on space profile (Phase 3)
-- **FR031B** (Nice-to-have PoC): Mock endpoint `POST /spaces/{space_id}/ping` for testing webhook freshness updates (Phase 3)
-- **FR031C** (Future Phase 4+): Real webhook integrations (door sensors, booking systems, MQTT bridge)
+- **FR031A** (Phase 3 Optional PoC): Webhook infrastructure prep — optional webhook URL registration on space profile
+- **FR031B** (Phase 3 Optional PoC): Mock ping endpoint for testing (`POST /spaces/{space_id}/activity?signal=ping`)
+- **FR031C** (Phase 4+): Real integrations (door sensors, booking systems, MQTT bridge) — can reuse infrastructure from PoC
+
+#### Embeddable Maps & Customization (Tiered by Contribution)
+
+- **FR036**: **Phase 1 (Basic):** Parametrized URL embeds with iframe (no JS knowledge required)
+  - Format: `https://maps.making/embed?center=lat,lon&zoom=13&network=brussels&freshness=30d`
+  - Use cases: Notion pages, WordPress, any website
+
+- **FR036A**: **Phase 2 (Advanced):** Web component library for custom integrations
+  - JavaScript API for developers who want callbacks, custom styling
+  - Tied to Tier 2+ contributor roles
+
+- **FR036B**: **Phase 2+**: Network-branded views (show only member spaces with custom colors)
+
+- **FR037**: Dashboard feature: Space operators can generate embed code with one click
+  - Pre-configured for their network/skills/freshness preference
+  - Copy-paste to Notion/WordPress/website
 
 #### Network Metadata (Avoids Tech Debt)
 
-- **FR032**: Store network metadata in unified schema (name, website, contact_email, logo_url, region, description)
-- **FR033**: Support network data ingestion from CSV/JSON or parallel backend project API
-- **FR034**: Render network detail views (Phase 2+): network profile, member count, location map
-- **FR035**: Network-branded embeddable widgets (Phase 3+): networks embed map showing only their spaces
+- **FR038**: Store network metadata in unified schema (name, website, contact_email, logo_url, region, description)
+- **FR039**: Support network data ingestion from CSV/JSON or parallel backend project API
+- **FR040**: Render network detail views (Phase 2+): network profile, member count, location map
+- **FR041**: Network-branded embeddable widgets (Phase 2+): networks embed map showing only their spaces
 
 ---
 
@@ -211,16 +244,17 @@ Commons designed to Ostrom principles are **proven to sustain** across decades w
 
 ---
 
-### Journey 3: LLM Agent Queries Map for Space Information
+### Journey 3: LLM Agent Queries Map for Ecosystem Intelligence
 
 **Actor**: AI agent assisting user planning
 
-1. User asks: "What makerspaces are active in Berlin right now?"
-2. Agent queries Maps of Making API via A2A protocol
-3. Agent filters by freshness and activity signals, returns only "live" spaces
-4. Agent provides verified, current recommendations
+1. User asks: "What spaces in Berlin teach advanced electronics alongside metalworking?"
+2. Agent queries Maps of Making API via A2A protocol, uses graph queries to find partnerships
+3. Agent filters by: freshness (verified <7 days), skill levels, confirmed partnerships
+4. Agent returns: primary space + recommended partner space, with why they complement each other
+5. Agent provides verified, current recommendations with ecosystem context
 
-**Value**: Agent-driven assistance becomes viable when data is trustworthy and machine-readable
+**Value**: Agent-driven assistance becomes viable when data reveals relationships, not just locations. Graph intelligence transforms raw location data into living ecosystem recommendations
 
 ---
 
