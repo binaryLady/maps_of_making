@@ -24,9 +24,9 @@ Maps of Making serves five distinct user personas, each with different needs and
 
 ### Current Pain (Legacy Maps Fail)
 - **Outdated listings:** Maps show spaces that closed 6 months ago
-- **No freshness signal:** Can't tell if information is current or abandoned
+- **No freshness signal:** Can't tell if information is current or abandoned (except mainly hackerspaces on mapall.space trough API)
 - **Wasted travel:** Arrives at address → space is gone/closed/moved
-- **No context:** Equipment list says "3D printer" but doesn't know if it's functional or blocked for weeks
+- **No context:** Equipment list says "3D printer" but doesn't know what are the requirements, nor if it's functional or blocked for weeks
 - **No trust:** Can't determine why a space isn't responding to contact attempts
 
 ### What Maps of Making Unlocks
@@ -57,16 +57,16 @@ Maps of Making shows:
 
 ### Current Pain (Legacy Maps Fail)
 - **No historical data:** When spaces close, they disappear → can't research failure patterns
-- **No temporal analysis:** Can't answer "which regions lost spaces in 2024?"
+- **No temporal analysis:** Can't answer "which regions lost spaces post-COVID?"
 - **Location-only view:** No understanding of relationships, skill communities, collaboration patterns
 - **Siloed data:** Each map has different spaces → no integrated ecosystem view
 - **Dead ends:** Success stories don't tell failure stories → biased learning
 
 ### What Maps of Making Unlocks
 ✅ **Temporal data preserved:** Spaces marked "closed" with dates, reasons, relocation history
-✅ **Time travel queries:** "Show me Brussels ecosystem in Jan 2025 vs today"
+✅ **Time travel queries:** "Show me Belgian maker ecosystem in Jan 2020 vs today"
 ✅ **Failure pattern analysis:** "Which spaces closed? When? Owner changed hands?"
-✅ **Skill evolution tracking:** "Did metalworking communities cluster before or after laserlab opened?"
+✅ **Skill evolution tracking:** "Did metalworking communities cluster before or after 'laserlab' opened?"
 ✅ **Growth trajectories:** "Which networks are expanding? Which consolidating?"
 ✅ **Graph-based insights:** Query partnerships, collaboration chains, ecosystem health metrics
 
@@ -74,7 +74,7 @@ Maps of Making shows:
 **"What conditions predict makerspace survival vs closure in EU cities? Which skill communities emerge first?"**
 
 Maps of Making enables:
-- Historical space data (births, deaths, transitions)
+- Historical space data (births, deaths, transitions, relocations)
 - Skill distribution analysis over time
 - Partnership formation patterns
 - Closure reasons anonymized + aggregated
@@ -254,17 +254,25 @@ Flow: Individual Maker in Berlin
 ```
 Flow: Researcher studying maker ecosystems
 ├─ Access: /api/spaces?temporal_date=2020-01-01 (timeline query)
-├─ Query 1: "All spaces that existed in 2020 but not 2025"
-│  └─ Result: List of closed spaces + closure reasons + dates
-├─ Query 2: "Skill communities in Berlin 2020 vs 2025"
-│  └─ Result: Evolution of specialization, skill clustering
-├─ Query 3: "Partnership formation patterns pre/post closure"
-│  └─ Result: Did partnerships correlate with survival?
+├─ Query 1: "Which regions lost spaces post-COVID?"
+│  ├─ Setup: Compare space counts 2020-01-01 vs 2025-11-01
+│  ├─ Result: [Belgium -8%, Germany -3%, France -12%, Austria +5%]
+│  └─ Insight: Southern/Western EU hit harder; Eastern growing
+├─ Query 2: "What happened to Belgian spaces between 2020-2025?"
+│  ├─ Closed: 8 spaces (dates, owners noted)
+│  ├─ Survived: 34 spaces (how did they adapt?)
+│  └─ Result: Closure spike March-June 2020, recovery slow
+├─ Query 3: "Did partnerships help spaces survive COVID?"
+│  ├─ Compare: Partnered spaces vs isolated spaces
+│  └─ Result: Partnered spaces had 40% higher survival rate
+├─ Query 4: "Which skill areas disappeared? Which emerged?"
+│  ├─ Lost: Traditional workshops (high overhead)
+│  └─ Gained: Home-scale digital fab, online mentoring
 ├─ Export: All results as JSON for analysis
-└─ Publish: Academic paper on maker ecosystem resilience
+└─ Publish: Academic paper on COVID's impact on maker resilience
 ```
 
-**Success metric:** Researcher can answer temporal questions without manual work
+**Success metric:** Researcher can answer temporal + causal questions without manual work
 
 ---
 
@@ -272,7 +280,7 @@ Flow: Researcher studying maker ecosystems
 
 ```
 Flow: Network coordinator weekly check
-├─ Log in (magic link)
+├─ Log in (magic link? or account? or local node?)
 ├─ Dashboard: "Network Health Overview"
 │  ├─ Fresh ✅: 28 spaces (89% verified <30d) — great!
 │  ├─ Aging ⚠️: 3 spaces (verified 31-60d) — send reminder
