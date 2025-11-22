@@ -214,7 +214,7 @@ Agent's internal reasoning:
 
 ## Feature-to-Persona Mapping
 
-| Feature | Persona 1 | Persona 2 | Persona 3 | Persona 4 | Persona 5 |
+| Feature | Individual Maker | Researcher | Space Operator | Founder | LLM Agent |
 |---------|-----------|-----------|-----------|-----------|-----------|
 | **Freshness indicators** | 🔴 Critical | 🟡 Important | 🔴 Critical | 🟡 Important | 🟡 Important |
 | **Skills + levels (anonymized)** | 🔴 Critical | 🟡 Important | 🟡 Important | 🔴 Critical | 🟡 Important |
