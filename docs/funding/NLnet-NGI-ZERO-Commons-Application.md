@@ -11,26 +11,31 @@
 ### Your name
 ```
 [COMPLETE - Project lead name]
+Jason Pettiaux
 ```
 
 ### Email address
 ```
 [COMPLETE - Primary contact email]
+jason.pettiaux@gmail.com
 ```
 
 ### Phone number
 ```
 [COMPLETE - With country code]
++32 493 53 11 24
 ```
 
 ### Organisation
 ```
 [COMPLETE - Lead organization or network, or leave blank]
+Vulca
 ```
 
 ### Country
 ```
 [COMPLETE - Your country]
+Belgium
 ```
 
 ---
@@ -58,11 +63,16 @@ https://github.com/nicolasdb/maps_of_making
 ### Draft Abstract (~1150 chars - refine to fit)
 
 ```
-Maps of Making eliminates coordination costs for makerspace networks by creating one verification
+Makerspaces reinvent manufacturing through the product lifecycle, from invention & prototyping to production, repair and recycling.
+That is a huge work. There is too much to do and reinvent for any single space, they need to work together. However until now, every makerspace network is relying on rarely updated sparse databases. [Precious plastics](https://community.preciousplastic.com/map), mapall.space (through the Spaces API) and [Open Know-Where by the Internet of Things](https://www.internetofproduction.org/openknowwhere) have all done great things.
+We now need to take inspiration in what they did. Reuse their code as much as possible and build a solution that continuously engages the community without the community needing to update the map specifically. We also need to engage and integrated different networks to contribute to the map, but also to help them integrate the map in their own system and integrate their constraints into the map design and architecture. Finally, we need to integrate advanced systems for enriching and searching this database, using the documentation that is already present for all of those websites, unlocking the value of the documentation and creating an updated library of hidden knowledge that is rediscovered, rebuilt by every individual community maker space around the world.
+
+Maps of Making eliminates coordination costs for makerspace networks by creating one federated verification
 point globally visible across the entire ecosystem.
 
 Problem: Spaces waste effort updating 5+ separate maps (Fablab.io, Hackerspaces.org, Google Maps,
 regional databases). Maps go stale. Networks lose critical coordination infrastructure.
+Maps are how people search and connect, networks need maps to connect. Through the map, we can then connect and unlock the documentation
 
 Solution: Single federated commons where networks and spaces verify once, visible everywhere, powered
 by Elinor Ostrom's proven commons governance principles.
@@ -71,7 +81,7 @@ Outcomes:
 1. Consolidated makerspace data from 3-5 pilot networks in unified schema (IPFS-stored)
 2. Interactive map + embeddable widget showing real-time freshness signals
 3. Effortless verification system (magic links, webhooks) requiring <2 minutes per update
-4. Natural language API queries proving data is machine-readable and reveals network intelligence
+4. Natural language API queries proving data is machine-readable and unlocking access to network intelligence
 5. Demonstrated sustainability through community ownership model grounded in Ostrom principles
 
 Why NGI Zero Commons: We're building digital commons infrastructure designed to outlive grant funding,
@@ -99,6 +109,8 @@ Required for each team member:
 
 Example structure:
 ```
+Jason Pettiaux, Project & Community Lead: 5 years in healthcare product development, a complex stakeholder ecosystem; 5 years as Scout leader animating communities through flat governance, 2 years as Vulca Explorer building fablab networks across Europe and the world.
+
 [YOUR NAME], Project Lead: [X years] experience in [domain]. Led/contributed to [specific projects].
 Portfolio: [GitHub/website]. Relevant to this project: [your expertise in commons/graph DB/makerspaces].
 
@@ -136,6 +148,7 @@ GitHub: [link]. Relevant: [expertise].
 
 ```
 Budget structured as 4 milestone-based deliverables (8 weeks total):
+Working with spiral development to go through Design -> Development -> Adoption
 
 MILESTONE 1: Backend Engine Foundation (Weeks 1-3) — €5,200
 - Docker Compose + Neo4j + FastAPI architecture
@@ -211,7 +224,13 @@ EXISTING SOLUTIONS & LIMITATIONS:
 4. mapall.space (Attempted federation, inactive)
    - Tried federation but no governance model
    - No verification incentives
-   - Communities not invested → abandoned
+   - Communities not invested
+5. Precious Plastics Maps
+   - Specific for Precious plastics hubs
+   - No inter-network fertilisation
+   - Active community
+   - Centralised database (Supabase)
+   - No passive activation of the members
 
 WHAT MAPS OF MAKING DOES DIFFERENTLY:
 
@@ -228,9 +247,8 @@ WHAT MAPS OF MAKING DOES DIFFERENTLY:
    [See architecture §7: github.com/nicolasdb/maps_of_making/docs/architecture/architecture.md#7-freshness--activity-signals]
 
 3. NETWORK INTELLIGENCE (Graph-Based)
-   - Reveals partnerships, skill communities, collaboration clusters
-   - Queries impossible in SQL: "Find spaces teaching advanced electronics + textiles"
-   - Natural language API: "Ask the map" (hero feature)
+   - Scraping websites and unlocking documentation -> Making documentation worthwhile for a lab
+   - Natural language API: "Ask the map Find spaces teaching advanced electronics + textiles" (hero feature)
    - Existing maps: Location-only, no relationships
    [See architecture §2 & personas: github.com/nicolasdb/maps_of_making/docs/planning/PERSONAS.md]
 
@@ -243,16 +261,17 @@ WHAT MAPS OF MAKING DOES DIFFERENTLY:
 
 5. OPEN STANDARDS & REPLICABILITY
    - Apache 2.0 license (enables derivative funding)
-   - Architecture replicable for repair networks, tool libraries, gardens
-   - Existing maps: Proprietary, limited reuse
+   - Architecture allows to integrate repair networks, tool libraries, gardens
+   - Existing maps: Proprietary, limited reuse, no federation
 
 WHY NOW:
 Ostrom's research shows commons designed at inception sustain for decades. Previous maps failed because
 they were platforms-first, governance-later. We're building governance-first.
+AI & graph architecture are now mature to easily unlock modern rich scraping.
 
 COMPETITIVE ADVANTAGE:
-We're not building "a better map"—we're building digital commons infrastructure that communities want
-to maintain because they own it, see immediate impact, and effort is minimal.
+We're building a digital common infrastructure, not "a better map".
+A infrastructure that answers local community needs first and is easy to maintain, has long-term value because they own it and can control it and they see immediate impact.
 ```
 
 **Character count:** ~3,750 chars ✅ (within 4000 limit)
@@ -265,7 +284,7 @@ to maintain because they own it, see immediate impact, and effort is minimal.
 **Question:** What are significant technical challenges you expect to solve during the project, if any?
 
 ### Draft Technical Challenges (~4700 chars - with GitHub references)
-
+/// TO REVIEW JASON
 ```
 CHALLENGE 1: MAINTAINING FRESH DATA IN DECENTRALIZED SYSTEM
 
