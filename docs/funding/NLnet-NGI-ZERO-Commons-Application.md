@@ -10,19 +10,16 @@
 
 ### Your name
 ```
-[COMPLETE - Project lead name]
 Jason Pettiaux
 ```
 
 ### Email address
 ```
-[COMPLETE - Primary contact email]
 jason.pettiaux@gmail.com
 ```
 
 ### Phone number
 ```
-[COMPLETE - With country code]
 +32 493 53 11 24
 ```
 
@@ -34,7 +31,6 @@ Vulca
 
 ### Country
 ```
-[COMPLETE - Your country]
 Belgium
 ```
 
@@ -51,6 +47,8 @@ Maps of Making: Makerspace Data in Commons
 ```
 https://github.com/nicolasdb/maps_of_making
 (README serves as project homepage)
+or pre-website on notion
+https://plucky-beef-541.notion.site/Maps-of-Making-2b9bbd21f4c18078b0b6dc1e64c9daf0
 ```
 
 ---
@@ -60,35 +58,30 @@ https://github.com/nicolasdb/maps_of_making
 
 **Question:** Can you explain the whole project and its expected outcome(s)?
 
-### Draft Abstract (~1150 chars - refine to fit)
+### Draft
 
 ```
-Makerspaces reinvent manufacturing through the product lifecycle, from invention & prototyping to production, repair and recycling.
-That is a huge work. There is too much to do and reinvent for any single space, they need to work together. However until now, every makerspace network is relying on rarely updated sparse databases. [Precious plastics](https://community.preciousplastic.com/map), mapall.space (through the Spaces API) and [Open Know-Where by the Internet of Things](https://www.internetofproduction.org/openknowwhere) have all done great things.
-We now need to take inspiration in what they did. Reuse their code as much as possible and build a solution that continuously engages the community without the community needing to update the map specifically. We also need to engage and integrated different networks to contribute to the map, but also to help them integrate the map in their own system and integrate their constraints into the map design and architecture. Finally, we need to integrate advanced systems for enriching and searching this database, using the documentation that is already present for all of those websites, unlocking the value of the documentation and creating an updated library of hidden knowledge that is rediscovered, rebuilt by every individual community maker space around the world.
+Makerspaces reinvent manufacturing from invention, prototyping to production, repair and recycling, they must work together. 
 
-Maps of Making eliminates coordination costs for makerspace networks by creating one federated verification
-point globally visible across the entire ecosystem.
+Maps of Making solves a critical failure in makerspace coordination: existing maps die because spaces update once and receive no sustained value in return. This misalignment wastes community effort and reduces overall ecosystem impact.
 
-Problem: Spaces waste effort updating 5+ separate maps (Fablab.io, Hackerspaces.org, Google Maps,
-regional databases). Maps go stale. Networks lose critical coordination infrastructure.
-Maps are how people search and connect, networks need maps to connect. Through the map, we can then connect and unlock the documentation
+We're building a digital commons where fresh data unlocks ecosystem intelligence. The more communities contribute, the more useful the map becomes — creating a self-reinforcing value loop grounded in Elinor Ostrom's proven commons governance principles.
 
-Solution: Single federated commons where networks and spaces verify once, visible everywhere, powered
-by Elinor Ostrom's proven commons governance principles.
+Round 1 validates this with diverse stakeholders who've confirmed their support. 8+ organizations have already committed letters of intent.
 
-Outcomes:
-1. Consolidated makerspace data from 3-5 pilot networks in unified schema (IPFS-stored)
-2. Interactive map + embeddable widget showing real-time freshness signals
-3. Effortless verification system (magic links, webhooks) requiring <2 minutes per update
-4. Natural language API queries proving data is machine-readable and unlocking access to network intelligence
-5. Demonstrated sustainability through community ownership model grounded in Ostrom principles
+Key deliverables:
 
-Why NGI Zero Commons: We're building digital commons infrastructure designed to outlive grant funding,
-not extractive mapping platforms. Data lives on IPFS. Networks can run validator nodes. Networks own governance.
+- Federated data commons with decentralized backup
+- Freshness signals validating spaces maintain data because it delivers value
+- Graph database enabling relationship queries SQL can't handle
+- Semantic "ask the map" queries via EU-compliant LLM 
+
+Success metric:
+
+Provide a community database behaving like a true commons — useful, shared, and self-reinforcing.
 ```
 
-**Character count:** ~1,050 chars ✅ (within 1200 limit)
+**Character count:** 1,142 (max 1200) ✅
 
 ---
 
@@ -97,7 +90,7 @@ not extractive mapping platforms. Data lives on IPFS. Networks can run validator
 
 **Question:** Have you been involved with projects or organisations relevant to this project before? And if so, can you tell us a bit about your contributions?
 
-### Status: DEFERRED
+### Status: WIP
 
 **[TODO - Provide team member bios]**
 
@@ -107,18 +100,20 @@ Required for each team member:
 - 2-3 key projects / GitHub/portfolio links
 - One sentence: Why relevant to this project?
 
-Example structure:
 ```
 Jason Pettiaux, Project & Community Lead: 5 years in healthcare product development, a complex stakeholder ecosystem; 5 years as Scout leader animating communities through flat governance, 2 years as Vulca Explorer building fablab networks across Europe and the world.
 
-[YOUR NAME], Project Lead: [X years] experience in [domain]. Led/contributed to [specific projects].
-Portfolio: [GitHub/website]. Relevant to this project: [your expertise in commons/graph DB/makerspaces].
+Nicolas de Barquin, ??? : 
+10+ years founding and leading OpenFab Brussels. I experienced the classic commons tragedy: as the single maintainer, I burned out. Members relied on me to fix, teach, organize—and when I couldn't anymore, the space nearly closed. That failure sent me on a journey to understand why commons collapse, studying Ostrom's principles, game theory, and behavioral economics. "Maps of Making" is the system I wish had existed: designed so no single person becomes the bottleneck.
+Built OpenFab on a €14k/year participation model—members contributed labor instead of high fees. The space survived 13 years including COVID, but still relied on key maintainers.
+9 years participating in VULCA (European maker mobility network). This peer connections kept me functional — meeting fabmanagers facing the same struggles was like fresh air. We'd share solutions, learn from each other's experiments across cultures. It's why I lasted 10 years at OpenFab instead of burning out sooner.
+5 years as Lead CAD Developer at EATOPS SA, designing telemetry systems for spacecraft and offshore platforms. Built predictive monitoring to catch silent failures before they became critical. That systems thinking—using historical data to anticipate problems—directly informs Maps of Making's temporal analysis layer.
 
-[CO-LEAD NAME], [Role]: [X years] experience in [domain]. Previous work includes [specific projects].
-GitHub: [link]. Relevant: [expertise].
+Maps of Making sits at the intersection: I know why commons fail, what keeps maker communities alive, and how to build systems that prevent silent failures. This project is the convergence.
+https://github.com/nicolasdb
 ```
 
-**Character count:** [WILL FINALIZE WHEN PROVIDED] (max 2500)
+**Character count:** 1807 (max 2500) ✅
 
 ---
 
@@ -127,73 +122,54 @@ GitHub: [link]. Relevant: [expertise].
 ### Requested Amount
 
 ```
-€18,555
+38300€
 ```
-
-**Rationale:**
-- First proposal cap: €50,000 (we request €18,555 = 37% of cap)
-- 4-milestone MVP: 8 weeks (2 months) intensive development
-- Milestone-based payment structure (4 deliverables)
-- Core tech stack: Neo4j + FastAPI + Leaflet.js + IPFS
-- See detailed budget breakdown below
-
----
-
-### Budget Explanation
+### Explain Cost
 **Character limit: 2500 characters**
 
-**Question:** Explain what the requested budget will be used for? Does the project have other funding sources, both past and present? A breakdown in the main tasks with associated effort is appreciated. Make rates explicit.
-
-### Draft Budget Explanation (~2300 chars - aligned to Round 1 Roadmap)
-
 ```
-Budget structured as 4 milestone-based deliverables (8 weeks total):
-Working with spiral development to go through Design -> Development -> Adoption
+Budget covers 3-month intensive development and validation cycle with 4 milestone-based deliverables.
 
-MILESTONE 1: Backend Engine Foundation (Weeks 1-3) — €5,200
-- Docker Compose + Neo4j + FastAPI architecture
-- Docling data ingestion pipeline for heterogeneous CSV/JSON
-- Graphiti knowledge graph construction
-- Mistral AI integration (embeddings + chat)
-- RBAC-filtered graph queries + test suite (>80% coverage)
-[See: github.com/nicolasdb/maps_of_making/docs/planning/round-1-roadmap.md#milestone-1]
+APPROACH:
+Round 1 validates architecture choices through rapid iteration with real users. We run parallel technical and community tracks, testing both our technology decisions (graph vs SQL, decentralized backup) and engagement model (do spaces actually maintain data when it's useful?).
 
-MILESTONE 2: Maps of Making Domain Adaptation (Weeks 4-5) — €4,000
-- Pydantic schemas for Space/Network/Verification
-- CSV/JSON ingestion via Docling (2+ pilot networks)
-- Freshness decay calculation + lifecycle logic (Fresh→Aging→Zombie→Dead)
-- Magic-link JWT auth + Gmail API integration
-- REST API endpoints (GET /spaces, GET /networks, POST /verify)
-- A2A proof-of-concept endpoint (Mistral AI natural language queries)
+MILESTONE STRUCTURE (12 weeks):
 
-MILESTONE 3: Map Interface & Verification Flow (Weeks 6-7) — €3,840
-- SvelteKit + Leaflet.js interactive map (OpenStreetMap rendering)
-- Space markers color-coded by freshness (✅⚠️🧟💀)
-- Space detail cards + verification form (via magic link)
-- Frontend-backend integration + responsive design
-[See: github.com/nicolasdb/maps_of_making/docs/planning/PERSONAS.md#use-cases for interaction flows]
+M1: Solution Validation (2 weeks) — €6,400
+Deliverable: Architecture decisions + user research confirming solution fit.
 
-MILESTONE 4: Integration, Testing & Deployment (Week 8) — €2,880
-- IPFS backup/restore tested + documented
-- End-to-end integration tests (all user journeys)
-- Production deployment (Hetzner)
-- User documentation + API specs
-- Bug fixes from pilot network feedback
+M2: Walking Skeleton + Backup (3 weeks) — €9,600
+Deliverable: Working prototype ready for real user testing.
 
-INFRASTRUCTURE & CONTINGENCY (8 weeks)
-- Hetzner hosting: €20
-- Mistral AI API (30k requests): €225
-- Contingency buffer (15%): €2,420
-Subtotal: €2,665
+M3: Beta Test + Iteration (3 weeks) — €9,600
+Deliverable: Beta validation proving engagement model works.
 
-GRAND TOTAL: €18,555
+M4: Extended Validation (4 weeks) — €11,200
+Deliverable: Production-ready MVP + validation report for Round 2.
 
-Rates: €80/hour (Brussels senior developer rate). No markup. In-kind contributions: [YOUR CONTRIBUTIONS HERE].
-Other funding: None currently. Phase 2+ will seek Erasmus+ KA220, Fediversity for scaling.
-[Detailed budget: github.com/nicolasdb/maps_of_making/docs/planning/round-1-roadmap.md]
+Infrastructure & Travel: €1,500
+Hosting (graph database performance), AI computation (semantic queries + benchmarks), travel for in-person validation sessions, communication tools.
+
+RATE: €80/hour (460 hours total)
+Brussels senior rate covering core team half-time commitment plus specialist consultations (graph architecture, UX design, deployment). Project management overhead included.
+
+OTHER FUNDING:
+None currently for this project. In-kind: VULCA network access, OpenFab infrastructure for testing, community relationships reducing cold-start risk.
+
+Future strategy: Round 2 scaling (€40-50k NLnet/NGI), Phase 3 skills features (Erasmus+ KA220), Phase 4 governance (Fediversity).
+
+WHY IT WORKS:
+
+- Milestone payments reduce risk for both parties
+- Short cycles enable rapid validation (fail fast, adjust)
+- Both technical and community validation funded equally
+- Specialist support when needed (we're not experts in everything)
+- Reasonable scope: walking skeleton + validation, not full product
+- Travel enables trust-building with pilot partners
+- Clear sustainability path beyond grant funding
 ```
 
-**Character count:** ~2,280 chars ✅ (within 2500 limit)
+**Character count:** 1978 chars ✅ (max 2500)
 
 ---
 
@@ -202,79 +178,97 @@ Other funding: None currently. Phase 2+ will seek Erasmus+ KA220, Fediversity fo
 
 **Question:** Compare your own project with existing or historical efforts. What is new, more thorough or otherwise different?
 
-### Draft Comparison (~3800 chars - with GitHub doc references)
+### Draft
 
 ```
-EXISTING SOLUTIONS & LIMITATIONS:
+EXISTING LANDSCAPE:
 
-1. Fablab.io (~1000 fablabs, SQL-based)
-   - Centralized: Data lives on Fablab.io servers (platform lock-in)
-   - No freshness signals: Impossible to know if listing is current
-   - Location-only: No collaboration/relationship visibility
-   - Effort duplication: Spaces must update 5+ platforms
+Several platforms map maker ecosystems with varying approaches:
+1. INTERNET OF PRODUCTION (IoP)
+   - Largest coverage: 14,172 facilities
+   - Equipment tracking: 7,488 machines
+   - Strength: Comprehensive aggregation, production-ready
+   - Limitations:
+     * 48-month data expiration
+     * No real-time freshness indicators
+     * Manual updates via email to DevOps officer
+     * Relational database: location-only queries, no relationship intelligence
+     * Deleted data = lost history
 
-2. Hackerspaces.org (~400 spaces)
-   - Same centralization + no freshness + no ecosystem intelligence
+2. FABLAB.IO & HACKERSPACES.ORG
+   - 1,750+ fablabs, 2,000+ hackerspaces
+   - Community-maintained but chronically stale
 
-3. Google Maps + Regional Databases
-   - Fragmented: Spaces update platforms separately
-   - Stale: No incentive for maintenance
-   - No standard schema: Regional inconsistency
+3. MAPALL.SPACE
+   - Aggregates SpaceAPI + existing directories
+   - Live data but read-only
+   - Static snapshot approach
 
-4. mapall.space (Attempted federation, inactive)
-   - Tried federation but no governance model
-   - No verification incentives
-   - Communities not invested
-5. Precious Plastics Maps
-   - Specific for Precious plastics hubs
-   - No inter-network fertilisation
-   - Active community
-   - Centralised database (Supabase)
-   - No passive activation of the members
+4. SPACEAPI (Distributed Status Protocol)
+   - Individual spaces self-host real-time status APIs
+   - Brilliant for "is space open now?"
+   - Limited adoption
 
 WHAT MAPS OF MAKING DOES DIFFERENTLY:
 
-1. ELIMINATES DUPLICATE EFFORT
-   - One verification → globally visible
-   - Not another platform; a commons underlying all platforms
-   [See PRD §Goals #1: github.com/nicolasdb/maps_of_making/docs/planning/PRD.md#goals]
+1. TRUST THROUGH TRANSPARENCY
+   - Continuous freshness decay: Fresh ✅ → Aging ⚠️ → Zombie 🧟 → Dead 💀
+   - IoP deletes after 48 months; we mark status changes with full history
+   - Users see "verified 8 days ago" vs "unverified for 187 days"
+   - Community closure reporting (3 reports → auto-dead, reversible with proof)
+   - Activity webhooks prove liveness (not just claims)
+   
+   Why: Trust requires transparency. Batch deletion hides problems.
 
-2. REAL-TIME FRESHNESS SIGNALS
-   - Activity-based decay (14d Fresh → 30d Aging → 90d Zombie → Dead)
-   - Transparent: "Last verified 3 days ago" builds trust
-   - Webhooks → instant freshness update
-   - Existing maps: Binary (updated/not) or hidden
-   [See architecture §7: github.com/nicolasdb/maps_of_making/docs/architecture/architecture.md#7-freshness--activity-signals]
+1. INCENTIVE ALIGNMENT
+   - Magic links: 2-minute self-serve updates
+   - Single source of truth → globally visible
+   - Instant map refresh = proof of impact
+   - Networks can't scale via email-to-DevOps model; we enable federated self-service
+   
+   Why: Existing maps fail because spaces have no reason to maintain data. We make maintenance effortless AND valuable.
 
-3. NETWORK INTELLIGENCE (Graph-Based)
-   - Scraping websites and unlocking documentation -> Making documentation worthwhile for a lab
-   - Natural language API: "Ask the map Find spaces teaching advanced electronics + textiles" (hero feature)
-   - Existing maps: Location-only, no relationships
-   [See architecture §2 & personas: github.com/nicolasdb/maps_of_making/docs/planning/PERSONAS.md]
+1. NETWORK INTELLIGENCE
+   - Graph database reveals ecosystem fabric (partnerships, collaborations, skill flows)
+   - Queries impractical in SQL:
+     * "Show partnership network around Fab Lab Barcelona"
+     * "Find spaces with advanced electronics + textile instruction + NGO partnerships"
+     * "Map skill flows between Eastern European fablabs"
+   - Natural language console ("ask the map"): semantic queries via EU-compliant LLM
+   - Agent-accessible via OpenAPI (A2A protocol compatible)
+   
+   Why: Directories show WHERE. We show WHO WORKS WITH WHOM and WHY. This is the invisible coordination layer funders and researchers need.
 
-4. DECENTRALIZED COMMONS GOVERNANCE
-   - Grounded in Elinor Ostrom's 8 principles for sustainable commons
-   - Networks own data (not platform)
-   - IPFS storage: No single point of control
-   - Networks can host validator replicas (Phase 4)
-   - Existing maps: Platform-owned, extractive
+1. ECOSYSTEM LEARNING
+   - Immutable ledger: spaces never disappear, marked dead with full audit trail
+   - Closure reports preserved: "Lab X closed 2025-11-05, 3 community reports, reason: [view]"
+   - Temporal queries: "Show ecosystem state in January 2024" or "Which spaces closed after pandemic?"
+   - Research value: networks learn from failures, not just successes
+   
+   Why: Deleted data = lost knowledge. We preserve ecosystem history so communities learn from what worked and what didn't.
 
-5. OPEN STANDARDS & REPLICABILITY
-   - Apache 2.0 license (enables derivative funding)
-   - Architecture allows to integrate repair networks, tool libraries, gardens
-   - Existing maps: Proprietary, limited reuse, no federation
+1. FEDERATED COMMONS GOVERNANCE
+   - Decentralized backup : data survives individual failures
+   - Networks can host validator replicas (no single point of control)
+   - Apache 2.0 license: truly replicable for repair networks, tool libraries, any commons
+   - Grounded in Ostrom principles: designed to sustain beyond grant funding
+   
+   Why: Platforms die when the operator loses interest. Commons governed by communities endure.
 
-WHY NOW:
-Ostrom's research shows commons designed at inception sustain for decades. Previous maps failed because
-they were platforms-first, governance-later. We're building governance-first.
-AI & graph architecture are now mature to easily unlock modern rich scraping.
+STRATEGIC POSITIONING:
 
-COMPETITIVE ADVANTAGE:
-We're building a digital common infrastructure, not "a better map".
-A infrastructure that answers local community needs first and is easy to maintain, has long-term value because they own it and can control it and they see immediate impact.
+We're not competing on coverage, we're competing on what coverage can't solve:
+- Trust (is this data current?)
+- Intelligence (who collaborates with whom?)  
+- Accessibility (can agents query this?)
+- Sustainability (will this outlive its creators?)
+
+Internet of Production proved aggregation is achievable. We're solving the NEXT problem: keeping data alive, revealing invisible networks, enabling the federated coordination layer.
+
+This isn't another map. It's network intelligence infrastructure for maker ecosystems—designed as digital commons.
 ```
 
-**Character count:** ~3,750 chars ✅ (within 4000 limit)
+**Character count:** 3928 chars ✅ (4000 max)
 
 ---
 
@@ -286,90 +280,87 @@ A infrastructure that answers local community needs first and is easy to maintai
 ### Draft Technical Challenges (~4700 chars - with GitHub references)
 /// TO REVIEW JASON
 ```
-CHALLENGE 1: MAINTAINING FRESH DATA IN DECENTRALIZED SYSTEM
+CHALLENGE 1: GETTING SPACES TO ACTUALLY MAINTAIN DATA
 
-Problem: How ensure data current when communities autonomous? No central platform can mandate updates.
+The hard part isn't a tech problem. It's human behavior. Every map platform dies because people update once and never come back. They don't get recurring benefits, so why bother? No amount of polish fixes that.
 
-Why difficult: Existing maps failed—no incentive mechanism. Spaces don't update unless direct benefit.
+Our approach: 
+- Make it stupidly easy to start and show immediate impact (map refreshes instantly, freshness resets to ✅). 
+- Single source of truth made visible everywhere. They keep up-to-date their website, we automate ingestion into a persistant "common" easy to consult. 
+- The system creates its own gravity.
 
-Our approach:
-- Real-time freshness decay (visible countdown) creates urgency
-- Effortless signals (magic links, webhooks) reduce friction
-- Community feedback: Space verifies → instant map update = proof of impact
-- Success metric: ≤60 days avg freshness by Week 8
-[Technical detail: github.com/nicolasdb/maps_of_making/docs/architecture/architecture.md#7-freshness--activity-signals]
+The risk: 
+If this doesn't work, nothing else matters. We validate with 5 beta spaces first, then expand to all pilot networks. 
 
----
 
-CHALLENGE 2: FEDERATION WITH IPFS (NO SINGLE POINT OF FAILURE)
+CHALLENGE 2: MAKING IT A REAL COMMONS, NOT ANOTHER PLATFORM
 
-Problem: Ensure data availability if hub fails?
+We need the data to survive even if we disappear tomorrow. But blockchain is overkill, Git has merge conflicts, and Conflict-free replicated data type (CRDTs) are too complex. How do we get persistence without drowning in coordination protocols?
 
-Why difficult: IPFS is immutable but eventual-consistency; Neo4j fast but centralized.
+Our approach: 
+One main database for fast queries. Periodic snapshot it to IPFS. Anyone can dockerize the snapshots. If the main hub dies, restore from IPFS. No consensus algorithms, no mining, no distributed writes. It's simpler than Git and way lighter than blockchain. If IPFS doesn't work, we fall back to rsync or torrents. The principle stays the same.
 
-Our approach (MVP):
-- Neo4j hub for fast queries
-- Hourly exports to IPFS (GraphML + cryptographic content addressing)
-- Networks download snapshots → restore local Neo4j replicas (validator model)
-- Hub fails: Replicas serve; hub re-syncs from IPFS on restart
-- Phase 4: Federated Neo4j consensus (RAFT-based)
+The risk: 
+If we don't deliver decentralized backup, we're lying about the commons part. This gets tested in Milestone 2 with pilot networks running their own container.
 
-Validation: Week 1, test IPFS snapshot integrity + restore with pilot networks.
 
----
+CHALLENGE 3: CHOOSING STANDARDS WITHOUT OVER-ENGINEERING
 
-CHALLENGE 3: A2A PROTOCOL COMPATIBILITY
+GraphRAG with LLMs is straightforward to build. The challenge is picking standards that let us federate later without painting ourselves into a corner. But we can't spend Round 1 debating protocols.
 
-Problem: A2A abstract; unknown if suitable for agent queries.
+Our approach: 
+Build OpenAPI REST first. Test A2A protocol in week 2—if it works easily, use it. 
+If not, stick with REST. Either way, prove that "ask the map" queries actually work. Natural language like "find spaces teaching electronics in Berlin partnered with NGOs" should just work.
 
-Why difficult: LLM integration needs structured, machine-readable data. A2A spec newer.
+The risk: 
+Over-invest in standards = wasted time. Under-invest = proprietary mess later. We validate what works in Milestone 1, commit in Milestone 2.
 
-Our approach:
-- Week 1 design: Validate A2A with sample LLM queries (function calling)
-- If viable: Use A2A (hero feature: "Ask the map")
-- If not: Fall back to REST (still agent-compatible)
-- Either way: Learn what works for agent-driven access
 
-Decision gate: End Week 1, choose A2A vs REST before Week 4 API build.
+CHALLENGE 4: EXTRACTING DATA FROM MESSY SOURCES
 
----
+Some spaces will share clean CSV files. Others have barely-maintained websites with just "name + address" buried in text. We need to extract useful data from both without building a PhD thesis in NLP.
 
-CHALLENGE 4: NETWORK ADOPTION & ENGAGEMENT
+Our approach: 
+Use LLMs to parse unstructured text. Pydantic schemas enforce baseline consistency (location and name are required, everything else is optional). Show extracted data to operators for confirmation—they know if it's right. Keep confidence scores so we know what's reliable.
 
-Problem: If networks don't promote verification, freshness signals fail.
+The risk: 
+If extraction quality is poor, manual curation becomes the bottleneck and we're back to the old problem. We test with 5-10 real sources in Milestone 1 to catch this early.
 
-Why difficult: Requires behavioral change (see value, exert effort).
+CHALLENGE 5: GETTING NETWORKS TO ACTUALLY PROMOTE IT 
 
-Our approach:
-- Co-design with 2-3 networks upfront (before building)
-- Transparency dashboard: "% of your spaces verified"
-- Embed in community comms (newsletters, events)
-- Pilot support: Help send first verification batch
-- Long-term: Freshness = reputation (self-reinforcing)
+Individual spaces are one thing. Convincing network coordinators to actively push our solution to 20-50 member spaces is different. That's organizational behavior change, and organizations are slow. 
 
-Success metric: ≥70% pilot spaces verify ≥1 time by Week 8.
-[User flows: github.com/nicolasdb/maps_of_making/docs/planning/PERSONAS.md#interaction-flows]
+Our approach: 
+Co-design with coordinators before we build anything. Give them a dashboard showing "72% verified" as a network health metric. Provide newsletter templates and social assets so they don't have to write from scratch. Help them send the first batch. Make it obvious that fresh data = their network looks professional. 
 
----
+The risk: 
+This is existential. If networks don't promote it, the freshness model collapses and we've built nothing. Milestone 4 tests this by expanding to all 7+ pilot organizations.
 
-CHALLENGE 5: SCHEMA CONSISTENCY ACROSS HETEROGENEOUS SOURCES
 
-Problem: Pilot networks have different data formats (CSV, JSON APIs, spreadsheets).
+THE REAL QUESTION:
 
-Why difficult: Normalizing 5+ schemas while preserving data integrity = error-prone.
+These 5 challenges all ask the same thing: 
+> Can we design a digital common that people actually maintain because it serves them, not because we're brute forcing it?
 
-Our approach:
-- Week 1-2 audit: Map each network schema → unified Pydantic model
-- Explicit transformation rules (documented, human-reviewable)
-- Validation at ingestion: Reject non-compliant data
-- Versioning: Keep 3-5 versions for rollback
-- Network loop: Validation fails → network fixes source
+The tech serves the behavior. 
+If spaces don't engage (Challenge 1), decentralized backup (Challenge 2) doesn't matter. 
+If networks don't promote (Challenge 5), the standards we chose (Challenge 3) are irrelevant.
+If data extraction is broken (Challenge 4), nobody gets value.
 
-Technical: Pydantic validators + audit logging.
-[Data model: github.com/nicolasdb/maps_of_making/docs/architecture/architecture.md#2-data-architecture-graph-schema]
+Round 1 validates the thesis:
+"Well-designed commons outlive their creators."
+
+As Ostrom’s work reminds us, systems endure when the people using them help shape the rules.  
+As Bauwens shows, value grows when communities co-produce and steward shared resources.  
+And as Rifkin argues, the digital era favors collaborative infrastructures over centralized ones.
+
+If our database behaves like a true commons — useful, shared, and self-reinforcing —  
+it won’t need to be forced.  
+People will maintain it because it gives them power,  
+not because it gives them work.
 ```
 
-**Character count:** ~4,600 chars ✅ (within 5000 limit)
+**Character count:** 4787 chars ✅ (5000 max)
 
 ---
 
@@ -378,62 +369,50 @@ Technical: Pydantic validators + audit logging.
 
 **Question:** Describe the ecosystem of the project, and how you will engage with relevant actors and promote the outcomes?
 
-### Draft Ecosystem & Engagement (~2400 chars - with network placeholders)
+### Draft Ecosystem & Engagement
 
 ```
-TARGET ACTORS & ENGAGEMENT STRATEGY:
+WHO WE'RE WORKING WITH:
 
-1. PILOT NETWORKS (3-5 regional/global networks)
-   [STATUS: Add your networks here as they confirm]
-   - Network 1: [NAME - DATA STATUS] (Contact: [EMAIL])
-   - Network 2: [NAME - DATA STATUS] (Contact: [EMAIL])
-   - Network 3: [NAME - DATA STATUS] (Contact: [EMAIL])
+We've secured letters of intent from 7+ organizations spanning maker networks, individual spaces, and researchers—from European networks coordinating dozens of spaces to project-based initiatives. 
+What they share: frustration with unreliable maps and excitement about network intelligence. They've committed to sharing data, promoting verification, and giving honest feedback.
 
-   Engagement:
-   - Co-design: Bi-weekly calls to validate schemas, verify workflow, test ingestion
-   - Support: Integration assistance, training materials, outreach templates
-   - Incentive: Free infrastructure + global visibility + data sovereignty
-   - Commitment: Letter of Intent (data access + verification promotion)
-   - Data requirement: CSV/JSON with 10-50 spaces per network
+HOW WE'LL ENGAGE:
 
-2. MAKERSPACE OPERATORS (Individual spaces)
-   - Outreach: Networks contact members directly
-   - Incentive: One magic-link verification → globally visible + freshness on map
-   - Support: Video tutorials, FAQ, Slack channel
-   - Feedback: Weekly freshness reports ("Your data is fresh ✅")
+Pilot Networks: Co-design in Milestone 1-2 through bi-weekly calls validating needs. More importantly: their spaces become discoverable across the entire ecosystem, not just one platform.
 
-3. RESEARCHERS & DATA USERS
-   - Engagement: Outreach to academia (fab labs, design schools)
-   - Use case: Reliable data for ecosystem research, innovation networks
-   - Incentive: API access + temporal queries + attribution
-   - Distribution: Maker Faire, design conferences, journals
-   [See: github.com/nicolasdb/maps_of_making/docs/planning/PERSONAS.md#persona-2]
+Individual Spaces: Progressive onboarding in three waves.
 
-4. OPEN SOURCE & COMMONS COMMUNITIES
-   - License: Apache 2.0 (derivative funding eligible)
-   - Repository: Public GitHub (code + documentation)
-   - Governance: Transition to community-led commons (Phase 4)
-   - Channels: Fediverse, open data working groups
+1.  Magic link asks "are you still open?" Verify location and status. 
+This proves freshness with minimal effort.
+No response? 
+Space marked "zombie", then "dead".
 
-5. DOWNSTREAM INTEGRATORS
-   - Incentive: Embed map widget (networks, local gov, events)
-   - Documentation: API docs, embed code, query templates
-   - Support: Technical integration support
-   [See: github.com/nicolasdb/maps_of_making/docs/architecture/architecture.md#9-embeddable-maps-strategy]
+2.  If alive, we ask consent to scrape their website. Scraping extracts deeper data (focus 
+areas, partnerships, capabilities). Results shown to operator for validation—they curate what's accurate, building trust in the process.
 
-SUSTAINABILITY & LONG-TERM:
+3.  Test it yourself. "Ask questions about your space"—they know the answers, so they validate quality. Then: "Want to embed these results on your website?" Generate custom iframe. Now their data feeds back to them, visible to their visitors.
 
-Post-NLNet (Weeks 9+):
-- Networks self-sustain (freshness = reputation)
-- Replication revenue: Communities license support
-- Phase 2+: Erasmus+ KA220, Fediversity for scaling
-- Governance: Community-led commons structure
+Researchers: We're reaching academia studying maker ecosystems. Plan interviews for deeper understanding of their needs and interests.
 
-Proof of engagement: Letters of Intent from pilot networks (ATTACHMENT: Pilot_Network_LOI.pdf)
-[Will attach when networks confirm]
+PROMOTING OUTCOMES:
+
+Round 1 outcomes documented publicly: 
+validation report with engagement metrics, case studies, technical architecture. We'll share through maker networks, academic channels, NGI events.
+
+The best promotion is working infrastructure. If spaces verify because it serves them, networks will notice.
+
+SUSTAINABILITY:
+
+Networks self-sustain because single verification = ecosystem-wide visibility. Strength in numbers, not scattered effort across platforms. We're designing for community maintenance: Docker containers, clear docs, no proprietary dependencies.
+
+Future funding: Erasmus+ for skills (Phase 2), Fediversity for scaling (Phase 3). But the 
+core—spaces verifying data—runs on aligned incentives, not grant money.
+
+The letters prove the need. Round 1 proves the model.
 ```
 
-**Character count:** ~2,380 chars ✅ (within 2500 limit)
+**Character count:** 2242 chars ✅ (2500 max)
 
 ---
 
@@ -498,18 +477,6 @@ Proof of engagement: Letters of Intent from pilot networks (ATTACHMENT: Pilot_Ne
 - Concrete about solutions (specific metrics, technical validation gates)
 - NGI-aligned (commons, decentralization, sustainability, open source)
 - Not overselling (achievable MVP scope)
-
----
-
-## NEXT STEPS
-
-1. ✅ Complete all `[COMPLETE]` sections with actual team/budget info
-2. ✅ Count characters for each field (with space margin)
-3. ✅ Verify budget adds up to requested amount
-4. ✅ Prepare pilot network letters of commitment
-5. ✅ Finalize & review draft answers
-6. ✅ Submit to NLnet form at least 1 day before Dec 1 deadline
-7. ✅ Prepare for Stage 2 interactive review (expect questions on adoption strategy, technical feasibility)
 
 ---
 
