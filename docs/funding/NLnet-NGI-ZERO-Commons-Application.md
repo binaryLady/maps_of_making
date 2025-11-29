@@ -67,7 +67,7 @@ Maps of Making solves a critical failure in makerspace coordination: existing ma
 
 We're building a digital commons where fresh data unlocks ecosystem intelligence. The more communities contribute, the more useful the map becomes — creating a self-reinforcing value loop grounded in Elinor Ostrom's proven commons governance principles.
 
-Round 1 validates this with diverse stakeholders who've confirmed their support. 8+ organizations have already committed letters of intent.
+Round 1 validates this with diverse stakeholders who've confirmed their support. 7+ organizations have already committed letters of intent.
 
 Key deliverables:
 
@@ -114,7 +114,7 @@ https://github.com/nicolasdb
 https://www.linkedin.com/in/nicolasdb1977/
 ```
 
-**Character count:** 1807 (max 2500) ✅
+**Character count:** 1881 (max 2500) ✅
 
 ---
 
