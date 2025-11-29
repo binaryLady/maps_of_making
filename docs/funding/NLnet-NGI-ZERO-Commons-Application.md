@@ -26,7 +26,6 @@ jason.pettiaux@gmail.com
 ### Organisation
 ```
 [COMPLETE - Lead organization or network, or leave blank]
-Vulca
 ```
 
 ### Country
@@ -40,7 +39,7 @@ Belgium
 
 ### Proposal name
 ```
-Maps of Making: Makerspace Data in Commons
+Maps of Making: Smart Makerspace Maps, a new Commons
 ```
 
 ### Website / wiki
@@ -100,6 +99,14 @@ Required for each team member:
 
 ```
 Jason Pettiaux, Project & Community Lead: 5 years in healthcare product development, a complex stakeholder ecosystem; 5 years as Scout leader animating communities through flat governance, 2 years as Vulca Explorer building fablab networks across Europe and the world.
+Jason is a traveler, a maker and was brought up in the FOSS world, coming to FOSDEM as a child.
+Passionate about medical and hardware, he contributed to projects in these area, by co-founding Open Medtech asbl to build the project Breath4Life (http://breath4life.org/) in Belgium during Covid, contributing to the Internet of Production activities giving workshops on FOSS at ULB to the RFFLabs (https://pitch.com/v/conference-opensource-kk99ud) and being an active participant of FabCare (https://fabcare.network/)
+He also did the FabAcademy and has been an active member of the global and european fab community leading as soon as the summer 2025 a workshop on transnational networks.
+Here’s the link to the FAB25 workshop : https://fab25.fabevent.org/programs/schedule?day=2025-07-09&title=transnational--continental-fablabs-networks-lessons-challenges-and-fut&event=b4f3a11a-b959-4988-b746-a3e02b8813f7
+Here’s his fabacamedy website :https://academany.fabcloud.io/fabacademy/2021/labs/ulb/students/jason-pettiaux/
+
+Jason grew up in FOSS, welcoming Richard Stallman home, being forced to use the clunky user interfaces of Free Software. He adopted the values of his father and passion for FOSS but he also knows first-hand the pain to use a software with great values and sovereignty but a bad UX.
+A maker himself, he wants to bring the strength of communities and contribution to the maker world, having visited 100+ fablabs across Europe and Africa, he knows the difficulty to connect and that’s why he’s co-founding Maps of Making.   
 
 Nicolas de Barquin, Technical Lead & Commons Architect : 
 10+ years founding and leading OpenFab Brussels. I experienced the classic commons tragedy: as the single maintainer, I burned out. Members relied on me to fix, teach, organize—and when I couldn't anymore, the space nearly closed. That failure sent me on a journey to understand why commons collapse, studying Ostrom's principles, game theory, and behavioral economics. "Maps of Making" is the system I wish had existed: designed so no single person becomes the bottleneck.
@@ -135,13 +142,13 @@ Round 1 validates architecture choices through rapid iteration with real users. 
 MILESTONE STRUCTURE (12 weeks):
 
 M1: Solution Validation (2 weeks) — €6,400
-Deliverable: Architecture decisions + user research confirming solution fit.
+Deliverable: Mock-up + Architecture decisions, validated through user research.
 
 M2: Walking Skeleton + Backup (3 weeks) — €9,600
 Deliverable: Working prototype ready for real user testing.
 
-M3: Beta Test + Iteration (3 weeks) — €9,600
-Deliverable: Beta validation proving engagement model works.
+M3: Validation + AI search dev (3 weeks) — €9,600
+Deliverable: Validation of the engagement model + Semantic query prototype.
 
 M4: Extended Validation (4 weeks) — €11,200
 Deliverable: Production-ready MVP + validation report for Round 2.
@@ -150,7 +157,7 @@ Infrastructure & Travel: €1,500
 - Hosting (graph database, production server): €400
 - AI/LLM computation (semantic queries, testing): €450
 - Travel for in-person validation (day trips within BE, NL, FR, DE): €650
-  (Includes: Gent, Rotterdam, Cologne, Lille/Paris, plus local transport)
+  (Includes: Gent, Rotterdam, Cologne, Lille/Paris, plus local transport, no stay over to save costs)
 
 RATE: €80/hour (480 hours total)
 Brussels senior development rate for 2 co-leads working half-time (20h/week each over 12 weeks).
@@ -197,7 +204,7 @@ Several platforms map maker ecosystems with varying approaches:
    - Limitations:
      * 48-month data expiration
      * No real-time freshness indicators
-     * Manual updates via email to DevOps officer
+     * Manual updates via email to DevOps officer (No community engagement)
      * Relational database: location-only queries, no relationship intelligence
      * Deleted data = lost history
 
@@ -214,6 +221,8 @@ Several platforms map maker ecosystems with varying approaches:
    - Individual spaces self-host real-time status APIs
    - Brilliant for "is space open now?"
    - Limited adoption
+
+We are in contact with all of them and they have agreed to share their data.
 
 WHAT MAPS OF MAKING DOES DIFFERENTLY:
 
@@ -256,7 +265,7 @@ WHAT MAPS OF MAKING DOES DIFFERENTLY:
 1. FEDERATED COMMONS GOVERNANCE
    - Decentralized backup : data survives individual failures
    - Networks can host validator replicas (no single point of control)
-   - Apache 2.0 license: truly replicable for repair networks, tool libraries, any commons
+   - Apache 2.0 license: truly replicable or extendable for repair networks, tool libraries, any commons
    - Grounded in Ostrom principles: designed to sustain beyond grant funding
    
    Why: Platforms die when the operator loses interest. Commons governed by communities endure.
@@ -315,7 +324,7 @@ CHALLENGE 3: CHOOSING STANDARDS WITHOUT OVER-ENGINEERING
 GraphRAG with LLMs is straightforward to build. The challenge is picking standards that let us federate later without painting ourselves into a corner. But we can't spend Round 1 debating protocols.
 
 Our approach: 
-Build OpenAPI REST first. Test A2A protocol in week 2—if it works easily, use it. 
+Build Open API REST first. Test A2A protocol in week 2—if it works easily, use it. 
 If not, stick with REST. Either way, prove that "ask the map" queries actually work. Natural language like "find spaces teaching electronics in Berlin partnered with NGOs" should just work.
 
 The risk: 
@@ -380,7 +389,8 @@ not because it gives them work.
 ```
 WHO WE'RE WORKING WITH:
 
-We've secured letters of intent from 8 organizations spanning 7 European countries—networks (RFF France, HTT UK), individual spaces (Spain, Ireland, Croatia, Italy, Portugal), and researchers. Coordinated from Brussels, Belgium, the project brings together maker communities across Europe's diverse regions. What they share: frustration with unreliable maps and excitement about network intelligence.
+We've secured letters of intent from 8 organizations spanning 7 European countries—networks (RFF France, HTT Ireland), individual spaces (Spain, Ireland, Croatia, Italy, Portugal), and researchers. Coordinated from Brussels, Belgium, the project brings together maker communities across Europe's diverse regions. What they share: frustration with unreliable maps and excitement about network intelligence.
+Moreover we are in close contact with FabLat (Latin America), FAN (Asia) & ReFFAO (West Africa), VOW (Germany), the Nordics Fablab Network to deploy it further as soon as we have something.
 
 HOW WE'LL ENGAGE:
 
@@ -393,7 +403,7 @@ This proves freshness with minimal effort.
 No response? 
 Space marked "zombie", then "dead".
 
-2.  If alive, we ask consent to scrape their website. Scraping extracts deeper data (focus 
+2.  If alive, we ask consent & guidance to scrape their website. Scraping extracts deeper data (focus 
 areas, partnerships, capabilities). Results shown to operator for validation—they curate what's accurate, building trust in the process.
 
 3.  Test it yourself. "Ask questions about your space"—they know the answers, so they validate quality. Then: "Want to embed these results on your website?" Generate custom iframe. Now their data feeds back to them, visible to their visitors.
