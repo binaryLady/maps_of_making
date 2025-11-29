@@ -78,10 +78,10 @@ Key deliverables:
 
 Success metric:
 
-Provide a community database behaving like a true commons — useful, shared, and self-reinforcing.
+Provide a community database, released under Apache 2.0, behaving like a true commons — useful, shared, and self-reinforcing.
 ```
 
-**Character count:** 1,142 (max 1200) ✅
+**Character count:** 1170 (max 1200) ✅
 
 ---
 
