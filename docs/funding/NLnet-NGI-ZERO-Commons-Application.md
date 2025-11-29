@@ -103,7 +103,7 @@ Required for each team member:
 ```
 Jason Pettiaux, Project & Community Lead: 5 years in healthcare product development, a complex stakeholder ecosystem; 5 years as Scout leader animating communities through flat governance, 2 years as Vulca Explorer building fablab networks across Europe and the world.
 
-Nicolas de Barquin, ??? : 
+Nicolas de Barquin, Technical Lead & Commons Architect : 
 10+ years founding and leading OpenFab Brussels. I experienced the classic commons tragedy: as the single maintainer, I burned out. Members relied on me to fix, teach, organize—and when I couldn't anymore, the space nearly closed. That failure sent me on a journey to understand why commons collapse, studying Ostrom's principles, game theory, and behavioral economics. "Maps of Making" is the system I wish had existed: designed so no single person becomes the bottleneck.
 Built OpenFab on a €14k/year participation model—members contributed labor instead of high fees. The space survived 13 years including COVID, but still relied on key maintainers.
 9 years participating in VULCA (European maker mobility network). This peer connections kept me functional — meeting fabmanagers facing the same struggles was like fresh air. We'd share solutions, learn from each other's experiments across cultures. It's why I lasted 10 years at OpenFab instead of burning out sooner.
@@ -111,6 +111,7 @@ Built OpenFab on a €14k/year participation model—members contributed labor i
 
 Maps of Making sits at the intersection: I know why commons fail, what keeps maker communities alive, and how to build systems that prevent silent failures. This project is the convergence.
 https://github.com/nicolasdb
+https://www.linkedin.com/in/nicolasdb1977/
 ```
 
 **Character count:** 1807 (max 2500) ✅
@@ -148,10 +149,17 @@ M4: Extended Validation (4 weeks) — €11,200
 Deliverable: Production-ready MVP + validation report for Round 2.
 
 Infrastructure & Travel: €1,500
-Hosting (graph database performance), AI computation (semantic queries + benchmarks), travel for in-person validation sessions, communication tools.
+- Hosting (graph database, production server): €400
+- AI/LLM computation (semantic queries, testing): €450
+- Travel for in-person validation (day trips within BE, NL, FR, DE): €650
+  (Includes: Gent, Rotterdam, Cologne, Lille/Paris, plus local transport)
 
-RATE: €80/hour (460 hours total)
-Brussels senior rate covering core team half-time commitment plus specialist consultations (graph architecture, UX design, deployment). Project management overhead included.
+RATE: €80/hour (480 hours total)
+Brussels senior development rate for 2 co-leads working half-time (20h/week each over 12 weeks).
+
+Budget flexibility: We may allocate up to 80 hours for specialist consultations (graph architecture, UX design, DevOps) at market rates (€90-120/h). When we do, we reduce our own hours proportionally to stay within the 480h budget envelope. This lets us bring in expertise where needed while maintaining cost discipline.
+
+Round 1 will validate both our technical approach and where specialist support adds most value, informing Round 2 budget planning.
 
 OTHER FUNDING:
 None currently for this project. In-kind: VULCA network access, OpenFab infrastructure for testing, community relationships reducing cold-start risk.
@@ -169,7 +177,7 @@ WHY IT WORKS:
 - Clear sustainability path beyond grant funding
 ```
 
-**Character count:** 1978 chars ✅ (max 2500)
+**Character count:** 2461 chars ✅ (max 2500)
 
 ---
 
