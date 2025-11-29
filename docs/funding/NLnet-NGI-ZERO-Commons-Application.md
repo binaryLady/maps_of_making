@@ -45,9 +45,7 @@ Maps of Making: Makerspace Data in Commons
 
 ### Website / wiki
 ```
-https://github.com/nicolasdb/maps_of_making
-(README serves as project homepage)
-or pre-website on notion
+pre-website on notion (Project homepage with overview, architecture, and pilot commitments)
 https://plucky-beef-541.notion.site/Maps-of-Making-2b9bbd21f4c18078b0b6dc1e64c9daf0
 ```
 
@@ -382,8 +380,7 @@ not because it gives them work.
 ```
 WHO WE'RE WORKING WITH:
 
-We've secured letters of intent from 7+ organizations spanning maker networks, individual spaces, and researchers—from European networks coordinating dozens of spaces to project-based initiatives. 
-What they share: frustration with unreliable maps and excitement about network intelligence. They've committed to sharing data, promoting verification, and giving honest feedback.
+We've secured letters of intent from 8 organizations spanning 7 European countries—networks (RFF France, HTT UK), individual spaces (Spain, Ireland, Croatia, Italy, Portugal), and researchers. Coordinated from Brussels, Belgium, the project brings together maker communities across Europe's diverse regions. What they share: frustration with unreliable maps and excitement about network intelligence.
 
 HOW WE'LL ENGAGE:
 
