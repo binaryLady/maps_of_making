@@ -1,6 +1,6 @@
 # Budget Breakdown - Maps of Making Round 1
 
-**Requested Amount:** €38,300
+**Requested Amount:** €39900
 
 ---
 
@@ -31,7 +31,7 @@ Both tracks inform each other through short 2-4 week cycles.
 
 ## Milestone Breakdown
 
-### Milestone 1: Solution Validation (2 weeks) — €6,400
+### Milestone 1: Solution Validation (2 weeks) — €6400
 
 **Team Activities:**
 - Compare graph database vs SQL for relationship queries
@@ -44,11 +44,17 @@ Both tracks inform each other through short 2-4 week cycles.
 
 **Hours:** 80h  
 **Rate:** €80/h  
-**Cost:** €6,400
+**Cost:** €6400
+
+**Acceptance Criteria & Artifacts**
+- [ ] Mockups (Figma or PNG) provided
+- [ ] Architecture decisions documented (Markdown)
+- [ ] ≥5 interview notes submitted
+- [ ] Decision recorded and signed off by project leads
 
 ---
 
-### Milestone 2: Walking Skeleton + Decentralized Backup (3 weeks) — €9,600
+### Milestone 2: Walking Skeleton + Decentralized Backup (3 weeks) — €9600
 
 **Team Activities:**
 - Implement chosen architecture (graph database + ingestion pipeline)
@@ -62,11 +68,17 @@ Both tracks inform each other through short 2-4 week cycles.
 
 **Hours:** 120h  
 **Rate:** €80/h  
-**Cost:** €9,600
+**Cost:** €9600
+
+**Acceptance Criteria & Artifacts**
+- [ ] Staging prototype URL or local run instructions (README)
+- [ ] Ingestion sample + schema provided
+- [ ] Backup retrieval proof (IPFS hash or alternative)
+- [ ] End-to-end smoke test passes
 
 ---
 
-### Milestone 3: Beta Test + Iteration (3 weeks) — €9,600
+### Milestone 3: Beta Test + Iteration (3 weeks) — €9600
 
 **Team Activities:**
 - Deploy beta version on production infrastructure
@@ -80,11 +92,17 @@ Both tracks inform each other through short 2-4 week cycles.
 
 **Hours:** 120h  
 **Rate:** €80/h  
-**Cost:** €9,600
+**Cost:** €9600
+
+**Acceptance Criteria & Artifacts**
+- [ ] Beta validation report (metrics + learnings)
+- [ ] Semantic-query prototype (API + sample queries)
+- [ ] Test dataset and example queries included
+- [ ] ≥5 structured beta sessions documented
 
 ---
 
-### Milestone 4: Extended Validation + Production Readiness (4 weeks) — €12,700
+### Milestone 4: Extended Validation + Production Readiness (4 weeks) — €12800
 
 **Team Activities:**
 - Implement critical improvements from beta feedback
@@ -99,14 +117,20 @@ Both tracks inform each other through short 2-4 week cycles.
 
 **Hours:** 160h  
 **Rate:** €80/h  
-**Infrastructure & Travel:** €650  
-**Cost:** €12,700
+**Cost:** €12800
+
+**Acceptance Criteria & Artifacts**
+- [ ] Production deploy (repo/Docker + deploy instructions)
+- [ ] Admin dashboard snapshot or access
+- [ ] Final validation report with case studies (7+ partners)
+- [ ] Runbook and maintenance docs submitted
+- [ ] Smoke tests pass and partner onboarding evidence provided
 
 ---
 
 ## Infrastructure & Travel Costs
 
-**Total:** €1,500 (allocated across milestones)
+**Total:** €1500 (allocated across milestones)
 
 ### Hosting (€400)
 - Production server for graph database queries
@@ -140,12 +164,12 @@ In-person validation visits with pilot partners within day-trip range from Bruss
 
 | Milestone | Duration | Hours | Cost |
 |-----------|----------|-------|------|
-| M1: Solution Validation | 2 weeks | 80h | €6,400 |
-| M2: Walking Skeleton + Backup | 3 weeks | 120h | €9,600 |
-| M3: Beta Test + Iteration | 3 weeks | 120h | €9,600 |
-| M4: Extended Validation | 4 weeks | 160h | €11,200 |
-| Infrastructure & Travel | 12 weeks | - | €1,500 |
-| **TOTAL** | **12 weeks** | **480h** | **€38,300** |
+| M1: Solution Validation | 2 weeks | 80h | €6400 |
+| M2: Walking Skeleton + Backup | 3 weeks | 120h | €9600 |
+| M3: Beta Test + Iteration | 3 weeks | 120h | €9600 |
+| M4: Extended Validation | 4 weeks | 160h | €12700 |
+| Infrastructure & Travel | 12 weeks | - | €1500 |
+| **TOTAL** | **12 weeks** | **480h** | **€39900** |
 
 ---
 

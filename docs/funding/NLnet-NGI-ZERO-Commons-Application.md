@@ -44,8 +44,7 @@ Maps of Making: Smart Makerspace Maps, a new Commons
 
 ### Website / wiki
 ```
-pre-website on notion (Project homepage with overview, architecture, and pilot commitments)
-https://plucky-beef-541.notion.site/Maps-of-Making-2b9bbd21f4c18078b0b6dc1e64c9daf0
+to complete!!
 ```
 
 ---
@@ -55,8 +54,6 @@ https://plucky-beef-541.notion.site/Maps-of-Making-2b9bbd21f4c18078b0b6dc1e64c9d
 
 **Question:** Can you explain the whole project and its expected outcome(s)?
 
-### Draft
-
 ```
 Makerspaces reinvent manufacturing from invention, prototyping to production, repair and recycling, they must work together. 
 
@@ -64,7 +61,7 @@ Maps of Making solves a critical failure in makerspace coordination: existing ma
 
 We're building a digital commons where fresh data unlocks ecosystem intelligence. The more communities contribute, the more useful the map becomes — creating a self-reinforcing value loop grounded in Elinor Ostrom's proven commons governance principles.
 
-Round 1 validates this with diverse stakeholders who've confirmed their support. 7+ organizations have already committed letters of intent.
+Round 1 validates this with diverse stakeholders who've confirmed their support. 12 organizations have already committed letters of intent.
 
 Key deliverables:
 
@@ -87,39 +84,28 @@ Provide a community database, released under Apache 2.0, behaving like a true co
 
 **Question:** Have you been involved with projects or organisations relevant to this project before? And if so, can you tell us a bit about your contributions?
 
-### Status: WIP
-
-**[TODO - Provide team member bios]**
-
-Required for each team member:
-- Name + Role
-- Years of relevant experience
-- 2-3 key projects / GitHub/portfolio links
-- One sentence: Why relevant to this project?
-
 ```
-Jason Pettiaux, Project & Community Lead: 5 years in healthcare product development, a complex stakeholder ecosystem; 5 years as Scout leader animating communities through flat governance, 2 years as Vulca Explorer building fablab networks across Europe and the world.
-Jason is a traveler, a maker and was brought up in the FOSS world, coming to FOSDEM as a child.
-Passionate about medical and hardware, he contributed to projects in these area, by co-founding Open Medtech asbl to build the project Breath4Life (http://breath4life.org/) in Belgium during Covid, contributing to the Internet of Production activities giving workshops on FOSS at ULB to the RFFLabs (https://pitch.com/v/conference-opensource-kk99ud) and being an active participant of FabCare (https://fabcare.network/)
-He also did the FabAcademy and has been an active member of the global and european fab community leading as soon as the summer 2025 a workshop on transnational networks.
-Here’s the link to the FAB25 workshop : https://fab25.fabevent.org/programs/schedule?day=2025-07-09&title=transnational--continental-fablabs-networks-lessons-challenges-and-fut&event=b4f3a11a-b959-4988-b746-a3e02b8813f7
-Here’s his fabacamedy website :https://academany.fabcloud.io/fabacademy/2021/labs/ulb/students/jason-pettiaux/
+Jason Pettiaux, Project & Community Lead
+I've spent 2 years as Vulca Explorer building fablab networks across Europe and the world, visiting 100+ spaces. I lead a workshop at FAB25 (July 2025) on transnational maker networks — the exact challenge Maps of Making addresses.
+I'm a FabAcademy graduate and active in the global fab community. I co-founded Open Medtech (Breath4Life during COVID), contributed to Internet of Production activities, and participated in FabCare network.
+I grew up in FOSS culture but learned firsthand that great values + bad UX = unused tools. I bring both community-building experience and pragmatic design thinking to ensure we build maker infrastructure people actually use.
+https://tinyurl.com/fab25-jason
+https://tinyurl.com/fabac-jason
+https://tinyurl.com/foss-pitch
 
-Jason grew up in FOSS, welcoming Richard Stallman home, being forced to use the clunky user interfaces of Free Software. He adopted the values of his father and passion for FOSS but he also knows first-hand the pain to use a software with great values and sovereignty but a bad UX.
-A maker himself, he wants to bring the strength of communities and contribution to the maker world, having visited 100+ fablabs across Europe and Africa, he knows the difficulty to connect and that’s why he’s co-founding Maps of Making.   
-
-Nicolas de Barquin, Technical Lead & Commons Architect : 
-10+ years founding and leading OpenFab Brussels. I experienced the classic commons tragedy: as the single maintainer, I burned out. Members relied on me to fix, teach, organize—and when I couldn't anymore, the space nearly closed. That failure sent me on a journey to understand why commons collapse, studying Ostrom's principles, game theory, and behavioral economics. "Maps of Making" is the system I wish had existed: designed so no single person becomes the bottleneck.
-Built OpenFab on a €14k/year participation model—members contributed labor instead of high fees. The space survived 13 years including COVID, but still relied on key maintainers.
-9 years participating in VULCA (European maker mobility network). This peer connections kept me functional — meeting fabmanagers facing the same struggles was like fresh air. We'd share solutions, learn from each other's experiments across cultures. It's why I lasted 10 years at OpenFab instead of burning out sooner.
-5 years as Lead CAD Developer at EATOPS SA, designing telemetry systems for spacecraft and offshore platforms. Built predictive monitoring to catch silent failures before they became critical. That systems thinking—using historical data to anticipate problems—directly informs Maps of Making's temporal analysis layer.
-
-Maps of Making sits at the intersection: I know why commons fail, what keeps maker communities alive, and how to build systems that prevent silent failures. This project is the convergence.
+Nicolas de Barquin, Technical Lead & Commons Architect
+I spent 10+ years founding and leading OpenFab Brussels on a €14k/year labor-contribution model. I experienced the classic commons tragedy: as the single maintainer, I burned out. That failure sent me deep into Ostrom's principles, game theory, and behavioral economics. Maps of Making is the system I wish had existed — designed so no single person becomes the bottleneck.
+9 years in VULCA, visiting 50+ spaces — meeting fabmanagers facing the same struggles was my oxygen.
+5 years as Lead CAD Developer at EATOPS, designing spacecraft telemetry systems. I built predictive monitoring to catch silent failures before they become critical.
+I sit at the intersection: why commons fail, what keeps communities alive, how to build systems that prevent silent failures.
 https://github.com/nicolasdb
-https://www.linkedin.com/in/nicolasdb1977/
+https://www.linkedin.com/in/nicolasdb1977
+
+Why This Team:
+One of us brings the outward network reach, connecting maker communities across continents. The other brings the inward systems depth, understanding why infrastructure fails and how to prevent it. Together we're building commons that outlive their creators.
 ```
 
-**Character count:** 1881 (max 2500) ✅
+**Character count:** 1966 (max 2500) ✅
 
 ---
 
@@ -128,7 +114,7 @@ https://www.linkedin.com/in/nicolasdb1977/
 ### Requested Amount
 
 ```
-38300€
+39900€
 ```
 ### Explain Cost
 **Character limit: 2500 characters**
@@ -141,23 +127,22 @@ Round 1 validates architecture choices through rapid iteration with real users. 
 
 MILESTONE STRUCTURE (12 weeks):
 
-M1: Solution Validation (2 weeks) — €6,400
+M1: Solution Validation (2 weeks) — €6400
 Deliverable: Mock-up + Architecture decisions, validated through user research.
 
-M2: Walking Skeleton + Backup (3 weeks) — €9,600
+M2: Walking Skeleton + Backup (3 weeks) — €9600
 Deliverable: Working prototype ready for real user testing.
 
-M3: Validation + AI search dev (3 weeks) — €9,600
+M3: Validation + AI search dev (3 weeks) — €9600
 Deliverable: Validation of the engagement model + Semantic query prototype.
 
-M4: Extended Validation (4 weeks) — €11,200
+M4: Extended Validation (4 weeks) — €12800
 Deliverable: Production-ready MVP + validation report for Round 2.
 
 Infrastructure & Travel: €1,500
 - Hosting (graph database, production server): €400
 - AI/LLM computation (semantic queries, testing): €450
 - Travel for in-person validation (day trips within BE, NL, FR, DE): €650
-  (Includes: Gent, Rotterdam, Cologne, Lille/Paris, plus local transport, no stay over to save costs)
 
 RATE: €80/hour (480 hours total)
 Brussels senior development rate for 2 co-leads working half-time (20h/week each over 12 weeks).
@@ -182,7 +167,7 @@ WHY IT WORKS:
 - Clear sustainability path beyond grant funding
 ```
 
-**Character count:** 2461 chars ✅ (max 2500)
+**Character count:** 2406 chars ✅ (max 2500)
 
 ---
 
@@ -191,38 +176,28 @@ WHY IT WORKS:
 
 **Question:** Compare your own project with existing or historical efforts. What is new, more thorough or otherwise different?
 
-### Draft
-
 ```
 EXISTING LANDSCAPE:
 
 Several platforms map maker ecosystems with varying approaches:
 1. INTERNET OF PRODUCTION (IoP)
-   - Largest coverage: 14,172 facilities
-   - Equipment tracking: 7,488 machines
-   - Strength: Comprehensive aggregation, production-ready
-   - Limitations:
-     * 48-month data expiration
-     * No real-time freshness indicators
-     * Manual updates via email to DevOps officer (No community engagement)
-     * Relational database: location-only queries, no relationship intelligence
-     * Deleted data = lost history
+   - Coverage: 14,172 facilities; equipment: 7,488 machines
+   - Strength: large-scale aggregation, production-ready
+   - Limitations: 48‑month deletion policy; no freshness indicators; manual email updates; relational DB limits relationship queries; deleted data loses history
 
 2. FABLAB.IO & HACKERSPACES.ORG
    - 1,750+ fablabs, 2,000+ hackerspaces
-   - Community-maintained but chronically stale
+   - Community-maintained but often stale
 
 3. MAPALL.SPACE
-   - Aggregates SpaceAPI + existing directories
-   - Live data but read-only
-   - Static snapshot approach
+   - Aggregates SpaceAPI + directories
+   - Live read-only snapshots
 
-4. SPACEAPI (Distributed Status Protocol)
-   - Individual spaces self-host real-time status APIs
-   - Brilliant for "is space open now?"
-   - Limited adoption
+4. SPACEAPI
+   - Distributed status APIs for individual spaces ("is it open?")
+   - Useful but limited adoption
 
-We are in contact with all of them and they have agreed to share their data.
+We have outreach and letters of intent from key partners (including IoP).
 
 WHAT MAPS OF MAKING DOES DIFFERENTLY:
 
@@ -235,7 +210,7 @@ WHAT MAPS OF MAKING DOES DIFFERENTLY:
    
    Why: Trust requires transparency. Batch deletion hides problems.
 
-1. INCENTIVE ALIGNMENT
+2. INCENTIVE ALIGNMENT
    - Magic links: 2-minute self-serve updates
    - Single source of truth → globally visible
    - Instant map refresh = proof of impact
@@ -243,7 +218,7 @@ WHAT MAPS OF MAKING DOES DIFFERENTLY:
    
    Why: Existing maps fail because spaces have no reason to maintain data. We make maintenance effortless AND valuable.
 
-1. NETWORK INTELLIGENCE
+3. NETWORK INTELLIGENCE
    - Graph database reveals ecosystem fabric (partnerships, collaborations, skill flows)
    - Queries impractical in SQL:
      * "Show partnership network around Fab Lab Barcelona"
@@ -254,7 +229,7 @@ WHAT MAPS OF MAKING DOES DIFFERENTLY:
    
    Why: Directories show WHERE. We show WHO WORKS WITH WHOM and WHY. This is the invisible coordination layer funders and researchers need.
 
-1. ECOSYSTEM LEARNING
+4. ECOSYSTEM LEARNING
    - Immutable ledger: spaces never disappear, marked dead with full audit trail
    - Closure reports preserved: "Lab X closed 2025-11-05, 3 community reports, reason: [view]"
    - Temporal queries: "Show ecosystem state in January 2024" or "Which spaces closed after pandemic?"
@@ -262,7 +237,7 @@ WHAT MAPS OF MAKING DOES DIFFERENTLY:
    
    Why: Deleted data = lost knowledge. We preserve ecosystem history so communities learn from what worked and what didn't.
 
-1. FEDERATED COMMONS GOVERNANCE
+5. FEDERATED COMMONS GOVERNANCE
    - Decentralized backup : data survives individual failures
    - Networks can host validator replicas (no single point of control)
    - Apache 2.0 license: truly replicable or extendable for repair networks, tool libraries, any commons
@@ -283,7 +258,7 @@ Internet of Production proved aggregation is achievable. We're solving the NEXT 
 This isn't another map. It's network intelligence infrastructure for maker ecosystems—designed as digital commons.
 ```
 
-**Character count:** 3928 chars ✅ (4000 max)
+**Character count:** 3808 chars ✅ (4000 max)
 
 ---
 
@@ -292,8 +267,6 @@ This isn't another map. It's network intelligence infrastructure for maker ecosy
 
 **Question:** What are significant technical challenges you expect to solve during the project, if any?
 
-### Draft Technical Challenges (~4700 chars - with GitHub references)
-/// TO REVIEW JASON
 ```
 CHALLENGE 1: GETTING SPACES TO ACTUALLY MAINTAIN DATA
 
@@ -310,7 +283,7 @@ If this doesn't work, nothing else matters. We validate with 5 beta spaces first
 
 CHALLENGE 2: MAKING IT A REAL COMMONS, NOT ANOTHER PLATFORM
 
-We need the data to survive even if we disappear tomorrow. But blockchain is overkill, Git has merge conflicts, and Conflict-free replicated data type (CRDTs) are too complex. How do we get persistence without drowning in coordination protocols?
+We need the data to survive even if we disappear tomorrow. But blockchain is overkill, Git has merge conflicts, and conflict-free replicated data type (CRDTs) are too complex. How do we get persistence without drowning in coordination protocols?
 
 Our approach: 
 One main database for fast queries. Periodic snapshot it to IPFS. Anyone can dockerize the snapshots. If the main hub dies, restore from IPFS. No consensus algorithms, no mining, no distributed writes. It's simpler than Git and way lighter than blockchain. If IPFS doesn't work, we fall back to rsync or torrents. The principle stays the same.
@@ -375,7 +348,7 @@ People will maintain it because it gives them power,
 not because it gives them work.
 ```
 
-**Character count:** 4787 chars ✅ (5000 max)
+**Character count:** 4788 chars ✅ (5000 max)
 
 ---
 
@@ -384,13 +357,12 @@ not because it gives them work.
 
 **Question:** Describe the ecosystem of the project, and how you will engage with relevant actors and promote the outcomes?
 
-### Draft Ecosystem & Engagement
-
 ```
 WHO WE'RE WORKING WITH:
 
-We've secured letters of intent from 8 organizations spanning 7 European countries—networks (RFF France, HTT Ireland), individual spaces (Spain, Ireland, Croatia, Italy, Portugal), and researchers. Coordinated from Brussels, Belgium, the project brings together maker communities across Europe's diverse regions. What they share: frustration with unreliable maps and excitement about network intelligence.
-Moreover we are in close contact with FabLat (Latin America), FAN (Asia) & ReFFAO (West Africa), VOW (Germany), the Nordics Fablab Network to deploy it further as soon as we have something.
+Coordinated from Brussels, Belgium, we've secured letters of intent from 12 organizations spanning three continents — European networks (RFF France, HTT UK), individual spaces (Spain, Ireland, Croatia, Italy, Portugal), researchers, and global networks representing 200+ spaces across Africa, Asia, and Latin America (FabCare, GIG, ReFFAO, Internet of Production).
+
+What they share: frustration with unreliable maps and excitement about network intelligence. They've committed to sharing data, promoting verification, and giving honest feedback.
 
 HOW WE'LL ENGAGE:
 
@@ -427,7 +399,7 @@ core—spaces verifying data—runs on aligned incentives, not grant money.
 The letters prove the need. Round 1 proves the model.
 ```
 
-**Character count:** 2242 chars ✅ (2500 max)
+**Character count:** 2421 chars ✅ (2500 max)
 
 ---
 
@@ -437,19 +409,10 @@ The letters prove the need. Round 1 proves the model.
 
 ### Recommended Attachments:
 
-**Attachment 1: PRD.md**
-- Full Product Requirements Document with functional requirements, success metrics, user journeys
-
-**Attachment 2: Architecture.md**
-- Technical architecture, data models, technology stack justification, deployment strategy
-
-**Attachment 3: Detailed Budget Spreadsheet**
+**Detailed Budget Spreadsheet**
 - Itemized costs, effort breakdown, rates, infrastructure costs, contingency
 
-**Optional Attachment 4: Ostrom Commons Analysis**
-- Detailed mapping of 8 Ostrom principles to project design
-
-**Optional Attachment 5: Pilot Network Letters of Commitment**
+**Pilot Network Letters of Commitment**
 - Letters from 3-5 pilot networks confirming participation, data sharing, outreach commitment
 
 ---
@@ -492,7 +455,3 @@ The letters prove the need. Round 1 proves the model.
 - Concrete about solutions (specific metrics, technical validation gates)
 - NGI-aligned (commons, decentralization, sustainability, open source)
 - Not overselling (achievable MVP scope)
-
----
-
-_Maps of Making: Building a digital commons where communities maintain their own data because they own it._
