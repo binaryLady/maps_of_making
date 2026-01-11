@@ -1,0 +1,255 @@
+# CLUSTER PROFILE TEMPLATE FOR COMPARISON
+# Copy this template and fill in for any cluster/network in any vertical or sector
+
+[cluster]
+# Basic Information
+name = "Cluster Name"
+tagline = "Short brand statement"
+website = "https://example.com"
+parent_organization = "Parent org if applicable"
+location = "City, Country"
+region = "Geographic region"
+established = "Year or Unknown"
+contact_address = "Full address"
+contact_phone = "Phone number"
+contact_email = "Email address"
+
+[cluster.mission]
+statement = "Official mission statement"
+value_proposition = "What they claim to offer to members"
+target_sectors = ["Sector 1", "Sector 2", "Sector 3"]
+target_member_types = ["Startups", "SMEs", "Corporates"]
+
+[cluster.vision]
+description = "Long-term strategic vision"
+social_focus = false  # Does cluster have social/impact mission?
+sustainability_focus = false
+goals = [
+  "Goal 1",
+  "Goal 2",
+  "Goal 3"
+]
+
+[cluster.members]
+total_count = 0
+geographic_spread = "Local/Regional/National/International"
+growth_rate_known = false
+growth_rate = "Unknown"
+application_process = "Description of how to join"
+member_fee = "Fee structure or Unknown"
+member_types = ["Type 1", "Type 2"]
+
+[cluster.services]
+# Services: use named subtables for each service (avoid inline JSON-like objects such as `service = { ... }`).
+# This mirrors how we store services in real profiles and prevents parsing/editing mistakes.
+# Add a service by creating a subtable with a machine-friendly name (snake_case, no spaces):
+# Example:
+# [cluster.services.guidance]
+# name = "Guidance"
+# description = "Support from idea validation to commercialization"
+# offerings = ["Advisory sessions", "Funding strategy", "Regulatory guidance"]
+# target_audience = "Startups, SMEs"
+# cost_model = "Free/Paid/Tiered"
+# tags = ["advice","financing","regulation"]
+# contact_url = "https://example.com/service"
+
+[cluster.services.example_service]
+name = "Service Display Name"
+description = "What it actually does for members"
+offerings = [
+  "Specific offering 1",
+  "Specific offering 2",
+  "Specific offering 3"
+]
+target_audience = "Who benefits"
+cost_model = "Free/Paid/Tiered/Unknown"
+tags = ["example","template"]
+contact_url = "https://example.com/service"
+
+[cluster.governance]
+structure = "Advisory Board / Board of Directors / Member-led / Unknown"
+decision_making = "How decisions are made"
+board_size = 0
+diversity_focus = false
+
+[[cluster.governance.board]]
+role = "Position/Title"
+name = "Person Name"
+title = "Their title"
+company = "Their company"
+expertise = "Area of expertise"
+linkedin = "LinkedIn profile URL or Unknown"
+
+[cluster.team]
+size = 0
+staff_roles = ["Role 1", "Role 2"]
+permanent_staff = 0
+contracted_advisors = 0
+geographic_distribution = "HQ location"
+
+# Use array-of-tables for team members rather than an inline array of objects. This makes edits safer.
+[[cluster.team.team_members]]
+name = "Person Name"
+role = "Job title"
+expertise = "Area of focus"
+linkedin = "LinkedIn or Unknown"
+
+# Add more team members by copying the [[cluster.team.team_members]] block and changing values.
+
+[cluster.digital_presence]
+website = "https://example.com"
+website_quality = "Professional/Outdated/Broken links/Unknown"
+newsletter = false
+newsletter_frequency = "Monthly/Quarterly/Unknown"
+member_directory = false
+directory_searchable = false
+directory_up_to_date = false
+social_media = ["LinkedIn", "Twitter", "Facebook"]
+member_analytics_visible = false
+
+[cluster.programs]
+# List specific programs or initiatives
+
+[[cluster.programs.program]]
+name = "Program Name"
+description = "What the program does"
+duration = "Timeline or 'Ongoing'"
+cost = "Free/Paid/Unknown"
+url = "https://link.to.program"
+
+[cluster.partnerships]
+partner_count = 0
+partner_categories = ["Type 1", "Type 2"]
+investor_access = false
+corporate_partnerships = false
+academic_partnerships = false
+government_partnerships = false
+
+[cluster.events]
+annual_event_count = 0
+networking_events = true
+conference = false
+workshops = true
+mentoring_sessions = false
+pitch_competitions = false
+member_exclusive_events = false
+public_events = false
+
+[cluster.value_proposition]
+# What members actually get in practice (vs marketing)
+
+member_benefits_claimed = [
+  "Claimed benefit 1",
+  "Claimed benefit 2"
+]
+
+member_benefits_measurable = [
+  "Measurable benefit 1",
+  "Measurable benefit 2"
+]
+
+lead_generation_tracked = false
+partnership_facilitation_tracked = false
+member_growth_driven = false
+funding_attracted_by_members = false
+exits_or_success_stories = false
+
+member_feedback = "Unknown"
+nps_score = "Unknown"
+member_satisfaction = "Unknown"
+
+[cluster.challenges]
+known_issues = [
+  "Issue 1",
+  "Issue 2"
+]
+
+data_quality_issues = [
+  "Data freshness: Unknown / Stale / Unknown update mechanism"
+]
+
+engagement_issues = [
+  "Unknown member engagement levels"
+]
+
+communication_gaps = [
+  "Gap 1 between claimed services and actual delivery"
+]
+
+[cluster.opportunities]
+# What they COULD do to add more value
+
+with_fresh_member_data = [
+  "Implement real-time matching algorithm",
+  "Create sector-specific sub-groups",
+  "Build lead generation dashboard",
+  "Create targeted partnership opportunities",
+  "Develop tier-based membership",
+  "Investor matchmaking with live data"
+]
+
+improvement_areas = [
+  "Area 1",
+  "Area 2"
+]
+
+market_gaps = [
+  "Gap 1",
+  "Gap 2"
+]
+
+[cluster.competitive_landscape]
+# Prefer array-of-tables for competitor records (safer to edit than inline tables).
+[[cluster.competitive_landscape.direct_competitor]]
+name = "Competitor 1"
+location = "City"
+focus = "Description"
+
+# Add more direct competitors by adding additional [[cluster.competitive_landscape.direct_competitor]] blocks
+
+[[cluster.competitive_landscape.indirect_competitor]]
+name = "Competitor 1"
+location = "City"
+focus = "Description"
+
+market_positioning = "Description of how they differentiate"
+
+market_saturation = "High/Medium/Low"
+
+[cluster.financial]
+# If known/public
+funding_source = "Government/Corporate/Member fees/Unknown"
+operating_budget_known = false
+sustainable_model = "Unknown"
+
+[cluster.data_quality]
+member_count_current = 0
+last_member_audit = "Unknown"
+profile_freshness_mechanism = "Unknown/Manual/Automated"
+known_stale_profiles = "Unknown"
+contact_info_availability = "% estimated"
+website_urls_available = false
+phone_numbers_available = false
+contact_person_available = false
+email_availability = false
+
+[cluster.strategic_assessment]
+# Your analysis
+
+maturity_level = "Emerging/Growth/Mature/Declining"
+value_clarity = "Clear/Unclear/Mixed"
+member_alignment = "High/Medium/Low"
+market_fit = "Strong/Moderate/Weak"
+innovation_capability = "High/Medium/Low"
+scalability = "High/Medium/Low"
+sustainability = "Sustainable/At-risk/Unknown"
+
+strategic_priorities = [
+  "Priority 1",
+  "Priority 2"
+]
+
+recommendations = [
+  "Recommendation 1",
+  "Recommendation 2"
+]
