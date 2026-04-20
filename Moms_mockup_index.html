@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maps of Making - Demo Interactive</title>
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      overflow: hidden;
+    }
+    
+    #map {
+      width: 100vw;
+      height: 100vh;
+    }
+    
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+      50% {
+        transform: scale(1.15);
+        opacity: 0.8;
+      }
+    }
+    
+    .marker-active {
+      animation: pulse 2s infinite;
+    }
+    
+    .partnership-bud {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    
+    .partnership-bud:hover {
+      transform: scale(1.3);
+      z-index: 1000;
+    }
+    
+    .partnership-edge {
+      stroke-dasharray: 1000;
+      stroke-dashoffset: 1000;
+      animation: growEdge 1.5s ease-out forwards;
+    }
+    
+    @keyframes growEdge {
+      to {
+        stroke-dashoffset: 0;
+      }
+    }
+    
+    .partnership-edge:hover {
+      stroke-width: 4px !important;
+      opacity: 1 !important;
+      filter: drop-shadow(0 0 4px currentColor);
+    }
+    
+    .cartouche {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background: white;
+      padding: 16px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      min-width: 280px;
+      max-width: 400px;
+      z-index: 1000;
+      font-size: 14px;
+    }
+    
+    .cartouche-title {
+      font-weight: bold;
+      margin-bottom: 12px;
+    }
+    
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+    
+    .legend-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    
+    .cartouche-footer {
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid #e5e7eb;
+      font-size: 12px;
+      color: #6b7280;
+    }
+    
+    .selected-info {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #e5e7eb;
+      font-size: 12px;
+    }
+    
+    .selected-label {
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  
+  <div class="cartouche">
+    <!-- Default View -->
+    <div id="default-view">
+      <div style="font-weight: bold; font-size: 16px; margin-bottom: 4px;">Maps of Making</div>
+      <div style="font-size: 12px; color: #6b7280; margin-bottom: 12px;">Freshness</div>
+      
+      <div class="legend-item">
+        <div class="legend-dot" style="background: #22c55e;"></div>
+        <span>Active (&lt;30d)</span>
+      </div>
+      
+      <div class="legend-item">
+        <div class="legend-dot" style="background: #eab308;"></div>
+        <span>Aging (30-90d)</span>
+      </div>
+      
+      <div class="legend-item">
+        <div class="legend-dot" style="background: #3b82f6;"></div>
+        <span>Coming Soon</span>
+      </div>
+      
+      <div class="legend-item">
+        <div class="legend-dot" style="background: #ef4444;"></div>
+        <span>Zombie (&gt;90d)</span>
+      </div>
+      
+      <div class="legend-item">
+        <div class="legend-dot" style="background: #6b7280;"></div>
+        <span>Closed</span>
+      </div>
+      
+      <div style="margin-top: 12px;">
+        <input 
+          type="text" 
+          id="prompt-input" 
+          placeholder="Ask about spaces..." 
+          style="
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 12px;
+          "
+        />
+      </div>
+      
+      <div style="margin-top: 12px; font-size: 12px; color: #6b7280;">
+        <div>Zoom: <span id="zoom-level-default">12</span></div>
+        <div>Spaces: <span id="space-count">18</span></div>
+      </div>
+    </div>
+    
+    <!-- Selection View -->
+    <div id="selection-view" style="display: none;">
+      <div style="font-weight: bold; font-size: 16px; margin-bottom: 12px;">Maps of Making</div>
+      
+      <div style="margin-bottom: 12px;">
+        <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;" id="selected-name"></div>
+        <div style="font-size: 12px; color: #666; margin-bottom: 4px;" id="selected-type"></div>
+        <div style="font-size: 12px; margin-bottom: 4px;" id="selected-address"></div>
+        
+        <div style="margin: 8px 0" id="selected-freshness-badge"></div>
+        
+        <div style="font-size: 12px; margin-top: 8px;">
+          <strong>Last verified:</strong> <span id="selected-verified"></span>
+        </div>
+        
+        <div style="font-size: 12px; margin-top: 4px;">
+          <strong>Themes:</strong> <span id="selected-themes"></span>
+        </div>
+        
+        <div style="font-size: 12px; margin-top: 4px;">
+          <strong>Partnerships:</strong> <span id="selected-partnerships"></span>
+        </div>
+      </div>
+      
+      <div style="margin-top: 12px;">
+        <input 
+          type="text" 
+          id="prompt-input-selection" 
+          placeholder="Ask about spaces..." 
+          style="
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 12px;
+          "
+        />
+      </div>
+      
+      <div style="margin-top: 12px; font-size: 12px; color: #6b7280;">
+        Zoom: <span id="zoom-level-selection">12</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  
+  <script>
+    function initMap() {
+      if (typeof L === 'undefined') {
+        setTimeout(initMap, 100);
+        return;
+      }
+
+    const BRUSSELS_SPACES = [
+      {
+        id: 'openfab',
+        name: 'OpenFab',
+        type: 'fablab',
+        location: [50.8283, 4.3793],
+        address: '158 rue Gray, Ixelles',
+        freshness: 'aging',
+        last_verified: '2025-10-12',
+        themes: ['education', 'technology-access', 'community'],
+        partnerships: [
+          { id: 'fablab-ulb', status: 'active', type: 'skill-exchange' },
+          { id: 'green-fabric', status: 'active', type: 'material-sharing' }
+        ],
+      },
+      {
+        id: 'microfactory',
+        name: 'MicroFactory',
+        type: 'fablab',
+        location: [50.8642, 4.3178],
+        address: '140 rue Heyvaert, Molenbeek',
+        freshness: 'active',
+        last_verified: '2025-11-18',
+        themes: ['circular-economy', 'textile', 'woodwork'],
+        partnerships: [
+          { id: 'cityfab3', status: 'active', type: 'equipment-sharing' }
+        ],
+      },
+      {
+        id: 'cityfab1',
+        name: 'CityFab1',
+        type: 'fablab',
+        location: [50.8831, 4.3364],
+        address: '37 rue Dieudonné Lefèvre, Laeken',
+        freshness: 'active',
+        last_verified: '2025-11-19',
+        themes: ['green-tech', 'circular-economy', 'education'],
+        partnerships: [
+          { id: 'cityfab3', status: 'active', type: 'network' }
+        ],
+      },
+      {
+        id: 'cityfab3',
+        name: 'CityFab3',
+        type: 'fablab',
+        location: [50.8356, 4.3089],
+        address: 'Rue des vétérinaires 42, Anderlecht',
+        freshness: 'aging',
+        last_verified: '2025-10-15',
+        themes: ['architecture', 'product-design'],
+        partnerships: [
+          { id: 'microfactory', status: 'active', type: 'equipment-sharing' },
+          { id: 'cityfab1', status: 'active', type: 'network' }
+        ],
+      },
+      {
+        id: 'fablab-ulb',
+        name: 'Fablab Brussels (ULB/VUB)',
+        type: 'fablab',
+        location: [50.8138, 4.3813],
+        address: 'Kroonlaan 227, Elsene',
+        freshness: 'active',
+        last_verified: '2025-11-21',
+        themes: ['education', 'research', 'students'],
+        partnerships: [
+          { id: 'urlab', status: 'active', type: 'community' },
+          { id: 'openfab', status: 'active', type: 'skill-exchange' }
+        ],
+      },
+      {
+        id: 'hsbxl',
+        name: 'HSBXL',
+        type: 'hackerspace',
+        location: [50.8586, 4.3289],
+        address: 'Rue Osseghem 53, Molenbeek',
+        freshness: 'active',
+        last_verified: '2025-11-22',
+        themes: ['electronics', 'coding', 'hardware-hacking'],
+        partnerships: [
+          { id: 'urlab', status: 'active', type: 'community' },
+          { id: 'hcklabxl', status: 'dormant', type: 'events' }
+        ],
+      },
+      {
+        id: 'urlab',
+        name: 'UrLab',
+        type: 'hackerspace',
+        location: [50.8117, 4.3822],
+        address: 'Campus Solbosch ULB, Avenue Franklin Roosevelt 50',
+        freshness: 'active',
+        last_verified: '2025-11-21',
+        themes: ['students', 'coding', 'electronics'],
+        partnerships: [
+          { id: 'fablab-ulb', status: 'active', type: 'community' },
+          { id: 'hsbxl', status: 'active', type: 'community' }
+        ],
+      },
+      {
+        id: 'hcklabxl',
+        name: 'HCKLabXL',
+        type: 'hackerspace',
+        location: [50.8689, 4.3833],
+        address: 'Avenue Princesse Elisabeth 46, Schaerbeek',
+        freshness: 'aging',
+        last_verified: '2025-10-20',
+        themes: ['feminist-tech', 'activism', 'community'],
+        partnerships: [
+          { id: 'hsbxl', status: 'dormant', type: 'events' }
+        ],
+      },
+      {
+        id: 'green-fabric',
+        name: 'Green Fabric',
+        type: 'textile-lab',
+        location: [50.8320, 4.3430],
+        address: 'Rue fictive, Saint-Gilles',
+        freshness: 'active',
+        last_verified: '2025-11-17',
+        themes: ['textile', 'upcycling', 'circular-economy'],
+        partnerships: [
+          { id: 'openfab', status: 'active', type: 'material-sharing' },
+          { id: 'microfactory', status: 'proposed', type: 'project' }
+        ],
+      },
+      {
+        id: 'forestlab',
+        name: 'ForestLab Auderghem',
+        type: 'eco-lab',
+        location: [50.8080, 4.4090],
+        address: 'Buzzy Nest, Bd du Souverain 24, Watermael-Boitsfort',
+        freshness: 'coming-soon',
+        last_verified: '2025-11-15',
+        themes: ['biodiversity', 'nature-tech', 'education'],
+        partnerships: [],
+      },
+      {
+        id: 'fablab-orange',
+        name: 'Fablab Orange',
+        type: 'fablab',
+        location: [50.8455, 4.3571],
+        address: 'Brussels Central Station',
+        freshness: 'zombie',
+        last_verified: '2025-07-22',
+        themes: ['prototyping', 'startup-support'],
+        partnerships: [],
+      },
+      {
+        id: 'closefab',
+        name: 'CloseFab',
+        type: 'fablab',
+        location: [50.8420, 4.3650],
+        address: 'Former location near Sablon, Brussels',
+        freshness: 'dead',
+        last_verified: '2024-12-01',
+        themes: ['community', 'education'],
+        partnerships: [],
+      },
+      // 250km radius spaces
+      {
+        id: 'fablab-gent',
+        name: 'Fablab Gent',
+        type: 'fablab',
+        location: [51.0543, 3.7174],
+        address: 'Gent, Belgium',
+        freshness: 'active',
+        last_verified: '2025-11-19',
+        themes: ['education', 'prototyping'],
+        partnerships: [],
+      },
+      {
+        id: 'waag-amsterdam',
+        name: 'Waag Futurelab',
+        type: 'fablab',
+        location: [52.3676, 4.9041],
+        address: 'Amsterdam, Netherlands',
+        freshness: 'active',
+        last_verified: '2025-11-20',
+        themes: ['research', 'social-innovation'],
+        partnerships: [],
+      },
+      {
+        id: 'liege-hackerspace',
+        name: 'Liège Hackerspace',
+        type: 'hackerspace',
+        location: [50.6326, 5.5797],
+        address: 'Liège, Belgium',
+        freshness: 'active',
+        last_verified: '2025-11-18',
+        themes: ['electronics', 'community'],
+        partnerships: [],
+      },
+      {
+        id: 'fablab-lille',
+        name: 'La Coroutine',
+        type: 'fablab',
+        location: [50.6292, 3.0573],
+        address: 'Lille, France',
+        freshness: 'active',
+        last_verified: '2025-11-21',
+        themes: ['digital-fabrication', 'coworking'],
+        partnerships: [],
+      },
+      {
+        id: 'fablab-charleroi',
+        name: 'Fablab Charleroi',
+        type: 'fablab',
+        location: [50.4108, 4.4446],
+        address: 'Charleroi, Belgium',
+        freshness: 'aging',
+        last_verified: '2025-09-30',
+        themes: ['maker-culture', 'education'],
+        partnerships: [],
+      },
+    ];
+
+    // Calculate azimuth (bearing) between two points
+    function calculateAzimuth(lat1, lon1, lat2, lon2) {
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const y = Math.sin(dLon) * Math.cos(lat2 * Math.PI / 180);
+      const x = Math.cos(lat1 * Math.PI / 180) * Math.sin(lat2 * Math.PI / 180) -
+                Math.sin(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.cos(dLon);
+      const bearing = Math.atan2(y, x) * 180 / Math.PI;
+      return (bearing + 360) % 360;
+    }
+
+    function getPartnershipColor(status) {
+      switch (status) {
+        case 'active': return '#22c55e';
+        case 'dormant': return '#eab308';
+        case 'proposed': return '#3b82f6';
+        default: return '#9ca3af';
+      }
+    }
+
+    function getFreshnessColor(freshness) {
+      switch (freshness) {
+        case 'active': return '#22c55e';
+        case 'aging': return '#eab308';
+        case 'zombie': return '#ef4444';
+        case 'dead': return '#6b7280';
+        case 'coming-soon': return '#3b82f6';
+        default: return '#9ca3af';
+      }
+    }
+
+    function getFreshnessIcon(freshness) {
+      switch (freshness) {
+        case 'active': return '✓';
+        case 'aging': return '⚠';
+        case 'zombie': return '🧟';
+        case 'dead': return '💀';
+        case 'coming-soon': return '🚀';
+        default: return '?';
+      }
+    }
+
+    // Initialize map
+    const map = L.map('map').setView([50.8503, 4.3517], 12);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 18,
+    }).addTo(map);
+
+    let pinnedSpace = null;
+    let budLayers = {};
+    let edgeLayers = {};
+    let currentZoom = 12;
+
+    // Add markers
+    BRUSSELS_SPACES.forEach(space => {
+      const color = getFreshnessColor(space.freshness);
+      const icon = getFreshnessIcon(space.freshness);
+      const isActive = space.freshness === 'active';
+
+      const customIcon = L.divIcon({
+        html: `
+          <div style="
+            position: relative;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          ">
+            <div class="${isActive ? 'marker-active' : ''}" style="
+              width: 24px;
+              height: 24px;
+              background: ${color};
+              border-radius: 50%;
+              border: 2px solid white;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 14px;
+            ">
+              ${icon}
+            </div>
+          </div>
+        `,
+        className: 'custom-marker',
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+      });
+
+      const marker = L.marker(space.location, { icon: customIcon })
+        .addTo(map);
+
+      // Create bud layer for this space
+      budLayers[space.id] = L.layerGroup();
+
+      // Show buds/edges on hover
+      marker.on('mouseover', () => {
+        if (pinnedSpace !== space.id) {
+          updateVisualization(space);
+        }
+      });
+
+      marker.on('mouseout', () => {
+        if (pinnedSpace !== space.id) {
+          hideBuds(space);
+          hideEdges(space);
+        }
+      });
+
+      // Pin selection on click
+      marker.on('click', () => {
+        // Unpin previous
+        if (pinnedSpace && pinnedSpace !== space.id) {
+          const prevSpace = BRUSSELS_SPACES.find(s => s.id === pinnedSpace);
+          hideBuds(prevSpace);
+          hideEdges(prevSpace);
+        }
+        
+        // Toggle pin
+        if (pinnedSpace === space.id) {
+          pinnedSpace = null;
+          hideBuds(space);
+          hideEdges(space);
+          // Show default view
+          document.getElementById('default-view').style.display = 'block';
+          document.getElementById('selection-view').style.display = 'none';
+        } else {
+          pinnedSpace = space.id;
+          updateVisualization(space);
+          
+          // Show selection view
+          document.getElementById('default-view').style.display = 'none';
+          document.getElementById('selection-view').style.display = 'block';
+          
+          // Populate selection details
+          document.getElementById('selected-name').textContent = space.name;
+          document.getElementById('selected-type').textContent = space.type;
+          document.getElementById('selected-address').textContent = space.address;
+          document.getElementById('selected-verified').textContent = space.last_verified;
+          document.getElementById('selected-themes').textContent = space.themes.join(', ');
+          document.getElementById('selected-partnerships').textContent = 
+            space.partnerships.length > 0 
+              ? `${space.partnerships.length}` 
+              : 'None';
+          
+          // Freshness badge
+          const badgeColor = getFreshnessColor(space.freshness);
+          document.getElementById('selected-freshness-badge').innerHTML = `
+            <span style="
+              display: inline-block;
+              padding: 2px 8px;
+              background: ${badgeColor};
+              color: white;
+              border-radius: 12px;
+              font-size: 11px;
+            ">
+              ${space.freshness.toUpperCase()}
+            </span>
+          `;
+        }
+      });
+    });
+
+    function showBuds(space) {
+      if (space.partnerships.length === 0) return;
+
+      budLayers[space.id].clearLayers();
+
+      space.partnerships.forEach((partnership, index) => {
+        const partner = BRUSSELS_SPACES.find(s => s.id === partnership.id);
+        if (!partner) return;
+
+        // Calculate direction to partner
+        const azimuth = calculateAzimuth(
+          space.location[0], space.location[1],
+          partner.location[0], partner.location[1]
+        );
+
+        // Position bud around marker (30px orbit)
+        const angleRad = (azimuth - 90) * Math.PI / 180;
+        const orbitRadius = 30;
+        const offsetX = Math.cos(angleRad) * orbitRadius;
+        const offsetY = Math.sin(angleRad) * orbitRadius;
+
+        const budIcon = L.divIcon({
+          html: `
+            <div class="partnership-bud" style="
+              background: ${getPartnershipColor(partnership.status)};
+              transform: translate(${offsetX}px, ${offsetY}px);
+            " title="${partner.name} (${partnership.type})"></div>
+          `,
+          className: 'bud-container',
+          iconSize: [0, 0],
+        });
+
+        const budMarker = L.marker(space.location, { icon: budIcon })
+          .on('click', () => {
+            map.flyTo(partner.location, 14);
+          });
+
+        budLayers[space.id].addLayer(budMarker);
+      });
+
+      budLayers[space.id].addTo(map);
+    }
+
+    function hideBuds(space) {
+      if (budLayers[space.id]) {
+        budLayers[space.id].clearLayers();
+      }
+    }
+
+    function showEdges(space) {
+      if (space.partnerships.length === 0) return;
+
+      edgeLayers[space.id] = edgeLayers[space.id] || L.layerGroup();
+      edgeLayers[space.id].clearLayers();
+
+      space.partnerships.forEach((partnership) => {
+        const partner = BRUSSELS_SPACES.find(s => s.id === partnership.id);
+        if (!partner) return;
+
+        const latLngs = [
+          L.latLng(space.location[0], space.location[1]),
+          L.latLng(partner.location[0], partner.location[1])
+        ];
+
+        const polyline = L.polyline(latLngs, {
+          color: getPartnershipColor(partnership.status),
+          weight: partnership.status === 'active' ? 3 : 2,
+          opacity: partnership.status === 'active' ? 0.7 : 0.5,
+          className: 'partnership-edge',
+        });
+
+        polyline.bindTooltip(`${space.name} ↔ ${partner.name}<br>${partnership.type}`, {
+          sticky: true
+        });
+
+        edgeLayers[space.id].addLayer(polyline);
+      });
+
+      edgeLayers[space.id].addTo(map);
+    }
+
+    function hideEdges(space) {
+      if (edgeLayers[space.id]) {
+        edgeLayers[space.id].clearLayers();
+      }
+    }
+
+    function updateVisualization(space) {
+      if (currentZoom >= 14) {
+        hideEdges(space);
+        showBuds(space);
+      } else {
+        hideBuds(space);
+        showEdges(space);
+      }
+    }
+
+    // Update zoom level display
+    map.on('zoomend', () => {
+      const newZoom = map.getZoom();
+      currentZoom = newZoom;
+      document.getElementById('zoom-level-default').textContent = newZoom;
+      document.getElementById('zoom-level-selection').textContent = newZoom;
+      
+      // Update pinned space visualization on zoom change
+      if (pinnedSpace) {
+        const space = BRUSSELS_SPACES.find(s => s.id === pinnedSpace);
+        if (space) {
+          hideBuds(space);
+          hideEdges(space);
+          updateVisualization(space);
+        }
+      }
+    });
+
+    document.getElementById('space-count').textContent = BRUSSELS_SPACES.length;
+    }
+
+    // Start initialization
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initMap);
+    } else {
+      initMap();
+    }
+  </script>
+</body>
+</html>

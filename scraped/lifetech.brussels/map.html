@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifeTech Brussels - Member Map</title>
+    <link rel="stylesheet" href="https://leafletjs.com/dist/leaflet.css" />
+    <script src="https://leafletjs.com/dist/leaflet.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5;
+        }
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+        .info {
+            padding: 6px 8px;
+            font-size: 16px;
+            background: white;
+            background: rgba(255,255,255,0.8);
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            border-radius: 5px;
+        }
+        .legend {
+            background: white;
+            background: rgba(255,255,255,0.8);
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            border-radius: 5px;
+            padding: 10px;
+            font-size: 14px;
+        }
+        .legend-item {
+            margin: 5px 0;
+        }
+        .legend-color {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+            border-radius: 50%;
+            vertical-align: middle;
+        }
+        .popup-content {
+            font-size: 14px;
+        }
+        .popup-content strong {
+            display: block;
+            margin-top: 8px;
+        }
+        .warning {
+            color: #ff6600;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <script>
+        // Initialize map
+        const map = L.map('map').setView([50.85, 4.36], 11); // Brussels center
+
+        // Add tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 18
+        }).addTo(map);
+
+        // Info control
+        const info = L.control();
+        info.onAdd = function(map) {
+            this._div = L.DomUtil.create('div', 'info');
+            this._div.innerHTML = '<strong>LifeTech Members</strong><br>Hover over markers for details';
+            return this._div;
+        };
+        info.addTo(map);
+
+        // Legend
+        const legend = L.control({position: 'bottomright'});
+        legend.onAdd = function(map) {
+            this._div = L.DomUtil.create('div', 'legend');
+            this._div.innerHTML = `
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #4285F4;"></span>
+                    <span>Valid Profile</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #FFA500;"></span>
+                    <span>Data Issues</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #FF0000;"></span>
+                    <span>Dead Link</span>
+                </div>
+            `;
+            return this._div;
+        };
+        legend.addTo(map);
+
+        // Load and display GeoJSON
+        fetch('members.geojson')
+            .then(response => response.json())
+            .then(data => {
+                L.geoJSON(data, {
+                    pointToLayer: function(feature, latlng) {
+                        let color = '#4285F4';
+                        const props = feature.properties;
+
+                        if (props.website_status === 'redirect' || props.website_status === 'http_404') {
+                            color = '#FFA500';
+                        }
+                        if (props.website_status === 'not_found_404') {
+                            color = '#FF0000';
+                        }
+
+                        const marker = L.circleMarker(latlng, {
+                            radius: 8,
+                            fillColor: color,
+                            color: '#fff',
+                            weight: 2,
+                            opacity: 1,
+                            fillOpacity: 0.8
+                        });
+
+                        return marker;
+                    },
+                    onEachFeature: function(feature, layer) {
+                        const props = feature.properties;
+                        let popupContent = `
+                            <div class="popup-content">
+                                <strong>${props.name || 'Unknown'}</strong>
+                                <div>${props.description || ''}</div>
+                                <strong>Address:</strong> ${props.address || 'Not available'}
+                                <br><strong>Website:</strong> <a href="${props.website}" target="_blank">${props.website || 'N/A'}</a>
+                                <br><strong>Email:</strong> ${props.email || 'N/A'}
+                                <br><strong>Phone:</strong> ${props.phone || 'N/A'}
+                        `;
+
+                        if (props.warning) {
+                            popupContent += `<br><span class="warning">⚠️ ${props.warning}</span>`;
+                        }
+
+                        popupContent += '</div>';
+                        layer.bindPopup(popupContent);
+                    }
+                }).addTo(map);
+            })
+            .catch(error => console.error('Error loading GeoJSON:', error));
+    </script>
+</body>
+</html>

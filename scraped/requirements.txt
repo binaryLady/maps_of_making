@@ -1,0 +1,32 @@
+# Core data processing
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+tomlkit>=0.12.0
+python-dotenv>=1.0.0
+
+# API clients
+mistralai>=0.0.11
+httpx>=0.24.0
+
+# FireCrawl client (async web scraping) - Optional for fallback
+# firecrawl-py>=0.0.1  # Install separately if needed
+
+# Geocoding and mapping
+geopy>=2.3.0
+geojson>=3.0.0
+
+# Data analysis and logging
+pandas>=2.1.0
+
+# Utility libraries
+pydantic>=2.5.0
+click>=8.1.0
+tqdm>=4.66.0
+
+# Development and testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+black>=23.12.0
+ruff>=0.1.9
