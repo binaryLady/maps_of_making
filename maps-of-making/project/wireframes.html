@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Maps of Making — Wireframes</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Caveat:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+  html, body { margin: 0; padding: 0; background: #f0eee9; font-family: 'Inter Tight', system-ui, sans-serif; }
+  /* wireframe language — handdrawn, b&w + riso red */
+  .wf { --ink: #1a1a1a; --paper: #faf7f0; --faint: #b8b0a0; --rule: #2a2a2a; --red: #e23a2a; --blue: #2a5ce2; --green: #2aa866; }
+  .wf { background: var(--paper); color: var(--ink); position: relative; overflow: hidden; }
+  .wf::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background-image: radial-gradient(circle at 20% 30%, rgba(0,0,0,0.03) 0, transparent 40%),
+                      radial-gradient(circle at 80% 70%, rgba(226,58,42,0.04) 0, transparent 40%);
+  }
+  .wf-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--faint); }
+  .wf h1, .wf h2, .wf h3 { font-family: 'Caveat', cursive; font-weight: 700; margin: 0; }
+  .hand { font-family: 'Caveat', cursive; color: var(--red); }
+  .box { border: 1.5px solid var(--rule); border-radius: 2px; background: var(--paper); }
+  .box-dashed { border: 1.5px dashed var(--rule); }
+  .box-red { border: 2px solid var(--red); }
+  .mono { font-family: 'JetBrains Mono', monospace; font-size: 10px; }
+  .btn { border: 1.5px solid var(--rule); padding: 4px 10px; display: inline-block; font-size: 11px; background: var(--paper); border-radius: 2px; }
+  .btn-red { background: var(--red); color: #fff; border-color: var(--red); }
+  .btn-ink { background: var(--ink); color: #fff; }
+  .chip { border: 1.2px solid var(--rule); padding: 2px 8px; border-radius: 99px; font-size: 10px; display: inline-block; background: var(--paper); }
+  .chip.on { background: var(--ink); color: #fff; }
+  .pin { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--rule); display: inline-block; box-shadow: 2px 2px 0 var(--ink); }
+  .pin-confirmed { background: var(--blue); }
+  .pin-seeded { background: var(--paper); }
+  .pin-open { background: var(--green); }
+  .pin-stale { background: var(--paper); border-style: dashed; box-shadow: none; }
+  .pin-broken { background: var(--red); }
+  /* sketchy map with rough strokes */
+  .sketch-map { position: relative; background: #f4f0e5; overflow: hidden; }
+  .sketch-map svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .map-pin { position: absolute; transform: translate(-50%, -50%); }
+  .sep { height: 1.5px; background: var(--rule); margin: 10px 0; }
+  .sep-dashed { border-top: 1.5px dashed var(--rule); margin: 10px 0; }
+  .h-row { display: flex; align-items: center; gap: 8px; }
+  .v-col { display: flex; flex-direction: column; gap: 8px; }
+  .ruler { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--faint); }
+  .squiggle { display: block; width: 100%; height: 6px; }
+  /* annotation arrow */
+  .anno { position: absolute; z-index: 10; font-family: 'Caveat', cursive; color: var(--red); font-size: 20px; line-height: 1; }
+  .anno svg { display: block; }
+</style>
+</head>
+<body>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<div id="root"></div>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="wireframes.jsx"></script>
+</body>
+</html>

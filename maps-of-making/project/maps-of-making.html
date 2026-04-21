@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Maps of Making — pilot</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Caveat:wght@600;700&display=swap" rel="stylesheet" />
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+<style>
+  :root {
+    --paper: #f7f2e7;
+    --paper-2: #efe9d9;
+    --ink: #1a1a1a;
+    --ink-soft: #2a2a2a;
+    --muted: #6a6357;
+    --faint: #bfb7a4;
+    --rule: #2a2a2a;
+    --accent: oklch(62% 0.18 25);     /* riso red */
+    --accent-2: oklch(55% 0.17 250);  /* cobalt */
+    --green: oklch(60% 0.14 150);
+    --yellow: oklch(82% 0.15 90);
+    --shadow: 3px 3px 0 var(--ink);
+    --drawer-bg: #faf6ea;
+    --radius: 2px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; background: var(--paper); color: var(--ink);
+    font-family: 'Inter Tight', system-ui, sans-serif; font-size: 14px; overflow: hidden; }
+  :focus-visible { outline: 2.5px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  a { color: var(--accent-2); }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+  .mono { font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+  .hand { font-family: 'Caveat', cursive; font-weight: 700; }
+  .wf-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+
+  /* MapLibre canvas host */
+  #map { position: absolute; inset: 0; background: var(--paper-2); }
+  /* paper-wash overlay above tiles to bed the map in the zine aesthetic */
+  .paper-overlay { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: multiply; opacity: 0.55;
+    background:
+      radial-gradient(circle at 25% 30%, rgba(226,58,42,0.06), transparent 60%),
+      radial-gradient(circle at 80% 70%, rgba(42,92,226,0.05), transparent 60%),
+      repeating-linear-gradient(0deg, rgba(0,0,0,0.012) 0 1px, transparent 1px 3px); }
+
+  /* Top bar */
+  .topbar { position: absolute; top: 14px; left: 14px; right: 14px; z-index: 20;
+    display: flex; gap: 10px; align-items: flex-start; pointer-events: none; flex-wrap: wrap; }
+  .topbar > * { pointer-events: auto; }
+  .brand { background: var(--drawer-bg); border: 1.5px solid var(--rule); box-shadow: var(--shadow);
+    padding: 8px 14px; display: flex; align-items: baseline; gap: 8px; white-space: nowrap; flex-shrink: 0; }
+  .brand .logo { font-family: 'Caveat', cursive; font-weight: 700; font-size: 22px; line-height: 1; }
+  .brand .tag { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); }
+  .seg { display: flex; background: var(--drawer-bg); border: 1.5px solid var(--rule); box-shadow: var(--shadow); }
+  .seg { flex-shrink: 0; }
+  .seg button { padding: 8px 12px; border-right: 1.5px solid var(--rule); font-size: 12px; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .seg button:last-child { border-right: 0; }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+  .chip-btn { background: var(--drawer-bg); border: 1.5px solid var(--rule); box-shadow: var(--shadow);
+    padding: 8px 12px; font-size: 12px; display: flex; align-items: center; gap: 6px; white-space: nowrap; flex-shrink: 0; }
+  .chip-btn .count { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); }
+  .chip-btn.active { background: var(--ink); color: var(--paper); }
+  .chip-btn.active .count { color: var(--paper); opacity: 0.8; }
+  .spacer { flex: 1; }
+
+  /* Search — docked as a drawer from top */
+  .search-drawer { position: absolute; top: 60px; left: 50%; transform: translateX(-50%) translateY(-10px);
+    width: min(520px, calc(100vw - 32px)); z-index: 30;
+    background: var(--drawer-bg); border: 1.5px solid var(--rule); box-shadow: var(--shadow);
+    padding: 10px 12px; opacity: 0; pointer-events: none;
+    transition: opacity 200ms ease, transform 200ms cubic-bezier(.2,.8,.2,1); }
+  .search-drawer.open { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); }
+  .search-drawer input { width: 100%; border: 0; outline: 0; background: transparent;
+    font-family: 'Inter Tight', system-ui, sans-serif; font-size: 18px; padding: 8px 2px;
+    border-bottom: 1.5px solid var(--rule); }
+  .search-drawer .hints { margin-top: 8px; font-size: 11px; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; }
+  .search-drawer kbd { font-family: 'JetBrains Mono', monospace; border: 1px solid var(--rule);
+    padding: 1px 5px; background: #fff; border-radius: 2px; font-size: 10px; }
+
+  /* Drawers — base */
+  .drawer { position: absolute; z-index: 25; background: var(--drawer-bg);
+    border: 1.5px solid var(--rule); box-shadow: var(--shadow);
+    transition: transform 260ms cubic-bezier(.2,.8,.2,1), opacity 200ms ease;
+    display: flex; flex-direction: column; overflow: hidden; }
+  .drawer.left { top: 72px; bottom: 72px; left: 14px; width: 360px; transform: translateX(calc(-100% - 20px)); }
+  .drawer.left.open { transform: translateX(0); }
+  .drawer.right { top: 72px; bottom: 72px; right: 14px; width: 400px; transform: translateX(calc(100% + 20px)); }
+  .drawer.right.open { transform: translateX(0); }
+  .drawer.bottom { left: 50%; bottom: 14px; width: min(860px, calc(100vw - 28px));
+    transform: translate(-50%, calc(100% + 30px)); max-height: 62vh; }
+  .drawer.bottom.open { transform: translate(-50%, 0); }
+  .drawer-head { display: flex; align-items: center; gap: 8px; padding: 10px 14px;
+    border-bottom: 1.5px solid var(--rule); background: #fff; flex-shrink: 0; }
+  .drawer-head h2 { font-family: 'Caveat', cursive; font-size: 22px; font-weight: 700;
+    margin: 0; line-height: 1; }
+  .drawer-head .close { margin-left: auto; width: 28px; height: 28px; border: 1.5px solid var(--rule);
+    display: flex; align-items: center; justify-content: center; }
+  .drawer-head .close:hover { background: var(--ink); color: var(--paper); }
+  .drawer-body { flex: 1; overflow: auto; }
+  .drawer-body::-webkit-scrollbar { width: 10px; }
+  .drawer-body::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.18); }
+
+  /* Filter drawer */
+  .filter-group { padding: 12px 14px; border-bottom: 1px dashed var(--rule); }
+  .filter-group h3 { font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--muted); margin: 0 0 8px; font-weight: 500; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { border: 1.5px solid var(--rule); padding: 3px 10px; border-radius: 99px; font-size: 12px;
+    background: var(--drawer-bg); display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+  .chip .count { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); }
+  .chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .chip[aria-pressed="true"] .count { color: var(--paper); opacity: 0.8; }
+  .results-list { border-top: 1.5px solid var(--rule); }
+  .result { display: flex; gap: 10px; padding: 10px 14px; border-bottom: 1px dashed var(--rule);
+    cursor: pointer; align-items: flex-start; width: 100%; text-align: left; }
+  .result:hover, .result:focus-visible { background: #fff; }
+  .result[aria-selected="true"] { background: #fff; outline: 2px solid var(--accent); outline-offset: -2px; }
+  .result .name { font-weight: 600; font-size: 13.5px; line-height: 1.25; }
+  .result .meta { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); margin-top: 3px; }
+  .result .tags { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px; }
+  .result .tag { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; padding: 1px 5px;
+    border: 1px solid var(--rule); background: var(--paper); }
+
+  /* Pins — riso sticker style */
+  .pin-swatch { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--rule);
+    display: inline-block; box-shadow: 2px 2px 0 var(--ink); flex-shrink: 0; position: relative; }
+  .pin-swatch.seeded { background: var(--paper); }
+  .pin-swatch.confirmed { background: var(--accent-2); }
+  .pin-swatch.open { background: var(--green); }
+  .pin-swatch.stale { background: var(--paper); border-style: dashed; box-shadow: none; }
+  .pin-swatch.broken { background: var(--accent); }
+  .pin-swatch.broken::before { content: '×'; position: absolute; inset: 0; color: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; line-height: 1; }
+  .status-label { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; text-transform: uppercase;
+    letter-spacing: 0.05em; padding: 1px 5px; border: 1px solid var(--rule); }
+  .status-label.seeded { color: var(--muted); }
+  .status-label.confirmed { color: var(--accent-2); border-color: var(--accent-2); }
+  .status-label.open { color: var(--green); border-color: var(--green); }
+  .status-label.stale { color: #a37e00; border-color: #a37e00; background: #fff8d6; }
+  .status-label.broken { color: var(--accent); border-color: var(--accent); }
+
+  /* Map SVG markers — intrinsic SVG dimensions guarantee stable offsetWidth for MapLibre anchor math */
+  .map-marker { cursor: pointer; filter: drop-shadow(1px 1px 0 var(--ink)); }
+  .map-marker.stale { filter: none; }
+  .map-marker:hover { filter: drop-shadow(1px 1px 0 var(--ink)) brightness(1.1); }
+  .map-marker.stale:hover { filter: brightness(1.1); }
+  .map-marker.selected { outline: 1px solid var(--accent); outline-offset: 1px; border-radius: 50%; }
+
+  /* Per-kind fill colours */
+  .map-marker .marker-fill { stroke: var(--ink); stroke-width: 2; }
+  .map-marker.seeded    .marker-fill { fill: var(--paper); }
+  .map-marker.confirmed .marker-fill { fill: var(--accent-2); }
+  .map-marker.open      .marker-fill { fill: var(--green); }
+  .map-marker.stale     .marker-fill { fill: var(--paper); stroke-dasharray: 3 2; }
+  .map-marker.broken    .marker-fill { fill: var(--accent); }
+
+  /* Broken ×  */
+  .marker-x { fill: #fff; font-size: 13px; font-weight: 700; font-family: inherit; }
+
+  /* Pulse ring on open markers */
+  .marker-pulse { fill: none; stroke: var(--green); stroke-width: 2; opacity: 0;
+    transform-box: fill-box; transform-origin: center;
+    animation: pulse 1.8s ease-out infinite; }
+  @keyframes pulse { 0% { transform: scale(0.9); opacity: 0.8; } 100% { transform: scale(1.8); opacity: 0; } }
+
+  /* Detail drawer */
+  .detail-hero { padding: 14px 16px; border-bottom: 1px dashed var(--rule); background: #fff; }
+  .detail-hero h3 { font-family: 'Caveat', cursive; font-size: 30px; font-weight: 700;
+    margin: 0 0 4px; line-height: 1; }
+  .detail-hero .where { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); }
+  .detail-hero .badges { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  .detail-section { padding: 12px 16px; border-bottom: 1px dashed var(--rule); }
+  .detail-section .wf-label { margin-bottom: 6px; }
+  .kv { display: grid; grid-template-columns: 90px 1fr; gap: 4px 10px; font-size: 12.5px; }
+  .kv dt { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); text-transform: uppercase;
+    letter-spacing: 0.05em; padding-top: 2px; }
+  .kv dd { margin: 0; }
+  .freshness { display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--paper-2);
+    border-bottom: 1px dashed var(--rule); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+  .freshness .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 3px color-mix(in oklch, var(--green) 30%, transparent); }
+  .freshness.stale .dot { background: var(--yellow); box-shadow: 0 0 0 3px rgba(200,160,0,0.25); }
+  .freshness.broken .dot { background: var(--accent); box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 30%, transparent); }
+  .freshness.seeded .dot { background: var(--faint); box-shadow: none; border: 1.5px dashed var(--rule); }
+  pre.json { margin: 0; padding: 12px 16px; background: #1a1a1a; color: #eae3d0;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1.5; white-space: pre; overflow: auto; max-height: 280px; }
+  .json .k { color: #ffd77a; } .json .s { color: #b8e0b0; } .json .n { color: #f4a6a6; } .json .c { color: #888; }
+
+  /* Bottom drawer — preset / embed */
+  .preset-body { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+  .preset-col { padding: 14px 16px; }
+  .preset-col + .preset-col { border-left: 1px dashed var(--rule); }
+  .preset-col h4 { font-family: 'Caveat', cursive; font-size: 20px; margin: 0 0 8px; line-height: 1; }
+  .preset-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+  .preset-field label { font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--muted); }
+  .code { font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 10px 12px;
+    background: #1a1a1a; color: #eae3d0; border: 1.5px solid var(--rule); white-space: pre-wrap; word-break: break-all;
+    position: relative; }
+  .code .copy { position: absolute; top: 6px; right: 6px; background: var(--paper); color: var(--ink);
+    border: 1.5px solid var(--rule); font-size: 10px; padding: 2px 8px; font-family: inherit; }
+  .code .copy:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .preset-preview { border: 1.5px dashed var(--rule); padding: 8px 10px; font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px; color: var(--muted); background: var(--paper); margin-top: 6px; }
+  .preset-preview strong { color: var(--ink); font-weight: 600; }
+
+  /* Add-URL drawer */
+  .addurl-body { padding: 14px 16px; }
+  .addurl-body label { display: block; font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin: 12px 0 4px; }
+  .addurl-body input[type=url], .addurl-body input[type=text], .addurl-body select {
+    width: 100%; padding: 8px 10px; border: 1.5px solid var(--rule); background: #fff;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; border-radius: 2px; }
+  .addurl-body .btn-row { display: flex; gap: 8px; margin-top: 14px; }
+  .btn { border: 1.5px solid var(--rule); padding: 8px 14px; font-size: 12px; background: var(--drawer-bg); cursor: pointer; font-weight: 500; }
+  .btn:hover { background: #fff; }
+  .btn-primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .btn-primary:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .note { background: color-mix(in oklch, var(--yellow) 30%, var(--paper)); border: 1.5px dashed var(--rule);
+    padding: 10px 12px; font-size: 12px; line-height: 1.5; margin-top: 8px; }
+
+  /* Floating bot teaser */
+  .bot-fab { position: absolute; right: 14px; bottom: 14px; z-index: 15;
+    background: var(--ink); color: var(--paper); border: 1.5px solid var(--rule);
+    padding: 10px 14px; display: flex; align-items: center; gap: 10px;
+    box-shadow: var(--shadow); cursor: pointer; white-space: nowrap; }
+  .bot-fab:hover { background: var(--accent); border-color: var(--accent); }
+  .bot-fab .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 3px color-mix(in oklch, var(--green) 30%, transparent); }
+  .bot-fab .soon { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.1em; }
+  .bot-drawer { position: absolute; right: 14px; bottom: 14px; z-index: 16;
+    width: min(440px, calc(100vw - 28px)); background: var(--drawer-bg); border: 1.5px solid var(--rule);
+    box-shadow: var(--shadow); transform: translateY(calc(100% + 30px)); opacity: 0;
+    transition: transform 260ms cubic-bezier(.2,.8,.2,1), opacity 200ms; pointer-events: none; }
+  .bot-drawer.open { transform: translateY(0); opacity: 1; pointer-events: auto; }
+  .bot-transcript { padding: 14px 16px; font-size: 13px; line-height: 1.5; background: #fff;
+    border-bottom: 1px dashed var(--rule); }
+  .bot-msg { margin-bottom: 10px; }
+  .bot-msg .who { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+  .bot-msg.them .bubble { background: var(--paper-2); padding: 8px 10px; border: 1px dashed var(--rule); }
+  .bot-msg.bot .bubble { background: #1a1a1a; color: #eae3d0; padding: 8px 10px; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; }
+  .bot-footer { padding: 10px 16px; font-size: 11px; color: var(--muted); display: flex; gap: 10px; align-items: center; background: var(--drawer-bg); }
+
+  /* Legend — always-visible tiny corner card */
+  .legend { position: absolute; left: 14px; bottom: 14px; z-index: 14;
+    background: var(--drawer-bg); border: 1.5px solid var(--rule); box-shadow: var(--shadow);
+    padding: 8px 12px; font-size: 11px; display: flex; flex-direction: column; gap: 5px;
+    transition: transform 180ms ease; white-space: nowrap; }
+  .legend .row { white-space: nowrap; }
+  .legend h4 { margin: 0 0 4px; font-family: 'JetBrains Mono', monospace; font-size: 9.5px;
+    text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 500; }
+  .legend .row { display: flex; align-items: center; gap: 8px; }
+
+  /* Tweaks panel */
+  .tweaks { position: absolute; top: 14px; right: 14px; z-index: 40;
+    width: 280px; background: var(--drawer-bg); border: 1.5px solid var(--rule); box-shadow: var(--shadow);
+    padding: 0; transform: translateX(calc(100% + 20px)); transition: transform 260ms cubic-bezier(.2,.8,.2,1); }
+  .tweaks.open { transform: translateX(0); }
+  .tweaks .head { padding: 10px 14px; border-bottom: 1.5px solid var(--rule); display: flex; align-items: center; gap: 8px; }
+  .tweaks .head h3 { font-family: 'Caveat', cursive; font-size: 20px; margin: 0; line-height: 1; }
+  .tweaks .body { padding: 10px 14px; }
+  .tweak-row { margin-bottom: 12px; }
+  .tweak-row > label { display: block; font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 4px; }
+  .tweak-row .opts { display: flex; flex-wrap: wrap; gap: 4px; }
+  .tweak-row .opts button { border: 1px solid var(--rule); padding: 3px 8px; font-size: 11px; background: var(--paper); font-family: 'JetBrains Mono', monospace; }
+  .tweak-row .opts button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+
+  /* Empty / loading */
+  .loader { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px; background: var(--paper); z-index: 100; }
+  .loader .hand { font-size: 28px; }
+
+  /* Attribution tweak */
+  .maplibregl-ctrl-attrib { background: rgba(250,246,234,0.9) !important; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; }
+
+  /* Media */
+  @media (max-width: 720px) {
+    .drawer.left, .drawer.right { top: 64px; bottom: 14px; width: calc(100vw - 28px); }
+    .drawer.bottom { width: calc(100vw - 28px); max-height: 80vh; }
+    .tweaks { width: calc(100vw - 28px); top: 60px; }
+    .preset-body { grid-template-columns: 1fr; }
+    .preset-col + .preset-col { border-left: 0; border-top: 1px dashed var(--rule); }
+  }
+
+  /* Reduce motion */
+  @media (prefers-reduced-motion: reduce) {
+    .drawer, .search-drawer, .bot-drawer, .tweaks { transition: none !important; }
+    .marker-pulse { animation: none; }
+  }
+
+  /* Map tile desaturation */
+  .map-dim .maplibregl-canvas { filter: saturate(0.45) contrast(0.95) brightness(1.03); }
+  .map-paper .maplibregl-canvas { filter: saturate(0.2) contrast(0.95) brightness(1.05) sepia(0.15); }
+  .map-dark .maplibregl-canvas { filter: saturate(0.5) invert(0.9) hue-rotate(180deg) brightness(0.95); }
+</style>
+</head>
+<body>
+
+<!-- Loader -->
+<div class="loader" id="loader">
+  <div class="hand">unrolling the map…</div>
+  <div class="mono" style="color: var(--muted);">loading 40 synthetic spaces · FR + DE</div>
+</div>
+
+<!-- Map -->
+<div id="map" class="map-paper" role="application" aria-label="Map of maker spaces"></div>
+<div class="paper-overlay"></div>
+
+<!-- Top bar -->
+<header class="topbar" role="banner">
+  <div class="brand" title="Maps of Making · pilot">
+    <span class="logo">maps of making</span>
+    <span class="tag">v0.1 · pilot</span>
+  </div>
+  <div class="seg" role="group" aria-label="Open panel">
+    <button id="btn-filters" aria-pressed="false" aria-controls="drawer-filters">
+      <span aria-hidden="true">▤</span> Filters <span class="mono" id="results-count" aria-live="polite">40</span>
+    </button>
+    <button id="btn-search" aria-pressed="false" aria-controls="drawer-search">
+      <span aria-hidden="true">⌕</span> Search
+    </button>
+    <button id="btn-preset" aria-pressed="false" aria-controls="drawer-preset">
+      <span aria-hidden="true">⎘</span> Preset & embed
+    </button>
+    <button id="btn-addurl" aria-pressed="false" aria-controls="drawer-addurl">
+      <span aria-hidden="true">＋</span> Add your URL
+    </button>
+  </div>
+  <div class="spacer"></div>
+  <button class="chip-btn" id="btn-tweaks" aria-pressed="false" aria-controls="tweaks" title="Tweaks">
+    <span aria-hidden="true">⚙</span> Tweaks
+  </button>
+</header>
+
+<!-- Search drawer (top) -->
+<div class="search-drawer" id="drawer-search" role="dialog" aria-label="Search spaces" aria-hidden="true">
+  <input id="search-input" type="search" placeholder="Search name, city, specialty…" aria-label="Search" />
+  <div class="hints">
+    <span>Try <kbd>paris</kbd>, <kbd>wood</kbd>, <kbd>VOW</kbd></span>
+    <span style="margin-left: auto;"><kbd>esc</kbd> close</span>
+  </div>
+</div>
+
+<!-- Filters drawer (left) -->
+<aside class="drawer left" id="drawer-filters" role="dialog" aria-label="Filters and results" aria-hidden="true">
+  <div class="drawer-head">
+    <h2>Filters</h2>
+    <span class="mono" style="color: var(--muted);" id="drawer-count">40 / 40</span>
+    <button class="close" aria-label="Close filters" data-close="filters">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="filter-group" id="fg-network">
+      <h3>Network</h3>
+      <div class="chips" id="chips-network"></div>
+    </div>
+    <div class="filter-group" id="fg-country">
+      <h3>Country</h3>
+      <div class="chips" id="chips-country"></div>
+    </div>
+    <div class="filter-group" id="fg-status">
+      <h3>Status</h3>
+      <div class="chips" id="chips-status"></div>
+    </div>
+    <div class="filter-group" id="fg-spec">
+      <h3>Specialties</h3>
+      <div class="chips" id="chips-spec"></div>
+    </div>
+    <div class="filter-group" style="display:flex; justify-content:space-between; align-items:center;">
+      <button class="btn" id="btn-reset-filters">Reset</button>
+      <span class="mono" style="color: var(--muted);" id="filters-summary"></span>
+    </div>
+    <div class="results-list" id="results-list" role="listbox" aria-label="Matching spaces"></div>
+  </div>
+</aside>
+
+<!-- Detail drawer (right) -->
+<aside class="drawer right" id="drawer-detail" role="dialog" aria-label="Space detail" aria-hidden="true">
+  <div class="drawer-head">
+    <h2>Detail</h2>
+    <button class="close" aria-label="Close detail" data-close="detail" style="margin-left:auto;">✕</button>
+  </div>
+  <div class="drawer-body" id="detail-body">
+    <div style="padding: 24px; color: var(--muted);">Click a pin to see details.</div>
+  </div>
+</aside>
+
+<!-- Preset & embed drawer (bottom) -->
+<aside class="drawer bottom" id="drawer-preset" role="dialog" aria-label="Preset builder and embed code" aria-hidden="true">
+  <div class="drawer-head">
+    <h2>Preset &amp; embed</h2>
+    <span class="mono" style="color: var(--muted);">save a view · get a snippet</span>
+    <button class="close" aria-label="Close preset" data-close="preset" style="margin-left:auto;">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="preset-body">
+      <div class="preset-col">
+        <h4>Current view</h4>
+        <div class="preset-field">
+          <label for="preset-name">Preset name</label>
+          <input id="preset-name" type="text" value="Open wood workshops, DE" style="border:1.5px solid var(--rule); padding:8px 10px; background:#fff; font-family:'JetBrains Mono',monospace; font-size:12px;" />
+        </div>
+        <div class="preset-preview" id="preset-preview">
+          Captures <strong id="pp-count">—</strong> spaces · filters: <span id="pp-filters">—</span> · bbox auto
+        </div>
+      </div>
+      <div class="preset-col">
+        <h4>iframe snippet</h4>
+        <div class="code" id="code-iframe" role="region" aria-label="iframe code">
+          <button class="copy" data-copy="code-iframe">copy</button>
+<span id="code-iframe-text"></span>
+        </div>
+        <h4 style="margin-top: 14px;">Web component</h4>
+        <div class="code" id="code-wc" role="region" aria-label="Web component code">
+          <button class="copy" data-copy="code-wc">copy</button>
+<span id="code-wc-text"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- Add URL drawer (right, replaces detail when open) -->
+<aside class="drawer right" id="drawer-addurl" role="dialog" aria-label="Add your endpoint URL" aria-hidden="true" style="z-index: 26;">
+  <div class="drawer-head">
+    <h2>Add your URL</h2>
+    <button class="close" aria-label="Close add URL" data-close="addurl" style="margin-left:auto;">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="addurl-body">
+      <p style="margin: 0 0 10px; font-size: 13px; line-height: 1.5;">
+        Run your space? Paste the public URL of your space's JSON file. We'll fetch it, validate, and flip your pin from ⚪ to 🔵.
+      </p>
+      <label for="url-input">Endpoint URL</label>
+      <input id="url-input" type="url" placeholder="https://your-space.example/maker.json" />
+
+      <label for="url-space">Space (if known)</label>
+      <select id="url-space"><option value="">— new or unlisted —</option></select>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btn-fetch-url">Fetch &amp; validate</button>
+        <button class="btn" id="btn-sample">Try a sample</button>
+      </div>
+
+      <div id="url-result" class="mono" style="margin-top: 12px; font-size: 11px; min-height: 40px;"></div>
+
+      <div class="note">
+        <strong>Pilot note:</strong> in this MVP, fetching is simulated against local seed data — real cross-origin fetching lives in the <span class="mono">admin.*</span> dashboard (deployed separately alongside Oxigraph + NanoClaw).
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- Legend -->
+<div class="legend" aria-label="Pin legend">
+  <h4>Legend</h4>
+  <div class="row"><span class="pin-swatch seeded"></span><span>Seeded · unclaimed</span></div>
+  <div class="row"><span class="pin-swatch confirmed"></span><span>Confirmed</span></div>
+  <div class="row"><span class="pin-swatch open"></span><span>Open now</span></div>
+  <div class="row"><span class="pin-swatch stale"></span><span>Stale endpoint</span></div>
+  <div class="row"><span class="pin-swatch broken"></span><span>Broken / 404</span></div>
+</div>
+
+<!-- Bot teaser -->
+<button class="bot-fab" id="btn-bot" aria-controls="bot-drawer" aria-expanded="false">
+  <span class="dot"></span>
+  <span>Ask the map</span>
+  <span class="soon">soon</span>
+</button>
+<div class="bot-drawer" id="bot-drawer" role="dialog" aria-label="Bot preview" aria-hidden="true">
+  <div class="drawer-head">
+    <h2>Ask the map</h2>
+    <span class="mono" style="color: var(--muted);">preview · not wired yet</span>
+    <button class="close" aria-label="Close bot preview" data-close="bot" style="margin-left:auto;">✕</button>
+  </div>
+  <div class="bot-transcript">
+    <div class="bot-msg them">
+      <div class="who">@marie · RFF Mattermost</div>
+      <div class="bubble">J'ai envie de partir en long week-end à Berlin ou Hamburg, quelqu'un connaît des espaces ouverts à ça ?</div>
+    </div>
+    <div class="bot-msg bot">
+      <div class="who">@mom-bot</div>
+      <div class="bubble">Found 3 confirmed spaces open for hosting in Berlin/Hamburg.<br/>→ Offene Werkstatt Berlin<br/>→ Werkhof Hamburg<br/>→ Hackspace Mitte<br/><span style="color:#888;"># 12h by TGV from Marseille-St-Charles</span></div>
+    </div>
+  </div>
+  <div class="bot-footer">
+    <span>Natural language → SPARQL over live endpoints. Matrix / Mattermost / Discord channels.</span>
+  </div>
+</div>
+
+<!-- Tweaks panel -->
+<aside class="tweaks" id="tweaks" role="dialog" aria-label="Design tweaks" aria-hidden="true">
+  <div class="head">
+    <h3>Tweaks</h3>
+    <span class="mono" style="color: var(--muted); margin-left: auto;">design only</span>
+    <button class="close" aria-label="Close tweaks" data-close="tweaks" style="margin-left:6px; width:24px; height:24px; border:1.5px solid var(--rule);">✕</button>
+  </div>
+  <div class="body">
+    <div class="tweak-row">
+      <label>Map style</label>
+      <div class="opts" data-tweak="mapStyle">
+        <button data-val="paper" aria-pressed="true">paper</button>
+        <button data-val="dim" aria-pressed="false">dim</button>
+        <button data-val="dark" aria-pressed="false">dark</button>
+        <button data-val="raw" aria-pressed="false">raw OSM</button>
+      </div>
+    </div>
+    <div class="tweak-row">
+      <label>Accent color</label>
+      <div class="opts" data-tweak="accent">
+        <button data-val="red" aria-pressed="true">riso red</button>
+        <button data-val="cobalt" aria-pressed="false">cobalt</button>
+        <button data-val="forest" aria-pressed="false">forest</button>
+        <button data-val="marigold" aria-pressed="false">marigold</button>
+      </div>
+    </div>
+    <div class="tweak-row">
+      <label>Pin density</label>
+      <div class="opts" data-tweak="density">
+        <button data-val="roomy" aria-pressed="true">roomy</button>
+        <button data-val="compact" aria-pressed="false">compact</button>
+      </div>
+    </div>
+    <div class="tweak-row">
+      <label>Show pulse on open</label>
+      <div class="opts" data-tweak="pulse">
+        <button data-val="on" aria-pressed="true">on</button>
+        <button data-val="off" aria-pressed="false">off</button>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<script src="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.js"></script>
+<script src="https://unpkg.com/pmtiles@3/dist/pmtiles.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
