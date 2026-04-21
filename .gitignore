@@ -16,5 +16,11 @@ venv/
 .env
 
 
+# Bind-mount data dirs (persisted on VPS, not in git)
+data/oxigraph/*
+data/nanoclaw/*
+!data/oxigraph/.gitkeep
+!data/nanoclaw/.gitkeep
+
 VID-20251124-WA0002.mp4
 scraped/whatsapp-vulca/WhatsApp Chat with Hi👋VULCA.FRIENDS🚐.txt

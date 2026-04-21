@@ -634,8 +634,13 @@
   function applyTweaks() {
     const styleMap = { paper: 'light', dim: 'grayscale', dark: 'dark', raw: 'light' };
     if (map) {
-      map.once('styledata', () => renderMarkers());
-      map.setStyle(buildStyle(styleMap[state.tweaks.mapStyle] || 'light'));
+      if (state.tweaks.mapStyle !== state._lastMapStyle) {
+        state._lastMapStyle = state.tweaks.mapStyle;
+        map.once('styledata', () => renderMarkers());
+        map.setStyle(buildStyle(styleMap[state.tweaks.mapStyle] || 'light'));
+      } else {
+        renderMarkers();
+      }
     }
     // Accent color
     const accents = {

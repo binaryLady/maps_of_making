@@ -1,0 +1,62 @@
+services:
+
+  # ─────────────────────────────────────────────────────────────────
+  # maps-nginx — serves static web/ files, proxies /sparql → oxigraph
+  # Joins the shared gateway network so hetzner-gateway can reach it.
+  # ─────────────────────────────────────────────────────────────────
+  maps-nginx:
+    image: nginx:alpine
+    container_name: maps-nginx
+    restart: unless-stopped
+    networks:
+      - gateway
+      - internal
+    volumes:
+      - ../web:/var/www/mapsofmaking:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - /var/log/nginx/maps:/var/log/nginx
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ─────────────────────────────────────────────────────────────────
+  # oxigraph — SPARQL 1.1 triplestore
+  # Persists RDF data in data/oxigraph/ (bind-mounted from VPS host).
+  # ─────────────────────────────────────────────────────────────────
+  oxigraph:
+    image: ghcr.io/oxigraph/oxigraph:latest
+    container_name: maps-oxigraph
+    restart: unless-stopped
+    networks:
+      - internal
+    volumes:
+      - ../data/oxigraph:/data
+    command: serve --location /data --bind 0.0.0.0:7878
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7878/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ─────────────────────────────────────────────────────────────────
+  # nanoclaw — Phase 2 placeholder (bot adapter / ingestion agent)
+  # Uncomment and configure when Phase 2 ingestion work begins.
+  # ─────────────────────────────────────────────────────────────────
+  # nanoclaw:
+  #   image: nanoclaw:local        # built from source, no public image yet
+  #   container_name: maps-nanoclaw
+  #   restart: unless-stopped
+  #   networks:
+  #     - internal
+  #   volumes:
+  #     - ../data/nanoclaw:/data
+  #     - /var/run/docker.sock:/var/run/docker.sock  # needed for container spawning
+  #   env_file: .env
+
+networks:
+  gateway:
+    external: true        # shared with hetzner-gateway
+  internal:
+    driver: bridge        # maps-nginx ↔ oxigraph only, not exposed
