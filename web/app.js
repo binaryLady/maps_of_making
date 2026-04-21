@@ -18,11 +18,11 @@
     selectedId: null,
     openDrawer: null,          // 'filters' | 'search' | 'preset' | 'addurl' | 'detail' | 'bot' | 'tweaks' | null
     tweaks: {
-      mapStyle: 'paper',
-      accent: 'red',
+      mapStyle: 'dim',
       density: 'roomy',
       pulse: 'on',
     },
+    embed: { centerId: null },
     markers: new Map(),        // id -> maplibre.Marker
   };
 
@@ -101,7 +101,7 @@
   function initMap() {
     map = new maplibregl.Map({
       container: 'map',
-      style: buildStyle('light'),
+      style: buildStyle('grayscale'),
       center: [4.8, 49.5],   // rough midpoint FR/DE
       zoom: 4.3,
       hash: false,
@@ -377,6 +377,10 @@
       el('div', { class: 'wf-label', style: { padding: '12px 16px 0' } }, ['Raw JSON from endpoint']),
       el('pre', { class: 'json' }, [jsonHighlight(jsonForSpace(s))])
     ]));
+    // Embed CTA
+    const embedBtn = el('button', { class: 'btn btn-primary', style: { margin: '12px 16px 16px', width: 'calc(100% - 32px)' } }, ['⎘ Embed this space →']);
+    embedBtn.addEventListener('click', () => embedSpace(s.id));
+    body.appendChild(embedBtn);
   }
 
   function freshnessText(s) {
@@ -461,11 +465,27 @@
 
     const name = $('#preset-name').value.trim() || 'untitled-preset';
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    const url = `https://mapsofmaking.org/embed?preset=${slug}&${q}&bbox=${bbox}`;
-    const iframe = `<iframe src="${url}"\n        width="100%" height="520"\n        style="border:1.5px solid #1a1a1a"\n        title="${name}"\n        loading="lazy"></iframe>`;
-    const wc = `<script src="https://mapsofmaking.org/mom-map.js" defer><\/script>\n<mom-map preset="${slug}"\n         filters="${q}"\n         bbox="${bbox}"></mom-map>`;
+    const base = window.location.origin + window.location.pathname;
+    const paramParts = [`preset=${slug}`, q !== 'all' ? q : null, `bbox=${bbox}`];
+    if (state.embed.centerId) {
+      const cs = state.spaces.find((x) => x.id === state.embed.centerId);
+      if (cs) paramParts.push(`center=${cs.coordinates.lat.toFixed(5)},${cs.coordinates.lon.toFixed(5)}`);
+    }
+    const shareUrl = `${base}?${paramParts.filter(Boolean).join('&')}`;
+
+    const iframe = `<figure style="margin:0">\n  <iframe src="${shareUrl}"\n          width="100%" height="520"\n          style="border:1.5px solid #1a1a1a;display:block"\n          title="${name}"\n          loading="lazy"></iframe>\n  <figcaption>Source: <a href="https://mapofmaking.debarquin.eu">Maps of Making</a> · Apache 2.0</figcaption>\n</figure>`;
+
     $('#code-iframe-text').textContent = iframe;
-    $('#code-wc-text').textContent = wc;
+    $('#code-url-text').textContent = shareUrl;
+  }
+
+  function embedSpace(id) {
+    const s = state.spaces.find((x) => x.id === id);
+    if (!s) return;
+    $('#preset-name').value = s.name;
+    state.embed.centerId = id;
+    if (map) map.flyTo({ center: [s.coordinates.lon, s.coordinates.lat], zoom: Math.max(map.getZoom(), 10), speed: 1.2 });
+    setDrawer('preset');
   }
 
   // ───────────────────────────── add URL (simulated)
@@ -632,26 +652,18 @@
   }
 
   function applyTweaks() {
-    const styleMap = { paper: 'light', dim: 'grayscale', dark: 'dark', raw: 'light' };
+    const styleMap = { dim: 'grayscale', dark: 'dark' };
+    const mapEl = document.getElementById('map');
     if (map) {
       if (state.tweaks.mapStyle !== state._lastMapStyle) {
         state._lastMapStyle = state.tweaks.mapStyle;
         map.once('styledata', () => renderMarkers());
-        map.setStyle(buildStyle(styleMap[state.tweaks.mapStyle] || 'light'));
+        map.setStyle(buildStyle(styleMap[state.tweaks.mapStyle] || 'grayscale'));
       } else {
         renderMarkers();
       }
     }
-    // Accent color
-    const accents = {
-      red:      ['oklch(62% 0.18 25)',  'oklch(55% 0.17 250)'],
-      cobalt:   ['oklch(55% 0.17 250)', 'oklch(62% 0.18 25)'],
-      forest:   ['oklch(55% 0.14 150)', 'oklch(62% 0.14 80)'],
-      marigold: ['oklch(70% 0.16 80)',  'oklch(55% 0.17 250)'],
-    };
-    const [a1, a2] = accents[state.tweaks.accent] || accents.red;
-    document.documentElement.style.setProperty('--accent', a1);
-    document.documentElement.style.setProperty('--accent-2', a2);
+    if (mapEl) mapEl.className = 'map-' + state.tweaks.mapStyle;
     if (!map) renderMarkers();
   }
 
@@ -674,6 +686,11 @@
     return rows;
   };
   window.__map = () => map;
+
+  // ───────────────────────────── embed detection
+  if (window.self !== window.top) {
+    document.body.classList.add('embed-mode');
+  }
 
   // ───────────────────────────── boot
   (async function boot() {

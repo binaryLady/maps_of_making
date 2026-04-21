@@ -6,26 +6,35 @@
   <title>Embed test — Maps of Making</title>
   <style>
     body { font-family: sans-serif; max-width: 960px; margin: 2rem auto; padding: 0 1rem; background: #f5f5f0; color: #1a1a1a; }
-    h1 { font-size: 1.2rem; margin-bottom: 0.25rem; }
-    p { font-size: 0.85rem; color: #555; margin: 0 0 0.75rem; }
-    iframe { border: 1.5px solid #1a1a1a; width: 100%; height: 520px; display: block; margin: 0 0 2rem; }
-    .label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #888; margin: 1.5rem 0 0.25rem; }
+    h1 { font-size: 1.1rem; margin-bottom: 0.2rem; }
+    .note { font-size: 0.8rem; color: #555; margin: 0 0 2rem; padding: 0.6rem 0.8rem; background: #fffbe6; border-left: 3px solid #f0c000; }
+    .scenario { margin-bottom: 3rem; }
+    .label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #888; margin: 0 0 0.4rem; }
+    .desc { font-size: 0.8rem; color: #555; margin: 0 0 0.5rem; }
+    /* Default iframe reset — scenarios can override inline */
+    iframe { display: block; border: 1.5px solid #1a1a1a; }
   </style>
 </head>
 <body>
   <h1>Maps of Making — embed test page</h1>
-  <p>Vanilla host page simulating a third-party site embedding the map. Used to validate iframe layout, CORS, and responsive behaviour before production deploy.</p>
+  <p class="note">
+    Protocol: go to <strong>mapofmaking.debarquin.eu</strong> → click a space → "⎘ Embed this space →" → adjust size &amp; border → copy snippet → paste it below replacing the placeholder iframe, save, refresh.
+  </p>
 
-  <div class="label">Full width iframe (520px height)</div>
-  <iframe src="maps-of-making.html"
-          title="Maps of Making"
-          loading="lazy"
-          allow="geolocation"></iframe>
+  <div class="scenario">
+    <div class="label">Scenario A — (your snippet)</div>
+    <div class="desc">Replace the iframe below with the snippet you copied from the deployed app.</div>
+    <!-- ① PASTE YOUR SNIPPET from HERE -->
+        <figure style="margin:0">
+  <iframe src="https://mapofmaking.debarquin.eu/?preset=open-wood-workshops-de&bbox=-0.47,49.74,14.31,54.14"
+          width="100%" height="520"
+          style="border:1.5px solid #1a1a1a;display:block"
+          title="Open wood workshops, DE"
+          loading="lazy"></iframe>
+  <figcaption>Source: <a href="https://mapofmaking.debarquin.eu">Maps of Making</a> · Apache 2.0</figcaption>
+</figure>
+    <!-- ① END OF SNIPPET HERE -->
+  </div>
 
-  <div class="label">Narrow column (480px wide)</div>
-  <iframe src="maps-of-making.html"
-          title="Maps of Making — narrow"
-          loading="lazy"
-          style="max-width:480px;height:400px"></iframe>
 </body>
 </html>

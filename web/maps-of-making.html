@@ -274,6 +274,7 @@
 
   /* Attribution tweak */
   .maplibregl-ctrl-attrib { background: rgba(250,246,234,0.9) !important; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; }
+  .maplibregl-ctrl-bottom-right { bottom: 60px !important; }
 
   /* Media */
   @media (max-width: 720px) {
@@ -292,8 +293,17 @@
 
   /* Map tile desaturation */
   .map-dim .maplibregl-canvas { filter: saturate(0.45) contrast(0.95) brightness(1.03); }
-  .map-paper .maplibregl-canvas { filter: saturate(0.2) contrast(0.95) brightness(1.05) sepia(0.15); }
-  .map-dark .maplibregl-canvas { filter: saturate(0.5) invert(0.9) hue-rotate(180deg) brightness(0.95); }
+  .map-dark .maplibregl-canvas { filter: none; }
+
+  /* Embed mode — hide all chrome, show minimal caption */
+  body.embed-mode .topbar,
+  body.embed-mode .tweaks,
+  body.embed-mode .legend,
+  body.embed-mode .bot-fab,
+  body.embed-mode .bot-drawer,
+  body.embed-mode .drawer { display: none !important; }
+  body.embed-mode .maplibregl-ctrl-bottom-right { bottom: 10px !important; }
+
 </style>
 </head>
 <body>
@@ -305,7 +315,7 @@
 </div>
 
 <!-- Map -->
-<div id="map" class="map-paper" role="application" aria-label="Map of maker spaces"></div>
+<div id="map" class="map-dim" role="application" aria-label="Map of maker spaces"></div>
 <div class="paper-overlay"></div>
 
 <!-- Top bar -->
@@ -411,10 +421,10 @@
           <button class="copy" data-copy="code-iframe">copy</button>
 <span id="code-iframe-text"></span>
         </div>
-        <h4 style="margin-top: 14px;">Web component</h4>
-        <div class="code" id="code-wc" role="region" aria-label="Web component code">
-          <button class="copy" data-copy="code-wc">copy</button>
-<span id="code-wc-text"></span>
+        <h4 style="margin-top: 14px;">Share URL</h4>
+        <div class="code" id="code-url" role="region" aria-label="Share URL">
+          <button class="copy" data-copy="code-url">copy</button>
+<span id="code-url-text"></span>
         </div>
       </div>
     </div>
@@ -500,19 +510,8 @@
     <div class="tweak-row">
       <label>Map style</label>
       <div class="opts" data-tweak="mapStyle">
-        <button data-val="paper" aria-pressed="true">paper</button>
-        <button data-val="dim" aria-pressed="false">dim</button>
+        <button data-val="dim" aria-pressed="true">dim</button>
         <button data-val="dark" aria-pressed="false">dark</button>
-        <button data-val="raw" aria-pressed="false">raw OSM</button>
-      </div>
-    </div>
-    <div class="tweak-row">
-      <label>Accent color</label>
-      <div class="opts" data-tweak="accent">
-        <button data-val="red" aria-pressed="true">riso red</button>
-        <button data-val="cobalt" aria-pressed="false">cobalt</button>
-        <button data-val="forest" aria-pressed="false">forest</button>
-        <button data-val="marigold" aria-pressed="false">marigold</button>
       </div>
     </div>
     <div class="tweak-row">
