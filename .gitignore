@@ -2,6 +2,7 @@
 .gemini/
 .bmad/
 _bmad/
+node_modules/
 
 # OS / editor
 .directory
