@@ -25,7 +25,7 @@ Maps of Making is a federated open-data platform for the European maker ecosyste
 
 The immediate deliverable is a production-ready SPA built on the existing hi-fi prototype: a fullscreen MapLibre map with Protomaps vector tiles (replacing blocked OSM/Carto raster tiles), filter/search/detail drawers, and embeddable iframe + web component output. Phase 1 ships a convincing, working map with federation UI placeholders clearly labelled as phase 2.
 
-Phase 2 wires the federated backend: URL ingestion, Oxigraph SPARQL triplestore, and NanoClaw/OpenClaw LLM agents enabling natural language queries over live endpoints via Matrix/Mattermost/Discord. Space coordinators add their URL once and see their pin flip ⚪→🔵. Network admins get a dashboard with endpoint health monitoring, diff detection, and Oxigraph sync status.
+Phase 2 wires the federated backend: URL ingestion, Oxigraph SPARQL triplestore, and a Nanobot agent (OpenRouter-compatible, Discord + Telegram built-in) enabling natural language queries over live endpoints. Space coordinators add their URL once and see their pin flip ⚪→🔵. Network admins get a dashboard with endpoint health monitoring, diff detection, and Oxigraph sync status.
 
 **Primary users:** Space coordinators (claim your pin, publish once, forget it); network admins (confidence dashboard — who's live, stale, or broken at a glance). Makers browsing the map are secondary users.
 
@@ -61,7 +61,7 @@ The group chat question "is the Venice fab lab still open?" is the metric. This 
 
 - Protomaps tiles load reliably — no referer blocks, no pin drift at any zoom level
 - Oxigraph ingests and syncs endpoints; diff detection flags stale/broken URLs automatically
-- NanoClaw/OpenClaw produces valid SPARQL from natural language with a validation gate before queries reach the triplestore
+- Nanobot agent translates natural language to SPARQL via OpenRouter (LiteLLMProvider), with a validation gate against the IoP ontology before queries reach the triplestore
 - System degrades gracefully — map remains functional if up to 50% of endpoints are unreachable
 
 ### Measurable Outcomes
@@ -82,7 +82,7 @@ Production-ready implementation of existing prototype: Protomaps vector tiles, M
 
 ### Growth — Phase 2 (Federated PoC, workshop + grant ready)
 
-URL ingestion pipeline, Oxigraph SPARQL triplestore, ⚪→🔵 pin confirmation, NanoClaw/OpenClaw bot over Matrix/Mattermost, admin dashboard (health monitoring, diff detection, sync status). Coordinator onboarding via facilitated workshops + JSON schema guide.
+URL ingestion pipeline, Oxigraph SPARQL triplestore, ⚪→🔵 pin confirmation, Nanobot agent (Discord + Telegram built-in, Mattermost custom adapter at pilot), admin dashboard (health monitoring, diff detection, sync status). Coordinator onboarding via facilitated workshops + JSON schema guide.
 
 ## User Journeys
 
@@ -124,7 +124,7 @@ She clicks the map link. It loads. There's a pin near Lyon — grey, unclaimed. 
 
 **Same Arjun**, next time. Types in RFF Mattermost: *"Des espaces confirmés avec du travail du bois à Hamburg ou Berlin ce week-end?"* Bot replies in 30 seconds: 2 confirmed spaces, opening hours, distance from Hamburg Hbf. He contacts one directly in the channel.
 
-**Capabilities required:** NanoClaw/OpenClaw agent wired to Oxigraph, Mattermost channel integration, SPARQL validation gate, French → query → French response round-trip.
+**Capabilities required:** Nanobot agent wired to Oxigraph, Discord slash command integration, SPARQL validation gate, French → query → French response round-trip.
 
 ---
 
@@ -191,7 +191,7 @@ Every existing maker directory pulls data toward a central platform. Maps of Mak
 No existing maker map treats data freshness as a product concern. Maps of Making makes staleness *visible* and *self-healing*. Pin states: ⚪ seeded · 🔵 confirmed · dashed stale · 🔴 broken · 🟢 live now. The 🟢 state — future tier — is fed by edge device and webhook pings (door sensor, channel activity, fridge ping). Something happened; the place is alive. More trustworthy than any form field.
 
 **3. IoP Ontology as SPARQL Guardrail**
-LLM agents (NanoClaw/OpenClaw) translate natural language to SPARQL queries constrained by the Internet of Production ontology vocabulary. The ontology is loaded into Oxigraph as queryable RDF; a curated schema prompt (~2–5K tokens) guides LLM output; a two-stage validation gate rejects queries with unmapped predicates before they reach the triplestore. The LLM never invents facts — it only reformulates queries within known schema bounds. Failure rate ~10–15% is accepted and logged as schema enrichment signal.
+The Nanobot agent (OpenRouter-compatible via LiteLLMProvider, model-agnostic) translates natural language to SPARQL queries constrained by the Internet of Production ontology vocabulary. The ontology is loaded into Oxigraph as queryable RDF; a curated schema prompt (~2–5K tokens) guides LLM output; a two-stage validation gate rejects queries with unmapped predicates before they reach the triplestore. The LLM never invents facts — it only reformulates queries within known schema bounds. Failure rate ~10–15% is accepted and logged as schema enrichment signal.
 
 **4. Reciprocal Visibility — the Embed Incentive Loop**
 The embed snippet (iframe/web component showing the space's live pin on their own website) creates reciprocal visibility: stale data degrades *the coordinator's own web presence*, not just the directory. This inverts the maintenance motivation of every previous directory. Secondary effect: the bot deployed in a network's own Mattermost/Matrix channel makes the map a tool used where the community already lives — coordinators with skin in their own data quality become invested in keeping it fresh. Future extension: documentation-as-data-source using SOLID protocol (out of scope for PoC, in development as side project).
@@ -222,7 +222,7 @@ The product's validation metric — a question that used to go to 200 people get
 
 Single-Page Application (SPA). One HTML file + vanilla JS (prototype), minimal framework overhead, embeddable as a self-contained unit. The map is the app — no routing, no multi-page navigation.
 
-**Hosting:** VPS, Docker Compose stack with Oxigraph and NanoClaw/OpenClaw as services. PMTiles file served from the same VPS (or CDN-fronted object storage). Admin dashboard on a separate subdomain (e.g. `admin.mapsofmaking.org`).
+**Hosting:** VPS, Docker Compose stack with Oxigraph and Nanobot agent as services. PMTiles file served from the same VPS (or CDN-fronted object storage). Admin dashboard on a separate subdomain (e.g. `admin.mapsofmaking.org`).
 
 ### Technical Architecture Considerations
 
@@ -257,8 +257,9 @@ Authoritative performance targets are defined in the Non-Functional Requirements
 
 - Stay close to prototype structure — minimal build toolchain, vanilla JS preferred for Phase 1
 - Embed snippet must be responsive by default — drop-in, no coordinator tweaking required
-- Docker Compose services: `map-spa` (static), `oxigraph` (SPARQL), `claw` (LLM agent), `nginx` (reverse proxy + PMTiles serving)
+- Docker Compose services: `map-spa` (static), `oxigraph` (SPARQL), `mak-agent` (Nanobot: Discord + Telegram + heartbeat scheduling), `mak-link-handler` (magic link validation HTTP endpoint), `nginx` (reverse proxy + PMTiles serving)
 - Admin dashboard (`admin.*` subdomain) is a separate lightweight page — auth-gated, same VPS
+- Scheduler runs as isolated service to ensure heartbeat loop continues even if bot process crashes
 
 ## Project Scoping & Phased Development
 
@@ -295,7 +296,7 @@ Authoritative performance targets are defined in the Non-Functional Requirements
 - [ ] Diff detection + staleness monitoring: periodic re-fetch, flag stale/broken
 - [ ] GDPR closure logic: N failed syncs → remove PII → mark `closed` with date
 - [ ] Admin dashboard (`admin.*` subdomain): fleet health, per-space drill-down, coordinator contact dispatch, sync status, stats export
-- [ ] NanoClaw/OpenClaw bot: Mattermost integration, IoP-ontology-constrained SPARQL, validation gate, graceful failure → clarify → log gap
+- [ ] Nanobot agent: Discord + Telegram built-in, Mattermost custom adapter at pilot; IoP-ontology-constrained SPARQL, validation gate, graceful failure → clarify → log gap
 - [ ] Coordinator notification: email on endpoint failure with pre-filled recovery link
 
 **Out of scope for Phase 2:** Matrix/Discord channels, 🟢 live-now edge pings, JSON generator, SOLID data layer.
@@ -363,7 +364,7 @@ Multi-network beyond RFF/VOW; Matrix + Discord bot; 🟢 live-now tier via webho
 - **FR23** No edit UI — coordinators update their data by editing their JSON at the URL
 
 ### Endpoint Health & Ingestion (Phase 2)
-- **FR24** Periodic fetch of all registered endpoints (cadence TBD in NFRs)
+- **FR24** Periodic fetch of all registered endpoints (6-hour cadence, configurable)
 - **FR25** Endpoint state machine: confirmed → stale (N failed fetches) → broken → closed
 - **FR25b** Closure logic: JSON self-reports closed OR N consecutive fetch failures → PII removed, space marked closed-at-date, pin retained for historical record
 - **FR26** Diff detection between snapshots flags meaningful changes
@@ -387,11 +388,11 @@ Multi-network beyond RFF/VOW; Matrix + Discord bot; 🟢 live-now tier via webho
 
 ### Natural Language Bot (Phase 2)
 - **FR37** "Ask the map" bot accepts natural language questions
-- **FR38** NanoClaw/OpenClaw translates NL → SPARQL using IoP ontology as prompt context
+- **FR38** Nanobot agent translates NL → SPARQL using IoP ontology as prompt context (OpenRouter API via LiteLLMProvider, model-agnostic via config)
 - **FR39** Bot returns results with source space links + query transparency (show SPARQL)
 - **FR40** Bot acknowledges gracefully when query can't be answered; offers clarification
 - **FR41** Failed/ambiguous queries logged as ontology gap signals
-- **FR42** Bot deployed to Mattermost first, then Matrix and Discord
+- **FR42** Nanobot deployed to Discord (built-in), Telegram (built-in), then Mattermost (custom adapter at pilot)
 
 ### Auth (Phase 2)
 - **FR43** Admin subdomain gated by simple shared password (PoC-grade)
@@ -415,10 +416,10 @@ Multi-network beyond RFF/VOW; Matrix + Discord bot; 🟢 live-now tier via webho
 ### Reliability & Ingestion
 - **NFR-R1** Endpoint fetch uses ETag / Last-Modified conditional requests — pull + ingest only when diff detected (fast trust signal when coordinator edits their JSON)
 - **NFR-R2** Fetch timeout 60s per endpoint with incremental backoff on failure
-- **NFR-R3** Fetch cadence, failure thresholds (stale/broken/closed), and retention policy are **config-file driven**, not hardcoded — tuned from real PoC data
+- **NFR-R3** Fetch cadence (6h default), failure thresholds (stale/broken/closed), and retention policy are **config-file driven**, not hardcoded — tuned from real PoC data
 - **NFR-R4** Per-endpoint fetch latency logged (min/avg/max ms) and surfaced on admin dashboard
 - **NFR-R5** Map SPA remains functional when up to 50% of endpoints are unreachable — stale data served with explicit provenance timestamp; degrade-to-stale, never degrade-to-empty
-- **NFR-R6** Fetch worker failures never take down the public map — pipeline isolation (SPA serves last-good Oxigraph state)
+- **NFR-R6** Fetch worker failures never take down the public map — pipeline isolation (SPA serves last-good Oxigraph state; scheduler runs as isolated background service)
 - **NFR-R7 (scale note — future)** At >500 endpoints: add per-domain rate limiting, jittered schedule, robots.txt respect, content-addressed dedup (SHA-256 of normalized payload) to avoid DDoSing small self-hosted JSON endpoints
 
 ### Security
@@ -450,7 +451,7 @@ Multi-network beyond RFF/VOW; Matrix + Discord bot; 🟢 live-now tier via webho
 ### Integration
 - **NFR-I1** Protomaps PMTiles served from own CDN or self-hosted (avoids upstream referer blocks)
 - **NFR-I2** Oxigraph exposes standard SPARQL 1.1 HTTP protocol — compatible with third-party SPARQL clients
-- **NFR-I3** Bot adapters (Mattermost first, then Matrix, Discord) share a protocol-agnostic core
+- **NFR-I3** Bot adapters (Discord first, then Mattermost and Matrix) share a protocol-agnostic core
 - **NFR-I4** Embed web component works in any modern browser without framework dependency
 - **NFR-I5** JSON endpoint schema extends SpaceAPI where compatible — reuse over reinvent
 

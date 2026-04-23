@@ -1,0 +1,109 @@
+# generated: 2026-04-23
+# last_updated: 2026-04-23
+# project: maps_of_making
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-04-23
+last_updated: 2026-04-23
+project: maps_of_making
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+
+development_status:
+  # Epic 0: Pilot Seed Data Pipeline
+  epic-0: in-progress
+  0-1-normalize-vow-scrape-to-mom-compliant-json-ld-geocode: ready-for-dev
+  0-2-generate-rff-mockup-dataset-for-health-layer-demo: backlog
+  0-3-seed-import-load-both-datasets-into-oxigraph: backlog
+  epic-0-retrospective: optional
+
+  # Epic 1: Federated Backend Foundation
+  epic-1: backlog
+  1-1-integration-dependency-spike: backlog
+  1-2-scope-basemap-to-europe-update-loader-copy: backlog
+  1-3-docker-compose-stack-nginx-security-routing: backlog
+  1-4-author-mom-ontology-v0-load-mom-iop-into-oxigraph: backlog
+  1-5-map-reads-from-oxigraph-geojson-materialization: backlog
+  epic-1-retrospective: optional
+
+  # Epic 2: Coordinator URL Onboarding
+  epic-2: backlog
+  2-1-coordinator-url-validation-endpoint: backlog
+  2-2-add-your-url-drawer-live-validation-ui: backlog
+  2-3-first-fetch-ingestion-pin-flip-immediate-map-refresh: backlog
+  2-4-reciprocal-embed-snippet-on-confirmation: backlog
+  2-5-detail-drawer-provenance-ingestion-history: backlog
+  epic-2-retrospective: optional
+
+  # Epic 3: Endpoint Health, Stale Detection & Magic-Link Recovery
+  epic-3: backlog
+  3-1-heartbeat-scheduler-periodic-6h-fetch-cycle: backlog
+  3-2-freshness-state-machine-stale-broken-closed-transitions: backlog
+  3-3-magic-link-generation-link-handler-validation: backlog
+  3-4-coordinator-email-notification-with-pre-filled-recovery-link: backlog
+  epic-3-retrospective: optional
+
+  # Epic 4: Network Admin Fleet Health Dashboard
+  epic-4: backlog
+  4-1-fleet-health-overview-status-counts-sparkline: backlog
+  4-2-per-space-drill-down-fetch-history-error-log-manual-re-fetch: backlog
+  4-3-coordinator-nudge-dispatch: backlog
+  4-4-demo-data-toggle-include-exclude-rff-mockup-graph: backlog
+  4-5-export-registry-audit-log: backlog
+  epic-4-retrospective: optional
+
+  # Epic 5: Map Polish, Progressive Disclosure & Accessibility
+  epic-5: backlog
+  5-1-filters-search-wired-to-real-federated-data: backlog
+  5-2-stale-broken-state-ui-banners-provenance-empty-states: backlog
+  5-3-embed-polish-last-confirmed-caption-reciprocal-visibility: backlog
+  5-4-accessible-list-view-axe-core-in-ci: backlog
+  5-5-phase-1-ui-hypothesis-validation-tweaks-panel-decision: backlog
+  epic-5-retrospective: optional
+
+  # Epic 6: "Ask the Map" — NL Bot
+  epic-6: backlog
+  6-1-nl-sparql-task-with-iop-ontology-context: backlog
+  6-2-answer-formatting-source-links-sparql-transparency: backlog
+  6-3-graceful-failure-clarification-ontology-gap-logging: backlog
+  6-4-discord-ask-mom-command-wired-end-to-end: backlog
+  6-5-telegram-adapter: backlog
+  6-6-mattermost-custom-adapter: backlog
+  epic-6-retrospective: optional
+
+  # Epic 7: "Open Now" Presence Layer (deferred)
+  epic-7: backlog
+  7-1-webhook-presence-handler-badge-on-map: backlog
+  epic-7-retrospective: optional

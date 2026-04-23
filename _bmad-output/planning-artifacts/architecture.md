@@ -80,16 +80,16 @@ Mixed brownfield stack — no conventional starter template applies.
 - **Python harness:** custom module built from scratch per ADR-008 structure
 - **Infrastructure:** Docker Compose extending Phase 1 stack
 
-### Python Harness Dependencies
+### Nanobot Agent Dependencies
+Nanobot includes all required dependencies:
 ```
-openai       # AsyncOpenAI → OpenRouter
-httpx        # async SPARQL client (not SPARQLWrapper — sync only)
-discord.py   # primary channel adapter, slash commands
-pyyaml       # config.yaml loading
-python-telegram-bot  # secondary adapter (planned)
-# mattermostdriver  # secondary adapter (planned, bot user model)
+nanobot              # Agent framework (Discord, Telegram, Slack adapters built-in)
+litellm              # OpenRouter + multi-provider LLM support
+asyncio              # Scheduling via CronService + HEARTBEAT.md
+httpx                # async SPARQL client (not SPARQLWrapper — sync only)
+pyyaml               # config loading for custom tasks
 ```
-No APScheduler — use `asyncio.create_task` + `while True: await asyncio.sleep(interval)` for heartbeat. Add `aiocron` only if cron expressions become needed.
+Custom tasks (heartbeat.py, nl_to_sparql.py, etc.) run inside Nanobot's executor. No custom event loop or APScheduler needed — CronService + HEARTBEAT.md handle all scheduling.
 
 ### First Implementation Story (Spike)
 Build exactly three files, nothing else:
@@ -269,32 +269,38 @@ harness/
     └── discord_adapter.py   # slash commands + defer pattern
 ```
 
-**LLM client (OpenRouter):**
-```python
-_client = AsyncOpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=os.environ["OPENROUTER_API_KEY"],
-    default_headers={
-        "HTTP-Referer": "https://mapofmaking.debarquin.eu",
-        "X-Title": "Maps of Making",
-    },
-)
+**Nanobot config.json (LiteLLM provider + multi-model):**
+```json
+{
+  "providers": {
+    "default": {
+      "type": "litellm",
+      "api_key": "${OPENROUTER_API_KEY}",
+      "base_url": "https://openrouter.ai/api/v1",
+      "models": {
+        "heartbeat": { "model": "anthropic/claude-haiku-4-5", "temperature": 0.2, "max_tokens": 1024 },
+        "nl_to_sparql": { "model": "anthropic/claude-sonnet-4-5", "temperature": 0.0, "max_tokens": 512 },
+        "answer_format": { "model": "minimax/minimax-01", "temperature": 0.5, "max_tokens": 512 }
+      }
+    }
+  },
+  "channels": {
+    "discord": { "enabled": true, "token": "${DISCORD_BOT_TOKEN}" },
+    "telegram": { "enabled": true, "token": "${TELEGRAM_BOT_TOKEN}", "allowFrom": ["${ADMIN_USER_ID}"] }
+  }
+}
 ```
 
-**Per-task model config:**
-```yaml
-tasks:
-  heartbeat:
-    model: "anthropic/claude-haiku-4-5"
-    temperature: 0.2
-  nl_to_sparql:
-    model: "anthropic/claude-sonnet-4-5"
-    temperature: 0.0          # deterministic SPARQL
-  answer_format:
-    model: "minimax/minimax-01"
-    temperature: 0.5
-  notify_dispatch:
-    model: null               # template only, no LLM
+**Custom tasks in Nanobot:**
+```python
+# tasks/heartbeat.py — invoked by Nanobot's HEARTBEAT.md scheduler
+async def heartbeat_task(oxigraph_endpoint: str, space_uri: str) -> str:
+    # Fetch space JSON-LD, diff against snapshot, write SPARQL UPDATE
+    # Returns structured message for chat or silent execution
+    
+# tasks/nl_to_sparql.py — invoked by Discord/Telegram slash commands
+async def nl_to_sparql(user_question: str, ontology_context: str, model: str = "default") -> str:
+    # Use Nanobot's LiteLLM provider to call model
 ```
 
 **SPARQL client:** `httpx.AsyncClient` directly — SPARQLWrapper is synchronous, skip it.
@@ -415,16 +421,23 @@ CREATE TABLE llm_cost_log (
 
 ---
 
-### ADR-013: LLM Harness — Custom over Nanobot
+### ADR-013: Agent Framework — Nanobot with One Custom Adapter
 
-**Decision:** Stay with custom Python harness. Nanobot evaluated and deferred to post-pilot consideration.
+**Decision:** Use Nanobot as the primary agent framework. Discord and Telegram adapters built-in; implement one custom Mattermost adapter if needed post-pilot.
 
-**Evaluation result:**
-- Nanobot v0.1.5 is early-stage. OpenRouter support unclear. Heartbeat/scheduler pattern not demonstrated.
-- Custom harness: ~200 lines, full control, auditable, model-agnostic via OpenRouter.
-- Channel adapters (Discord defer pattern, Telegram placeholder edit) are the only real win Nanobot would offer — but implementing two adapters is ~100 lines each, not worth a framework dependency.
+**Rationale:**
+- **OpenRouter native:** LiteLLMProvider handles `anthropic/claude-*`, `minimax/minimax-01`, OpenRouter transparently — full model-swap control via config
+- **Scheduler included:** CronService + HEARTBEAT.md (30-minute polling) — heartbeat pattern ready, no custom event loop
+- **Channel adapters free:** Discord (defer pattern), Telegram (polling), Slack built-in; Mattermost is the only custom adapter needed
+- **Maintained project:** ~4,000 lines, high source reputation (77.6 benchmark score), active development
 
-**Revisit at pilot:** If adapter count grows beyond 3 or the harness grows beyond ~500 lines, evaluate Nanobot again.
+**Trade-off analysis:**
+- Custom harness: ~200 lines base, but add Discord defer logic (~50), Telegram edit pattern (~50), scheduler loop (~100), SPARQL bindings normaliser (~50), magic link validation (~50), structured logging (~100) = **~600 lines actual**
+- Nanobot: ~4,000 lines but multi-channel support + scheduling included = **less custom code overall + fewer moving parts**
+
+**Mattermost adapter:** If needed, implement as custom extension after pilot. Nanobot's adapter protocol is straightforward (send/receive interface).
+
+**Implementation:** Dockerfile `FROM hkuds/nanobot:latest`. Port `config.yaml` to Nanobot's `config.json` format. Keep `tasks/` directory structure for LLM tasks (heartbeat.py, nl_to_sparql.py, etc.) — they stay the same, just invoked from Nanobot instead of harness/main.py.
 
 ---
 
@@ -644,33 +657,24 @@ maps_of_making/
 │   └── iop/
 │       └── iop.ttl                      # IoP ontology snapshot (loaded into Oxigraph at init)
 │
-├── harness/                             # Python LLM agent harness
-│   ├── Dockerfile                       # python:3.12-slim base
-│   ├── requirements.txt                 # pip-compile --generate-hashes
-│   ├── config.yaml                      # model assignments, endpoints, thresholds
-│   ├── main.py                          # entrypoint: bot start + heartbeat loop
-│   ├── config.py                        # single config loader — only file that reads config.yaml
-│   ├── llm_client.py                    # AsyncOpenAI → OpenRouter, headers baked in
+├── nanobot-config/                      # Nanobot agent configuration
+│   └── config.json                      # channel adapters, LLM models, scheduling
+│
+├── tasks/                               # Custom task modules (invoked by Nanobot)
+│   ├── heartbeat.py                     # fetch URL, diff JSON-LD, write triples (invoked by HEARTBEAT.md)
+│   ├── nl_to_sparql.py                  # NL → SPARQL string (temp=0.0, Sonnet)
+│   ├── answer_format.py                 # SPARQL result dict → plain language str
+│   ├── notify_dispatch.py               # read queue, fill template, send, mark dispatched
 │   ├── sparql_client.py                 # httpx async run_select() + run_update()
 │   ├── magic_link.py                    # token generation, validation, single-use + TTL
-│   ├── tasks/
-│   │   ├── heartbeat.py                 # fetch URL, diff JSON-LD, write triples
-│   │   ├── nl_to_sparql.py              # NL → SPARQL string (temp=0.0, Sonnet)
-│   │   ├── answer_format.py             # SPARQL result dict → plain language str
-│   │   └── notify_dispatch.py           # read queue, fill template, send, mark dispatched
-│   ├── adapters/
-│   │   ├── discord_adapter.py           # slash commands + defer pattern (primary)
-│   │   ├── telegram_adapter.py          # placeholder + edit pattern (planned)
-│   │   └── mattermost_adapter.py        # webhook model (planned)
 │   ├── sparql/
 │   │   ├── queries.py                   # SELECT query constants (SCREAMING_SNAKE_CASE)
 │   │   └── updates.py                   # UPDATE/INSERT query constants
 │   └── tests/
-│       ├── tasks/
-│       │   ├── test_heartbeat.py
-│       │   ├── test_nl_to_sparql.py
-│       │   ├── test_answer_format.py
-│       │   └── test_notify_dispatch.py
+│       ├── test_heartbeat.py
+│       ├── test_nl_to_sparql.py
+│       ├── test_answer_format.py
+│       ├── test_notify_dispatch.py
 │       ├── test_sparql_client.py
 │       └── test_magic_link.py
 │
@@ -705,24 +709,15 @@ services:
     expose: ["7878"]
     networks: [internal]
 
-  mak-harness:                        # Discord bot + heartbeat scheduler
-    build: ./harness
+  mak-agent:                          # Nanobot agent (Discord + Telegram + tasks)
+    image: hkuds/nanobot:latest
     environment:
-      - ADAPTER=discord
-      - OXIGRAPH_ENDPOINT=http://oxigraph:7878
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
-      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
-    depends_on: [oxigraph]
-    networks: [internal]
-
-  mak-scheduler:                      # heartbeat scheduler — separate from bot
-    build: ./harness
-    command: ["python", "-m", "scheduler"]  # asyncio loop, no Discord
-    environment:
       - OXIGRAPH_ENDPOINT=http://oxigraph:7878
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+    volumes:
+      - ./nanobot-config:/root/.nanobot
+      - ./tasks:/app/tasks
     depends_on: [oxigraph]
-    volumes: [./data:/app/data]
     networks: [internal]
 
   mak-link-handler:                   # magic link HTTP endpoint (ADR-011)
@@ -742,7 +737,7 @@ networks:
     driver: bridge
 ```
 
-**Scheduler isolation rationale:** Bot process crashes (Discord gateway issues, rate limits) must not kill the heartbeat loop. Separate service, same Docker image, different entrypoint. Bot crashes → spaces continue to be monitored.
+**Nanobot integration:** CronService runs alongside chat adapters in the same container. Nanobot's supervisor ensures both systems survive crashes — heartbeat.md tasks execute on schedule even if Discord connection drops.
 
 ---
 
