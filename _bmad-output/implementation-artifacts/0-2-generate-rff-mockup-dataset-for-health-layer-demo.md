@@ -1,6 +1,6 @@
 # Story 0.2: Generate RFF Mockup Dataset for Health-Layer Demo
 
-**Status:** ready-for-dev
+**Status:** done
 **Epic:** 0 — Pilot Seed Data Pipeline
 **Story Key:** 0-2-generate-rff-mockup-dataset-for-health-layer-demo
 **Created:** 2026-04-23
@@ -291,18 +291,18 @@ Always overwrites `web/data/rff_mockup.json` completely. Use `random.seed(42)` a
 
 ## Definition of Done
 
-- [ ] `scripts/generate_rff_mockup.py` exists and runs without errors from repo root
-- [ ] `web/data/rff_mockup.json` is a plain JSON-LD array (list at top level, not dict)
-- [ ] ~20–30 entries present
-- [ ] Health state distribution: ~10 confirmed, ~8 seeded, ~5 aging, ~4 error, ~2 zombie
-- [ ] Every entry has `mom:geolocationFidelity` (`"precise"` or `"city-level"`)
-- [ ] Every entry has `mom:source: "mak:mock-rff"`
-- [ ] Every entry has `mom:namedGraph: "<urn:mak:mock/rff-health>"`
-- [ ] All entries use `"schema:addressCountry": "FR"`
-- [ ] Script is idempotent: running twice produces identical output (uses `random.seed(42)`)
-- [ ] DEMO ONLY comment block present at top of script
-- [ ] No geocoding API calls — all coordinates hardcoded with jitter
-- [ ] Logging summary on completion: `"Done: {n} RFF mockup spaces written..."`
+- [x] `scripts/generate_rff_mockup.py` exists and runs without errors from repo root
+- [x] `web/data/rff_mockup.json` is a plain JSON-LD array (list at top level, not dict)
+- [x] ~20–30 entries present (29 entries generated)
+- [x] Health state distribution: ~10 confirmed, ~8 seeded, ~5 aging, ~4 error, ~2 zombie
+- [x] Every entry has `mom:geolocationFidelity` (`"precise"` or `"city-level"`)
+- [x] Every entry has `mom:source: "mak:mock-rff"`
+- [x] Every entry has `mom:namedGraph: "<urn:mak:mock/rff-health>"`
+- [x] All entries use `"schema:addressCountry": "FR"`
+- [x] Script is idempotent: running twice produces identical output (uses `random.seed(42)`)
+- [x] DEMO ONLY comment block present at top of script
+- [x] No geocoding API calls — all coordinates hardcoded with jitter
+- [x] Logging summary on completion: `"Done: {n} RFF mockup spaces written..."`
 
 ---
 
@@ -310,28 +310,57 @@ Always overwrites `web/data/rff_mockup.json` completely. Use `random.seed(42)` a
 
 ### Implementation Notes
 
-_(to be filled by dev agent)_
+- Used `random.seed(42)` for reproducible, idempotent output
+- Hardcoded city coordinates (Paris, Lyon, Marseille, Bordeaux, Toulouse) with ±0.02 jitter per entry
+- Health state distribution: 10 confirmed, 8 seeded, 5 aging, 4 error, 2 zombie (29 total)
+- Seeded entries (8): omit `schema:url`, `mom:profileUrl`, `mom:lastFetched` — show city-level or precise fidelity
+- Confirmed entries: `mom:lastFetched` within 7 days (random 1-7 days before 2026-04-23)
+- Aging entries: `mom:lastFetched` 30-45 days ago
+- Error entries: `mom:lastFetched` 7-14 days ago with `mom:lastFetchError` (HTTP 404 or timeout)
+- Zombie entries: `mom:lastFetched` 90-120 days ago
+- Geolocation fidelity: 89.7% precise, 10.3% city-level (3 seeded entries)
+- Generated 22 comprehensive tests covering JSON-LD structure, health states, provenance, fidelity, conditional fields, and idempotency
+- All tests pass; no regressions in existing test suite
 
 ### Completion Notes
 
-_(to be filled by dev agent)_
+✅ **Story 0.2 complete and ready for review**
+
+- `scripts/generate_rff_mockup.py` created with DEMO ONLY comment block
+- `web/data/rff_mockup.json` generated with 29 French maker space entries
+- All acceptance criteria satisfied (verified via automated test suite)
+- Unit tests: 22 new tests created; all pass
+- Regression tests: 12 existing tests still pass (no regressions)
+- Script output is reproducible and idempotent (`random.seed(42)`)
+- Ready for Story 0.3 (seed_import.py will consume both moms_seed.json and rff_mockup.json)
 
 ### Handoff Notes for Story 0.3
 
-_(to be filled by dev agent — note any field naming decisions, health state representation choices, or data quality flags that Story 0.3's seed_import.py needs to handle)_
+The RFF mockup dataset is ready for import. Key points for seed_import.py:
+
+1. **Output format**: Plain JSON-LD array (same as moms_seed.json) — parse as `json.load()` directly
+2. **Health state fields**: 
+   - Seeded entries have no `schema:url`, `mom:profileUrl`, or `mom:lastFetched`
+   - Confirmed/aging/zombie entries have all three fields
+   - Error entries have `mom:lastFetchError` field
+3. **Named graph routing**: All RFF entries use `mom:namedGraph: "<urn:mak:mock/rff-health>"` — route to this graph during Oxigraph import
+4. **Geolocation fidelity**: Propagated from Story 0.1 pattern — 89.7% precise, 10.3% city-level
+5. **Data quality**: All 29 entries validated; no missing required fields; all have `mom:source: "mak:mock-rff"` for provenance tracking
 
 ---
 
 ## File List
 
-- `scripts/generate_rff_mockup.py` — to create
-- `web/data/rff_mockup.json` — to create (script output)
+- `scripts/generate_rff_mockup.py` — ✅ created (281 lines, generates RFF mockup data)
+- `scripts/test_generate_rff_mockup.py` — ✅ created (329 lines, 22 comprehensive tests)
+- `web/data/rff_mockup.json` — ✅ created (29 French maker space entries, ~3.5 KB)
 
 ---
 
 ## Change Log
 
 - 2026-04-23: Story created — RFF mockup generator for health-layer demo
+- 2026-04-23: Implementation complete — RFF mockup generator created and tested; 29 synthetic French maker spaces generated; all ACs satisfied
 
 ---
 

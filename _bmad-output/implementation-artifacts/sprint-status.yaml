@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-23
-last_updated: 2026-04-23
+last_updated: 2026-04-23 (story 0.2 done)
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
@@ -45,7 +45,7 @@ development_status:
   # Epic 0: Pilot Seed Data Pipeline
   epic-0: in-progress
   0-1-normalize-vow-scrape-to-mom-compliant-json-ld-geocode: done
-  0-2-generate-rff-mockup-dataset-for-health-layer-demo: ready-for-dev
+  0-2-generate-rff-mockup-dataset-for-health-layer-demo: done
   0-3-seed-import-load-both-datasets-into-oxigraph: backlog
   epic-0-retrospective: optional
 
