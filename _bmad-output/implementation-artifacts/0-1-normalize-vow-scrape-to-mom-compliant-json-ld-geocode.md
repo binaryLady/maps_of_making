@@ -1,6 +1,6 @@
 # Story 0.1: Normalize VOW Scrape to MOM-Compliant JSON-LD + Geocode
 
-**Status:** review
+**Status:** done
 **Epic:** 0 — Pilot Seed Data Pipeline
 **Story Key:** 0-1-normalize-vow-scrape-to-mom-compliant-json-ld-geocode
 **Created:** 2026-04-23
