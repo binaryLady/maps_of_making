@@ -1,0 +1,1213 @@
+{
+  "$schema": "https://mapsofmaking.org/schemas/moms-seed-v0.1.json",
+  "version": "0.1.0-prototype",
+  "generated": "2026-04-20T12:23:35.964Z",
+  "notice": "SYNTHETIC PLACEHOLDER DATA — not real spaces. For UI prototype only. Final RFF/VOW seed pending.",
+  "sources": [
+    "RFF (Réseau des Fablabs Français) — placeholder",
+    "VOW (Verbund Offener Werkstätten) — placeholder"
+  ],
+  "count": 40,
+  "spaces": [
+    {
+      "id": "l-etabli-de-paris",
+      "name": "L'Établi de Paris",
+      "country": "FR",
+      "city": "Paris",
+      "coordinates": {
+        "lat": 48.84175,
+        "lon": 2.34165
+      },
+      "address": "86 rue du Commun, Paris",
+      "website": "https://l-etabli-de-paris.fablab.fr.example",
+      "contact": "hello@l-etabli-de-paris.fablab.fr.example",
+      "endpoint_url": "https://l-etabli-de-paris.fablab.fr.example/maker.json",
+      "status": "confirmed",
+      "open_now": true,
+      "opening_hours": "Thu 19:00–23:00; Sat 14:00–19:00",
+      "specialties": [
+        "bike-repair",
+        "jewelry"
+      ],
+      "network_memberships": [
+        "RFF"
+      ],
+      "last_fetched": "2026-04-18T16:34:38.586Z",
+      "open_for_hosting": false,
+      "capacity": 25,
+      "founded": 2008
+    },
+    {
+      "id": "la-forge-de-lyon",
+      "name": "La Forge de Lyon",
+      "country": "FR",
+      "city": "Lyon",
+      "coordinates": {
+        "lat": 45.7546,
+        "lon": 4.84279
+      },
+      "address": "53 rue du Commun, Lyon",
+      "website": "https://la-forge-de-lyon.fablab.fr.example",
+      "contact": "hello@la-forge-de-lyon.fablab.fr.example",
+      "endpoint_url": null,
+      "status": "seeded",
+      "open_now": false,
+      "opening_hours": "Mo–Do 16:00–21:00",
+      "specialties": [
+        "welding",
+        "ceramics"
+      ],
+      "network_memberships": [
+        "RFF"
+      ],
+      "last_fetched": null,
+      "open_for_hosting": true,
+      "capacity": 47,
+      "founded": 2020
+    },
+    {
+      "id": "la-ressourcerie-marseille",
+      "name": "La Ressourcerie Marseille",
+      "country": "FR",
+      "city": "Marseille",
+      "coordinates": {
+        "lat": 43.28843,
+        "lon": 5.38868
+      },
+      "address": "86 rue du Commun, Marseille",
+      "website": "https://la-ressourcerie-marseille.fablab.fr.example",
+      "contact": "hello@la-ressourcerie-marseille.fablab.fr.example",
+      "endpoint_url": null,
+      "status": "seeded",
+      "open_now": false,
+      "opening_hours": "Thu 19:00–23:00; Sat 14:00–19:00",
+      "specialties": [
+        "electronics",
+        "woodworking",
+        "photography"
+      ],
+      "network_memberships": [
+        "RFF",
+        "VULCA"
+      ],
+      "last_fetched": null,
+      "open_for_hosting": true,
+      "capacity": 17,
+      "founded": 2017
+    },
+    {
+      "id": "atelier-partage-toulouse",
+      "name": "Atelier Partagé Toulouse",
+      "country": "FR",
+      "city": "Toulouse",
+      "coordinates": {
+        "lat": 43.61888,
+        "lon": 1.43646
+      },
+      "address": "72 rue du Commun, Toulouse",
+      "website": "https://atelier-partage-toulouse.fablab.fr.example",
+      "contact": "hello@atelier-partage-toulouse.fablab.fr.example",
+      "endpoint_url": "https://atelier-partage-toulouse.fablab.fr.example/maker.json",
+      "status": "confirmed",
+      "open_now": false,
+      "opening_hours": "Wed 18:00–22:00; Sat 10:00–17:00",
+      "specialties": [
+        "photography",
+        "glasswork",
+        "audio"
+      ],
+      "network_memberships": [
+        "VULCA"
+      ],
+      "last_fetched": "2026-04-18T02:04:07.461Z",
+      "open_for_hosting": false,
+      "capacity": 57,
+      "founded": 2020
+    },
+    {
+      "id": "atelier-commun-nantes",
+      "name": "Atelier Commun Nantes",
+      "country": "FR",
+      "city": "Nantes",
+      "coordinates": {
+        "lat": 47.20726,
+        "lon": -1.54291
+      },
+      "address": "104 rue du Commun, Nantes",
+      "website": "https://atelier-commun-nantes.fablab.fr.example",
+      "contact": "hello@atelier-commun-nantes.fablab.fr.example",
+      "endpoint_url": "https://atelier-commun-nantes.fablab.fr.example/maker.json",
+      "status": "stale",
+      "open_now": false,
+      "opening_hours": "Wed 18:00–22:00; Sat 10:00–17:00",
+      "specialties": [
+        "biolab",
+        "ceramics"
+      ],
+      "network_memberships": [
+        "RFF"
+      ],
+      "last_fetched": "2026-02-18T12:23:35.962Z",
+      "open_for_hosting": false,
+      "capacity": 26,
+      "founded": 2023
+    },
+    {
+      "id": "le-hangar-bordeaux",
+      "name": "Le Hangar Bordeaux",
+      "country": "FR",
+      "city": "Bordeaux",
+      "coordinates": {
+        "lat": 44.8221,
+        "lon": -0.5839
+      },
+      "address": "7 rue du Commun, Bordeaux",
+      "website": "https://le-hangar-bordeaux.fablab.fr.example",
+      "contact": "hello@le-hangar-bordeaux.fablab.fr.example",
+      "endpoint_url": null,
+      "status": "seeded",
+      "open_now": false,
+      "opening_hours": "Mon–Fri 14:00–20:00",
+      "specialties": [
+        "electronics",
+        "biolab",
+        "jewelry",
+        "bookbinding",
+        "welding"
+      ],
+      "network_memberships": [
+        "RFF"
+      ],
+      "last_fetched": null,
+      "open_for_hosting": true,
+      "capacity": 72,
+      "founded": 2018
+    },
+    {
+      "id": "atelier-commun-lille",
+      "name": "Atelier Commun Lille",
+      "country": "FR",
+      "city": "Lille",
+      "coordinates": {
+        "lat": 50.63152,
+        "lon": 3.04397
+      },
+      "address": "114 rue du Commun, Lille",
+      "website": "https://atelier-commun-lille.fablab.fr.example",
+      "contact": "hello@atelier-commun-lille.fablab.fr.example",
+      "endpoint_url": null,
+      "status": "seeded",
+      "open_now": false,
+      "opening_hours": "Wed 18:00–22:00; Sat 10:00–17:00",
+      "specialties": [
+        "audio",
+        "robotics"
+      ],
+      "network_memberships": [
+        "RFF"
+      ],
+      "last_fetched": null,
+      "open_for_hosting": false,
+      "capacity": 23,
+      "founded": 2023
+    },
+    {
+      "id": "makerspace-strasbourg",
+      "name": "Makerspace Strasbourg",
+      "country": "FR",
+      "city": "Strasbourg",
+      "coordinates": {
+        "lat": 48.56092,
+        "lon": 7.7506
+      },
+      "address": "56 rue du Commun, Strasbourg",
+      "website": "https://makerspace-strasbourg.fablab.fr.example",
+      "contact": "hello@makerspace-strasbourg.fablab.fr.example",
+      "endpoint_url": "https://makerspace-strasbourg.fablab.fr.example/maker.json",
+      "status": "confirmed",
+      "open_now": false,
+      "opening_hours": "Mon–Sun 09:00–22:00",
+      "specialties": [
+        "woodworking",
+        "biolab"
+      ],
+      "network_memberships": [
+        "RFF"
+      ],
+      "last_fetched": "2026-04-19T20:58:21.783Z",
+      "open_for_hosting": true,
+      "capacity": 48,
+      "founded": 2013
+    },
+    {
+      "id": "hackerspace-rennes",
+      "name": "Hackerspace Rennes",
+      "country": "FR",
+      "city": "Rennes",
+      "coordinates": {
+        "lat": 48.12584,
+        "lon": -1.68627
+      },
+      "address": "35 rue du Commun, Rennes",
+      "website": "https://hackerspace-rennes.fablab.fr.example",
+      "contact": "hello@hackerspace-rennes.fablab.fr.example",
+      "endpoint_url": null,
+      "status": "seeded",
+      "open_now": false,
+      "opening_hours": "by appointment",
+      "specialties": [
+        "cnc-milling",
+        "leather",
+        "laser-cutting",
+        "photography",
+        "woodworking"
+      ],
+      "network_memberships": [
+        "RFF",
+        "VULCA"
+      ],
+      "last_fetched": null,
+      "open_for_hosting": false,
+      "capacity": 75,
+      "founded": 2011
+    },
+    {
+      "id": "le-hangar-grenoble",
+      "name": "Le Hangar Grenoble",
+      "country": "FR",
+      "city": "Grenoble",
+      "coordinates": {
+        "lat": 45.17078,
+        "lon": 5.74169
+      },
+      "address": "19 rue du Commun, Grenoble",
+      "website": "https://le-hangar-grenoble.fablab.fr.example",
+      "contact": "hello@le-hangar-grenoble.fablab.fr.example",
+      "endpoint_url": null,
+      "status": "seeded",
+      "open_now": false,
+      "opening_hours": "Mon–Fri 14:00–20:00",
+      "specialties": [
+        "leather",
+        "cnc-milling"
+      ],
+      "network_memberships": [
+        "RFF"
+      ],
+      "last_fetched": null,
+      "open_for_hosting": true,
+      "capacity": 28,
+      "founded": 2013
+    },
+    {
+      "id": "la-forge-de-brest",
+      "name": "La Forge de Brest",
+      "country": "FR",
+      "city": "Brest",
+      "coordinates": {
+        "lat": 48.38354,
+        "lon": -4.46888
+      },
+      "address": "103 rue du Commun, Brest",
+      "website": "https://la-forge-de-brest.fablab.fr.example",
+      "contact": "hello@la-forge-de-brest.fablab.fr.example",
+      "endpoint_url": "https://la-forge-de-brest.fablab.fr.example/maker.json",
+      "status": "confirmed",
+      "open_now": true,
+      "opening_hours": "Wed 18:00–22:00; Sat 10:00–17:00",
+      "specialties": [
+        "video",
+        "leather",
+        "robotics"
+      ],
+      "network_memberships": [
+        "RFF"
+      ],
+      "last_fetched": "2026-04-18T18:55:35.772Z",
+      "open_for_hosting": false,
+      "capacity": 56,
+      "founded": 2011
+    },
+    {
+      "id": "fablab-ouvert-de-montpellier",
+      "name": "FabLab Ouvert de Montpellier",
+      "country": "FR",
+      "city": "Montpellier",
+      "coordinates": {
+        "lat": 43.60867,
+        "lon": 3.86932
+      },
+      "address": "34 rue du Commun, Montpellier",
+      "website": "https://fablab-ouvert-de-montpellier.fablab.fr.example",
+      "contact": "hello@fablab-ouvert-de-montpellier.fablab.fr.example",
+      "endpoint_url": null,
+      "status": "seeded",
+      "open_now": false,
+      "opening_hours": "Tue–Sat 10:00–18:00",
+      "specialties": [
+        "screen-printing",
+        "woodworking"
+      ],
+      "network_memberships": [
+        "VULCA"
+      ],
+      "last_fetched": null,
+      "open_for_hosting": false,
+      "capacity": 38,
+      "founded": 2020
+    },
+    {
+      "id": "l-atelier-du-coin-nice",
+      "name": "L'Atelier du Coin — Nice",
+      "country": "FR",
+      "city": "Nice",
+      "coordinates": {
+        "lat": 43.72285,
+        "lon": 7.25654
+      },
+      "address": "116 rue du Commun, Nice",
+      "website": "https://l-atelier-du-coin-nice.fablab.fr.example",
+      "contact": "hello@l-atelier-du-coin-nice.fablab.fr.example",
+      "endpoint_url": null,
+      "status": "seeded",
+      "open_now": false,
+      "opening_hours": "Tue–Sat 10:00–18:00",
+      "specialties": [
+        "leather",
+        "jewelry",
+        "audio",
+        "glasswork",
+        "welding"
+      ],
+      "network_memberships": [
+        "RFF"
+      ],
+      "last_fetched": null,
+      "open_for_hosting": true,
+      "capacity": 86,
+      "founded": 2024
+    },
+    {
+      "id": "atelier-commun-saint-etienne",
+      "name": "Atelier Commun Saint-Étienne",
+      "country": "FR",
+      "city": "Saint-Étienne",
+      "coordinates": {
+        "lat": 45.4457,
+        "lon": 4.389
+      },
+      "address": "49 rue du Commun, Saint-Étienne",
+      "website": "https://atelier-commun-saint-etienne.fablab.fr.example",
+      "contact": "hello@atelier-commun-saint-etienne.fablab.fr.example",
+      "endpoint_url": null,
+      "status": "seeded",
+      "open_now": false,
+      "opening_hours": "Mon–Fri 14:00–20:00",
+      "specialties": [
+        "glasswork",
+        "screen-printing",
+        "3d-printing",
+        "metalworking",
+        "robotics"
+      ],
+      "network_memberships": [
+        "RFF"
+      ],
+      "last_fetched": null,
+      "open_for_hosting": true,
+      "capacity": 82,
+      "founded": 2016
+    },
+    {
+      "id": "la-forge-de-le-mans",
+      "name": "La Forge de Le Mans",
+      "country": "FR",
+      "city": "Le Mans",
+      "coordinates": {
+        "lat": 48.00184,
+        "lon": 0.21776
+      },
+      "address": "65 rue du Commun, Le Mans",
+      "website": "https://la-forge-de-le-mans.fablab.fr.example",
+      "contact": "hello@la-forge-de-le-mans.fablab.fr.example",
+      "endpoint_url": null,
+      "status": "seeded",
+      "open_now": false,
+      "opening_hours": "by appointment",
+      "specialties": [
+        "audio",
+        "textile",
+        "bike-repair"
+      ],
+      "network_memberships": [
+        "RFF",
+        "VULCA"
+      ],
+      "last_fetched": null,
+      "open_for_hosting": true,
+      "capacity": 13,
+      "founded": 2010
+    },
+    {
+      "id": "hackerspace-dijon",
+      "name": "Hackerspace Dijon",
+      "country": "FR",
+      "city": "Dijon",
+      "coordinates": {
+        "lat": 47.32929,
+        "lon": 5.04024
+      },
+      "address": "40 rue du Commun, Dijon",
+      "website": "https://hackerspace-dijon.fablab.fr.example",
+      "contact": "hello@hackerspace-dijon.fablab.fr.example",
+      "endpoint_url": "https://hackerspace-dijon.fablab.fr.example/maker.json",
+      "status": "confirmed",
+      "open_now": false,
+      "opening_hours": "Mo–Do 16:00–21:00",
+      "specialties": [
+        "ceramics",
+        "robotics"
+      ],
+      "network_memberships": [
+        "RFF"
+      ],
+      "last_fetched": "2026-04-17T19:20:34.074Z",
+      "open_for_hosting": false,
+      "capacity": 63,
+      "founded": 2015
+    },
+    {
+      "id": "l-atelier-du-coin-reims",
+      "name": "L'Atelier du Coin — Reims",
+      "country": "FR",
+      "city": "Reims",
+      "coordinates": {
+        "lat": 49.26854,
+        "lon": 4.05048
+      },
+      "address": "11 rue du Commun, Reims",
+      "website": "https://l-atelier-du-coin-reims.fablab.fr.example",
+      "contact": "hello@l-atelier-du-coin-reims.fablab.fr.example",
+      "endpoint_url": null,
+      "status": "seeded",
+      "open_now": false,
+      "opening_hours": "Tue–Sat 10:00–18:00",
+      "specialties": [
+        "jewelry",
+        "sewing"
+      ],
+      "network_memberships": [
+        "RFF",
+        "VULCA"
+      ],
+      "last_fetched": null,
+      "open_for_hosting": true,
+      "capacity": 64,
+      "founded": 2013
+    },
+    {
+      "id": "makerspace-angers",
+      "name": "Makerspace Angers",
+      "country": "FR",
+      "city": "Angers",
+      "coordinates": {
+        "lat": 47.47099,
+        "lon": -0.5555
+      },
+      "address": "60 rue du Commun, Angers",
+      "website": "https://makerspace-angers.fablab.fr.example",
+      "contact": "hello@makerspace-angers.fablab.fr.example",
+      "endpoint_url": null,
+      "status": "seeded",
+      "open_now": false,
+      "opening_hours": "Wed 18:00–22:00; Sat 10:00–17:00",
+      "specialties": [
+        "jewelry",
+        "pcb-fab",
+        "robotics",
+        "electronics"
+      ],
+      "network_memberships": [
+        "VULCA",
+        "VULCA"
+      ],
+      "last_fetched": null,
+      "open_for_hosting": false,
+      "capacity": 77,
+      "founded": 2018
+    },
+    {
+      "id": "hackerspace-clermont-ferrand",
+      "name": "Hackerspace Clermont-Ferrand",
+      "country": "FR",
+      "city": "Clermont-Ferrand",
+      "coordinates": {
+        "lat": 45.78161,
+        "lon": 3.08291
+      },
+      "address": "43 rue du Commun, Clermont-Ferrand",
+      "website": "https://hackerspace-clermont-ferrand.fablab.fr.example",
+      "contact": "hello@hackerspace-clermont-ferrand.fablab.fr.example",
+      "endpoint_url": null,
+      "status": "seeded",
+      "open_now": false,
+      "opening_hours": "by appointment",
+      "specialties": [
+        "metalworking",
+        "ceramics",
+        "laser-cutting"
+      ],
+      "network_memberships": [
+        "RFF"
+      ],
+      "last_fetched": null,
+      "open_for_hosting": false,
+      "capacity": 77,
+      "founded": 2014
+    },
+    {
+      "id": "fablab-municipal-biarritz",
+      "name": "FabLab Municipal Biarritz",
+      "country": "FR",
+      "city": "Biarritz",
+      "coordinates": {
+        "lat": 43.48915,
+        "lon": -1.56276
+      },
+      "address": "23 rue du Commun, Biarritz",
+      "website": "https://fablab-municipal-biarritz.fablab.fr.example",
+      "contact": "hello@fablab-municipal-biarritz.fablab.fr.example",
+      "endpoint_url": "https://fablab-municipal-biarritz.fablab.fr.example/maker.json",
+      "status": "confirmed",
+      "open_now": true,
+      "opening_hours": "Mon–Sun 09:00–22:00",
+      "specialties": [
+        "jewelry",
+        "sewing",
+        "audio",
+        "laser-cutting",
+        "screen-printing"
+      ],
+      "network_memberships": [
+        "RFF",
+        "VULCA"
+      ],
+      "last_fetched": "2026-04-18T03:01:58.671Z",
+      "open_for_hosting": false,
+      "capacity": 52,
+      "founded": 2023
+    },
+    {
+      "id": "offene-werkstatt-berlin",
+      "name": "Offene Werkstatt Berlin",
+      "country": "DE",
+      "city": "Berlin",
+      "coordinates": {
+        "lat": 52.52267,
+        "lon": 13.42401
+      },
+      "address": "74 Werkstraße, Berlin",
+      "website": "https://offene-werkstatt-berlin.werkstatt.de.example",
+      "contact": "hello@offene-werkstatt-berlin.werkstatt.de.example",
+      "endpoint_url": "https://offene-werkstatt-berlin.werkstatt.de.example/maker.json",
+      "status": "confirmed",
+      "open_now": false,
+      "opening_hours": "Wed 18:00–22:00; Sat 10:00–17:00",
+      "specialties": [
+        "bike-repair",
+        "pcb-fab",
+        "video",
+        "leather",
+        "sewing"
+      ],
+      "network_memberships": [
+        "VOW",
+        "VULCA"
+      ],
+      "last_fetched": "2026-04-20T11:40:50.594Z",
+      "open_for_hosting": false,
+      "capacity": 50,
+      "founded": 2014
+    },
+    {
+      "id": "holzwerkstatt-hamburg",
+      "name": "Holzwerkstatt Hamburg",
+      "country": "DE",
+      "city": "Hamburg",
+      "coordinates": {
+        "lat": 53.55814,
+        "lon": 9.98816
+      },
+      "address": "66 Werkstraße, Hamburg",
+      "website": "https://holzwerkstatt-hamburg.werkstatt.de.example",
+      "contact": "hello@holzwerkstatt-hamburg.werkstatt.de.example",
+      "endpoint_url": "https://holzwerkstatt-hamburg.werkstatt.de.example/maker.json",
+      "status": "confirmed",
+      "open_now": true,
+      "opening_hours": "Tue–Sat 10:00–18:00",
+      "specialties": [
+        "bookbinding",
+        "sewing",
+        "ceramics"
+      ],
+      "network_memberships": [
+        "VULCA",
+        "VULCA"
+      ],
+      "last_fetched": "2026-04-18T16:40:04.554Z",
+      "open_for_hosting": false,
+      "capacity": 23,
+      "founded": 2010
+    },
+    {
+      "id": "werkhof-munchen",
+      "name": "Werkhof München",
+      "country": "DE",
+      "city": "München",
+      "coordinates": {
+        "lat": 48.11811,
+        "lon": 11.57201
+      },
+      "address": "100 Werkstraße, München",
+      "website": "https://werkhof-munchen.werkstatt.de.example",
+      "contact": "hello@werkhof-munchen.werkstatt.de.example",
+      "endpoint_url": null,
+      "status": "seeded",
+      "open_now": false,
+      "opening_hours": "Mon–Fri 14:00–20:00",
+      "specialties": [
+        "bookbinding",
+        "video",
+        "ceramics",
+        "screen-printing",
+        "cnc-milling"
+      ],
+      "network_memberships": [
+        "VOW",
+        "VULCA"
+      ],
+      "last_fetched": null,
+      "open_for_hosting": false,
+      "capacity": 14,
+      "founded": 2021
+    },
+    {
+      "id": "stadtwerkstatt-koln",
+      "name": "Stadtwerkstatt Köln",
+      "country": "DE",
+      "city": "Köln",
+      "coordinates": {
+        "lat": 50.93096,
+        "lon": 6.96594
+      },
+      "address": "45 Werkstraße, Köln",
+      "website": "https://stadtwerkstatt-koln.werkstatt.de.example",
+      "contact": "hello@stadtwerkstatt-koln.werkstatt.de.example",
+      "endpoint_url": null,
+      "status": "seeded",
+      "open_now": false,
+      "opening_hours": "by appointment",
+      "specialties": [
+        "audio",
+        "metalworking",
+        "3d-printing"
+      ],
+      "network_memberships": [
+        "VOW",
+        "VULCA"
+      ],
+      "last_fetched": null,
+      "open_for_hosting": false,
+      "capacity": 40,
+      "founded": 2013
+    },
+    {
+      "id": "holzwerkstatt-frankfurt",
+      "name": "Holzwerkstatt Frankfurt",
+      "country": "DE",
+      "city": "Frankfurt",
+      "coordinates": {
+        "lat": 50.09259,
+        "lon": 8.66245
+      },
+      "address": "49 Werkstraße, Frankfurt",
+      "website": "https://holzwerkstatt-frankfurt.werkstatt.de.example",
+      "contact": "hello@holzwerkstatt-frankfurt.werkstatt.de.example",
+      "endpoint_url": null,
+      "status": "seeded",
+      "open_now": false,
+      "opening_hours": "Mon–Fri 14:00–20:00",
+      "specialties": [
+        "jewelry",
+        "photography",
+        "laser-cutting",
+        "bike-repair",
+        "welding"
+      ],
+      "network_memberships": [
+        "VOW"
+      ],
+      "last_fetched": null,
+      "open_for_hosting": true,
+      "capacity": 80,
+      "founded": 2023
+    },
+    {
+      "id": "stadtwerkstatt-stuttgart",
+      "name": "Stadtwerkstatt Stuttgart",
+      "country": "DE",
+      "city": "Stuttgart",
+      "coordinates": {
+        "lat": 48.78907,
+        "lon": 9.19504
+      },
+      "address": "114 Werkstraße, Stuttgart",
+      "website": "https://stadtwerkstatt-stuttgart.werkstatt.de.example",
+      "contact": "hello@stadtwerkstatt-stuttgart.werkstatt.de.example",
+      "endpoint_url": null,
+      "status": "seeded",
+      "open_now": false,
+      "opening_hours": "Thu 19:00–23:00; Sat 14:00–19:00",
+      "specialties": [
+        "robotics",
+        "screen-printing",
+        "video",
+        "audio"
+      ],
+      "network_memberships": [
+        "VOW"
+      ],
+      "last_fetched": null,
+      "open_for_hosting": false,
+      "capacity": 70,
+      "founded": 2010
+    },
+    {
+      "id": "werkstatt-leipzig-e-v",
+      "name": "Werkstatt Leipzig e.V.",
+      "country": "DE",
+      "city": "Leipzig",
+      "coordinates": {
+        "lat": 51.34515,
+        "lon": 12.35718
+      },
+      "address": "24 Werkstraße, Leipzig",
+      "website": "https://werkstatt-leipzig-e-v.werkstatt.de.example",
+      "contact": "hello@werkstatt-leipzig-e-v.werkstatt.de.example",
+      "endpoint_url": null,
+      "status": "seeded",
+      "open_now": false,
+      "opening_hours": "by appointment",
+      "specialties": [
+        "jewelry",
+        "robotics"
+      ],
+      "network_memberships": [
+        "VOW"
+      ],
+      "last_fetched": null,
+      "open_for_hosting": true,
+      "capacity": 68,
+      "founded": 2014
+    },
+    {
+      "id": "kreativwerkstatt-dresden",
+      "name": "Kreativwerkstatt Dresden",
+      "country": "DE",
+      "city": "Dresden",
+      "coordinates": {
+        "lat": 51.05855,
+        "lon": 13.72035
+      },
+      "address": "82 Werkstraße, Dresden",
+      "website": "https://kreativwerkstatt-dresden.werkstatt.de.example",
+      "contact": "hello@kreativwerkstatt-dresden.werkstatt.de.example",
+      "endpoint_url": null,
+      "status": "seeded",
+      "open_now": false,
+      "opening_hours": "Mon–Sun 09:00–22:00",
+      "specialties": [
+        "leather",
+        "3d-printing",
+        "laser-cutting",
+        "ceramics",
+        "woodworking"
+      ],
+      "network_memberships": [
+        "VOW",
+        "VULCA"
+      ],
+      "last_fetched": null,
+      "open_for_hosting": false,
+      "capacity": 86,
+      "founded": 2022
+    },
+    {
+      "id": "garage-bremen",
+      "name": "Garage Bremen",
+      "country": "DE",
+      "city": "Bremen",
+      "coordinates": {
+        "lat": 53.06349,
+        "lon": 8.8157
+      },
+      "address": "14 Werkstraße, Bremen",
+      "website": "https://garage-bremen.werkstatt.de.example",
+      "contact": "hello@garage-bremen.werkstatt.de.example",
+      "endpoint_url": "https://garage-bremen.werkstatt.de.example/maker.json",
+      "status": "confirmed",
+      "open_now": true,
+      "opening_hours": "Di, Do 18–22; Sa 11–16",
+      "specialties": [
+        "audio",
+        "photography",
+        "sewing",
+        "video"
+      ],
+      "network_memberships": [
+        "VOW",
+        "VULCA"
+      ],
+      "last_fetched": "2026-04-17T22:13:02.507Z",
+      "open_for_hosting": true,
+      "capacity": 79,
+      "founded": 2019
+    },
+    {
+      "id": "fablab-hannover",
+      "name": "FabLab Hannover",
+      "country": "DE",
+      "city": "Hannover",
+      "coordinates": {
+        "lat": 52.37331,
+        "lon": 9.73071
+      },
+      "address": "15 Werkstraße, Hannover",
+      "website": "https://fablab-hannover.werkstatt.de.example",
+      "contact": "hello@fablab-hannover.werkstatt.de.example",
+      "endpoint_url": "https://fablab-hannover.werkstatt.de.example/maker.json",
+      "status": "stale",
+      "open_now": false,
+      "opening_hours": "Mon–Sun 09:00–22:00",
+      "specialties": [
+        "textile",
+        "cnc-milling",
+        "glasswork",
+        "3d-printing"
+      ],
+      "network_memberships": [
+        "VOW",
+        "VULCA"
+      ],
+      "last_fetched": "2025-12-31T12:23:35.963Z",
+      "open_for_hosting": true,
+      "capacity": 64,
+      "founded": 2015
+    },
+    {
+      "id": "holzwerkstatt-nurnberg",
+      "name": "Holzwerkstatt Nürnberg",
+      "country": "DE",
+      "city": "Nürnberg",
+      "coordinates": {
+        "lat": 49.46623,
+        "lon": 11.08388
+      },
+      "address": "27 Werkstraße, Nürnberg",
+      "website": "https://holzwerkstatt-nurnberg.werkstatt.de.example",
+      "contact": "hello@holzwerkstatt-nurnberg.werkstatt.de.example",
+      "endpoint_url": null,
+      "status": "seeded",
+      "open_now": false,
+      "opening_hours": "Mo–Do 16:00–21:00",
+      "specialties": [
+        "audio",
+        "robotics",
+        "biolab",
+        "ceramics",
+        "electronics"
+      ],
+      "network_memberships": [
+        "VULCA",
+        "VULCA"
+      ],
+      "last_fetched": null,
+      "open_for_hosting": false,
+      "capacity": 64,
+      "founded": 2019
+    },
+    {
+      "id": "werkstatt-bochum-e-v",
+      "name": "Werkstatt Bochum e.V.",
+      "country": "DE",
+      "city": "Bochum",
+      "coordinates": {
+        "lat": 51.48579,
+        "lon": 7.23383
+      },
+      "address": "60 Werkstraße, Bochum",
+      "website": "https://werkstatt-bochum-e-v.werkstatt.de.example",
+      "contact": "hello@werkstatt-bochum-e-v.werkstatt.de.example",
+      "endpoint_url": "https://werkstatt-bochum-e-v.werkstatt.de.example/maker.json",
+      "status": "stale",
+      "open_now": false,
+      "opening_hours": "Di, Do 18–22; Sa 11–16",
+      "specialties": [
+        "biolab",
+        "photography",
+        "textile",
+        "welding",
+        "bookbinding"
+      ],
+      "network_memberships": [
+        "VOW"
+      ],
+      "last_fetched": "2026-01-19T12:23:35.964Z",
+      "open_for_hosting": false,
+      "capacity": 25,
+      "founded": 2010
+    },
+    {
+      "id": "hackspace-freiburg",
+      "name": "Hackspace Freiburg",
+      "country": "DE",
+      "city": "Freiburg",
+      "coordinates": {
+        "lat": 47.99552,
+        "lon": 7.85297
+      },
+      "address": "107 Werkstraße, Freiburg",
+      "website": "https://hackspace-freiburg.werkstatt.de.example",
+      "contact": "hello@hackspace-freiburg.werkstatt.de.example",
+      "endpoint_url": null,
+      "status": "seeded",
+      "open_now": false,
+      "opening_hours": "by appointment",
+      "specialties": [
+        "photography",
+        "bookbinding",
+        "woodworking",
+        "metalworking",
+        "sewing"
+      ],
+      "network_memberships": [
+        "VOW"
+      ],
+      "last_fetched": null,
+      "open_for_hosting": false,
+      "capacity": 32,
+      "founded": 2021
+    },
+    {
+      "id": "offene-werkstatt-aachen",
+      "name": "Offene Werkstatt Aachen",
+      "country": "DE",
+      "city": "Aachen",
+      "coordinates": {
+        "lat": 50.76763,
+        "lon": 6.07218
+      },
+      "address": "74 Werkstraße, Aachen",
+      "website": "https://offene-werkstatt-aachen.werkstatt.de.example",
+      "contact": "hello@offene-werkstatt-aachen.werkstatt.de.example",
+      "endpoint_url": "https://offene-werkstatt-aachen.werkstatt.de.example/maker.json",
+      "status": "confirmed",
+      "open_now": false,
+      "opening_hours": "by appointment",
+      "specialties": [
+        "bike-repair",
+        "jewelry",
+        "photography",
+        "laser-cutting"
+      ],
+      "network_memberships": [
+        "VOW"
+      ],
+      "last_fetched": "2026-04-17T20:53:31.404Z",
+      "open_for_hosting": false,
+      "capacity": 43,
+      "founded": 2021
+    },
+    {
+      "id": "offene-werkstatt-kassel",
+      "name": "Offene Werkstatt Kassel",
+      "country": "DE",
+      "city": "Kassel",
+      "coordinates": {
+        "lat": 51.31783,
+        "lon": 9.48373
+      },
+      "address": "37 Werkstraße, Kassel",
+      "website": "https://offene-werkstatt-kassel.werkstatt.de.example",
+      "contact": "hello@offene-werkstatt-kassel.werkstatt.de.example",
+      "endpoint_url": null,
+      "status": "seeded",
+      "open_now": false,
+      "opening_hours": "Wed 18:00–22:00; Sat 10:00–17:00",
+      "specialties": [
+        "video",
+        "ceramics",
+        "bookbinding"
+      ],
+      "network_memberships": [
+        "VULCA"
+      ],
+      "last_fetched": null,
+      "open_for_hosting": true,
+      "capacity": 74,
+      "founded": 2020
+    },
+    {
+      "id": "makerhub-jena",
+      "name": "Makerhub Jena",
+      "country": "DE",
+      "city": "Jena",
+      "coordinates": {
+        "lat": 50.93386,
+        "lon": 11.57041
+      },
+      "address": "96 Werkstraße, Jena",
+      "website": "https://makerhub-jena.werkstatt.de.example",
+      "contact": "hello@makerhub-jena.werkstatt.de.example",
+      "endpoint_url": null,
+      "status": "seeded",
+      "open_now": false,
+      "opening_hours": "Wed 18:00–22:00; Sat 10:00–17:00",
+      "specialties": [
+        "screen-printing",
+        "robotics",
+        "biolab",
+        "glasswork"
+      ],
+      "network_memberships": [
+        "VOW",
+        "VULCA"
+      ],
+      "last_fetched": null,
+      "open_for_hosting": true,
+      "capacity": 25,
+      "founded": 2019
+    },
+    {
+      "id": "makerhub-potsdam",
+      "name": "Makerhub Potsdam",
+      "country": "DE",
+      "city": "Potsdam",
+      "coordinates": {
+        "lat": 52.38826,
+        "lon": 13.05429
+      },
+      "address": "89 Werkstraße, Potsdam",
+      "website": "https://makerhub-potsdam.werkstatt.de.example",
+      "contact": "hello@makerhub-potsdam.werkstatt.de.example",
+      "endpoint_url": "https://makerhub-potsdam.werkstatt.de.example/404-gone.json",
+      "status": "broken",
+      "open_now": false,
+      "opening_hours": "Mo–Do 16:00–21:00",
+      "specialties": [
+        "ceramics",
+        "audio",
+        "bike-repair",
+        "biolab",
+        "textile"
+      ],
+      "network_memberships": [
+        "VOW",
+        "VULCA"
+      ],
+      "last_fetched": "2026-04-10T12:23:35.964Z",
+      "open_for_hosting": true,
+      "capacity": 62,
+      "founded": 2014
+    },
+    {
+      "id": "hackspace-mainz",
+      "name": "Hackspace Mainz",
+      "country": "DE",
+      "city": "Mainz",
+      "coordinates": {
+        "lat": 49.97926,
+        "lon": 8.26649
+      },
+      "address": "14 Werkstraße, Mainz",
+      "website": "https://hackspace-mainz.werkstatt.de.example",
+      "contact": "hello@hackspace-mainz.werkstatt.de.example",
+      "endpoint_url": null,
+      "status": "seeded",
+      "open_now": false,
+      "opening_hours": "Di, Do 18–22; Sa 11–16",
+      "specialties": [
+        "welding",
+        "bookbinding"
+      ],
+      "network_memberships": [
+        "VOW"
+      ],
+      "last_fetched": null,
+      "open_for_hosting": true,
+      "capacity": 69,
+      "founded": 2012
+    },
+    {
+      "id": "reparatur-cafe-karlsruhe",
+      "name": "Reparatur-Café Karlsruhe",
+      "country": "DE",
+      "city": "Karlsruhe",
+      "coordinates": {
+        "lat": 49.00709,
+        "lon": 8.39797
+      },
+      "address": "78 Werkstraße, Karlsruhe",
+      "website": "https://reparatur-cafe-karlsruhe.werkstatt.de.example",
+      "contact": "hello@reparatur-cafe-karlsruhe.werkstatt.de.example",
+      "endpoint_url": "https://reparatur-cafe-karlsruhe.werkstatt.de.example/maker.json",
+      "status": "confirmed",
+      "open_now": true,
+      "opening_hours": "Mon–Sun 09:00–22:00",
+      "specialties": [
+        "electronics",
+        "laser-cutting",
+        "metalworking"
+      ],
+      "network_memberships": [
+        "VOW"
+      ],
+      "last_fetched": "2026-04-19T07:06:07.118Z",
+      "open_for_hosting": true,
+      "capacity": 48,
+      "founded": 2020
+    },
+    {
+      "id": "stadtwerkstatt-rostock",
+      "name": "Stadtwerkstatt Rostock",
+      "country": "DE",
+      "city": "Rostock",
+      "coordinates": {
+        "lat": 54.08236,
+        "lon": 12.12532
+      },
+      "address": "93 Werkstraße, Rostock",
+      "website": "https://stadtwerkstatt-rostock.werkstatt.de.example",
+      "contact": "hello@stadtwerkstatt-rostock.werkstatt.de.example",
+      "endpoint_url": null,
+      "status": "seeded",
+      "open_now": false,
+      "opening_hours": "Thu 19:00–23:00; Sat 14:00–19:00",
+      "specialties": [
+        "robotics",
+        "woodworking",
+        "metalworking",
+        "glasswork",
+        "screen-printing"
+      ],
+      "network_memberships": [
+        "VULCA",
+        "VULCA"
+      ],
+      "last_fetched": null,
+      "open_for_hosting": true,
+      "capacity": 47,
+      "founded": 2015
+    }
+  ]
+}

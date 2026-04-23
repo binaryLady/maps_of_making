@@ -44,7 +44,7 @@ story_location: _bmad-output/implementation-artifacts
 development_status:
   # Epic 0: Pilot Seed Data Pipeline
   epic-0: in-progress
-  0-1-normalize-vow-scrape-to-mom-compliant-json-ld-geocode: ready-for-dev
+  0-1-normalize-vow-scrape-to-mom-compliant-json-ld-geocode: review
   0-2-generate-rff-mockup-dataset-for-health-layer-demo: backlog
   0-3-seed-import-load-both-datasets-into-oxigraph: backlog
   epic-0-retrospective: optional
