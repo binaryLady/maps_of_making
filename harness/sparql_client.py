@@ -20,8 +20,10 @@ async def run_ask(query: str) -> tuple[bool, int]:
                 "Content-Type": "application/sparql-query",
                 "Accept": "application/sparql-results+json",
             },
-            timeout=10.0,
+            timeout=httpx.Timeout(connect=5.0, read=10.0),
         )
         resp.raise_for_status()
     latency = int((time.monotonic() - t0) * 1000)
-    return resp.json()["boolean"], latency
+    result = resp.json().get("boolean", False)
+    log.info("sparql.completed", result=result, latency_ms=latency)
+    return result, latency

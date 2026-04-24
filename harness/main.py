@@ -30,7 +30,11 @@ async def on_ready():
 async def ping(interaction: discord.Interaction):
     sid = str(interaction.id)
     bound = log.bind(session_id=sid, adapter="discord")
-    await interaction.response.defer(thinking=True)
+    try:
+        await interaction.response.defer(thinking=True)
+    except discord.errors.InteractionResponded:
+        bound.error("ping.defer_failed", reason="interaction_already_responded")
+        return
     bound.info("ping.received")
 
     lines = []
@@ -60,5 +64,9 @@ async def ping(interaction: discord.Interaction):
 
 
 if __name__ == "__main__":
+    discord_token = os.environ.get("DISCORD_BOT_TOKEN")
+    if not discord_token:
+        raise ValueError("DISCORD_BOT_TOKEN not set in .env or environment")
+
     sparql_client.OXIGRAPH_ENDPOINT = os.environ.get("OXIGRAPH_ENDPOINT", "http://localhost:7878")
-    bot.run(os.environ["DISCORD_BOT_TOKEN"])
+    bot.run(discord_token)

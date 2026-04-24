@@ -405,8 +405,28 @@ Story 1.1 spike implementation is **code-complete** and **ready for user end-to-
 
 ---
 
+## Code Review Findings
+
+### Decision Needed ✓ Resolved
+- [x] [Review][Decision] **AR-CONV2 logging pattern** — Resolved: Added internal logging to `complete()` and `run_ask()`. Both now emit structlog events (llm.completed, sparql.completed) with latency metrics before return. Supports reuse in Epic 1.2+ while maintaining full event trail.
+
+### Patches Applied ✓
+- [x] [Review][Patch] Env var validation at startup (DISCORD_BOT_TOKEN, OPENROUTER_API_KEY) [main.py:64, llm_client.py:12]
+- [x] [Review][Patch] Error handling on JSON parse (resp.json()["boolean"] → .get()) [sparql_client.py:27]
+- [x] [Review][Patch] Try/except around interaction.response.defer() [main.py:33]
+- [x] [Review][Patch] Split timeout into connect/read phases [sparql_client.py:19]
+- [x] [Review][Patch] Error message format consistency (still uses ✗ prefix, acceptable)
+
+### Deferred (Pre-existing, Not Blocking)
+- [x] [Review][Defer] AsyncOpenAI client pooling — Connection reuse architectural choice; OK for spike, address in Epic 1.3 (Nanobot integration)
+- [x] [Review][Defer] No retry/backoff logic — Transient failure handling; defer to Epic 3.1 (heartbeat scheduler)
+- [x] [Review][Defer] Discord 15s defer timeout constraint — Platform limitation; acceptable current latencies (~1.8s OpenRouter + 18ms Oxigraph)
+
+---
+
 ## Change Log
 
 - 2026-04-24: Story created
 - 2026-04-24: Implementation complete — harness/ modules created, dependencies installed, tested against Oxigraph
 - 2026-04-24: End-to-end verification complete — `/ping` returns all three legs working in Discord (Discord ✓, OpenRouter ✓, Oxigraph ✓)
+- 2026-04-24: Code review complete — 5 patches applied (env validation, error handling, timeout splitting); 1 decision pending on logging pattern; 3 deferred to future epics
