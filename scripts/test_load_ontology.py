@@ -14,7 +14,8 @@ import httpx
 import pytest
 
 
-OXIGRAPH_ENDPOINT = os.environ.get("OXIGRAPH_ENDPOINT", "http://localhost:7878") + "/query"
+_base = os.environ.get("OXIGRAPH_ENDPOINT", "http://localhost:7878").rstrip("/")
+OXIGRAPH_ENDPOINT = _base if _base.endswith("/query") else _base + "/query"
 
 
 def sparql_ask(query: str) -> bool:
@@ -43,7 +44,7 @@ def sparql_ask(query: str) -> bool:
         )
         response.raise_for_status()
         return response.json().get("boolean", False)
-    except httpx.ConnectError as e:
+    except (httpx.ConnectError, httpx.ConnectTimeout) as e:
         pytest.skip(f"Oxigraph unreachable: {e}")
 
 

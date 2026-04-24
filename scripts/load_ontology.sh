@@ -8,6 +8,8 @@
 
 set -e
 
+cd "$(dirname "$0")/.."
+
 OXIGRAPH_URL="${1:-http://localhost:7878}"
 CURL_PREFIX=""
 

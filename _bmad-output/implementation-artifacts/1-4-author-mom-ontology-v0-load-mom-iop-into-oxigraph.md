@@ -226,6 +226,32 @@ claude-haiku-4-5-20251001
 - infra/docker-compose.yml (modified — removed :z SELinux volume labels)
 - Makefile (modified — sync-app now syncs project root; added scripts, .env coverage)
 
+### Review Findings
+
+- [x] [Review][Patch] `ontology/` missing from Makefile `sync-app` rsync target — already fixed: sync-app syncs `.` (project root); AC #7 satisfied [Makefile:33]
+- [x] [Review][Patch] load_ontology.sh must be run from project root — fixed: added `cd "$(dirname "$0")/.."` guard [scripts/load_ontology.sh:11]
+- [x] [Review][Patch] `OXIGRAPH_ENDPOINT` env var double-appends `/query` — fixed: strip trailing path before appending [scripts/test_load_ontology.py:17]
+- [x] [Review][Patch] `httpx.ConnectTimeout` not caught — fixed: catch `(ConnectError, ConnectTimeout)` [scripts/test_load_ontology.py:46]
+- [x] [Review][Defer] distrobox fallback silent failure when container not running — `podman inspect` fails silently, CONTAINER_IP is empty, script proceeds with original failing URL without a clear error message [scripts/load_ontology.sh:18] — deferred, infrastructure concern
+- [x] [Review][Defer] No `--max-time` on curl PUTs — load script can hang indefinitely on slow VPS or stalled container [scripts/load_ontology.sh:31] — deferred, low risk for current scale
+
+### Post-Deployment Fix (2026-04-24)
+
+After story shipped (commit a9f44ff), VPS container stack failed to start:
+- **Issue**: `docker compose up` exited with "dependency failed to start: container maps-oxigraph is unhealthy"
+- **Root Cause**: oxigraph image is a minimal static binary with no `curl` or shell; healthcheck tried `curl -f http://localhost:7878/health` which failed (curl missing + `/health` endpoint doesn't exist)
+- **Fix Applied**:
+  - Removed oxigraph healthcheck entirely (impossible to make work in minimal image)
+  - Changed `depends_on` conditions from `service_healthy` to `service_started` for both mak-link-handler and maps-nginx
+  - **Created symlink**: `infra/.env` → `../.env` (docker-compose.yml needs .env in working directory)
+  - Synced updated `infra/docker-compose.yml` to VPS
+  - Verified all services responding: oxigraph `:7878`, link-handler `:8000/health`, nginx `:80/health`
+- **Commits**:
+  - 61b8d32 "Fix oxigraph container healthcheck — remove curl dependency"
+  - (pending) "Add .env symlink to infra/ and document post-deployment fixes"
+- **Status**: ✅ VPS stack now running; ontology graphs verified loaded; infra/.env symlink in place
+
 ### Change Log
 
 - 2026-04-24: Story 1.4 implemented — MOM ontology v0, IoP stub, JSON-LD context, load script, integration tests, Makefile + docker-compose fixes
+- 2026-04-24: Post-deployment healthcheck fix — removed curl dependency from oxigraph, all services restored
