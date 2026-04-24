@@ -15,6 +15,7 @@ __pycache__/
 *.pyo
 venv/
 .env
+!infra/.env
 
 
 # Bind-mount data dirs (persisted on VPS, not in git)
@@ -25,3 +26,4 @@ data/nanoclaw/*
 
 VID-20251124-WA0002.mp4
 scraped/whatsapp-vulca/WhatsApp Chat with Hi👋VULCA.FRIENDS🚐.txt
+.env copy

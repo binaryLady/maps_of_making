@@ -1,5 +1,7 @@
 name: maps_of_making
 
+env_file: .env
+
 services:
 
   # ─────────────────────────────────────────────────────────────────
@@ -15,8 +17,8 @@ services:
       - internal
     volumes:
       - ../web:/var/www/mapsofmaking:ro
-      - ./nginx/conf.d:/etc/nginx/conf.d:z
-      - ../data/logs/nginx:/var/log/nginx:z
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ../data/logs/nginx:/var/log/nginx
       - /etc/nginx/.htpasswd:/etc/nginx/.htpasswd:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/health"]
@@ -36,7 +38,7 @@ services:
     networks:
       - internal
     volumes:
-      - ../data/oxigraph:/data:z
+      - ../data/oxigraph:/data
     expose:
       - "7878"
     command: serve --location /data --bind 0.0.0.0:7878
