@@ -1,6 +1,6 @@
 # Story 1.3: Docker Compose Stack + Nginx Security Routing
 
-Status: review
+Status: done
 
 ## Story
 
@@ -12,7 +12,7 @@ so that the backend is reachable, secure, and ready for ontology loading and ing
 
 1. **Given** the VPS has Docker + Docker Compose installed and `.env` is populated from `.env.example`
    **When** `docker compose up -d` is run from the project root on the VPS
-   **Then** all four services start without error: `oxigraph`, `mak-agent` (Nanobot), `mak-link-handler`, `maps-nginx`
+   **Then** ~~all four services start without error: `oxigraph`, `mak-agent` (Nanobot), `mak-link-handler`, `maps-nginx`~~ **3 services start without error: `oxigraph`, `mak-link-handler`, `maps-nginx`** — `mak-agent` (Nanobot) deferred to Epic 6 as a separate compose project (must be built from source; see `epic_1_architectural_decisions` in sprint-status.yaml)
 
 2. **And** `docker network ls` shows a `maps_of_making_internal` network; no host-level port conflicts — all services use `expose`, not `ports`, except `maps-nginx` (which joins the external `gateway` network and is only reachable via hetzner-gateway)
 
@@ -24,7 +24,7 @@ so that the backend is reachable, secure, and ready for ontology loading and ing
 
 6. **And** the presence webhook nginx route (`/webhook/presence`) is present but commented out (Epic 7 slot reserved)
 
-7. **And** `admin.debarquin.eu` returns 401 without credentials and 200 with the shared password from `.env` (basic auth on `maps-nginx` `/admin` location)
+7. ~~**And** `admin.debarquin.eu` returns 401 without credentials and 200 with the shared password from `.env` (basic auth on `maps-nginx` `/admin` location)~~ ⏭️ **Descoped to Epic 2/3** — nginx `auth_basic` location and `.htpasswd` volume mount are in place; `.htpasswd` generation deferred until admin SPA exists.
 
 8. **And** `.env.example` is committed with all required variable names and placeholder values; `.env` is in `.gitignore`
 
@@ -290,3 +290,37 @@ claude-haiku-4-5-20251001
 - 2026-04-24: All tasks implemented and deployed to VPS
 - 2026-04-24: Architectural decision made: Nanobot deferred to Epic 6 (separate compose project)
 - 2026-04-24: AC #1–#6 verified on VPS; AC #7 deferred to Epic 2/3 (admin SPA + htpasswd setup)
+- 2026-04-24: Code review completed (3 layers: Blind Hunter, Edge Case Hunter, Acceptance Auditor)
+
+### Review Findings
+
+**Reviewed:** 2026-04-24 | **Sources:** Blind Hunter + Edge Case Hunter + Acceptance Auditor | **Dismissed:** 3
+
+#### Decision Needed
+
+- [x] [Review][Decision] **AC #7 status — descoped to Epic 2/3** — AC #7 text updated to reflect deferral. nginx auth_basic + .htpasswd volume mount in place; .htpasswd generation deferred until admin SPA exists.
+- [x] [Review][Decision] **AC #1 spec inconsistency — resolved** — AC #1 text updated to reflect 3-service delivery; mak-agent deferral to Epic 6 noted inline.
+
+#### Patch
+
+- [x] [Review][Patch] **LINK_SECRET not validated — container starts with empty string if unset** [`infra/docker-compose.yml:mak-link-handler:environment`]
+- [x] [Review][Patch] **depends_on oxigraph uses default condition, not service_healthy** [`infra/docker-compose.yml:mak-link-handler:depends_on`]
+- [x] [Review][Patch] **mak-link-handler missing healthcheck** [`infra/docker-compose.yml:mak-link-handler`]
+- [x] [Review][Patch] **OXIGRAPH_ENDPOINT in .env.example still points to localhost:7878** — should be `http://oxigraph:7878` for VPS or annotated clearly [`.env.example`]
+- [x] [Review][Patch] **OPTIONS preflight on /sparql/update returns 403, blocking CORS preflight** [`infra/nginx/conf.d/app.conf:sparql/update`]
+- [x] [Review][Patch] **Token parameter not validated in /claim/{token}** — no format/length check, no logging [`infra/link_handler/main.py:claim`]
+- [x] [Review][Patch] **Dockerfile missing EXPOSE 8000** [`infra/link_handler/Dockerfile`]
+- [x] [Review][Patch] **No request logging in link_handler** — claim attempts leave no audit trail [`infra/link_handler/main.py`]
+- [x] [Review][Patch] **Token with special chars (/, ?, #) may be mangled by nginx proxy_pass** [`infra/nginx/conf.d/app.conf:claim/`]
+
+#### Deferred
+
+- [x] [Review][Defer] **Docker images not pinned to specific versions** [`infra/link_handler/Dockerfile`, `docker-compose.yml`] — deferred, pre-existing practice across project
+- [x] [Review][Defer] **CORS `*` overly permissive on /sparql/query** [`infra/nginx/conf.d/app.conf`] — deferred, intentional public endpoint design, revisit in Epic 5
+- [x] [Review][Defer] **LINK_SECRET env var never consumed in stub** [`infra/link_handler/main.py`] — deferred, by design; stub placeholder for Epic 3
+- [x] [Review][Defer] **nginx /claim/ has minimal proxy headers (missing X-Forwarded-Proto)** [`infra/nginx/conf.d/app.conf`] — deferred, stub; full headers in Epic 3
+- [x] [Review][Defer] **No SPARQL query complexity limits / DoS protection** [`infra/nginx/conf.d/app.conf`] — deferred, pre-existing, future infra hardening
+- [x] [Review][Defer] **No graceful shutdown timeout for uvicorn** [`infra/link_handler/Dockerfile`] — deferred, stub only
+- [x] [Review][Defer] **gateway network external precondition not verified** [`infra/docker-compose.yml`] — deferred, pre-existing infra dependency
+- [x] [Review][Defer] **nginx starts before upstreams are ready (early 502s)** [`infra/docker-compose.yml`] — deferred, pre-existing; nginx auto-recovers on upstream reconnect
+- [x] [Review][Defer] **No upstream fallback for oxigraph or mak-link-handler downtime** [`infra/nginx/conf.d/app.conf`] — deferred, resilience hardening is future work
