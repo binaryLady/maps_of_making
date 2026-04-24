@@ -1,3 +1,5 @@
+name: maps_of_making
+
 services:
 
   # ─────────────────────────────────────────────────────────────────
@@ -15,6 +17,7 @@ services:
       - ../web:/var/www/mapsofmaking:ro
       - ./nginx/conf.d:/etc/nginx/conf.d:z
       - ../data/logs/nginx:/var/log/nginx:z
+      - /etc/nginx/.htpasswd:/etc/nginx/.htpasswd:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/health"]
       interval: 30s
@@ -24,6 +27,7 @@ services:
   # ─────────────────────────────────────────────────────────────────
   # oxigraph — SPARQL 1.1 triplestore
   # Persists RDF data in data/oxigraph/ (bind-mounted from VPS host).
+  # Internal only — access via nginx proxy on VPS.
   # ─────────────────────────────────────────────────────────────────
   oxigraph:
     image: ghcr.io/oxigraph/oxigraph:latest
@@ -33,8 +37,8 @@ services:
       - internal
     volumes:
       - ../data/oxigraph:/data:z
-    ports:
-      - "127.0.0.1:7878:7878"
+    expose:
+      - "7878"
     command: serve --location /data --bind 0.0.0.0:7878
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:7878/health"]
@@ -43,22 +47,46 @@ services:
       retries: 3
 
   # ─────────────────────────────────────────────────────────────────
-  # nanoclaw — Phase 2 placeholder (bot adapter / ingestion agent)
-  # Uncomment and configure when Phase 2 ingestion work begins.
+  # mak-agent — Nanobot NL bot (deferred to Epic 6)
+  # Build from source: https://github.com/HKUDS/nanobot
+  # Run as a SEPARATE compose project joining maps_of_making_internal.
+  # Do NOT embed here — kept as separate project for clean isolation.
   # ─────────────────────────────────────────────────────────────────
-  # nanoclaw:
-  #   image: nanoclaw:local        # built from source, no public image yet
-  #   container_name: maps-nanoclaw
+  # mak-agent:
+  #   image: hkuds/nanobot:local   # build from HKUDS/nanobot repo
+  #   container_name: maps-agent
   #   restart: unless-stopped
   #   networks:
   #     - internal
+  #   environment:
+  #     - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+  #     - OXIGRAPH_ENDPOINT=http://oxigraph:7878
   #   volumes:
-  #     - ../data/nanoclaw:/data
-  #     - /var/run/docker.sock:/var/run/docker.sock  # needed for container spawning
-  #   env_file: .env
+  #     - ./nanobot-config:/root/.nanobot:z
+  #     - ./tasks:/app/tasks:z
+  #   depends_on:
+  #     - oxigraph
+
+  # ─────────────────────────────────────────────────────────────────
+  # mak-link-handler — FastAPI magic link validator & claim handler
+  # Processes /claim/{token} requests (full impl in Epic 3 Story 3.3).
+  # ─────────────────────────────────────────────────────────────────
+  mak-link-handler:
+    build: ./link_handler
+    container_name: maps-link-handler
+    restart: unless-stopped
+    networks:
+      - internal
+    expose:
+      - "8000"
+    environment:
+      - OXIGRAPH_ENDPOINT=http://oxigraph:7878
+      - LINK_SECRET=${LINK_SECRET}
+    depends_on:
+      - oxigraph
 
 networks:
   gateway:
     external: true        # shared with hetzner-gateway
   internal:
-    driver: bridge        # maps-nginx ↔ oxigraph only, not exposed
+    driver: bridge        # maps-nginx ↔ oxigraph, mak-agent, mak-link-handler
