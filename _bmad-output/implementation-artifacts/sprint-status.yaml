@@ -13,11 +13,46 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-23
-last_updated: 2026-04-24 (story 0.3 ready-for-dev)
+last_updated: 2026-04-24 (story 1.1 ready-for-dev)
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
 story_location: _bmad-output/implementation-artifacts
+
+# CROSS-EPIC HANDOFFS
+# ===================
+# Critical learnings that MUST be carried into story creation for future epics.
+# Check this section when creating any new story.
+#
+# Epic 0 → Epic 1+ handoffs (2026-04-24):
+#   SPARQL_PREFIXES: Every SPARQL query must include PREFIX declarations.
+#     Oxigraph returns 400 without them. Mocked unit tests never catch this —
+#     only live Oxigraph testing does. Confirmed namespaces:
+#       PREFIX mom: <https://mapsofmaking.eu/ns#>
+#       PREFIX mak: <https://mapsofmaking.eu/resource/>
+#       PREFIX schema: <https://schema.org/>
+#       PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+#   OXIGRAPH_DATA: 567 named graphs loaded at localhost:7878 (566 VOW + 1 RFF).
+#     Idempotency verified. --force RFF reload has dupe-triples bug (non-blocking).
+#   HTTP_CLIENT: httpx only (not requests, not SPARQLWrapper).
+#   LOCAL_DEV: distrobox-host-exec podman compose -f infra/docker-compose.yml up -d oxigraph
+#   FRAMEWORK: Spike (1.1) uses custom 3-file harness. Nanobot integration starts at 1.3.
+#   VENV: Managed externally by user — never create harness/venv or scripts/venv.
+
+cross_epic_handoffs:
+  epic_0_to_1:
+    sparql_prefixes_required: true
+    sparql_namespaces:
+      mom: "https://mapsofmaking.eu/ns#"
+      mak: "https://mapsofmaking.eu/resource/"
+      schema: "https://schema.org/"
+      xsd: "http://www.w3.org/2001/XMLSchema#"
+    oxigraph_live_data: "567 named graphs (566 VOW + 1 RFF mock) at localhost:7878"
+    http_client: "httpx (not requests, not SPARQLWrapper)"
+    local_dev_cmd: "distrobox-host-exec podman compose -f infra/docker-compose.yml up -d oxigraph"
+    nanobot_start: "Story 1.3 — not Story 1.1"
+    outstanding_bugs:
+      - "seed_import.py --force duplicates triples (no CLEAR GRAPH before reload) — non-blocking"
 
 development_status:
   # Epic 0: Pilot Seed Data Pipeline
@@ -28,8 +63,8 @@ development_status:
   epic-0-retrospective: optional
 
   # Epic 1: Federated Backend Foundation
-  epic-1: backlog
-  1-1-integration-dependency-spike: backlog
+  epic-1: in-progress
+  1-1-integration-dependency-spike: ready-for-dev
   1-2-scope-basemap-to-europe-update-loader-copy: backlog
   1-3-docker-compose-stack-nginx-security-routing: backlog
   1-4-author-mom-ontology-v0-load-mom-iop-into-oxigraph: backlog
