@@ -104,6 +104,7 @@
       style: buildStyle('grayscale'),
       center: [4.8, 49.5],   // rough midpoint FR/DE
       zoom: 4.3,
+      maxBounds: [[-25, 34], [45, 72]], // [west, south], [east, north] — Atlantic to Ural, N Africa to Scandinavia
       hash: false,
       attributionControl: { compact: true },
     });
