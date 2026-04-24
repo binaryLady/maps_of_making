@@ -1,6 +1,6 @@
 # Story 1.4: Author MOM Ontology v0 + Load MOM & IoP into Oxigraph
 
-Status: review
+Status: done
 
 ## Story
 

@@ -1,185 +1,123 @@
-# Maps of Making: Federated Makerspace Data Commons
+# Maps of Making
 
-> Digital commons infrastructure that solves why makerspace maps fail: **no ongoing incentive to maintain them.**
+> Maker spaces are invisible because maps go stale. We're fixing that.
 
 ---
 
 ## The Problem
 
-Existing makerspace maps (Fablab.io, Hackerspaces.org, regional databases) go stale because:
+Fifteen directories list makerspaces, fablabs, hackerspaces, and maker labs across Europe and globally.
 
-- **Spaces waste effort** updating 5+ separate platforms with zero visible impact
-- **No feedback loop** showing "your verification matters"
-- **Maps become unreliable** → users waste travel time and resources
-- **Ecosystem loses coordination** → networks can't share lessons from failures
-- **Knowledge disappears** → when spaces close, their history is erased
+And yet — when someone in a 200+ member network needs to know if the Venice fab lab is still open, they post in the group chat. Because they know maps are stale.
 
-**Root cause:** Incentive misalignment. One-shot data entry ≠ ongoing maintenance.
+**Here's why:**
+- Spaces register once to claim presence, then never update. The reward for signing up is being on the map. There's no incentive to maintain.
+- So you update one directory, realize you need to update thirteen others, and… you stop.
+- Meanwhile, every group chat keeps asking the same questions: *"Anyone know a space near Barcelona? Is this place still open? Who hosts residencies?"*
 
-**Impact:** Digital nomads, researchers, and communities depend on current makerspace info. Outdated maps lead to wasted travel, wasted resources, lost ecosystem learning.
-
----
-
-## Our Solution
-
-### One Verification Point → Visible Everywhere
-
-Maps of Making creates a **single source of truth** so useful and fresh that maintaining it becomes rationally justified:
-
-**For Space Operators:**
-- Verify once → visible globally across the entire ecosystem
-- Effortless maintenance: Magic links, webhooks, local sensors (**<2 minutes per update**)
-- Real-time feedback: Activity update → instant freshness change on map
-- Community reputation: "Our data is current; people can actually find us"
-
-**For Users & Researchers:**
-- One reliable source replaces 5+ stale platforms
-- Freshness signals (✅ Fresh → ⚠️ Aging → 🧟 Zombie → 💀 Dead) show current status
-- Machine-readable API: Natural language queries ("Find active spaces in Berlin")
-- Network intelligence: Who collaborates? What partnerships exist? (not just locations)
-
-**For the Ecosystem:**
-- Spaces close, but their history is preserved (not deleted)
-- Networks can study failure patterns and evolution strategies
-- Communities share lessons across regions
-- **Infrastructure designed to outlive any grant funding**
+The real problem: you're pushing data to fifteen platforms. Nothing incentivizes keeping it fresh.
 
 ---
 
-## Commons Alignment: Built for Sustainability
+## The Flip
 
-Maps of Making is grounded in **Elinor Ostrom's principles** for sustainable commons governance—proven across fisheries, forests, and community resources worldwide:
+What if it worked backwards?
 
-| Principle | Implementation |
-|-----------|-----------------|
-| **Clear boundaries** | Federated networks define membership; spaces opt-in |
-| **Collective decision-making** | Networks set verification standards, governance rules |
-| **Monitoring & accountability** | Freshness signals, activity logs, immutable ledger |
-| **Graduated sanctions** | Status lifecycle incentivizes timely verification |
-| **Conflict resolution** | Closure reports, dispute mechanisms, community trust |
-| **Recognition** | Networks govern their own data (not platform gatekeeping) |
-| **Polycentric governance** | Networks can host federation replicas, apply rules at their scale |
-| **Nested enterprises** | Pilot networks → Regional federations → Global ecosystem |
+**You publish one file** — a small, structured file about your space (name, address, status, specialties) — at any public URL you control. Your website, GitHub, Nextcloud, a simple server. Anywhere.
 
-**Key Design Decisions:**
-- ✅ Community ownership: Networks and spaces control their data
-- ✅ Decentralized architecture: IPFS snapshots (data lives in commons, not proprietary servers)
-- ✅ Transparent governance: Immutable ledger tracks all verification events
-- ✅ Apache 2.0 license: Enables derivative funding (NGI, Erasmus+)
-- ✅ Validator node model: Networks can run local replicas (no single point of failure)
+We read *from you*. Continuously. When you update that file, the map updates everywhere instantly. No forms, no logins, no middleman.
 
-**Why This Matters for NLNet:** Commons designed to Ostrom principles are proven to sustain across decades without external funding or platform gatekeeping. This isn't just a map—**it's infrastructure designed to outlive grants.**
+```json
+{
+  "name": "FabLab of Ooo",
+  "address": "12 Sugar Plum Street, Land of Ooo",
+  "website": "https://fablab-of-ooo.example",
+  "status": "open",
+  "opening_hours": "Mon–Fri 14:00–20:00",
+  "specialties": ["woodworking", "electronics", "candy engineering"],
+  "networks": ["VULCA", "Adventure Makers Network"]
+}
+```
+
+This is the logic behind [SpaceAPI](https://spaceapi.io/) — thousands of hackerspaces have used it for years. We're bringing that spirit to the broader maker ecosystem.
 
 ---
 
-## Impact Potential
+## What it unlocks — progressively
 
-### 1. Eliminate Duplicate Effort
-**Problem:** Spaces update 5+ separate maps. Each update feels disconnected from impact.
-**Solution:** Single verification cascades everywhere—one update powers discoverability across the entire ecosystem.
+**Day 1:** From that file alone, the map answers real questions:
+- *"Show me all open spaces within 100km of Bath"*
+- *"Which spaces in Germany have woodworking?"*
+- *"Who's part of the VOW network?"*
 
-### 2. Enable Ecosystem Learning
-**Problem:** Failed spaces close, data disappears, networks can't learn from experience.
-**Solution:** Preserve history, not delete it. Time-based queries enable research: "Which spaces closed in 2024? Why? What patterns exist?"
+**Layer 2:** Once networks agree on shared vocabulary — that "woodworking" and "wood shop" are the same thing — we unlock cross-network queries. A simple ontology that lets your data talk to other people's data.
 
-### 3. Reveal Invisible Networks
-**Problem:** Other maps show locations. We reveal relationships.
-**Solution:** Graph database captures collaborations, partnerships, skill flows. Answer questions like: "Who collaborates with whom? What ecosystems are forming?"
-
-### 4. Agent-Ready Infrastructure
-**Problem:** Closed maps are opaque to AI. Agents can't understand ecosystem.
-**Solution:** Natural language API + A2A protocol compatibility. "Ask the map" becomes possible—agents get current, verified data.
-
-### 5. Replicable Pattern for Commons
-**Problem:** Solutions built for makerspaces only.
-**Solution:** Same model scales to repair networks, tool libraries, community gardens, knowledge commons. Open source + Apache 2.0 enables forks.
+**Layer 3:** A bot in a Mattermost channel reads: *"Cherche espace ouvert à accueil en Allemagne"* — and instead of the group chat guessing, it queries all French and German networks' endpoints, finds matches, returns them as a map with train times. All from structured, live, open data.
 
 ---
 
-## Documentation Guide
+## Built on open standards
 
-### For Reviewers & Funders
-Start here and read in order:
-1. **[Product Requirements (PRD)](docs/PRD.md)** — Full requirements, user journeys, success metrics, Ostrom alignment
-2. **[Competitive Analysis](docs/competitive-analysis.md)** — Market positioning, competitor comparison, strategic differentiation
-3. **[NLNet Application](docs/NLnet-NGI-ZERO-Commons-Application.md)** — Funding proposal, budget, timeline
+- **[SpaceAPI](https://spaceapi.io/)** — proven endpoint pattern, already used by hackerspaces globally
+- **[W3C Linked Data](https://www.w3.org/standards/semanticweb/data)** — structured data that means the same thing everywhere
+- **[Solid](https://solidproject.org/)** — your data, your file, your URL
+- **[SPARQL](https://www.w3.org/TR/sparql11-query/) & [Oxigraph](https://oxigraph.org/)** — federated queries across all space endpoints
 
-### For Technical Leadership
-1. **[Architecture](docs/architecture.md)** — System design, 6 ADRs, graph schema, API design, deployment
-2. **[Tech Stack Audit](docs/tech-stack-audit.md)** — Verified technologies, latest versions, license compatibility
-3. **[Implementation Readiness Report](docs/implementation-readiness-report.md)** — Gate-check validation, gap analysis, risk assessment
-
-### For Development Team
-1. **[Epics & Stories](docs/epics.md)** — 21-27 user stories, sequencing, acceptance criteria, estimates
-2. **[Architecture](docs/architecture.md)** — Sections 1-3 (system design, data models, tech stack)
-3. **[Project Status](docs/bmm-workflow-status.md)** — Phase completion, next actions, blockers
-
-### For Consortium Partners
-1. **This README** ← You are here
-2. **[PRD](docs/PRD.md)** — Problem statement, solution approach, success metrics
-3. **[Architecture](docs/architecture.md)** — Overview of technical approach and governance model
+This isn't proprietary. It's infrastructure you can understand, audit, and fork.
 
 ---
 
-## Funding Strategy
+## Where we are now
 
-### NLNet Commons Fund (MVP: Phases 1-3)
-- **Timeline:** 6 months
-- **Scope:** Data federation + interactive map + verification system
-- **Proof of concept:** Demonstrates that communities maintain data when incentives align
+**Pilot networks:** RFF (Réseau des Fablabs Français) and VOW (Verbund Offener Werkstätten) are the first to participate.
 
-### Phase 4+ (Strategic Funding)
-- **Erasmus+ KA220:** Governance layer, network coordinator training
-- **Fediversity:** Decentralized scaling, validator node deployment
-- **Replication revenue:** Communities license implementation support
+**Live stack:** The `lod-prototype` branch runs the full federation: Oxigraph ingesting endpoints, SPARQL queries over the aggregated data, an interactive map powered by fresh, decentralized data.
 
-**Why It Works:** Pilot networks → regional federations → global maker ecosystem. Each level self-sustains through community participation.
+**Next:** Workshops with pilot networks to walk spaces through setup (no solo effort required). Then scaling to more regions.
 
 ---
 
-## Contributing
+## For space operators
 
-Maps of Making is built for **community participation from day one.**
+Early pilot networks (RFF, VOW) are rolling out workshops now. If you're outside those networks and want to join, [reach out](mailto:nicolas.de.barquin@gmail.com).
 
-### For Makerspace Networks
-Interested in piloting? **[Start here](docs/PRD.md#Epic-3-Verification--Community-Maintenance)** to understand verification workflow.
-
-### For Developers
-Phase 4 sprint planning begins Nov 2025. **[See implementation roadmap](docs/epics.md)** for story breakdown and contribution opportunities.
-
-### For Researchers
-**[Temporal ecosystem analysis](docs/PRD.md#Epic-5-Temporal-Ecosystem-Analysis)** is deferred to Phase 4 but core infrastructure is designed to support it. Space history is preserved, not deleted.
+The setup is simple:
+1. Publish a structured file at a URL you control
+2. Tell us the URL
+3. Your space appears on the map — and stays fresh when you update the file
 
 ---
 
-## Team
+## For developers
 
-**Maps of Making** is developed by a coalition of makerspace networks, digital commons researchers, and open-source contributors.
+- **`/web`** — React frontend, live map powered by SPARQL queries
+- **`/infra`** — Docker Compose stack: Oxigraph, Nginx, the full federation layer
+- **`/ontology`** — Shared vocabulary (RDF schema) that spaces and networks define together
+- **`/harness`** — Integration test suite for the federation protocol
 
-**Current Team:**
-- [COMPLETE with team members and roles]
+The architecture is designed for sovereignty: networks can run local Oxigraph replicas, communities own their vocabularies, spaces control their data.
 
-**Contact:** [COMPLETE with primary contact]
+---
+
+## For researchers
+
+Space history is preserved, not deleted. Time-based queries are part of the design — "Which spaces closed in 2024? What patterns exist?" Research on makerspace ecosystems doesn't require scraping; it comes from shared, structured data.
 
 ---
 
 ## License
 
-- **Core Platform:** Apache 2.0 (enables derivative funding from NGI calls)
-- **Database:** GPL3 (Neo4j Community)
-- **Dependencies:** All MIT or Apache 2.0 compatible
+**Apache 2.0** — enables community remixing, derivative funding, and institutional partnerships without gatekeeping.
 
-All code, documentation, and data schemas are open source. **Data commons, not data extraction.**
+All code and schemas are open source. We're building commons infrastructure, not extracting data.
 
 ---
 
 ## Citation
 
-If you reference Maps of Making in research or funding applications:
-
 ```
 Maps of Making: Federated Makerspace Data Commons.
-Grounded in Elinor Ostrom's principles for sustainable commons governance.
+Built on SpaceAPI, W3C Linked Data, and open standards.
 https://github.com/maps-of-making
 Apache 2.0 License, 2025
 ```
@@ -188,8 +126,8 @@ Apache 2.0 License, 2025
 
 <div align="center">
 
-**Building digital commons where communities maintain their own data because they own it, see immediate impact, and the effort is minimal.**
+**One file per space. Fresh data everywhere. A map the ecosystem maintains because it owns it.**
 
-[📄 Full PRD](docs/PRD.md) • [🏗️ Architecture](docs/architecture.md) • [💰 NLNet Application](docs/NLnet-NGI-ZERO-Commons-Application.md) • [📊 Analysis](docs/competitive-analysis.md)
+[🚀 Blog post](https://nicolasdb.eu) • [🔧 Architecture](/ontology) • [💬 Contact](mailto:nicolas.de.barquin@gmail.com)
 
 </div>

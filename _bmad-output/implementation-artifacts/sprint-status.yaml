@@ -74,7 +74,7 @@ development_status:
   1-1-integration-dependency-spike: done
   1-2-scope-basemap-to-europe-update-loader-copy: done
   1-3-docker-compose-stack-nginx-security-routing: done
-  1-4-author-mom-ontology-v0-load-mom-iop-into-oxigraph: review
+  1-4-author-mom-ontology-v0-load-mom-iop-into-oxigraph: done
   1-5-map-reads-from-oxigraph-geojson-materialization: backlog
   epic-1-retrospective: optional
 
