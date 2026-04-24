@@ -4,28 +4,6 @@
 # project_key: NOKEY
 # tracking_system: file-system
 # story_location: _bmad-output/implementation-artifacts
-
-# STATUS DEFINITIONS:
-# ==================
-# Epic Status:
-#   - backlog: Epic not yet started
-#   - in-progress: Epic actively being worked on
-#   - done: All stories in epic completed
-#
-# Epic Status Transitions:
-#   - backlog → in-progress: Automatically when first story is created (via create-story)
-#   - in-progress → done: Manually when all stories reach 'done' status
-#
-# Story Status:
-#   - backlog: Story only exists in epic file
-#   - ready-for-dev: Story file created in stories folder
-#   - in-progress: Developer actively working on implementation
-#   - review: Ready for code review (via Dev's code-review workflow)
-#   - done: Story completed
-#
-# Retrospective Status:
-#   - optional: Can be completed but not required
-#   - done: Retrospective has been completed
 #
 # WORKFLOW NOTES:
 # ===============
@@ -35,7 +13,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-23
-last_updated: 2026-04-23 (story 0.2 done)
+last_updated: 2026-04-24 (story 0.3 ready-for-dev)
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
@@ -43,10 +21,10 @@ story_location: _bmad-output/implementation-artifacts
 
 development_status:
   # Epic 0: Pilot Seed Data Pipeline
-  epic-0: in-progress
+  epic-0: done
   0-1-normalize-vow-scrape-to-mom-compliant-json-ld-geocode: done
   0-2-generate-rff-mockup-dataset-for-health-layer-demo: done
-  0-3-seed-import-load-both-datasets-into-oxigraph: backlog
+  0-3-seed-import-load-both-datasets-into-oxigraph: done
   epic-0-retrospective: optional
 
   # Epic 1: Federated Backend Foundation

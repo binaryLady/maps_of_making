@@ -13,8 +13,8 @@ services:
       - internal
     volumes:
       - ../web:/var/www/mapsofmaking:ro
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      - /var/log/nginx/maps:/var/log/nginx
+      - ./nginx/conf.d:/etc/nginx/conf.d:z
+      - ../data/logs/nginx:/var/log/nginx:z
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/health"]
       interval: 30s
@@ -32,7 +32,9 @@ services:
     networks:
       - internal
     volumes:
-      - ../data/oxigraph:/data
+      - ../data/oxigraph:/data:z
+    ports:
+      - "127.0.0.1:7878:7878"
     command: serve --location /data --bind 0.0.0.0:7878
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:7878/health"]
