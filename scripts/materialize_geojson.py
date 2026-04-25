@@ -30,7 +30,7 @@ PREFIX schema: <https://schema.org/>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 SELECT ?spaceUri ?name ?latitude ?longitude ?status ?geolocationFidelity ?geolocationNote
-       ?street ?postcode ?city ?country ?website ?profileUrl
+       ?street ?postcode ?city ?country ?website ?profileUrl ?openNow
        (GROUP_CONCAT(?specialty; separator="|") AS ?specialties)
 WHERE {
   GRAPH ?spaceGraph {
@@ -52,9 +52,14 @@ WHERE {
     OPTIONAL { ?spaceUri schema:knowsAbout ?specialty }
   }
   FILTER (STRSTARTS(STR(?spaceGraph), "urn:mak:space/"))
+  OPTIONAL {
+    GRAPH <urn:mak:presence> {
+      ?spaceUri mom:openNow ?openNow .
+    }
+  }
 }
 GROUP BY ?spaceUri ?name ?latitude ?longitude ?status ?geolocationFidelity ?geolocationNote
-         ?street ?postcode ?city ?country ?website ?profileUrl
+         ?street ?postcode ?city ?country ?website ?profileUrl ?openNow
 ORDER BY ?spaceUri"""
 
 
@@ -109,8 +114,13 @@ def binding_to_space(binding: dict) -> dict:
     space_id = space_uri.split("/")[-1] if "/" in space_uri else space_uri
 
     name = binding.get("name", {}).get("value", "")
-    latitude = float(binding.get("latitude", {}).get("value", 0))
-    longitude = float(binding.get("longitude", {}).get("value", 0))
+    lat_raw = binding.get("latitude", {}).get("value")
+    lon_raw = binding.get("longitude", {}).get("value")
+    if lat_raw is None or lon_raw is None:
+        log.warning(f"WARNING_MISSING_COORDINATES: space {space_uri!r} has no lat/lon — skipped")
+        return None
+    latitude = float(lat_raw)
+    longitude = float(lon_raw)
 
     status = binding.get("status", {}).get("value", "seeded")
     fidelity = binding.get("geolocationFidelity", {}).get("value", "")
@@ -121,6 +131,8 @@ def binding_to_space(binding: dict) -> dict:
     country = binding.get("country", {}).get("value", "")
     website = binding.get("website", {}).get("value", "")
     endpoint_url = binding.get("profileUrl", {}).get("value", "")
+    open_now_raw = binding.get("openNow", {}).get("value")
+    open_now = open_now_raw.lower() == "true" if open_now_raw is not None else False
     raw_specialties = binding.get("specialties", {}).get("value", "")
     specialties = [s for s in raw_specialties.split("|") if s] if raw_specialties else []
 
@@ -129,54 +141,63 @@ def binding_to_space(binding: dict) -> dict:
     address = ", ".join(address_parts)
 
     return {
-        "id": space_id,
-        "name": name,
-        "coordinates": {"lat": latitude, "lon": longitude},
-        "status": status,
-        "geolocationFidelity": fidelity,
-        "geolocationNote": geo_note,
-        "address": address,
-        "city": city,
-        "country": country,
-        "website": website,
-        "endpoint_url": endpoint_url,
-        "specialties": specialties,
-        # Fields not yet seeded — populated by Epic 2 individual endpoint fetch
-        "opening_hours": "",
-        "founded": "",
-        "capacity": 0,
-        "contact": "",
-        "network_memberships": [],
-        "open_for_hosting": False,
-        "open_now": False,
-        "last_fetched": "",
+        "type": "Feature",
+        "geometry": {
+            "type": "Point",
+            "coordinates": [longitude, latitude],
+        },
+        "properties": {
+            "id": space_id,
+            "uri": space_uri,
+            "name": name,
+            "status": status,
+            "geolocationFidelity": fidelity,
+            "geolocationNote": geo_note,
+            "address": address,
+            "city": city,
+            "country": country,
+            "website": website,
+            "endpoint_url": endpoint_url,
+            "specialties": specialties,
+            "open_now": open_now,
+            # Fields not yet seeded — populated by Epic 2 individual endpoint fetch
+            "opening_hours": "",
+            "founded": "",
+            "capacity": 0,
+            "contact": "",
+            "network_memberships": [],
+            "open_for_hosting": False,
+            "last_fetched": "",
+        },
     }
 
 
 def materialize_spaces() -> dict:
     """
-    Materialize spaces list from Oxigraph.
+    Materialize spaces as GeoJSON FeatureCollection from Oxigraph.
 
     Returns:
-        Object with 'spaces' array, compatible with app.js loadData()
+        RFC 7946 GeoJSON FeatureCollection
     """
     log.info(f"Querying Oxigraph at {OXIGRAPH_URL}")
     bindings = fetch_spaces_from_oxigraph()
 
-    spaces = [binding_to_space(b) for b in bindings]
-    log.info(f"Materialized {len(spaces)} spaces")
+    features = [binding_to_space(b) for b in bindings]
+    features = [f for f in features if f is not None]
+    log.info(f"Materialized {len(features)} spaces")
 
     return {
-        "spaces": spaces,
+        "type": "FeatureCollection",
+        "features": features,
     }
 
 
 def write_output_atomically(data: dict) -> None:
     """
-    Write spaces data to file atomically (write to temp file, then rename).
+    Write GeoJSON FeatureCollection to file atomically (write to temp file, then rename).
 
     Args:
-        data: Data structure with 'spaces' array
+        data: RFC 7946 GeoJSON FeatureCollection
     """
     OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
 

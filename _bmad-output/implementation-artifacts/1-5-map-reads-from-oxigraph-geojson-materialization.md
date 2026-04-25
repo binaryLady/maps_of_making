@@ -1,6 +1,6 @@
 # Story 1.5: Map Reads from Oxigraph GeoJSON Materialization
 
-Status: review
+Status: done
 
 ## Story
 
@@ -370,6 +370,17 @@ After Story 1.4, `infra/docker-compose.yml` requires `.env` in the same director
 - `infra/nginx/conf.d/app.conf` — Already configured (Cache-Control header for /data/ static files working)
 - `infra/docker-compose.yml` — Fixed nginx volume mount: /etc/nginx/.htpasswd → ./nginx/.htpasswd (relative path for Fedora/rootless Podman compatibility)
 - `.gitignore` — Added infra/nginx/.htpasswd entry (credentials file, never commit)
+
+### Review Findings
+
+- [x] [Review][Decision] Output format deviation: fixed — `materialize_geojson.py` now emits RFC 7946 GeoJSON FeatureCollection; `app.js` parses `features[]` and flattens to internal space objects
+- [x] [Review][Decision] Missing `properties.uri` and `properties.last_fetched` — `uri` added to properties; `last_fetched` kept as `""` (honest for seeded data, Epic 3 will populate)
+- [x] [Review][Decision] Missing LEFT JOIN against `<urn:mak:presence>` — added OPTIONAL GRAPH `<urn:mak:presence>` clause; `open_now` field wired (false for all spaces until Epic 7)
+- [x] [Review][Patch] Lat/lon default to 0.0 on missing value — fixed: logs WARNING_MISSING_COORDINATES and returns None; filtered out in materialize_spaces()
+- [x] [Review][Patch] `loadData()` no try/catch for JSON parse — fixed: try/catch around `res.json()` with graceful failure banner
+- [x] [Review][Defer] Fixed temp filename `.geojson.tmp` — concurrent runs corrupt; low risk now (manual invocation), becomes real risk when Epic 3 scheduler runs it — deferred, pre-existing
+- [x] [Review][Defer] GROUP_CONCAT `|` separator — specialty with literal `|` splits incorrectly; Epic 2 will normalize specialties — deferred, pre-existing
+- [x] [Review][Defer] `countryLabel()` only handles FR/DE — all other countries show raw ISO code; Epic 5 polish scope — deferred, pre-existing
 
 ## Change Log
 

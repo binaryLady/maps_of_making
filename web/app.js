@@ -1,6 +1,6 @@
 // Maps of Making — hi-fi prototype
 // Fullscreen MapLibre + slide-in drawers. Minimal cognitive load.
-// Data: data/moms_seed.json (synthetic).
+// Data: /data/spaces.geojson (GeoJSON FeatureCollection materialized from Oxigraph).
 
 (function () {
   'use strict';
@@ -59,8 +59,23 @@
       state.spaces = [];
       return;
     }
-    const json = await res.json();
-    state.spaces = json.spaces || [];
+    let json;
+    try {
+      json = await res.json();
+    } catch (e) {
+      document.body.classList.add('data-load-error');
+      state.spaces = [];
+      return;
+    }
+    // Parse GeoJSON FeatureCollection; flatten properties + geometry into space objects
+    const features = json.features || [];
+    state.spaces = features.map((f) => ({
+      ...f.properties,
+      coordinates: {
+        lat: f.geometry.coordinates[1],
+        lon: f.geometry.coordinates[0],
+      },
+    }));
   }
 
   // ───────────────────────────── map
