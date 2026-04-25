@@ -14,10 +14,10 @@ services:
       - gateway
       - internal
     volumes:
-      - ../web:/var/www/mapsofmaking:ro
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      - ../data/logs/nginx:/var/log/nginx
-      - /etc/nginx/.htpasswd:/etc/nginx/.htpasswd:ro
+      - ../web:/var/www/mapsofmaking:ro,z
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro,z
+      - ../data/logs/nginx:/var/log/nginx:z
+      - /etc/nginx/.htpasswd:/etc/nginx/.htpasswd:ro,z
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/health"]
       interval: 30s
@@ -41,7 +41,7 @@ services:
     networks:
       - internal
     volumes:
-      - ../data/oxigraph:/data
+      - ../data/oxigraph:/data:z
     expose:
       - "7878"
     command: serve --location /data --bind 0.0.0.0:7878
