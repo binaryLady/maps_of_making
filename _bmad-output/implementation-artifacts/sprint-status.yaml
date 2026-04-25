@@ -13,7 +13,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-23
-last_updated: 2026-04-25 (Epic 1 LIVE, RFF fix + port exposure, Story 2.0 ready-for-dev)
+last_updated: 2026-04-25 (Epic 1 LIVE, retro complete, ready for Epic 2)
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
@@ -21,35 +21,16 @@ story_location: _bmad-output/implementation-artifacts
 
 # CROSS-EPIC HANDOFFS
 # ===================
-# Critical learnings that MUST be carried into story creation for future epics.
-# Check this section when creating any new story.
-#
-# Epic 0 → Epic 1+ handoffs (2026-04-24):
-#   SPARQL_PREFIXES: Every SPARQL query must include PREFIX declarations.
-#     Oxigraph returns 400 without them. Mocked unit tests never catch this —
-#     only live Oxigraph testing does. CANONICAL namespaces (updated Story 1.5):
-#       PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
-#       PREFIX schema: <https://schema.org/>
-#       PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-#   OXIGRAPH_DATA: 606 spaces LIVE (566 VOW + 40 RFF mockup) in 607 named graphs at localhost:7878.
-#     Port 7878:7878 exposed for seed_import + materialize scripts. Source field in all spaces (Story 2.0).
-#   HTTP_CLIENT: httpx only (not requests, not SPARQLWrapper).
-#   LOCAL_DEV: distrobox-host-exec podman compose -f infra/docker-compose.yml up -d oxigraph
-#   FRAMEWORK: Spike (1.1) uses custom 3-file harness. Nanobot integration starts at 1.3.
-#   VENV: Managed externally by user — never create harness/venv or scripts/venv.
+# Active constraints that MUST be carried into story creation. Read before creating any story.
+# Resolved items removed 2026-04-25 (Epic 1 retro) — SPARQL prefixes and httpx are baked into
+# all story templates and code; they no longer need repeating here.
 
 cross_epic_handoffs:
-  epic_0_to_1:
-    sparql_prefixes_required: true
-    sparql_namespaces:
-      mom: "https://nicolasdb.github.io/mapsofmaking_ontology/ns#"
-      schema: "https://schema.org/"
-      xsd: "http://www.w3.org/2001/XMLSchema#"
-    oxigraph_live_data: "607 named graphs (566 VOW + 40 RFF mock + 1 ontology) at localhost:7878"
-    http_client: "httpx (not requests, not SPARQLWrapper)"
+  active_constraints:
+    oxigraph_live_data: "607 named graphs (566 VOW + 40 RFF mock + 1 ontology) at localhost:7878 (prod) / port 7878 exposed in docker-compose.dev.yml"
     local_dev_cmd: "distrobox-host-exec podman compose -f infra/docker-compose.yml -f infra/docker-compose.dev.yml up"
-    nanobot_start: "Story 1.3 — not Story 1.1"
-    outstanding_bugs: []
+    venv: "Managed externally — never create harness/venv or scripts/venv. Always `source venv/bin/activate`."
+    platform_volumes: "`:z` SELinux flag on Fedora/local only (docker-compose.dev.yml). Never add `:z` to docker-compose.yml (breaks Ubuntu VPS)."
   epic_1_namespace_and_vocabulary:
     decision: "All data and SPARQL queries use canonical namespace: https://nicolasdb.github.io/mapsofmaking_ontology/"
     tech_debt_resolved: "Story 1.5 migrated all seed data and schema from mapsofmaking.eu (not owned) to canonical namespace"
@@ -60,10 +41,9 @@ cross_epic_handoffs:
   epic_1_architectural_decisions:
     nanobot_integration:
       decision: "Nanobot runs as a SEPARATE compose project, NOT embedded in maps_of_making compose"
-      reason: "hkuds/nanobot image is not publicly available; must be built from source (github.com/HKUDS/nanobot). Separation gives clean isolation and independent updates."
-      when: "Epic 6 (NL bot). Not needed for Epics 2-5 (ingestion, health, UI)."
-      how: "Clone HKUDS/nanobot repo → build local image → run separate compose joining maps_of_making_internal network via external: true"
-      story_1_3_impact: "mak-agent commented out of docker-compose.yml; AC #1 adjusted to 3 services (nginx, oxigraph, link-handler)"
+      reason: "hkuds/nanobot image NOT publicly available; must clone github.com/HKUDS/nanobot and build locally."
+      when: "Epic 6 only. Epics 2-5 do not need it."
+      how: "Clone HKUDS/nanobot → build local image → separate compose joining maps_of_making_internal via external: true"
 
 development_status:
   # Epic 0: Pilot Seed Data Pipeline
@@ -80,7 +60,7 @@ development_status:
   1-3-docker-compose-stack-nginx-security-routing: done
   1-4-author-mom-ontology-v0-load-mom-iop-into-oxigraph: done
   1-5-map-reads-from-oxigraph-geojson-materialization: done
-  epic-1-retrospective: optional
+  epic-1-retrospective: done
 
   # Epic 2: Coordinator URL Onboarding
   epic-2: ready-for-dev
@@ -90,6 +70,7 @@ development_status:
   2-3-first-fetch-ingestion-pin-flip-immediate-map-refresh: backlog
   2-4-reciprocal-embed-snippet-on-confirmation: backlog
   2-5-detail-drawer-provenance-ingestion-history: backlog
+  2-6-mobile-responsive-layout: backlog
   epic-2-retrospective: optional
 
   # Epic 3: Endpoint Health, Stale Detection & Magic-Link Recovery

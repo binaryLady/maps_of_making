@@ -153,10 +153,10 @@ Phase 1 (map SPA, deployed at mapofmaking.debarquin.eu) is shipped. The epic/sto
 *(From Architecture ADRs — technical work items that inform stories but are not FRs/NFRs)*
 
 **Starter / Greenfield structure (ADR, no conventional template):**
-- AR-ST1: Custom Python harness built from scratch inside Nanobot framework container (`FROM hkuds/nanobot:latest`). First implementation story is a spike: Discord bot `/ping` that chains OpenRouter + Oxigraph health check, proving dependency surface.
+- AR-ST1: Custom Python harness built from scratch as a standalone 3-file spike (not inside a Nanobot container). First implementation story is a spike: Discord bot `/ping` that chains OpenRouter + Oxigraph health check, proving dependency surface. **[Updated Epic 1 retro 2026-04-25: `hkuds/nanobot` image is not publicly available; must be built from source. Nanobot runs as a SEPARATE Docker Compose project, not embedded in maps_of_making. Spike uses custom harness. Nanobot integration begins at Epic 6.]**
 
 **Infrastructure & Deployment (ADR-001, ADR-011, ADR-013, ADR-014):**
-- AR-INF1: Docker Compose stack named `maps_of_making` (explicit) with services: `oxigraph`, `mak-agent` (Nanobot), `mak-link-handler` (FastAPI), nginx reverse proxy. Internal-only networking via `expose`, not `ports`.
+- AR-INF1: Docker Compose stack named `maps_of_making` (explicit) with services: `oxigraph`, `mak-link-handler` (FastAPI), nginx reverse proxy. Internal-only networking via `expose`, not `ports`. **[Updated Epic 1 retro 2026-04-25: `mak-agent` (Nanobot) is commented out of this compose file; Nanobot runs as a SEPARATE compose project joining the internal network via `external: true`. Epic 6 activates it.]**
 - AR-INF2: nginx routes: `/sparql/query` → Oxigraph public read; `/sparql/update` → deny (internal only); `/claim/*` → mak-link-handler; admin subdomain shared-password basic auth.
 - AR-INF3: Host cron daily N-Quads dump of Oxigraph → `/var/backups/oxigraph/` → rsync off-host, 7-day retention. IPFS+IPLD production direction deferred to pilot.
 - AR-INF4: Secrets via `.env` on VPS (gitignored), `.env.example` committed with placeholders.
@@ -170,7 +170,7 @@ Phase 1 (map SPA, deployed at mapofmaking.debarquin.eu) is shipped. The epic/sto
 - AR-DATA5: IoP ontology loaded at harness startup into dedicated named graph; ~15–20% subset extracted via CONSTRUCT, cached in memory, injected into every NL→SPARQL prompt. `RELOAD_ONTOLOGY=1` forces reload.
 
 **Agent Framework & Harness (ADR-008, ADR-009, ADR-013):**
-- AR-AGT1: Nanobot (`FROM hkuds/nanobot:latest`) as agent framework — LiteLLM provider over OpenRouter; CronService + HEARTBEAT.md for scheduling; Discord + Telegram adapters built-in.
+- AR-AGT1: Nanobot as agent framework — LiteLLM provider over OpenRouter; CronService + HEARTBEAT.md for scheduling; Discord + Telegram adapters built-in. **[Updated Epic 1 retro 2026-04-25: image NOT `FROM hkuds/nanobot:latest` (not public). Must clone github.com/HKUDS/nanobot and build locally. Runs as separate compose project. Not needed until Epic 6.]**
 - AR-AGT2: Custom `tasks/` modules (heartbeat, nl_to_sparql, answer_format, notify_dispatch, magic_link) invoked by Nanobot; one task = one file; all return `str`.
 - AR-AGT3: Multi-model assignments via config: Haiku for heartbeat, Sonnet (temp=0) for NL→SPARQL, Minimax for answer formatting.
 - AR-AGT4: Discord defer pattern mandatory (`interaction.response.defer(thinking=True)`) on any LLM-involved command — bot timeout is 3s, LLM calls exceed this.
@@ -609,6 +609,11 @@ A coordinator pastes their JSON-LD endpoint URL, sees live validation feedback (
 
 **Testing strategy:** All development and demo testing uses RFF mockup space entries (safe to reset). VOW data is read-only and never used for onboarding tests. Openfab Brussels (Nicolas) is the live acceptance test for the full flow end-to-end, including embedding the map on openfab.be to validate the ⚪→🔵 feedback delay.
 
+**Architecture decisions locked for Epic 2 [2026-04-25 retro]:**
+- **Registration path: web drawer only.** The "Add your URL" drawer is already present in the phase-1 UI (not wired). Epic 2 wires it. Alternative registration paths (GitHub PR to ontology repo, Discord `/add` command, CI/CD cron trigger) are backlogged pending traction signal.
+- **Coordinator JSON hosting:** Epic 2 accepts any valid https URL. Documentation of hosting options (GitHub Gist, Google Drive, Nextcloud, institutional IT) and a JSON generator tool are workshop content, not Epic 2 scope. Backlogged.
+- **Final acceptance test:** Nicolas submits Openfab Brussels as a live coordinator. This is the Epic 2 done gate — not just RFF mockup validation.
+
 ---
 
 ### Story 2.1: Coordinator URL Validation Endpoint
@@ -716,6 +721,35 @@ So that I can trust whether the information is current — and coordinators can 
 **And** for ⚪ seeded spaces (not yet confirmed), the drawer shows: "This space hasn't claimed its pin yet. Are you the coordinator? Add your URL →" (links to the Add your URL drawer)
 **And** for 🔴 broken spaces, the drawer shows the error category in plain language + last known good snapshot date (UX-DR10)
 **And** all timestamps use the user's local timezone (via `Intl.DateTimeFormat`)
+
+---
+
+### Story 2.6: Mobile Responsive Layout
+
+*Added: Epic 1 retrospective 2026-04-25. Live testing on mobile revealed the phase-1 UI is not responsive — topbar overflows, drawers are desktop-only, map is compressed. PRD targets Mobile Chrome/Safari as a supported browser. This story makes the map usable on phone before the coordinator flow is demoed.*
+
+As a maker or coordinator browsing on a phone,
+I want the map to fit and be usable on a mobile screen,
+So that I can browse spaces and initiate the "Add your URL" flow without needing a desktop.
+
+**Acceptance Criteria:**
+
+**Given** the map SPA is loaded on a screen narrower than 768px
+**When** the page renders
+**Then** the topbar buttons (`Filters`, `Search`, `Add your URL`, `Tweaks`) do not overflow or wrap — either they collapse to a hamburger/icon row or the topbar scrolls horizontally without clipping
+**And** the map fills the full viewport height minus the topbar (no gap, no vertical scrollbar on the map itself)
+**And** the map is pannable and zoomable with touch gestures (pinch-to-zoom, drag-to-pan) — MapLibre touch handling must not be blocked by any overlay
+**And** all drawers (Filters, "Add your URL", detail drawer on pin click) open as bottom sheets on mobile (not side panels), covering ~60% of the screen height with a drag handle to dismiss
+**And** the loader and results-count text are readable at mobile font sizes (no text truncation, no overflow)
+**And** on screens ≥ 768px the layout is unchanged from current phase-1 desktop behaviour (no regression)
+**And** the fix is validated by Nicolas on his own phone before the story is marked done — not just by browser DevTools emulation
+
+**Dev Notes:**
+- Deferred from phase-1 intentionally; now required before Epic 2 coordinator demo
+- MapLibre itself is touch-capable; the issue is CSS layout (topbar overflow, drawer positioning)
+- Bottom sheet pattern: use CSS `position: fixed; bottom: 0; width: 100%` with `transform: translateY` for open/close animation
+- The `prefers-reduced-motion` media query (already in codebase) must cover the bottom sheet animation too
+- Do NOT add a JS framework for this — vanilla CSS media queries and minimal JS
 
 ---
 
