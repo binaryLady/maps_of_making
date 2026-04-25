@@ -13,7 +13,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-23
-last_updated: 2026-04-25 (story 2.0 created, ready-for-dev)
+last_updated: 2026-04-25 (Epic 1 LIVE, RFF fix + port exposure, Story 2.0 ready-for-dev)
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
@@ -31,8 +31,8 @@ story_location: _bmad-output/implementation-artifacts
 #       PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
 #       PREFIX schema: <https://schema.org/>
 #       PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-#   OXIGRAPH_DATA: 607 named graphs loaded at localhost:7878 (566 VOW + 40 RFF + 1 ontology).
-#     All data migrated to canonical namespace (Story 1.5). Idempotency verified.
+#   OXIGRAPH_DATA: 606 spaces LIVE (566 VOW + 40 RFF mockup) in 607 named graphs at localhost:7878.
+#     Port 7878:7878 exposed for seed_import + materialize scripts. Source field in all spaces (Story 2.0).
 #   HTTP_CLIENT: httpx only (not requests, not SPARQLWrapper).
 #   LOCAL_DEV: distrobox-host-exec podman compose -f infra/docker-compose.yml up -d oxigraph
 #   FRAMEWORK: Spike (1.1) uses custom 3-file harness. Nanobot integration starts at 1.3.
@@ -74,7 +74,7 @@ development_status:
   epic-0-retrospective: optional
 
   # Epic 1: Federated Backend Foundation
-  epic-1: in-progress
+  epic-1: done
   1-1-integration-dependency-spike: done
   1-2-scope-basemap-to-europe-update-loader-copy: done
   1-3-docker-compose-stack-nginx-security-routing: done
@@ -83,7 +83,7 @@ development_status:
   epic-1-retrospective: optional
 
   # Epic 2: Coordinator URL Onboarding
-  epic-2: backlog
+  epic-2: ready-for-dev
   2-0-ui-dataset-toggle-and-preferences: ready-for-dev
   2-1-coordinator-url-validation-endpoint: backlog
   2-2-add-your-url-drawer-live-validation-ui: backlog

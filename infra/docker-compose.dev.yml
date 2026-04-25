@@ -11,10 +11,17 @@ services:
       - internal    # drop gateway network (doesn't exist locally)
     ports:
       - "8080:80"
+    volumes:
+      - ../web:/var/www/mapsofmaking:ro,z
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro,z
+      - ../data/logs/nginx:/var/log/nginx:z
+      - ./nginx/.htpasswd:/etc/nginx/.htpasswd:ro,z
 
   oxigraph:
     ports:
       - "7878:7878"
+    volumes:
+      - ../data/oxigraph:/data:z
 
 networks:
   gateway:
