@@ -44,7 +44,7 @@ mom:confirmedAt
 mom:operationalState
   a owl:DatatypeProperty ;
   rdfs:label "Operational State" ;
-  rdfs:comment "Freshness lifecycle state of the physical space. Values: 'seeded' (imported, never verified ⚪), 'confirmed' (heartbeat responded 🔵), 'stale' (was confirmed, going quiet ⚠️), 'zombie' (unreachable 🧟), 'dead' (permanently closed as a physical space 💀). From ADR-006." ;
+  rdfs:comment "Lifecycle or participation state of a space. Lifecycle (in order): 'seeded' (imported, never verified ⚪) → 'confirmed' (heartbeat responded 🔵) → 'aging' (going quiet ⚠️) → 'zombie' (unreachable 🧟) → 'dead' (permanently closed 🪦). Out-of-lifecycle: 'error' (endpoint URL broken — red ×, independent of freshness cycle); 'unlinked' (space exists but not connected to any network — present but independent, shown as dashed circle). From ADR-006." ;
   rdfs:domain mom:Space ;
   rdfs:range xsd:string .
 

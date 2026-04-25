@@ -21,6 +21,7 @@
       mapStyle: 'dim',
       density: 'roomy',
       pulse: 'on',
+      showHealthMap: false,
     },
     embed: { centerId: null },
     markers: new Map(),        // id -> maplibre.Marker
@@ -180,20 +181,24 @@
       svg.appendChild(ring);
     }
 
-    const circle = document.createElementNS(SVG_NS, 'circle');
-    circle.setAttribute('cx', cx); circle.setAttribute('cy', cy); circle.setAttribute('r', r);
-    circle.classList.add('marker-fill');
+    const EMOJI_ONLY = new Set(['aging', 'zombie', 'dead']);
+    const MARKER_GLYPH = { broken: '×', aging: '⚠️', zombie: '🧟', dead: '🪦' };
 
-    svg.appendChild(circle);
+    if (!EMOJI_ONLY.has(kind)) {
+      const circle = document.createElementNS(SVG_NS, 'circle');
+      circle.setAttribute('cx', cx); circle.setAttribute('cy', cy); circle.setAttribute('r', r);
+      circle.classList.add('marker-fill');
+      svg.appendChild(circle);
+    }
 
-    if (kind === 'broken') {
-      const x = document.createElementNS(SVG_NS, 'text');
-      x.setAttribute('x', cx); x.setAttribute('y', cy);
-      x.setAttribute('dominant-baseline', 'central');
-      x.setAttribute('text-anchor', 'middle');
-      x.classList.add('marker-x');
-      x.textContent = '×';
-      svg.appendChild(x);
+    if (MARKER_GLYPH[kind]) {
+      const t = document.createElementNS(SVG_NS, 'text');
+      t.setAttribute('x', cx); t.setAttribute('y', cy);
+      t.setAttribute('dominant-baseline', 'central');
+      t.setAttribute('text-anchor', 'middle');
+      t.classList.add(kind === 'broken' ? 'marker-x' : 'marker-emoji');
+      t.textContent = MARKER_GLYPH[kind];
+      svg.appendChild(t);
     }
 
     return svg;
@@ -228,8 +233,11 @@
   }
 
   function markerKind(s) {
-    if (s.status === 'broken') return 'broken';
-    if (s.status === 'stale') return 'stale';
+    if (s.status === 'broken' || s.status === 'error') return 'broken';
+    if (s.status === 'unlinked' || s.status === 'stale') return 'unlinked';
+    if (s.status === 'aging') return 'aging';
+    if (s.status === 'zombie') return 'zombie';
+    if (s.status === 'dead') return 'dead';
     if (s.open_now) return 'open';
     if (s.status === 'confirmed') return 'confirmed';
     return 'seeded';
@@ -259,7 +267,9 @@
   function filteredSpaces() {
     const f = state.filters;
     const q = state.search.trim().toLowerCase();
+    const HEALTH_STATUSES = new Set(['aging', 'zombie', 'dead']);
     return state.spaces.filter((s) => {
+      if (String(state.tweaks.showHealthMap) !== 'true' && HEALTH_STATUSES.has(s.status)) return false;
       if (f.networks.size && !s.network_memberships.some((n) => f.networks.has(n))) return false;
       if (f.countries.size && !f.countries.has(s.country)) return false;
       if (f.statuses.size) {
@@ -291,7 +301,7 @@
     // Networks
     const networks = unique(state.spaces.flatMap((s) => s.network_memberships));
     const countries = unique(state.spaces.map((s) => s.country));
-    const statuses = ['seeded', 'confirmed', 'open', 'stale', 'broken'];
+    const statuses = ['seeded', 'confirmed', 'open', 'unlinked', 'broken'];
     const specialties = unique(state.spaces.flatMap((s) => s.specialties)).sort();
 
     renderChips('#chips-network', networks, state.filters.networks);
@@ -410,8 +420,11 @@
 
   function freshnessText(s) {
     if (s.status === 'seeded') return 'Seeded by network — not yet confirmed by the space.';
-    if (s.status === 'broken') return `URL broken · last successful fetch: ${timeAgo(s.last_fetched)}.`;
-    if (s.status === 'stale') return `Stale · last fetched ${timeAgo(s.last_fetched)} ago.`;
+    if (s.status === 'error' || s.status === 'broken') return `URL broken · last successful fetch: ${timeAgo(s.last_fetched)}.`;
+    if (s.status === 'unlinked' || s.status === 'stale') return 'Not linked to a network — present but independent.';
+    if (s.status === 'aging') return `Going quiet · last fetched ${timeAgo(s.last_fetched)} ago.`;
+    if (s.status === 'zombie') return `Unreachable · last seen ${timeAgo(s.last_fetched)} ago.`;
+    if (s.status === 'dead') return 'Permanently closed.';
     if (s.open_now) return `Open right now · last fetched ${timeAgo(s.last_fetched)} ago.`;
     return `Confirmed · last fetched ${timeAgo(s.last_fetched)} ago.`;
   }
@@ -666,6 +679,7 @@
           b.setAttribute('aria-pressed', 'true');
           state.tweaks[key] = b.dataset.val;
           applyTweaks();
+          savePreferences();
         });
       });
     });
@@ -690,6 +704,39 @@
     }
     if (mapEl) mapEl.className = 'map-' + state.tweaks.mapStyle;
     if (!map) renderMarkers();
+  }
+
+  function loadPreferences() {
+    try {
+      const stored = localStorage.getItem('mom_preferences');
+      if (stored) {
+        const prefs = JSON.parse(stored);
+        const validKeys = ['mapStyle', 'density', 'pulse'];
+        validKeys.forEach((key) => {
+          if (key in prefs) state.tweaks[key] = prefs[key];
+        });
+      }
+    } catch (e) {
+      // Silently ignore: corrupted JSON, localStorage unavailable, etc.
+    }
+  }
+
+  function savePreferences() {
+    try {
+      localStorage.setItem('mom_preferences', JSON.stringify(state.tweaks));
+    } catch (e) {
+      // Silently ignore: quota exceeded, private mode, etc.
+    }
+  }
+
+  function syncTweakButtons() {
+    $$('.tweaks .opts').forEach((group) => {
+      const key = group.dataset.tweak;
+      const val = String(state.tweaks[key]);
+      group.querySelectorAll('button').forEach((b) => {
+        b.setAttribute('aria-pressed', b.dataset.val === val ? 'true' : 'false');
+      });
+    });
   }
 
   // ───────────────────────────── drift measurement (DevTools probe)
@@ -732,10 +779,12 @@
         const protocol = new pmtiles.Protocol({ metadata: true });
         maplibregl.addProtocol('pmtiles', protocol.tile);
       }
+      loadPreferences();
       initMap();
       buildFilterChips();
       initAddUrl();
       wireUI();
+      syncTweakButtons();
       updateCounts();
       // Initial tweaks apply
       applyTweaks();

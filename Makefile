@@ -18,12 +18,23 @@ RSYNC_EXCLUDE := \
 	--exclude='*.pyc' \
 	--exclude='.pytest_cache/'
 
-.PHONY: sync sync-app sync-gateway help
+.PHONY: sync sync-app sync-gateway publish help
 
 help:
+	@echo "make publish       — full deploy: sync + reseed Oxigraph + regen GeoJSON on VPS"
 	@echo "make sync          — sync everything (app + gateway confs)"
 	@echo "make sync-app      — sync project root (excl. dev artifacts) to VPS"
 	@echo "make sync-gateway  — sync gateway nginx confs (manual reload needed)"
+
+## Full deploy: sync code then rebuild data on VPS
+## seed --force reloads the RFF graph (VOW skipped if unchanged); nginx picks up
+## the new spaces.geojson immediately via bind-mount — no container restart needed.
+publish: sync-app
+	@echo "→ reseeding Oxigraph on VPS..."
+	ssh $(REMOTE) 'cd $(REMOTE_APP) && source venv/bin/activate && python scripts/seed_import.py --force'
+	@echo "→ materializing GeoJSON on VPS..."
+	ssh $(REMOTE) 'cd $(REMOTE_APP) && source venv/bin/activate && python scripts/materialize_geojson.py'
+	@echo "✓ published — map live"
 
 ## Push everything (app + gateway confs)
 sync: sync-app sync-gateway

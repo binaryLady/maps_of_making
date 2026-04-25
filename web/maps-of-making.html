@@ -130,7 +130,10 @@
   .pin-swatch.seeded { background: var(--paper); }
   .pin-swatch.confirmed { background: var(--accent-2); }
   .pin-swatch.open { background: var(--green); }
-  .pin-swatch.stale { background: var(--paper); border-style: dashed; box-shadow: none; }
+  .pin-swatch.unlinked { background: var(--paper); border-style: dashed; box-shadow: none; }
+  .pin-swatch.aging { background: var(--paper); border-style: dashed; border-color: #c49a00; box-shadow: none; }
+  .pin-swatch.zombie { background: var(--paper); border-style: dashed; border-color: var(--muted); box-shadow: none; opacity: 0.6; }
+  .pin-swatch.dead { background: #666; border-color: #444; box-shadow: none; }
   .pin-swatch.broken { background: var(--accent); }
   .pin-swatch.broken::before { content: '×'; position: absolute; inset: 0; color: #fff;
     display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; line-height: 1; }
@@ -139,14 +142,17 @@
   .status-label.seeded { color: var(--muted); }
   .status-label.confirmed { color: var(--accent-2); border-color: var(--accent-2); }
   .status-label.open { color: var(--green); border-color: var(--green); }
-  .status-label.stale { color: #a37e00; border-color: #a37e00; background: #fff8d6; }
+  .status-label.unlinked { color: var(--muted); border-color: var(--rule); border-style: dashed; }
+  .status-label.aging { color: #a37e00; border-color: #c49a00; background: #fff8d6; }
+  .status-label.zombie { color: var(--muted); border-color: var(--muted); }
+  .status-label.dead { color: #444; border-color: #444; background: #e8e8e8; }
   .status-label.broken { color: var(--accent); border-color: var(--accent); }
 
   /* Map SVG markers — intrinsic SVG dimensions guarantee stable offsetWidth for MapLibre anchor math */
   .map-marker { cursor: pointer; filter: drop-shadow(1px 1px 0 var(--ink)); }
-  .map-marker.stale { filter: none; }
+  .map-marker.unlinked { filter: none; }
   .map-marker:hover { filter: drop-shadow(1px 1px 0 var(--ink)) brightness(1.1); }
-  .map-marker.stale:hover { filter: brightness(1.1); }
+  .map-marker.unlinked:hover { filter: brightness(1.1); }
   .map-marker.selected { outline: 1px solid var(--accent); outline-offset: 1px; border-radius: 50%; }
 
   /* Per-kind fill colours */
@@ -154,11 +160,13 @@
   .map-marker.seeded    .marker-fill { fill: var(--paper); }
   .map-marker.confirmed .marker-fill { fill: var(--accent-2); }
   .map-marker.open      .marker-fill { fill: var(--green); }
-  .map-marker.stale     .marker-fill { fill: var(--paper); stroke-dasharray: 3 2; }
+  .map-marker.unlinked  .marker-fill { fill: var(--paper); stroke-dasharray: 3 2; }
   .map-marker.broken    .marker-fill { fill: var(--accent); }
 
   /* Broken ×  */
   .marker-x { fill: #fff; font-size: 13px; font-weight: 700; font-family: inherit; }
+  /* Health map emoji glyphs */
+  .marker-emoji { font-size: 18px; font-family: inherit; }
 
   /* Pulse ring on open markers */
   .marker-pulse { fill: none; stroke: var(--green); stroke-width: 2; opacity: 0;
@@ -181,7 +189,10 @@
   .freshness { display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--paper-2);
     border-bottom: 1px dashed var(--rule); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
   .freshness .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 3px color-mix(in oklch, var(--green) 30%, transparent); }
-  .freshness.stale .dot { background: var(--yellow); box-shadow: 0 0 0 3px rgba(200,160,0,0.25); }
+  .freshness.unlinked .dot { background: var(--faint); box-shadow: none; border: 1.5px dashed var(--rule); }
+  .freshness.aging .dot { background: var(--yellow); box-shadow: 0 0 0 3px rgba(200,160,0,0.25); }
+  .freshness.zombie .dot { background: var(--muted); box-shadow: none; opacity: 0.6; }
+  .freshness.dead .dot { background: #555; box-shadow: none; }
   .freshness.broken .dot { background: var(--accent); box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 30%, transparent); }
   .freshness.seeded .dot { background: var(--faint); box-shadow: none; border: 1.5px dashed var(--rule); }
   pre.json { margin: 0; padding: 12px 16px; background: #1a1a1a; color: #eae3d0;
@@ -468,8 +479,8 @@
   <div class="row"><span class="pin-swatch seeded"></span><span>Seeded · unclaimed</span></div>
   <div class="row"><span class="pin-swatch confirmed"></span><span>Confirmed</span></div>
   <div class="row"><span class="pin-swatch open"></span><span>Open now</span></div>
-  <div class="row"><span class="pin-swatch stale"></span><span>Stale endpoint</span></div>
-  <div class="row"><span class="pin-swatch broken"></span><span>Broken / 404</span></div>
+  <div class="row"><span class="pin-swatch unlinked"></span><span>Unlinked · independent</span></div>
+  <div class="row"><span class="pin-swatch broken"></span><span>Broken endpoint</span></div>
 </div>
 
 <!-- Bot teaser -->
@@ -526,6 +537,13 @@
       <div class="opts" data-tweak="pulse">
         <button data-val="on" aria-pressed="true">on</button>
         <button data-val="off" aria-pressed="false">off</button>
+      </div>
+    </div>
+    <div class="tweak-row">
+      <label>Health map</label>
+      <div class="opts" data-tweak="showHealthMap">
+        <button data-val="true" aria-pressed="false">show</button>
+        <button data-val="false" aria-pressed="true">hide</button>
       </div>
     </div>
   </div>

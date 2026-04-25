@@ -148,7 +148,7 @@
     ],
     "mom:source": "mock-rff",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "confirmed"
+    "mom:operationalState": "unlinked"
   },
   {
     "@type": "mom:Space",
@@ -173,7 +173,7 @@
     ],
     "mom:source": "mock-rff",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "confirmed"
+    "mom:operationalState": "unlinked"
   },
   {
     "@type": "mom:Space",
@@ -223,7 +223,7 @@
     ],
     "mom:source": "mock-rff",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "confirmed"
+    "mom:operationalState": "unlinked"
   },
   {
     "@type": "mom:Space",
@@ -877,7 +877,7 @@
     ],
     "mom:source": "mock-rff",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "error"
+    "mom:operationalState": "zombie"
   },
   {
     "@type": "mom:Space",
@@ -901,7 +901,7 @@
     ],
     "mom:source": "mock-rff",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "error"
+    "mom:operationalState": "zombie"
   },
   {
     "@type": "mom:Space",
@@ -951,7 +951,7 @@
     ],
     "mom:source": "mock-rff",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "zombie"
+    "mom:operationalState": "dead"
   },
   {
     "@type": "mom:Space",
