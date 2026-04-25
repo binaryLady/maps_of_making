@@ -77,7 +77,7 @@ def geocode_with_fallback(geocode_fn, address_raw: str, city: str) -> tuple:
         query = f"{address_raw}, Germany"
         geo = geocode_fn(query)
         if geo:
-            return geo, "precise", ""
+            return geo, "exact", ""
     except Exception:
         pass
 
@@ -88,7 +88,7 @@ def geocode_with_fallback(geocode_fn, address_raw: str, city: str) -> tuple:
             geo = geocode_fn(query)
             if geo:
                 note = "Address incomplete — showing city-level location"
-                return geo, "city-level", note
+                return geo, "city", note
         except Exception:
             pass
 
@@ -98,18 +98,18 @@ def geocode_with_fallback(geocode_fn, address_raw: str, city: str) -> tuple:
         geo = geocode_fn(query)
         if geo:
             note = "Address incomplete — showing country-level location"
-            return geo, "country-level", note
+            return geo, "country", note
     except Exception:
         pass
 
     return None, "", ""
 
 
-def build_entry(raw: dict, geo_result, category_map: dict, address_dict: dict, fidelity: str = "precise", note: str = "") -> dict:
+def build_entry(raw: dict, geo_result, category_map: dict, address_dict: dict, fidelity: str = "exact", note: str = "") -> dict:
     tags = map_categories(raw.get("categories", []), category_map)
 
     entry = {
-        "@type": "mom:MakerSpace",
+        "@type": "mom:Space",
         "schema:name": raw.get("name", ""),
         "schema:address": address_dict,
         "schema:geo": {
@@ -120,8 +120,8 @@ def build_entry(raw: dict, geo_result, category_map: dict, address_dict: dict, f
         "schema:url": raw.get("website", ""),
         "mom:profileUrl": raw.get("profileUrl", ""),
         "schema:knowsAbout": tags,
-        "mom:source": "mak:scraped-vow",
-        "mom:freshnessStatus": "mak:seeded",
+        "mom:source": "scraped-vow",
+        "mom:operationalState": "seeded",
         "mom:geolocationFidelity": fidelity,
     }
     if note:
@@ -172,12 +172,12 @@ def main() -> int:
             failures.append(raw)
 
     # Count fidelity levels
-    precise = sum(1 for r in results if r.get("mom:geolocationFidelity") == "precise")
-    city = sum(1 for r in results if r.get("mom:geolocationFidelity") == "city-level")
-    country = sum(1 for r in results if r.get("mom:geolocationFidelity") == "country-level")
+    exact = sum(1 for r in results if r.get("mom:geolocationFidelity") == "exact")
+    city_count = sum(1 for r in results if r.get("mom:geolocationFidelity") == "city")
+    country = sum(1 for r in results if r.get("mom:geolocationFidelity") == "country")
     log.info(
-        "Done: %d total | %d precise, %d city-level, %d country-level | %d failures",
-        len(results), precise, city, country, len(failures),
+        "Done: %d total | %d exact, %d city, %d country | %d failures",
+        len(results), exact, city_count, country, len(failures),
     )
 
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:

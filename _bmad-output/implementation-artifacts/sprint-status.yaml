@@ -13,7 +13,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-23
-last_updated: 2026-04-25 (story 1.5 ready-for-dev)
+last_updated: 2026-04-25 (story 1.5 complete, in review)
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
@@ -27,13 +27,12 @@ story_location: _bmad-output/implementation-artifacts
 # Epic 0 → Epic 1+ handoffs (2026-04-24):
 #   SPARQL_PREFIXES: Every SPARQL query must include PREFIX declarations.
 #     Oxigraph returns 400 without them. Mocked unit tests never catch this —
-#     only live Oxigraph testing does. Confirmed namespaces:
-#       PREFIX mom: <https://mapsofmaking.eu/ns#>
-#       PREFIX mak: <https://mapsofmaking.eu/resource/>
+#     only live Oxigraph testing does. CANONICAL namespaces (updated Story 1.5):
+#       PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
 #       PREFIX schema: <https://schema.org/>
 #       PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-#   OXIGRAPH_DATA: 567 named graphs loaded at localhost:7878 (566 VOW + 1 RFF).
-#     Idempotency verified. --force RFF reload has dupe-triples bug (non-blocking).
+#   OXIGRAPH_DATA: 607 named graphs loaded at localhost:7878 (566 VOW + 40 RFF + 1 ontology).
+#     All data migrated to canonical namespace (Story 1.5). Idempotency verified.
 #   HTTP_CLIENT: httpx only (not requests, not SPARQLWrapper).
 #   LOCAL_DEV: distrobox-host-exec podman compose -f infra/docker-compose.yml up -d oxigraph
 #   FRAMEWORK: Spike (1.1) uses custom 3-file harness. Nanobot integration starts at 1.3.
@@ -44,15 +43,20 @@ cross_epic_handoffs:
     sparql_prefixes_required: true
     sparql_namespaces:
       mom: "https://nicolasdb.github.io/mapsofmaking_ontology/ns#"
-      mak: "https://nicolasdb.github.io/mapsofmaking_ontology/resource/"
       schema: "https://schema.org/"
       xsd: "http://www.w3.org/2001/XMLSchema#"
-    oxigraph_live_data: "567 named graphs (566 VOW + 1 RFF mock) at localhost:7878"
+    oxigraph_live_data: "607 named graphs (566 VOW + 40 RFF mock + 1 ontology) at localhost:7878"
     http_client: "httpx (not requests, not SPARQLWrapper)"
-    local_dev_cmd: "distrobox-host-exec podman compose -f infra/docker-compose.yml up -d oxigraph"
+    local_dev_cmd: "distrobox-host-exec podman compose -f infra/docker-compose.yml -f infra/docker-compose.dev.yml up"
     nanobot_start: "Story 1.3 — not Story 1.1"
-    outstanding_bugs:
-      - "seed_import.py --force duplicates triples (no CLEAR GRAPH before reload) — non-blocking"
+    outstanding_bugs: []
+  epic_1_namespace_and_vocabulary:
+    decision: "All data and SPARQL queries use canonical namespace: https://nicolasdb.github.io/mapsofmaking_ontology/"
+    tech_debt_resolved: "Story 1.5 migrated all seed data and schema from mapsofmaking.eu (not owned) to canonical namespace"
+    vocabulary_alignment: "mom.ttl is authoritative. All SPARQL queries and seed data use canonical class/property names (Space, operationalState, geolocationFidelity, geolocationNote)"
+    seed_data: "moms_seed.json (566 VOW) and rff_mockup.json (40 RFF) fully migrated with complete field coverage"
+    materialization: "SPARQL query includes all available fields: name, address, city, country, website, specialties, endpoint_url, status, geolocationFidelity, geolocationNote"
+    why_this_matters: "Epic 2/3/7 will build on this foundation. No downstream namespace surprises. Ontology ready for NL bot queries (Epic 6)"
   epic_1_architectural_decisions:
     nanobot_integration:
       decision: "Nanobot runs as a SEPARATE compose project, NOT embedded in maps_of_making compose"
@@ -75,7 +79,7 @@ development_status:
   1-2-scope-basemap-to-europe-update-loader-copy: done
   1-3-docker-compose-stack-nginx-security-routing: done
   1-4-author-mom-ontology-v0-load-mom-iop-into-oxigraph: done
-  1-5-map-reads-from-oxigraph-geojson-materialization: in-progress
+  1-5-map-reads-from-oxigraph-geojson-materialization: review
   epic-1-retrospective: optional
 
   # Epic 2: Coordinator URL Onboarding

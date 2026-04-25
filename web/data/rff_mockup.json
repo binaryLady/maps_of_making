@@ -1,6 +1,6 @@
 [
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "La Bidouillerie",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -16,16 +16,17 @@
     },
     "schema:url": "https://la-bidouillerie.fr",
     "mom:profileUrl": "https://rff-france.org/espaces/la-bidouillerie",
-    "schema:knowsAbout": ["electronics", "programming", "3d-printing"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:confirmed",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:confirmed",
-    "mom:lastFetched": "2026-04-21T10:00:00Z"
+    "schema:knowsAbout": [
+      "electronics",
+      "programming",
+      "3d-printing"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "confirmed"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "L'Électron Libre",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -36,21 +37,21 @@
     },
     "schema:geo": {
       "@type": "schema:GeoCoordinates",
-      "schema:latitude": 45.7680,
+      "schema:latitude": 45.768,
       "schema:longitude": 4.8335
     },
     "schema:url": "https://electron-libre-lyon.fr",
     "mom:profileUrl": "https://rff-france.org/espaces/electron-libre-lyon",
-    "schema:knowsAbout": ["laser-cutting", "electronics"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:confirmed",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:confirmed",
-    "mom:lastFetched": "2026-04-18T10:00:00Z"
+    "schema:knowsAbout": [
+      "laser-cutting",
+      "electronics"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "confirmed"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "Le Circuit Court",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -61,21 +62,21 @@
     },
     "schema:geo": {
       "@type": "schema:GeoCoordinates",
-      "schema:latitude": 43.2910,
+      "schema:latitude": 43.291,
       "schema:longitude": 5.3835
     },
     "schema:url": "https://lecircuitcourt.fr",
     "mom:profileUrl": "https://rff-france.org/espaces/le-circuit-court",
-    "schema:knowsAbout": ["3d-printing", "programming"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:confirmed",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:confirmed",
-    "mom:lastFetched": "2026-04-22T10:00:00Z"
+    "schema:knowsAbout": [
+      "3d-printing",
+      "programming"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "confirmed"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "La Scie qui Rit",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -91,16 +92,16 @@
     },
     "schema:url": "https://la-scie-qui-rit.fr",
     "mom:profileUrl": "https://rff-france.org/espaces/la-scie-qui-rit",
-    "schema:knowsAbout": ["wood", "cnc-milling"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:confirmed",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:confirmed",
-    "mom:lastFetched": "2026-04-20T10:00:00Z"
+    "schema:knowsAbout": [
+      "wood",
+      "cnc-milling"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "confirmed"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "Numérikal",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -116,16 +117,16 @@
     },
     "schema:url": "https://numerikal-toulouse.fr",
     "mom:profileUrl": "https://rff-france.org/espaces/numerikal",
-    "schema:knowsAbout": ["digital-media", "programming"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:confirmed",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:confirmed",
-    "mom:lastFetched": "2026-04-16T10:00:00Z"
+    "schema:knowsAbout": [
+      "digital-media",
+      "programming"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "confirmed"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "L'Usine à Gadgets",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -141,16 +142,16 @@
     },
     "schema:url": "https://usine-a-gadgets-nantes.fr",
     "mom:profileUrl": "https://rff-france.org/espaces/usine-a-gadgets",
-    "schema:knowsAbout": ["electronics", "3d-printing"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:confirmed",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:confirmed",
-    "mom:lastFetched": "2026-04-19T10:00:00Z"
+    "schema:knowsAbout": [
+      "electronics",
+      "3d-printing"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "confirmed"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "Le Ferlab",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -166,16 +167,16 @@
     },
     "schema:url": "https://ferlab-strasbourg.fr",
     "mom:profileUrl": "https://rff-france.org/espaces/ferlab-strasbourg",
-    "schema:knowsAbout": ["metalworking", "cnc-milling"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:confirmed",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:confirmed",
-    "mom:lastFetched": "2026-04-17T10:00:00Z"
+    "schema:knowsAbout": [
+      "metalworking",
+      "cnc-milling"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "confirmed"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "La Vis Sans Fin",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -191,16 +192,16 @@
     },
     "schema:url": "https://la-vis-sans-fin.fr",
     "mom:profileUrl": "https://rff-france.org/espaces/la-vis-sans-fin",
-    "schema:knowsAbout": ["wood", "metalworking"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:confirmed",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:confirmed",
-    "mom:lastFetched": "2026-04-21T10:00:00Z"
+    "schema:knowsAbout": [
+      "wood",
+      "metalworking"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "confirmed"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "FabriKo",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -216,16 +217,16 @@
     },
     "schema:url": "https://fabriko-rennes.fr",
     "mom:profileUrl": "https://rff-france.org/espaces/fabriko-rennes",
-    "schema:knowsAbout": ["laser-cutting", "3d-printing"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:confirmed",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:confirmed",
-    "mom:lastFetched": "2026-04-18T10:00:00Z"
+    "schema:knowsAbout": [
+      "laser-cutting",
+      "3d-printing"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "confirmed"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "L'OutilOthèque",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -241,16 +242,17 @@
     },
     "schema:url": "https://loutilothaque.fr",
     "mom:profileUrl": "https://rff-france.org/espaces/loutilothaque",
-    "schema:knowsAbout": ["electronics", "programming", "3d-printing"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:confirmed",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:confirmed",
-    "mom:lastFetched": "2026-04-20T10:00:00Z"
+    "schema:knowsAbout": [
+      "electronics",
+      "programming",
+      "3d-printing"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "confirmed"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "Courant d'Air",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -266,16 +268,16 @@
     },
     "schema:url": "https://courantdair-paris.fr",
     "mom:profileUrl": "https://rff-france.org/espaces/courant-d-air",
-    "schema:knowsAbout": ["digital-media", "electronics"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:confirmed",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:confirmed",
-    "mom:lastFetched": "2026-04-22T10:00:00Z"
+    "schema:knowsAbout": [
+      "digital-media",
+      "electronics"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "confirmed"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "La Maison du Maker",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -291,16 +293,16 @@
     },
     "schema:url": "https://maisondumaker-grenoble.fr",
     "mom:profileUrl": "https://rff-france.org/espaces/maison-du-maker-grenoble",
-    "schema:knowsAbout": ["3d-printing", "laser-cutting"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:confirmed",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:confirmed",
-    "mom:lastFetched": "2026-04-19T10:00:00Z"
+    "schema:knowsAbout": [
+      "3d-printing",
+      "laser-cutting"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "confirmed"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "Les Marteaux Enchantés",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -312,20 +314,20 @@
     "schema:geo": {
       "@type": "schema:GeoCoordinates",
       "schema:latitude": 43.5957,
-      "schema:longitude": 1.4310
+      "schema:longitude": 1.431
     },
     "schema:url": "https://marteaux-enchantes.fr",
     "mom:profileUrl": "https://rff-france.org/espaces/marteaux-enchantes",
-    "schema:knowsAbout": ["wood", "metalworking"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:confirmed",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:confirmed",
-    "mom:lastFetched": "2026-04-17T10:00:00Z"
+    "schema:knowsAbout": [
+      "wood",
+      "metalworking"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "confirmed"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "L'Atelier des Possibles",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -341,16 +343,16 @@
     },
     "schema:url": "https://atelier-des-possibles-lyon.fr",
     "mom:profileUrl": "https://rff-france.org/espaces/atelier-des-possibles",
-    "schema:knowsAbout": ["textiles", "ceramics"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:confirmed",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:confirmed",
-    "mom:lastFetched": "2026-04-21T10:00:00Z"
+    "schema:knowsAbout": [
+      "textiles",
+      "ceramics"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "confirmed"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "Le Pixel Libre",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -364,16 +366,17 @@
       "schema:latitude": 48.8847,
       "schema:longitude": 2.3379
     },
-    "schema:knowsAbout": ["digital-media", "programming"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:seeded",
-    "mom:geolocationFidelity": "city-level",
+    "schema:knowsAbout": [
+      "digital-media",
+      "programming"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address unknown — showing city location",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:seeded"
+    "mom:operationalState": "seeded"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "La Pâte à Modeler",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -387,16 +390,17 @@
       "schema:latitude": 49.1193,
       "schema:longitude": 6.1757
     },
-    "schema:knowsAbout": ["ceramics", "textiles"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:seeded",
-    "mom:geolocationFidelity": "city-level",
+    "schema:knowsAbout": [
+      "ceramics",
+      "textiles"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address unknown — showing city location",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:seeded"
+    "mom:operationalState": "seeded"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "Le Labo du Coin",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -410,16 +414,17 @@
       "schema:latitude": 48.6924,
       "schema:longitude": 6.1844
     },
-    "schema:knowsAbout": ["electronics", "programming"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:seeded",
-    "mom:geolocationFidelity": "city-level",
+    "schema:knowsAbout": [
+      "electronics",
+      "programming"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address unknown — showing city location",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:seeded"
+    "mom:operationalState": "seeded"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "BricoTech",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -433,15 +438,16 @@
       "schema:latitude": 43.2558,
       "schema:longitude": 5.3828
     },
-    "schema:knowsAbout": ["3d-printing", "electronics"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:seeded",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:seeded"
+    "schema:knowsAbout": [
+      "3d-printing",
+      "electronics"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "seeded"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "L'Établi Numérique",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -455,15 +461,16 @@
       "schema:latitude": 44.8516,
       "schema:longitude": -0.5671
     },
-    "schema:knowsAbout": ["digital-media", "programming"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:seeded",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:seeded"
+    "schema:knowsAbout": [
+      "digital-media",
+      "programming"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "seeded"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "La Forge du Futur",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -475,17 +482,18 @@
     "schema:geo": {
       "@type": "schema:GeoCoordinates",
       "schema:latitude": 50.6942,
-      "schema:longitude": 3.1750
+      "schema:longitude": 3.175
     },
-    "schema:knowsAbout": ["metalworking", "cnc-milling"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:seeded",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:seeded"
+    "schema:knowsAbout": [
+      "metalworking",
+      "cnc-milling"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "seeded"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "Méca-Nick",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -499,15 +507,16 @@
       "schema:latitude": 47.2012,
       "schema:longitude": -1.5487
     },
-    "schema:knowsAbout": ["metalworking", "bicycle-repair"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:seeded",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:seeded"
+    "schema:knowsAbout": [
+      "metalworking",
+      "bicycle-repair"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "seeded"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "La ManipUle",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -521,15 +530,16 @@
       "schema:latitude": 48.5524,
       "schema:longitude": 7.7547
     },
-    "schema:knowsAbout": ["programming", "electronics"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:seeded",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:seeded"
+    "schema:knowsAbout": [
+      "programming",
+      "electronics"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "seeded"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "Les Bricoleurs Savants",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -543,15 +553,16 @@
       "schema:latitude": 48.1331,
       "schema:longitude": -1.7115
     },
-    "schema:knowsAbout": ["3d-printing", "laser-cutting"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:seeded",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:seeded"
+    "schema:knowsAbout": [
+      "3d-printing",
+      "laser-cutting"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "seeded"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "Le Touche-à-Tout",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -565,15 +576,17 @@
       "schema:latitude": 48.8283,
       "schema:longitude": 2.3566
     },
-    "schema:knowsAbout": ["electronics", "wood", "textiles"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:seeded",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:seeded"
+    "schema:knowsAbout": [
+      "electronics",
+      "wood",
+      "textiles"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "seeded"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "L'Imprimerie du Futur",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -584,18 +597,19 @@
     },
     "schema:geo": {
       "@type": "schema:GeoCoordinates",
-      "schema:latitude": 45.1820,
-      "schema:longitude": 5.7560
+      "schema:latitude": 45.182,
+      "schema:longitude": 5.756
     },
-    "schema:knowsAbout": ["3d-printing", "digital-media"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:seeded",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:seeded"
+    "schema:knowsAbout": [
+      "3d-printing",
+      "digital-media"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "seeded"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "La Soudure Sociale",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -611,16 +625,16 @@
     },
     "schema:url": "https://lasouduresociale-lyon.fr",
     "mom:profileUrl": "https://rff-france.org/espaces/la-soudure-sociale",
-    "schema:knowsAbout": ["metalworking", "electronics"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:aging",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:aging",
-    "mom:lastFetched": "2026-03-22T10:00:00Z"
+    "schema:knowsAbout": [
+      "metalworking",
+      "electronics"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "aging"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "Le Tiers-Lab",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -631,21 +645,21 @@
     },
     "schema:geo": {
       "@type": "schema:GeoCoordinates",
-      "schema:latitude": 48.8740,
+      "schema:latitude": 48.874,
       "schema:longitude": 2.3607
     },
     "schema:url": "https://le-tiers-lab.fr",
     "mom:profileUrl": "https://rff-france.org/espaces/le-tiers-lab",
-    "schema:knowsAbout": ["programming", "digital-media"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:aging",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:aging",
-    "mom:lastFetched": "2026-03-16T10:00:00Z"
+    "schema:knowsAbout": [
+      "programming",
+      "digital-media"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "aging"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "La Bidouillerie Bordelaise",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -661,16 +675,16 @@
     },
     "schema:url": "https://bidouillerie-bordelaise.fr",
     "mom:profileUrl": "https://rff-france.org/espaces/bidouillerie-bordelaise",
-    "schema:knowsAbout": ["electronics", "programming"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:aging",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:aging",
-    "mom:lastFetched": "2026-03-19T10:00:00Z"
+    "schema:knowsAbout": [
+      "electronics",
+      "programming"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "aging"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "Le Fusolab",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -686,16 +700,16 @@
     },
     "schema:url": "https://lefusolab-toulouse.fr",
     "mom:profileUrl": "https://rff-france.org/espaces/le-fusolab",
-    "schema:knowsAbout": ["3d-printing", "food"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:aging",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:aging",
-    "mom:lastFetched": "2026-03-12T10:00:00Z"
+    "schema:knowsAbout": [
+      "3d-printing",
+      "food"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "aging"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "L'Atelier de la Joliette",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -711,16 +725,16 @@
     },
     "schema:url": "https://atelier-joliette-marseille.fr",
     "mom:profileUrl": "https://rff-france.org/espaces/atelier-joliette",
-    "schema:knowsAbout": ["laser-cutting", "metalworking"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:aging",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:aging",
-    "mom:lastFetched": "2026-03-24T10:00:00Z"
+    "schema:knowsAbout": [
+      "laser-cutting",
+      "metalworking"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "aging"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "Les Inventeurs de Génie",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -736,16 +750,16 @@
     },
     "schema:url": "https://inventeurs-de-genie-strasbourg.fr",
     "mom:profileUrl": "https://rff-france.org/espaces/inventeurs-de-genie",
-    "schema:knowsAbout": ["cnc-milling", "wood"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:aging",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:aging",
-    "mom:lastFetched": "2026-03-10T10:00:00Z"
+    "schema:knowsAbout": [
+      "cnc-milling",
+      "wood"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "aging"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "La Boîte à Outils",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -761,16 +775,17 @@
     },
     "schema:url": "https://laboiteoutils-nantes.fr",
     "mom:profileUrl": "https://rff-france.org/espaces/la-boite-a-outils",
-    "schema:knowsAbout": ["wood", "metalworking", "3d-printing"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:aging",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:aging",
-    "mom:lastFetched": "2026-03-17T10:00:00Z"
+    "schema:knowsAbout": [
+      "wood",
+      "metalworking",
+      "3d-printing"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "aging"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "Les Hackers du Dimanche",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -785,17 +800,16 @@
       "schema:longitude": 2.3946
     },
     "schema:url": "https://hackers-du-dimanche.fr/not-found",
-    "schema:knowsAbout": ["programming", "electronics"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:error",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:error",
-    "mom:lastFetched": "2026-04-15T10:00:00Z",
-    "mom:lastFetchError": "HTTP 404"
+    "schema:knowsAbout": [
+      "programming",
+      "electronics"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "error"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "La Forge Cassée",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -807,20 +821,18 @@
     "schema:geo": {
       "@type": "schema:GeoCoordinates",
       "schema:latitude": 45.7278,
-      "schema:longitude": 4.8480
+      "schema:longitude": 4.848
     },
     "schema:url": "https://la-forge-cassee.fr/not-found",
-    "schema:knowsAbout": ["metalworking"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:error",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:error",
-    "mom:lastFetched": "2026-04-12T10:00:00Z",
-    "mom:lastFetchError": "Connection timeout"
+    "schema:knowsAbout": [
+      "metalworking"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "error"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "L'Atelier du Vieux Poêle",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -835,17 +847,16 @@
       "schema:longitude": 5.3744
     },
     "schema:url": "https://atelier-vieux-poele.fr/not-found",
-    "schema:knowsAbout": ["wood", "metalworking"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:error",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:error",
-    "mom:lastFetched": "2026-04-09T10:00:00Z",
-    "mom:lastFetchError": "HTTP 404"
+    "schema:knowsAbout": [
+      "wood",
+      "metalworking"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "error"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "Fabrik'Air",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -860,17 +871,16 @@
       "schema:longitude": -0.5698
     },
     "schema:url": "https://fabrikair-bordeaux.fr/not-found",
-    "schema:knowsAbout": ["laser-cutting", "3d-printing"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:error",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:error",
-    "mom:lastFetched": "2026-04-14T10:00:00Z",
-    "mom:lastFetchError": "Connection timeout"
+    "schema:knowsAbout": [
+      "laser-cutting",
+      "3d-printing"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "error"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "Le Bricoshop",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -885,17 +895,16 @@
       "schema:longitude": 1.4024
     },
     "schema:url": "https://bricoshop-toulouse.fr/not-found",
-    "schema:knowsAbout": ["bicycle-repair", "metalworking"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:error",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:error",
-    "mom:lastFetched": "2026-04-11T10:00:00Z",
-    "mom:lastFetchError": "HTTP 404"
+    "schema:knowsAbout": [
+      "bicycle-repair",
+      "metalworking"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "error"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "La Vis Rouillée",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -911,16 +920,16 @@
     },
     "schema:url": "https://la-vis-rouilee.fr",
     "mom:profileUrl": "https://rff-france.org/espaces/la-vis-rouilee",
-    "schema:knowsAbout": ["metalworking", "electronics"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:zombie",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:zombie",
-    "mom:lastFetched": "2026-01-18T10:00:00Z"
+    "schema:knowsAbout": [
+      "metalworking",
+      "electronics"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "zombie"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "L'Éclat de Génie",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -932,20 +941,20 @@
     "schema:geo": {
       "@type": "schema:GeoCoordinates",
       "schema:latitude": 48.1143,
-      "schema:longitude": -1.6810
+      "schema:longitude": -1.681
     },
     "schema:url": "https://eclat-de-genie-rennes.fr",
     "mom:profileUrl": "https://rff-france.org/espaces/eclat-de-genie",
-    "schema:knowsAbout": ["programming", "digital-media"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:zombie",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:zombie",
-    "mom:lastFetched": "2026-01-03T10:00:00Z"
+    "schema:knowsAbout": [
+      "programming",
+      "digital-media"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "zombie"
   },
   {
-    "@type": "mom:MakerSpace",
+    "@type": "mom:Space",
     "schema:name": "La Forge Tranquille",
     "schema:address": {
       "@type": "schema:PostalAddress",
@@ -956,17 +965,17 @@
     },
     "schema:geo": {
       "@type": "schema:GeoCoordinates",
-      "schema:latitude": 50.6330,
+      "schema:latitude": 50.633,
       "schema:longitude": 3.0602
     },
     "schema:url": "https://la-forge-tranquille.fr",
     "mom:profileUrl": "https://rff-france.org/espaces/la-forge-tranquille",
-    "schema:knowsAbout": ["metalworking", "cnc-milling"],
-    "mom:source": "mak:mock-rff",
-    "mom:freshnessStatus": "mak:zombie",
-    "mom:geolocationFidelity": "precise",
-    "mom:namedGraph": "<urn:mak:mock/rff-health>",
-    "mom:healthState": "mak:zombie",
-    "mom:lastFetched": "2025-12-29T10:00:00Z"
+    "schema:knowsAbout": [
+      "metalworking",
+      "cnc-milling"
+    ],
+    "mom:source": "mock-rff",
+    "mom:geolocationFidelity": "exact",
+    "mom:operationalState": "zombie"
   }
 ]

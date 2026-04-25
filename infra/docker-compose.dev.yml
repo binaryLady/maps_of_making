@@ -1,0 +1,21 @@
+# Local dev overrides — NOT for VPS deployment
+# Usage: podman compose -f docker-compose.yml -f docker-compose.dev.yml up
+#
+# Isolation note: On Fedora/distrobox, hetzner-gateway network doesn't exist locally.
+# This override removes the gateway network dependency and exposes ports directly.
+# On VPS (Ubuntu), use docker-compose.yml alone — gateway handles routing.
+
+services:
+  maps-nginx:
+    networks:
+      - internal    # drop gateway network (doesn't exist locally)
+    ports:
+      - "8080:80"
+
+  oxigraph:
+    ports:
+      - "7878:7878"
+
+networks:
+  gateway:
+    external: false   # override: create locally instead of requiring hetzner-gateway

@@ -18,6 +18,9 @@ venv/
 !infra/.env
 
 
+# nginx auth — real credentials on VPS, empty placeholder for local dev (never commit)
+infra/nginx/.htpasswd
+
 # Bind-mount data dirs (persisted on VPS, not in git)
 data/oxigraph/*
 data/nanoclaw/*

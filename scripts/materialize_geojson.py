@@ -26,13 +26,12 @@ log = logging.getLogger(__name__)
 
 
 SPARQL_QUERY = """PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
-PREFIX mak: <https://nicolasdb.github.io/mapsofmaking_ontology/resource/>
 PREFIX schema: <https://schema.org/>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-PREFIX owl: <http://www.w3.org/2002/07/owl#>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-SELECT ?spaceUri ?name ?latitude ?longitude ?status ?lastChecked ?geolocationFidelity
+SELECT ?spaceUri ?name ?latitude ?longitude ?status ?geolocationFidelity ?geolocationNote
+       ?street ?postcode ?city ?country ?website ?profileUrl
+       (GROUP_CONCAT(?specialty; separator="|") AS ?specialties)
 WHERE {
   GRAPH ?spaceGraph {
     ?spaceUri a mom:Space ;
@@ -41,19 +40,21 @@ WHERE {
         schema:latitude ?latitude ;
         schema:longitude ?longitude
       ] .
-    OPTIONAL {
-      ?spaceUri mom:geolocationFidelity ?geolocationFidelity
-    }
+    OPTIONAL { ?spaceUri mom:operationalState ?status }
+    OPTIONAL { ?spaceUri mom:geolocationFidelity ?geolocationFidelity }
+    OPTIONAL { ?spaceUri mom:geolocationNote ?geolocationNote }
+    OPTIONAL { ?spaceUri schema:streetAddress ?street }
+    OPTIONAL { ?spaceUri schema:postalCode ?postcode }
+    OPTIONAL { ?spaceUri schema:addressLocality ?city }
+    OPTIONAL { ?spaceUri schema:addressCountry ?country }
+    OPTIONAL { ?spaceUri schema:url ?website }
+    OPTIONAL { ?spaceUri mom:profileUrl ?profileUrl }
+    OPTIONAL { ?spaceUri schema:knowsAbout ?specialty }
   }
   FILTER (STRSTARTS(STR(?spaceGraph), "urn:mak:space/"))
-
-  OPTIONAL {
-    GRAPH <urn:mak:status> {
-      ?spaceUri mak:healthStatus ?status ;
-        mak:lastChecked ?lastChecked
-    }
-  }
 }
+GROUP BY ?spaceUri ?name ?latitude ?longitude ?status ?geolocationFidelity ?geolocationNote
+         ?street ?postcode ?city ?country ?website ?profileUrl
 ORDER BY ?spaceUri"""
 
 
@@ -111,43 +112,44 @@ def binding_to_space(binding: dict) -> dict:
     latitude = float(binding.get("latitude", {}).get("value", 0))
     longitude = float(binding.get("longitude", {}).get("value", 0))
 
-    # Status defaults to 'seeded' if not present
-    status = binding.get("status", {}).get("value", "mak:seeded")
-    if status.startswith("mak:"):
-        status = status[4:]  # Strip 'mak:' prefix
-
-    # last_fetched (mak:lastChecked) — ISO 8601 timestamp
-    last_fetched = binding.get("lastChecked", {}).get("value", "")
-
-    # geolocationFidelity from mom:geolocationFidelity
+    status = binding.get("status", {}).get("value", "seeded")
     fidelity = binding.get("geolocationFidelity", {}).get("value", "")
-    # Strip quotes if present (SPARQL string literal)
-    if fidelity.startswith('"') and fidelity.endswith('"'):
-        fidelity = fidelity[1:-1]
+    geo_note = binding.get("geolocationNote", {}).get("value", "")
+    street = binding.get("street", {}).get("value", "")
+    postcode = binding.get("postcode", {}).get("value", "")
+    city = binding.get("city", {}).get("value", "")
+    country = binding.get("country", {}).get("value", "")
+    website = binding.get("website", {}).get("value", "")
+    endpoint_url = binding.get("profileUrl", {}).get("value", "")
+    raw_specialties = binding.get("specialties", {}).get("value", "")
+    specialties = [s for s in raw_specialties.split("|") if s] if raw_specialties else []
 
-    # Return space object compatible with app.js
-    # Fields from Oxigraph are populated; others default to empty/false
+    # Compose address string from available parts
+    address_parts = [p for p in [street, f"{postcode} {city}".strip()] if p]
+    address = ", ".join(address_parts)
+
     return {
         "id": space_id,
         "name": name,
         "coordinates": {"lat": latitude, "lon": longitude},
         "status": status,
-        "last_fetched": last_fetched,
         "geolocationFidelity": fidelity,
-        # Defaults for fields not yet in Oxigraph (populated by Epic 2 ingestion)
-        "address": "",
-        "city": "",
-        "country": "",
+        "geolocationNote": geo_note,
+        "address": address,
+        "city": city,
+        "country": country,
+        "website": website,
+        "endpoint_url": endpoint_url,
+        "specialties": specialties,
+        # Fields not yet seeded — populated by Epic 2 individual endpoint fetch
         "opening_hours": "",
         "founded": "",
         "capacity": 0,
         "contact": "",
-        "website": "",
-        "specialties": [],
         "network_memberships": [],
         "open_for_hosting": False,
         "open_now": False,
-        "endpoint_url": "",
+        "last_fetched": "",
     }
 
 

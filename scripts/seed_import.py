@@ -74,6 +74,8 @@ def build_vow_insert(entry: dict) -> tuple[str, str]:
 
     name = entry.get("schema:name", "")
     address = entry.get("schema:address", {})
+    street = address.get("schema:streetAddress", "")
+    postcode = address.get("schema:postalCode", "")
     locality = address.get("schema:addressLocality", "")
     country = address.get("schema:addressCountry", "")
     geo = entry.get("schema:geo", {})
@@ -82,15 +84,21 @@ def build_vow_insert(entry: dict) -> tuple[str, str]:
     url = entry.get("schema:url")
     profile_url = entry.get("mom:profileUrl")
     knows_about = entry.get("schema:knowsAbout", [])
-    source = entry.get("mom:source", "mak:scraped-vow")
-    freshness = entry.get("mom:freshnessStatus", "mak:seeded")
+    source = entry.get("mom:source", "scraped-vow")
+    operational_state = entry.get("mom:operationalState", "seeded")
     fidelity = entry.get("mom:geolocationFidelity", "")
 
     subject = f"<urn:mak:space/{sid}>"
-    triples = f"{subject} a mom:MakerSpace"
+    triples = f"{subject} a mom:Space"
 
     if name:
         triples += f" ;\n    schema:name {sparql_str(name)}@en"
+
+    if street:
+        triples += f" ;\n    schema:streetAddress {sparql_str(street)}"
+
+    if postcode:
+        triples += f" ;\n    schema:postalCode {sparql_str(postcode)}"
 
     if locality:
         triples += f" ;\n    schema:addressLocality {sparql_str(locality)}"
@@ -111,17 +119,20 @@ def build_vow_insert(entry: dict) -> tuple[str, str]:
         for item in knows_about:
             triples += f" ;\n    schema:knowsAbout {sparql_str(item)}"
 
-    triples += f" ;\n    mom:source {source}"
-    triples += f" ;\n    mom:freshnessStatus {freshness}"
+    triples += f" ;\n    mom:source {sparql_str(source)}"
+    triples += f" ;\n    mom:operationalState {sparql_str(operational_state)}"
 
     if fidelity:
         triples += f" ;\n    mom:geolocationFidelity {sparql_str(fidelity)}"
 
+    geo_note = entry.get("mom:geolocationNote", "")
+    if geo_note:
+        triples += f" ;\n    mom:geolocationNote {sparql_str(geo_note)}"
+
     triples += " ."
 
     insert_query = f"""PREFIX schema: <https://schema.org/>
-PREFIX mom: <https://mapsofmaking.eu/ns#>
-PREFIX mak: <https://mapsofmaking.eu/resource/>
+PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
 INSERT DATA {{
   GRAPH <{graph_uri}> {{
     {triples}
@@ -138,7 +149,7 @@ def build_rff_insert(entries: list) -> tuple[str, str]:
 
     for entry in entries:
         subject = f"<urn:mak:space/{entry.get('@id', 'rff-unknown')}>"
-        entry_triples = f"{subject} a mom:MakerSpace"
+        entry_triples = f"{subject} a mom:Space"
 
         if "schema:name" in entry:
             entry_triples += f" ;\n      schema:name {sparql_str(entry['schema:name'])}@en"
@@ -146,14 +157,14 @@ def build_rff_insert(entries: list) -> tuple[str, str]:
         if "schema:address" in entry:
             addr = entry["schema:address"]
             if isinstance(addr, dict):
+                if "schema:streetAddress" in addr:
+                    entry_triples += f" ;\n      schema:streetAddress {sparql_str(addr['schema:streetAddress'])}"
+                if "schema:postalCode" in addr:
+                    entry_triples += f" ;\n      schema:postalCode {sparql_str(addr['schema:postalCode'])}"
                 if "schema:addressLocality" in addr:
-                    entry_triples += (
-                        f" ;\n      schema:addressLocality {sparql_str(addr['schema:addressLocality'])}"
-                    )
+                    entry_triples += f" ;\n      schema:addressLocality {sparql_str(addr['schema:addressLocality'])}"
                 if "schema:addressCountry" in addr:
-                    entry_triples += (
-                        f" ;\n      schema:addressCountry {sparql_str(addr['schema:addressCountry'])}"
-                    )
+                    entry_triples += f" ;\n      schema:addressCountry {sparql_str(addr['schema:addressCountry'])}"
 
         if "schema:geo" in entry:
             geo = entry["schema:geo"]
@@ -173,28 +184,29 @@ def build_rff_insert(entries: list) -> tuple[str, str]:
             for item in entry.get("schema:knowsAbout", []):
                 entry_triples += f" ;\n      schema:knowsAbout {sparql_str(item)}"
 
-        entry_triples += f" ;\n      mom:source {entry.get('mom:source', 'mak:rff-mockup')}"
-        entry_triples += f" ;\n      mom:freshnessStatus {entry.get('mom:freshnessStatus', 'mak:seeded')}"
+        raw_state = entry.get("mom:operationalState") or entry.get("mom:freshnessStatus", "seeded")
+        # strip legacy URI prefix if present (e.g. "mak:confirmed" → "confirmed")
+        operational_state = raw_state.split(":")[-1] if ":" in raw_state else raw_state
+        entry_triples += f" ;\n      mom:source {sparql_str(entry.get('mom:source', 'mock-rff'))}"
+        entry_triples += f" ;\n      mom:operationalState {sparql_str(operational_state)}"
 
-        if "mom:healthState" in entry:
-            entry_triples += f" ;\n      mom:healthState {entry['mom:healthState']}"
-
-        if "mom:lastFetched" in entry:
-            entry_triples += f" ;\n      mom:lastFetched {sparql_str(entry['mom:lastFetched'])}"
-
-        if "mom:lastFetchError" in entry:
-            entry_triples += f" ;\n      mom:lastFetchError {sparql_str(entry['mom:lastFetchError'])}"
+        if "mom:confirmedAt" in entry:
+            entry_triples += f" ;\n      mom:confirmedAt {sparql_str(entry['mom:confirmedAt'])}"
 
         if "mom:geolocationFidelity" in entry:
-            entry_triples += f" ;\n      mom:geolocationFidelity {sparql_str(entry['mom:geolocationFidelity'])}"
+            fid = entry["mom:geolocationFidelity"]
+            fid_map = {"precise": "exact", "city-level": "city", "country-level": "country"}
+            entry_triples += f" ;\n      mom:geolocationFidelity {sparql_str(fid_map.get(fid, fid))}"
+
+        if "mom:geolocationNote" in entry:
+            entry_triples += f" ;\n      mom:geolocationNote {sparql_str(entry['mom:geolocationNote'])}"
 
         entry_triples += " ."
         triples_list.append(entry_triples)
 
     triples = "\n    ".join(triples_list)
     insert_query = f"""PREFIX schema: <https://schema.org/>
-PREFIX mom: <https://mapsofmaking.eu/ns#>
-PREFIX mak: <https://mapsofmaking.eu/resource/>
+PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
 INSERT DATA {{
   GRAPH <{graph_uri}> {{
     {triples}

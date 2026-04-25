@@ -17,7 +17,7 @@ services:
       - ../web:/var/www/mapsofmaking:ro,z
       - ./nginx/conf.d:/etc/nginx/conf.d:ro,z
       - ../data/logs/nginx:/var/log/nginx:z
-      - /etc/nginx/.htpasswd:/etc/nginx/.htpasswd:ro,z
+      - ./nginx/.htpasswd:/etc/nginx/.htpasswd:ro,z
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/health"]
       interval: 30s
