@@ -48,8 +48,17 @@
 
   // ───────────────────────────── data
   async function loadData() {
-    const res = await fetch('data/moms_seed.json');
-    if (!res.ok) throw new Error('seed load failed');
+    const res = await fetch('/data/spaces.geojson');
+    if (!res.ok) {
+      // Graceful failure: show banner, no pins rendered
+      document.body.classList.add('data-load-error');
+      const loader = document.getElementById('loader');
+      if (loader) {
+        loader.innerHTML = '<div class="hand" style="color: var(--accent)">Map data temporarily unavailable</div><div class="mono">Try refreshing the page</div>';
+      }
+      state.spaces = [];
+      return;
+    }
     const json = await res.json();
     state.spaces = json.spaces || [];
   }
