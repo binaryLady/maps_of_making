@@ -30,28 +30,55 @@ PREFIX schema: <https://schema.org/>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 SELECT ?spaceUri ?name ?latitude ?longitude ?status ?geolocationFidelity ?geolocationNote
-       ?street ?postcode ?city ?country ?website ?profileUrl ?openNow
+       ?street ?postcode ?city ?country ?website ?profileUrl ?openNow ?source
        (GROUP_CONCAT(?specialty; separator="|") AS ?specialties)
 WHERE {
-  GRAPH ?spaceGraph {
-    ?spaceUri a mom:Space ;
-      schema:name ?name ;
-      schema:geo [
-        schema:latitude ?latitude ;
-        schema:longitude ?longitude
-      ] .
-    OPTIONAL { ?spaceUri mom:operationalState ?status }
-    OPTIONAL { ?spaceUri mom:geolocationFidelity ?geolocationFidelity }
-    OPTIONAL { ?spaceUri mom:geolocationNote ?geolocationNote }
-    OPTIONAL { ?spaceUri schema:streetAddress ?street }
-    OPTIONAL { ?spaceUri schema:postalCode ?postcode }
-    OPTIONAL { ?spaceUri schema:addressLocality ?city }
-    OPTIONAL { ?spaceUri schema:addressCountry ?country }
-    OPTIONAL { ?spaceUri schema:url ?website }
-    OPTIONAL { ?spaceUri mom:profileUrl ?profileUrl }
-    OPTIONAL { ?spaceUri schema:knowsAbout ?specialty }
+  {
+    # VOW spaces (one space per named graph)
+    GRAPH ?spaceGraph {
+      ?spaceUri a mom:Space ;
+        schema:name ?name ;
+        schema:geo [
+          schema:latitude ?latitude ;
+          schema:longitude ?longitude
+        ] .
+      OPTIONAL { ?spaceUri mom:operationalState ?status }
+      OPTIONAL { ?spaceUri mom:geolocationFidelity ?geolocationFidelity }
+      OPTIONAL { ?spaceUri mom:geolocationNote ?geolocationNote }
+      OPTIONAL { ?spaceUri schema:streetAddress ?street }
+      OPTIONAL { ?spaceUri schema:postalCode ?postcode }
+      OPTIONAL { ?spaceUri schema:addressLocality ?city }
+      OPTIONAL { ?spaceUri schema:addressCountry ?country }
+      OPTIONAL { ?spaceUri schema:url ?website }
+      OPTIONAL { ?spaceUri mom:profileUrl ?profileUrl }
+      OPTIONAL { ?spaceUri schema:knowsAbout ?specialty }
+      OPTIONAL { ?spaceUri mom:source ?source }
+    }
+    FILTER (STRSTARTS(STR(?spaceGraph), "urn:mak:space/"))
   }
-  FILTER (STRSTARTS(STR(?spaceGraph), "urn:mak:space/"))
+  UNION
+  {
+    # RFF mockup spaces (all in consolidated rff-health graph)
+    GRAPH <urn:mak:mock/rff-health> {
+      ?spaceUri a mom:Space ;
+        schema:name ?name ;
+        schema:geo [
+          schema:latitude ?latitude ;
+          schema:longitude ?longitude
+        ] .
+      OPTIONAL { ?spaceUri mom:operationalState ?status }
+      OPTIONAL { ?spaceUri mom:geolocationFidelity ?geolocationFidelity }
+      OPTIONAL { ?spaceUri mom:geolocationNote ?geolocationNote }
+      OPTIONAL { ?spaceUri schema:streetAddress ?street }
+      OPTIONAL { ?spaceUri schema:postalCode ?postcode }
+      OPTIONAL { ?spaceUri schema:addressLocality ?city }
+      OPTIONAL { ?spaceUri schema:addressCountry ?country }
+      OPTIONAL { ?spaceUri schema:url ?website }
+      OPTIONAL { ?spaceUri mom:profileUrl ?profileUrl }
+      OPTIONAL { ?spaceUri schema:knowsAbout ?specialty }
+      OPTIONAL { ?spaceUri mom:source ?source }
+    }
+  }
   OPTIONAL {
     GRAPH <urn:mak:presence> {
       ?spaceUri mom:openNow ?openNow .
@@ -59,7 +86,7 @@ WHERE {
   }
 }
 GROUP BY ?spaceUri ?name ?latitude ?longitude ?status ?geolocationFidelity ?geolocationNote
-         ?street ?postcode ?city ?country ?website ?profileUrl ?openNow
+         ?street ?postcode ?city ?country ?website ?profileUrl ?openNow ?source
 ORDER BY ?spaceUri"""
 
 
@@ -135,6 +162,7 @@ def binding_to_space(binding: dict) -> dict:
     open_now = open_now_raw.lower() == "true" if open_now_raw is not None else False
     raw_specialties = binding.get("specialties", {}).get("value", "")
     specialties = [s for s in raw_specialties.split("|") if s] if raw_specialties else []
+    source = binding.get("source", {}).get("value")
 
     # Compose address string from available parts
     address_parts = [p for p in [street, f"{postcode} {city}".strip()] if p]
@@ -160,6 +188,7 @@ def binding_to_space(binding: dict) -> dict:
             "endpoint_url": endpoint_url,
             "specialties": specialties,
             "open_now": open_now,
+            "source": source,
             # Fields not yet seeded — populated by Epic 2 individual endpoint fetch
             "opening_hours": "",
             "founded": "",

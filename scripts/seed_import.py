@@ -148,7 +148,9 @@ def build_rff_insert(entries: list) -> tuple[str, str]:
     triples_list = []
 
     for entry in entries:
-        subject = f"<urn:mak:space/{entry.get('@id', 'rff-unknown')}>"
+        # Generate stable unique ID from name + locality (same pattern as VOW)
+        sid = entry.get('@id') or space_id(entry)
+        subject = f"<urn:mak:space/{sid}>"
         entry_triples = f"{subject} a mom:Space"
 
         if "schema:name" in entry:

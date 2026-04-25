@@ -976,6 +976,6 @@
     ],
     "mom:source": "mock-rff",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "zombie"
+    "mom:operationalState": "dead"
   }
 ]
