@@ -13,7 +13,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-23
-last_updated: 2026-04-26 (Story 2.0 code review complete and all patches applied, status=done)
+last_updated: 2026-04-26 (Epic 2 restructured: stories 2.1–2.4 merged into 2-1-coordinator-url-onboarding-e2e; story 2-1 ready-for-dev)
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
@@ -63,13 +63,12 @@ development_status:
   epic-1-retrospective: done
 
   # Epic 2: Coordinator URL Onboarding
+  # Restructured 2026-04-26: old 2.1–2.4 merged into one vertical slice (coordinator gesture is atomic);
+  # old 2.5 → new 2.2; 2.6 kept separate (CSS-only, no backend dependency).
   epic-2: in-progress
   2-0-ui-dataset-toggle-and-preferences: done
-  2-1-coordinator-url-validation-endpoint: backlog
-  2-2-add-your-url-drawer-live-validation-ui: backlog
-  2-3-first-fetch-ingestion-pin-flip-immediate-map-refresh: backlog
-  2-4-reciprocal-embed-snippet-on-confirmation: backlog
-  2-5-detail-drawer-provenance-ingestion-history: backlog
+  2-1-coordinator-url-onboarding-e2e: ready-for-dev
+  2-2-detail-drawer-provenance-ingestion-history: ready-for-dev
   2-6-mobile-responsive-layout: backlog
   epic-2-retrospective: optional
 

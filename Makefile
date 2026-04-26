@@ -18,13 +18,18 @@ RSYNC_EXCLUDE := \
 	--exclude='*.pyc' \
 	--exclude='.pytest_cache/'
 
-.PHONY: sync sync-app sync-gateway publish help
+.PHONY: sync sync-app sync-gateway publish startdev help
 
 help:
+	@echo "make startdev      — start local dev stack (Podman, detached)"
 	@echo "make publish       — full deploy: sync + reseed Oxigraph + regen GeoJSON on VPS"
 	@echo "make sync          — sync everything (app + gateway confs)"
 	@echo "make sync-app      — sync project root (excl. dev artifacts) to VPS"
 	@echo "make sync-gateway  — sync gateway nginx confs (manual reload needed)"
+
+## Start local dev stack (rootless Podman, dev port overrides, from host OS)
+startdev:
+	podman compose -f infra/docker-compose.yml -f infra/docker-compose.dev.yml up -d
 
 ## Full deploy: sync code then rebuild data on VPS
 ## seed --force reloads the RFF graph (VOW skipped if unchanged); nginx picks up

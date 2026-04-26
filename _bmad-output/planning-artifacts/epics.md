@@ -614,113 +614,63 @@ A coordinator pastes their JSON-LD endpoint URL, sees live validation feedback (
 - **Coordinator JSON hosting:** Epic 2 accepts any valid https URL. Documentation of hosting options (GitHub Gist, Google Drive, Nextcloud, institutional IT) and a JSON generator tool are workshop content, not Epic 2 scope. Backlogged.
 - **Final acceptance test:** Nicolas submits Openfab Brussels as a live coordinator. This is the Epic 2 done gate — not just RFF mockup validation.
 
----
-
-### Story 2.1: Coordinator URL Validation Endpoint
-
-As a coordinator submitting my space's JSON-LD URL,
-I want the system to validate my URL server-side and return clear structured feedback on each check,
-So that I know exactly what's wrong before submitting — and I'm never left with a vague error.
-
-**Acceptance Criteria:**
-
-**Given** `POST /api/validate-url` exists on the `mak-link-handler` FastAPI service, proxied by nginx
-**When** a coordinator submits a URL
-**Then** the endpoint performs and returns results for each check in order:
-1. **Scheme** — rejects non-https with message "URL must use https"
-2. **Reachable** — HTTP GET with 60s timeout; reports HTTP status code on failure
-3. **Valid JSON-LD** — parses response; rejects if not valid JSON or missing `@context`
-4. **Schema compliance** — checks for required MOM fields: `schema:name`, `schema:geo` (lat/lng), at least one of `schema:url` / `schema:email` / `schema:contactPoint` (space-level only)
-5. **PII check** — rejects if any of: `contact_person`, personal `email` pattern (name@domain with personal name heuristic), `tel` with personal format; returns quarantine alert to admin (NFR-D2)
-6. **Geocode verification** — confirms `schema:geo` coordinates fall within a plausible bounding box (Europe + pilot regions); flags if coordinates are `[0,0]` or clearly invalid
-**And** the response is a JSON object with `{ checks: [{name, passed, message}], overall: "valid"|"invalid", space_name, coordinates }` — never a stack trace
-**And** all validation checks run even after the first failure (full report, not fail-fast)
-**And** the endpoint is tested during development using an RFF mockup space that has a valid JSON-LD fixture served at a local test URL (e.g. `nginx /test/rff-sample.jsonld`)
+**Story restructure [2026-04-26]:** Original stories 2.1–2.4 merged into a single vertical slice (2.1); original 2.5 renumbered to 2.2; 2.6 kept. Rationale: the coordinator gesture is atomic from UX perspective; embed was already implemented in phase-1; PII hard-rejection deferred to a future "hardening PII & GDPR compliance" story.
 
 ---
 
-### Story 2.2: "Add Your URL" Drawer — Live Validation UI
+### Story 2.1: Coordinator URL Onboarding — E2E (submit → validate → ingest → flip → embed)
 
-As a coordinator,
-I want to paste my space's URL into the map and see each validation check pass or fail in real time,
-So that I know exactly what to fix before confirming — and the happy path feels like a clear, trustworthy handshake.
+*Merges original stories 2.1 + 2.2 + 2.3 + 2.4. Implementation file: `_bmad-output/implementation-artifacts/2-1-coordinator-url-onboarding-e2e.md`*
 
-**Acceptance Criteria:**
+As a space coordinator,
+I want to paste my JSON-LD endpoint URL, see it validated live, and watch my pin flip from ⚪ to 🔵 with a ready-to-copy embed snippet —
+so that I can register my space on the map without creating an account or contacting anyone.
 
-**Given** the "Add your URL" drawer is open (phase-1 UI already present, currently simulated)
+**Acceptance Criteria (summary — see implementation story for full BDD spec):**
+
+**Given** the "Add your URL" drawer is open
 **When** a coordinator pastes a URL and clicks "Fetch & validate"
-**Then** the drawer calls `POST /api/validate-url` (Story 2.1) and shows a live checklist as each result arrives:
-- ✓ Reachable
-- ✓ Valid JSON-LD
-- ✓ Schema complete
-- ✓ No personal data detected
-- ✓ Location verified
-**And** each failed check renders in plain language with a specific action: e.g. "Your URL returned 404 — check the path hasn't changed" / "We found a `contact_person` field — space endpoints must not include personal names (see schema guide)"
-**And** on all checks passing, a pin preview appears on the map at the geocoded coordinates (⚪ → highlighted, not yet confirmed) with the space name shown
-**And** a "Confirm & submit" button becomes active only after all checks pass
-**And** the "Try a sample" button loads a real RFF mockup space JSON-LD URL for demo purposes (not a hardcoded string — fetched from a known working fixture)
-**And** the space selector dropdown (`#url-space`) is pre-populated with seeded spaces whose names fuzzy-match `schema:name` from the validated JSON-LD, allowing coordinators to claim an existing ⚪ pin rather than create a duplicate
+**Then** `POST /api/validate-url` is called and a live checklist renders: reachable ✓, JSON-LD valid ✓, name found ✓, coordinates found ✓, (soft PII warning if personal fields present — non-blocking)
+
+**And** on all blocking checks passing, a "Confirm & register your space →" button appears
+
+**And** clicking confirm calls `POST /api/register-url`, which: re-validates, writes SPARQL UPDATE to Oxigraph (`mom:operationalState "confirmed"`, `mom:endpointUrl`, `mom:lastFetched`), writes a snapshot named graph `<urn:mak:space/{slug}/{date}>`, rematerializes `web/data/spaces.geojson` inline
+
+**And** the drawer shows a confirmation screen: space name, "Embed this space →" (calls existing `embedSpace()`), "View on map →" (calls `selectSpace()`)
+
+**And** the map markers re-render to show the 🔵 pin
+
+**And** a `scripts/seed_transition.py` admin utility (read-only by default, `--mark-done` opt-in) reports which seeded spaces have been confirmed — run manually for demo maintenance, isolated from the ingestion flow
+
+**PII enforcement deferred:** Soft warning only in Epic 2 — fields detected are listed but never block registration and are silently dropped from stored triples. Hard rejection + admin alert is a future "hardening PII & GDPR compliance" story.
 
 ---
 
-### Story 2.3: First-Fetch Ingestion + Pin Flip + Immediate Map Refresh
+### Story 2.2: Detail Drawer — Provenance + Ingestion History
 
-As a coordinator,
-I want to see my pin flip from ⚪ to 🔵 on the map within seconds of confirming my URL,
-So that the ⚪→🔵 moment is tangible and shareable — not a "check back later" experience.
-
-**Acceptance Criteria:**
-
-**Given** a coordinator has confirmed a validated URL via the drawer (Story 2.2)
-**When** they click "Confirm & submit"
-**Then** `tasks/heartbeat.py` is invoked immediately (not on next scheduler cycle) to perform the first full fetch of the URL
-**And** the fetched JSON-LD is stored as an append-only snapshot in `<urn:mak:space/{id}/{date}>` named graph (FR27b)
-**And** current space triples are written to `<urn:mak:space/{id}>` with `mak:confirmed` status
-**And** status triples in `<urn:mak:status>` are updated: `mak:visibility "public"`, `mak:healthStatus mak:confirmed`, `mak:lastChecked {now}`
-**And** `scripts/materialize_geojson.py` is called immediately after the Oxigraph write — the static `spaces.geojson` file is refreshed before the response is returned to the UI
-**And** the drawer shows a confirmation screen: pin preview now showing 🔵, message "Your space is live on the map", reciprocal embed snippet (Story 2.4)
-**And** `spaces.geojson` is served with `Cache-Control: max-age=60` so embedded maps on coordinator websites (like openfab.be) pick up the 🔵 state within 60 seconds without manual reload
-**And** if claiming an existing seeded space (matched by Story 2.2 dropdown), the seed triples tagged `mak:source mak:scraped-vow` are preserved as diff baseline for one cycle then superseded — they are never silently overwritten
-**And** if the fetched JSON-LD contains fields that don't map to MOM/IoP/Schema.org vocabulary, the ingest proceeds and an enrichment signal triple is written to `<urn:mak:gap/{uuid}>` with the unmapped field name and timestamp — IoP non-compliance is never a hard ingest failure (FR35b)
-**And** the full flow is validated end-to-end using an RFF mockup space URL before the Openfab live acceptance test
-
----
-
-### Story 2.4: Reciprocal Embed Snippet on Confirmation
-
-As a coordinator,
-I want to receive an embed snippet for my space's pin immediately after confirmation,
-So that I can place the map on my own website — creating a visible stake in keeping my data fresh (a stale pin degrades my own web presence).
-
-**Acceptance Criteria:**
-
-**Given** the coordinator has confirmed their URL and their pin has flipped 🔵 (Story 2.3)
-**When** the confirmation screen renders
-**Then** it shows two ready-to-copy snippets:
-1. **iframe embed** — pre-filtered to the coordinator's space by URI, centered on their coordinates, zoom 13; includes `loading="lazy"` and attribution link back to the full map
-2. **Share URL** — deep-link to the full map with the space's pin pre-selected and detail drawer open
-**And** each snippet has a "copy" button that writes to clipboard and confirms with brief "Copied!" feedback
-**And** the iframe embed renders the map in embed mode (no chrome, minimal caption: "Last confirmed {date} · Maps of Making") so a stale pin visibly degrades the coordinator's own site
-**And** the embed `src` URL uses `?space={uri}&embed=1` parameters that the SPA reads on load to open the correct detail drawer automatically
-**And** the `Cache-Control: max-age=60` on `spaces.geojson` (Story 2.3) means the embedded map on the coordinator's site reflects the 🔵 state within 60s — validated by Nicolas embedding on openfab.be and timing from URL submission to 🔵 visible
-
----
-
-### Story 2.5: Detail Drawer — Provenance + Ingestion History
+*Renumbered from original story 2.5. Implementation file: `_bmad-output/implementation-artifacts/2-2-detail-drawer-provenance-ingestion-history.md`*
 
 As a maker or coordinator,
-I want the space detail drawer to show when the data was last fetched and from which source,
+I want the space detail drawer to show where the data came from, when it was last fetched, and a short history of changes,
 So that I can trust whether the information is current — and coordinators can verify their own endpoint is being read correctly.
 
-**Acceptance Criteria:**
+**Acceptance Criteria (summary — see implementation story for full BDD spec):**
 
-**Given** a space has been ingested (Story 2.3) and a maker clicks its pin
+**Given** a maker clicks any pin
 **When** the detail drawer opens
-**Then** a provenance section shows: endpoint URL (truncated with full URL on hover/expand), last fetched timestamp in human-readable form ("3 hours ago" / "2 days ago"), HTTP status of last fetch, `mak:source` label (e.g. "VOW network" / "Self-registered")
-**And** an ingestion history section shows the last 5 dated snapshots as a reverse-chronological list: date + a one-line diff summary ("name updated", "hours changed", "no change")
-**And** for ⚪ seeded spaces (not yet confirmed), the drawer shows: "This space hasn't claimed its pin yet. Are you the coordinator? Add your URL →" (links to the Add your URL drawer)
-**And** for 🔴 broken spaces, the drawer shows the error category in plain language + last known good snapshot date (UX-DR10)
-**And** all timestamps use the user's local timezone (via `Intl.DateTimeFormat`)
+**Then** a "Data provenance" section shows: source label (Self-registered / VOW network / RFF network), endpoint URL (truncated, full on hover), last fetched timestamp via `timeAgo()`
+
+**And** for ⚪ seeded spaces: a "Claim this pin" CTA appears — "Are you the coordinator? Add your URL →" (calls `setDrawer('addurl')`)
+
+**And** for 🔴 broken spaces: freshness line replaced by amber error banner with plain-language error category (from `s.error_type`) + last known good date
+
+**And** a "Fetch history" section shows the last 5 snapshots from `GET /api/space/{id}/snapshots` (link_handler endpoint), rendered async — shows "No fetch history yet." on empty or error
+
+**And** `scripts/materialize_geojson.py` SPARQL query is extended to include `mom:endpointUrl`, `mom:lastFetched`, `mom:errorType` fields
+
+**And** all existing detail drawer sections (hero, quick facts, specialties, raw JSON, embed button) are unchanged
+
+**Depends on Story 2.1:** snapshot named graphs must be written by `POST /api/register-url` for history to populate.
 
 ---
 
@@ -899,7 +849,7 @@ So that I can make an informed decision about whether to contact the space — a
 **Given** a space has status `stale` (dashed pin) and a maker clicks it
 **When** the detail drawer opens
 **Then** an amber quiet banner appears at the top of the drawer: "Last confirmed {N} days ago — details may be outdated" (UX-DR3)
-**And** the provenance section (Story 2.5) shows the last successful fetch date and the error type from the most recent failed attempt in plain language
+**And** the provenance section (Story 2.2) shows the last successful fetch date and the error type from the most recent failed attempt in plain language
 **And** a "contact network admin" CTA is shown below the error — links to the network's public contact (never a personal email)
 
 **Given** a space has status `broken` (🔴 pin) and a maker clicks it
