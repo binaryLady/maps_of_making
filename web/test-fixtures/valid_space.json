@@ -1,0 +1,13 @@
+{
+  "@context": "https://schema.org/",
+  "@type": "LocalBusiness",
+  "schema:name": "La Bidouillerie (test)",
+  "schema:description": "Fablab and hackerspace in Paris — RFF test fixture - contains a lot of dummy data, not to be used in production.",
+  "schema:geo": {
+    "@type": "schema:GeoCoordinates",
+    "schema:latitude": 48.8653,
+    "schema:longitude": 2.3713
+  },
+  "schema:url": "https://labidouillerie.fr",
+  "schema:openingHours": "Mo-Fr 09:00-18:00"
+}

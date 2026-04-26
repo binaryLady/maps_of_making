@@ -81,9 +81,12 @@ services:
       - internal
     expose:
       - "8000"
+    volumes:
+      - ../web/data:/app/web_data
     environment:
       - OXIGRAPH_ENDPOINT=http://oxigraph:7878
       - LINK_SECRET=${LINK_SECRET:?LINK_SECRET must be set in .env}
+      - GEOJSON_OUTPUT=/app/web_data/spaces.geojson
     depends_on:
       oxigraph:
         condition: service_started

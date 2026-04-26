@@ -1,0 +1,13 @@
+{
+  "@context": "https://schema.org/",
+  "@type": "LocalBusiness",
+  "schema:name": "Le Circuit Court (test)",
+  "schema:description": "FabLab Marseille — RFF test fixture — includes email to test PII warning",
+  "schema:geo": {
+    "@type": "schema:GeoCoordinates",
+    "schema:latitude": 43.291,
+    "schema:longitude": 5.3835
+  },
+  "schema:url": "https://lecircuitcourt.fr",
+  "schema:email": "contact@lecircuitcourt.fr"
+}

@@ -17,6 +17,10 @@ services:
       - ../data/logs/nginx:/var/log/nginx:z
       - ./nginx/.htpasswd:/etc/nginx/.htpasswd:ro,z
 
+  mak-link-handler:
+    volumes:
+      - ../web/data:/app/web_data:z
+
   oxigraph:
     ports:
       - "7878:7878"

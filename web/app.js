@@ -30,6 +30,7 @@
 
   // ───────────────────────────── dom helpers
   const $ = (sel, root = document) => root.querySelector(sel);
+  const escHtml = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
   function el(tag, attrs = {}, children = []) {
     const n = document.createElement(tag);
@@ -530,46 +531,164 @@
     setDrawer('preset');
   }
 
-  // ───────────────────────────── add URL (simulated)
-  function initAddUrl() {
+  // ───────────────────────────── add URL
+  let _addUrlOriginalHTML = null;
+
+  function _resetAddUrlForm() {
+    if (_addUrlOriginalHTML === null) return;
+    // Skip if form is already in initial state (avoid double-init on first open)
+    const result = $('#url-result');
+    const input = $('#url-input');
+    if (result && !result.innerHTML && input && !input.value) return;
+    $('.addurl-body').innerHTML = _addUrlOriginalHTML;
+    // Re-populate space dropdown (was inside original HTML, now blank again)
     const sel = $('#url-space');
-    for (const s of [...state.spaces].sort((a,b) => a.name.localeCompare(b.name))) {
+    for (const s of [...state.spaces].sort((a, b) => a.name.localeCompare(b.name))) {
       sel.appendChild(el('option', { value: s.id }, [`${s.name} — ${s.city}, ${s.country}`]));
     }
+    _wireAddUrlHandlers();
+  }
+
+  function _wireAddUrlHandlers() {
     $('#btn-sample').addEventListener('click', () => {
-      const sample = state.spaces.find((s) => s.status === 'seeded');
+      const sample = state.spaces.find((s) => s.status === 'seeded' && s.website);
       if (sample) {
         $('#url-input').value = `${sample.website}/maker.json`;
         $('#url-space').value = sample.id;
       }
     });
-    $('#btn-fetch-url').addEventListener('click', () => {
-      const out = $('#url-result');
-      const url = $('#url-input').value.trim();
-      const spaceId = $('#url-space').value;
-      if (!url) { out.innerHTML = '<span style="color: var(--accent);">✗ enter a URL first.</span>'; return; }
-      out.innerHTML = '<span style="color: var(--muted);">→ resolving DNS… fetching… parsing JSON… validating schema…</span>';
-      setTimeout(() => {
-        const ok = /^https?:\/\/.+\..+/.test(url);
-        if (!ok) {
-          out.innerHTML = '<span style="color: var(--accent);">✗ invalid URL shape.</span>';
-          return;
+    $('#btn-fetch-url').addEventListener('click', _onFetchUrl);
+  }
+
+  async function _onFetchUrl() {
+    const out = $('#url-result');
+    const url = $('#url-input').value.trim();
+    if (!url) { out.innerHTML = '<span style="color:var(--accent);">✗ enter a URL first.</span>'; return; }
+    out.innerHTML = '<span style="color:var(--muted);">→ resolving DNS…</span>';
+    let data;
+    try {
+      const resp = await fetch('/api/validate-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, space_id: $('#url-space').value || null }),
+      });
+      if (!resp.ok && resp.headers.get('content-type')?.includes('text/html')) {
+        out.innerHTML = `<span style="color:var(--accent);">✗ API error: HTTP ${resp.status} — backend may be down</span>`;
+        return;
+      }
+      data = await resp.json();
+    } catch (e) {
+      out.innerHTML = `<span style="color:var(--accent);">✗ Network error: ${e.message}</span>`;
+      return;
+    }
+
+    const lines = [];
+    let blocking = false;
+
+    if (!data.reachable) {
+      lines.push({ ok: false, text: `not reachable — ${escHtml(data.error || 'unreachable')}` });
+      blocking = true;
+    } else {
+      lines.push({ ok: true, text: `reachable (${escHtml(data.status_code)} OK)` });
+      if (!data.json_ld_valid) {
+        lines.push({ ok: false, text: `JSON-LD invalid — ${escHtml(data.error || 'missing schema:name or name field')}` });
+        blocking = true;
+      } else {
+        lines.push({ ok: true, text: `JSON-LD valid` });
+        lines.push({ ok: true, text: `name: ${escHtml(data.name_found)}` });
+        if (!data.coords_found) {
+          lines.push({ ok: false, text: 'coordinates missing — add schema:geo with schema:latitude and schema:longitude' });
+          blocking = true;
+        } else {
+          lines.push({ ok: true, text: `coordinates found (${escHtml(data.lat)}, ${escHtml(data.lon)})` });
         }
-        if (spaceId) {
-          const s = state.spaces.find((x) => x.id === spaceId);
-          if (s) {
-            s.status = 'confirmed';
-            s.endpoint_url = url;
-            s.last_fetched = new Date().toISOString();
-            renderMarkers();
-            selectSpace(spaceId, { fly: true });
-            out.innerHTML = `<span style="color: var(--green);">✓ flipped <b>${s.name}</b> from ⚪ seeded to 🔵 confirmed. Pin updated.</span>`;
-            return;
-          }
+        if (data.pii_warning) {
+          lines.push({ warn: true, text: `personal data detected: ${escHtml((data.pii_fields || []).join(', '))} — will not be stored` });
         }
-        out.innerHTML = `<span style="color: var(--green);">✓ URL validated (simulated). In production this would enqueue the endpoint for Oxigraph ingestion.</span>`;
-      }, 900);
+      }
+    }
+
+    out.innerHTML = lines.map((l, i) => {
+      const icon = l.warn ? '⚠' : l.ok ? '✓' : '✗';
+      const color = l.warn ? 'var(--yellow, #b8860b)' : l.ok ? 'var(--green)' : 'var(--accent)';
+      return `<div class="check-line" style="--i:${i};animation-delay:calc(0.1s * var(--i));color:${color};">${icon} ${l.text}</div>`;
+    }).join('');
+
+    if (blocking) {
+      out.innerHTML += '<div style="color:var(--muted);margin-top:6px;font-size:11px;">↩ Fix the issues above and try again.</div>';
+      return;
+    }
+
+    // Pre-select space by name fuzzy match
+    if (data.name_found) {
+      const needle = data.name_found.toLowerCase();
+      const match = state.spaces.find((s) => s.name.toLowerCase().includes(needle) || needle.includes(s.name.toLowerCase()));
+      if (match) $('#url-space').value = match.id;
+    }
+
+    const btn = el('button', { id: 'btn-confirm-register', class: 'btn btn-primary', style: 'margin-top:10px;' }, ['Confirm & register your space →']);
+    out.appendChild(btn);
+
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      btn.textContent = 'Registering…';
+      let reg;
+      try {
+        const resp = await fetch('/api/register-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url, space_id: $('#url-space').value || null }),
+        });
+        reg = await resp.json();
+        if (!resp.ok) throw new Error(reg.detail?.error || `HTTP ${resp.status}`);
+      } catch (e) {
+        btn.disabled = false;
+        btn.textContent = 'Confirm & register your space →';
+        out.innerHTML += `<div style="color:var(--accent);margin-top:6px;">✗ Registration failed: ${e.message}</div>`;
+        return;
+      }
+
+      // Refresh map state
+      try {
+        const geoResp = await fetch(`/data/spaces.geojson?t=${Date.now()}`);
+        const geoJson = await geoResp.json();
+        state.spaces = (geoJson.features || []).map((f) => ({
+          ...f.properties,
+          coordinates: { lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0] },
+        }));
+        renderMarkers();
+      } catch (_) { /* non-fatal */ }
+
+      const spaceName = reg.space_name || 'Your space';
+      // space_uri is "urn:mak:space/{slug}" — extract slug as the local ID
+      const spaceId = reg.space_uri ? reg.space_uri.split('/').pop() : null;
+      const hasSpace = Boolean(spaceId);
+
+      $('.addurl-body').innerHTML = `
+        <div style="text-align:center;padding:20px 0;">
+          <div style="font-size:22px;margin-bottom:8px;">✓ ${escHtml(spaceName)} is live on the map!</div>
+          <div style="color:var(--muted);margin-bottom:18px;">Your pin has flipped from ⚪ to 🔵.</div>
+          <div class="btn-row" style="justify-content:center;">
+            <button class="btn btn-primary" id="btn-goto-embed"${hasSpace ? '' : ' disabled'}>Embed this space →</button>
+            <button class="btn" id="btn-view-on-map"${hasSpace ? '' : ' disabled'}>View on map →</button>
+            <button class="btn" id="btn-register-another" style="margin-top:8px;">Register another →</button>
+          </div>
+        </div>`;
+      if (spaceId) {
+        $('#btn-goto-embed').addEventListener('click', () => embedSpace(spaceId));
+        $('#btn-view-on-map').addEventListener('click', () => { closeDrawer('addurl'); selectSpace(spaceId, { fly: true }); });
+      }
+      $('#btn-register-another').addEventListener('click', () => _resetAddUrlForm());
     });
+  }
+
+  function initAddUrl() {
+    _addUrlOriginalHTML = $('.addurl-body').innerHTML;
+    const sel = $('#url-space');
+    for (const s of [...state.spaces].sort((a, b) => a.name.localeCompare(b.name))) {
+      sel.appendChild(el('option', { value: s.id }, [`${s.name} — ${s.city}, ${s.country}`]));
+    }
+    _wireAddUrlHandlers();
   }
 
   // ───────────────────────────── drawers / UI wiring
@@ -594,6 +713,8 @@
     if (focusable && name !== 'detail') focusable.focus({ preventScroll: true });
     // Update preset code if opening preset
     if (name === 'preset') renderPresetPreview();
+    // Reset addurl form when re-opening (clears post-confirmation screen)
+    if (name === 'addurl') _resetAddUrlForm();
   }
   function closeDrawer(name) {
     const id = ({

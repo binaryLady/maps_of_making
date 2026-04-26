@@ -173,6 +173,8 @@
     transform-box: fill-box; transform-origin: center;
     animation: pulse 1.8s ease-out infinite; }
   @keyframes pulse { 0% { transform: scale(0.9); opacity: 0.8; } 100% { transform: scale(1.8); opacity: 0; } }
+  @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+  .check-line { animation: fadeSlideIn 0.2s ease both; }
 
   /* Detail drawer */
   .detail-hero { padding: 14px 16px; border-bottom: 1px dashed var(--rule); background: #fff; }
@@ -465,10 +467,6 @@
       </div>
 
       <div id="url-result" class="mono" style="margin-top: 12px; font-size: 11px; min-height: 40px;"></div>
-
-      <div class="note">
-        <strong>Pilot note:</strong> in this MVP, fetching is simulated against local seed data — real cross-origin fetching lives in the <span class="mono">admin.*</span> dashboard (deployed separately alongside Oxigraph + NanoClaw).
-      </div>
     </div>
   </div>
 </aside>
