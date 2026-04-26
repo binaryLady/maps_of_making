@@ -395,6 +395,16 @@
       el('span', { class: 'dot' }),
       el('span', {}, [freshnessText(s)])
     ]));
+    // Claim CTA for seeded spaces
+    if (s.status === 'seeded') {
+      const ctaBtn = el('div', { class: 'note', style: { margin: '12px 16px', padding: '12px', backgroundColor: 'var(--note-bg)', borderRadius: '4px', cursor: 'pointer' } }, [
+        el('strong', {}, ['Is this your space?']),
+        el('div', { style: { fontSize: '13px', color: 'var(--muted)', marginTop: '4px' } }, ['Claim it with a coordinator endpoint to update information.'])
+      ]);
+      ctaBtn.addEventListener('click', () => setDrawer('addurl'));
+      ctaBtn.style.cursor = 'pointer';
+      body.appendChild(ctaBtn);
+    }
     // Quick facts
     body.appendChild(el('div', { class: 'detail-section' }, [
       el('div', { class: 'wf-label' }, ['Quick facts']),
@@ -406,6 +416,30 @@
         el('dt', {}, ['Website']), el('dd', {}, [el('a', { href: s.website, target: '_blank', rel: 'noopener' }, [s.website.replace(/^https?:\/\//, '')])]),
       ])
     ]));
+    // Provenance
+    const SOURCE_LABELS = {
+      'scraped-vow': 'VOW directory',
+      'mock-rff': 'RFF mockup (demo)',
+      'self-registered': 'Registered by coordinator'
+    };
+    if (s.endpoint_url || s.source || s.last_fetched) {
+      const provKids = [
+        el('dt', {}, ['Source']),
+        el('dd', {}, [SOURCE_LABELS[s.source] || s.source || '—']),
+      ];
+      if (s.endpoint_url) {
+        provKids.push(el('dt', {}, ['Endpoint URL']));
+        provKids.push(el('dd', {}, [el('a', { href: s.endpoint_url, target: '_blank', rel: 'noopener', title: s.endpoint_url }, [s.endpoint_url.replace(/^https?:\/\/(www\.)?/, '').slice(0, 40) + (s.endpoint_url.length > 40 ? '...' : '')])]));
+      }
+      if (s.last_fetched) {
+        provKids.push(el('dt', {}, ['Last fetched']));
+        provKids.push(el('dd', {}, [`${timeAgo(s.last_fetched)} ago`]));
+      }
+      body.appendChild(el('div', { class: 'detail-section' }, [
+        el('div', { class: 'wf-label' }, ['Provenance']),
+        el('dl', { class: 'kv' }, provKids)
+      ]));
+    }
     // Specialties
     body.appendChild(el('div', { class: 'detail-section' }, [
       el('div', { class: 'wf-label' }, ['Specialties']),
@@ -416,6 +450,38 @@
       el('div', { class: 'wf-label', style: { padding: '12px 16px 0' } }, ['Raw JSON from endpoint']),
       el('pre', { class: 'json' }, [jsonHighlight(jsonForSpace(s))])
     ]));
+    // Fetch history (confirmed/broken spaces only)
+    if (s.status === 'confirmed' || s.status === 'broken') {
+      const histSection = el('div', { class: 'detail-section' }, [
+        el('div', { class: 'wf-label' }, ['Fetch history']),
+        el('div', { id: 'hist-content', style: { fontSize: '13px', color: 'var(--muted)' } }, ['Loading...'])
+      ]);
+      body.appendChild(histSection);
+
+      fetch(`/api/space/${s.id}/snapshots`)
+        .then((resp) => resp.ok ? resp.json() : Promise.reject(resp.status))
+        .then((snapshots) => {
+          const histEl = document.getElementById('hist-content');
+          if (!histEl) return;
+          if (!snapshots || snapshots.length === 0) {
+            histEl.textContent = 'No fetch history yet.';
+            return;
+          }
+          histEl.innerHTML = '';
+          snapshots.forEach((snap) => {
+            const date = new Date(snap.date).toLocaleDateString();
+            const time = new Date(snap.date).toLocaleTimeString();
+            const status = snap.http_status ? `HTTP ${snap.http_status}` : '';
+            histEl.appendChild(el('div', { style: { marginBottom: '8px' } }, [
+              `${date} ${time} · ${snap.summary} ${status}`.trim()
+            ]));
+          });
+        })
+        .catch((err) => {
+          const histEl = document.getElementById('hist-content');
+          if (histEl) histEl.textContent = 'No fetch history yet.';
+        });
+    }
     // Embed CTA
     const embedBtn = el('button', { class: 'btn btn-primary', style: { margin: '12px 16px 16px', width: 'calc(100% - 32px)' } }, ['⎘ Embed this space →']);
     embedBtn.addEventListener('click', () => embedSpace(s.id));
@@ -424,7 +490,18 @@
 
   function freshnessText(s) {
     if (s.status === 'seeded') return 'Seeded by network — not yet confirmed by the space.';
-    if (s.status === 'error' || s.status === 'broken') return `URL broken · last successful fetch: ${timeAgo(s.last_fetched)}.`;
+    if (s.status === 'broken') {
+      const ERROR_LABELS = {
+        'connection_timeout': 'Connection timeout',
+        'invalid_json_ld': 'Invalid JSON-LD',
+        'missing_coordinates': 'Missing coordinates',
+        'http_error': 'HTTP error',
+        '404': 'Not found (404)',
+        '500': 'Server error (500)',
+      };
+      const errorMsg = ERROR_LABELS[s.error_type] || s.error_type || 'URL broken';
+      return `🔴 ${errorMsg} · last successful fetch: ${timeAgo(s.last_fetched)}.`;
+    }
     if (s.status === 'unlinked' || s.status === 'stale') return 'Not linked to a network — present but independent.';
     if (s.status === 'aging') return `Going quiet · last fetched ${timeAgo(s.last_fetched)} ago.`;
     if (s.status === 'zombie') return `Unreachable · last seen ${timeAgo(s.last_fetched)} ago.`;

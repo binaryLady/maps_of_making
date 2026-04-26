@@ -68,7 +68,7 @@ development_status:
   epic-2: in-progress
   2-0-ui-dataset-toggle-and-preferences: done
   2-1-coordinator-url-onboarding-e2e: done
-  2-2-detail-drawer-provenance-ingestion-history: ready-for-dev
+  2-2-detail-drawer-provenance-ingestion-history: done
   2-6-mobile-responsive-layout: backlog
   epic-2-retrospective: optional
 
@@ -82,6 +82,7 @@ development_status:
 
   # Epic 4: Network Admin Fleet Health Dashboard
   epic-4: backlog
+  4-0-admin-foundation-subdomain-auth-space-comparison: draft
   4-1-fleet-health-overview-status-counts-sparkline: backlog
   4-2-per-space-drill-down-fetch-history-error-log-manual-re-fetch: backlog
   4-3-coordinator-nudge-dispatch: backlog

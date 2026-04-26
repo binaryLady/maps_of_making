@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>Maps of Making — pilot</title>
+<title>Maps of Making — demo</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -282,8 +282,12 @@
   .tweak-row .opts button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
 
   /* Empty / loading */
-  .loader { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px; background: var(--paper); z-index: 100; }
+  .loader { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 16px; background: var(--paper); z-index: 100; padding: 24px; }
   .loader .hand { font-size: 28px; }
+  .loader .roadmap { list-style: none; padding: 0; margin: 0; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.9; color: var(--muted); }
+  .loader .roadmap li.done { color: var(--ink); opacity: 0.65; }
+  .loader .roadmap li.active { color: var(--ink); font-weight: 600; }
+  .loader .roadmap li.todo { opacity: 0.45; }
 
   /* Attribution tweak */
   .maplibregl-ctrl-attrib { background: rgba(250,246,234,0.9) !important; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; }
@@ -324,6 +328,16 @@
 <!-- Loader -->
 <div class="loader" id="loader">
   <div class="hand">unrolling the map…</div>
+  <ul class="roadmap" aria-label="Roadmap progress">
+    <li class="done">✅ Epic 0 — Pilot Seed Data Pipeline</li>
+    <li class="done">✅ Epic 1 — Federated Backend Foundation</li>
+    <li class="active">🟢 Epic 2 — Coordinator URL Onboarding</li>
+    <li class="todo">🔳 Epic 4 — Network Admin Fleet Health Dashboard</li>
+    <li class="todo">🔳 Epic 5 — Map Polish &amp; Accessibility</li>
+    <li class="todo">🔳 Epic 3 — Endpoint Health &amp; Magic-Link Recovery</li>
+    <li class="todo">🔳 Epic 6 — "Ask the Map" NL Bot</li>
+    <li class="todo">🔳 Epic 7 — "Open Now" Presence Layer</li>
+  </ul>
   <span class="mono" id="loader-count" style="color: var(--muted);"></span>
 </div>
 

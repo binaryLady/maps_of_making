@@ -393,6 +393,27 @@ async def register_url(req: UrlRequest):
         logger.error("Oxigraph UPDATE failed: %s", e)
         raise HTTPException(status_code=502, detail={"error": "triplestore_write_failed"})
 
+    # Write snapshot graph with ingestion metadata
+    snapshot_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    snapshot_graph = f"urn:mak:space/{slug}/{snapshot_date}"
+    snapshot_update = f"""INSERT DATA {{
+  GRAPH <{snapshot_graph}> {{
+    <{space_uri}> <{MOM}snapshotDate> "{snapshot_date}" .
+    <{space_uri}> <{MOM}snapshotSummary> "First registration" .
+    <{space_uri}> <{MOM}lastHttpStatus> 200 .
+  }}
+}}"""
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            snap = await client.post(
+                f"{OXIGRAPH_ENDPOINT}/update",
+                content=snapshot_update,
+                headers={"Content-Type": "application/sparql-update"},
+            )
+            snap.raise_for_status()
+    except Exception as e:
+        logger.warning("Snapshot graph write failed (non-fatal): %s", e)
+
     try:
         await _rematerialize_geojson()
     except Exception as e:
@@ -400,3 +421,47 @@ async def register_url(req: UrlRequest):
 
     logger.info("registered space: %s (%s)", name, space_uri)
     return {"status": "confirmed", "space_uri": space_uri, "space_name": name}
+
+
+@app.get("/api/space/{space_id}/snapshots")
+async def get_space_snapshots(space_id: str):
+    """Fetch ingestion history snapshots for a space."""
+    sparql_query = f"""PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
+
+SELECT ?graph ?snapshotDate ?snapshotSummary ?lastHttpStatus
+WHERE {{
+  GRAPH ?graph {{
+    ?space <{MOM}snapshotDate> ?snapshotDate ;
+           <{MOM}snapshotSummary> ?snapshotSummary .
+    OPTIONAL {{ ?space <{MOM}lastHttpStatus> ?lastHttpStatus }}
+  }}
+  FILTER (STRSTARTS(STR(?graph), "urn:mak:space/{space_id}/"))
+}}
+ORDER BY DESC(?snapshotDate)
+"""
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(
+                f"{OXIGRAPH_ENDPOINT}/query",
+                content=sparql_query,
+                headers={
+                    "Content-Type": "application/sparql-query",
+                    "Accept": "application/sparql-results+json",
+                },
+            )
+            resp.raise_for_status()
+            bindings = resp.json().get("results", {}).get("bindings", [])
+    except Exception as e:
+        logger.warning("Failed to fetch snapshots for space %s: %s", space_id, e)
+        return []
+
+    snapshots = []
+    for b in bindings:
+        snapshot = {
+            "date": b.get("snapshotDate", {}).get("value", ""),
+            "summary": b.get("snapshotSummary", {}).get("value", ""),
+            "http_status": int(b.get("lastHttpStatus", {}).get("value", 0)) if b.get("lastHttpStatus", {}).get("value") else 0,
+        }
+        snapshots.append(snapshot)
+
+    return snapshots

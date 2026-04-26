@@ -31,6 +31,7 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 SELECT ?spaceUri ?name ?latitude ?longitude ?status ?geolocationFidelity ?geolocationNote
        ?street ?postcode ?city ?country ?website ?profileUrl ?openNow ?source
+       ?endpointUrl ?lastFetched ?errorType
        (GROUP_CONCAT(?specialty; separator="|") AS ?specialties)
 WHERE {
   {
@@ -53,6 +54,9 @@ WHERE {
       OPTIONAL { ?spaceUri mom:profileUrl ?profileUrl }
       OPTIONAL { ?spaceUri schema:knowsAbout ?specialty }
       OPTIONAL { ?spaceUri mom:source ?source }
+      OPTIONAL { ?spaceUri mom:endpointUrl ?endpointUrl }
+      OPTIONAL { ?spaceUri mom:lastFetched ?lastFetched }
+      OPTIONAL { ?spaceUri mom:errorType ?errorType }
     }
     FILTER (STRSTARTS(STR(?spaceGraph), "urn:mak:space/"))
   }
@@ -77,6 +81,9 @@ WHERE {
       OPTIONAL { ?spaceUri mom:profileUrl ?profileUrl }
       OPTIONAL { ?spaceUri schema:knowsAbout ?specialty }
       OPTIONAL { ?spaceUri mom:source ?source }
+      OPTIONAL { ?spaceUri mom:endpointUrl ?endpointUrl }
+      OPTIONAL { ?spaceUri mom:lastFetched ?lastFetched }
+      OPTIONAL { ?spaceUri mom:errorType ?errorType }
     }
   }
   OPTIONAL {
@@ -87,6 +94,7 @@ WHERE {
 }
 GROUP BY ?spaceUri ?name ?latitude ?longitude ?status ?geolocationFidelity ?geolocationNote
          ?street ?postcode ?city ?country ?website ?profileUrl ?openNow ?source
+         ?endpointUrl ?lastFetched ?errorType
 ORDER BY ?spaceUri"""
 
 
@@ -157,12 +165,15 @@ def binding_to_space(binding: dict) -> dict:
     city = binding.get("city", {}).get("value", "")
     country = binding.get("country", {}).get("value", "")
     website = binding.get("website", {}).get("value", "")
-    endpoint_url = binding.get("profileUrl", {}).get("value", "")
+    # Prefer endpointUrl over profileUrl for confirmed spaces; fall back to profileUrl for seeded
+    endpoint_url = binding.get("endpointUrl", {}).get("value") or binding.get("profileUrl", {}).get("value", "")
     open_now_raw = binding.get("openNow", {}).get("value")
     open_now = open_now_raw.lower() == "true" if open_now_raw is not None else False
     raw_specialties = binding.get("specialties", {}).get("value", "")
     specialties = [s for s in raw_specialties.split("|") if s] if raw_specialties else []
     source = binding.get("source", {}).get("value")
+    last_fetched = binding.get("lastFetched", {}).get("value", "")
+    error_type = binding.get("errorType", {}).get("value", "")
 
     # Compose address string from available parts
     address_parts = [p for p in [street, f"{postcode} {city}".strip()] if p]
@@ -196,7 +207,8 @@ def binding_to_space(binding: dict) -> dict:
             "contact": "",
             "network_memberships": [],
             "open_for_hosting": False,
-            "last_fetched": "",
+            "last_fetched": last_fetched,
+            "error_type": error_type,
         },
     }
 
