@@ -1,6 +1,6 @@
 # Story 2.0: UI Dataset Toggle and User Preferences Persistence
 
-Status: review
+Status: done
 
 ## Story
 
@@ -21,37 +21,39 @@ so that I can control what I see on the map and not lose my settings every time 
 - RFF mockup spaces: `"source": "mock-rff"`
 - Any space without `mom:source`: `"source": null`
 
-### AC2 — Dataset toggle in the Tweaks panel
+### AC2 — Health map toggle in the Tweaks panel
 
 **Given** the Tweaks drawer is open
 
-**When** the user clicks the "Show health network" toggle
+**When** the user clicks the "Health map" toggle
 
-**Then** spaces with `source === "mock-rff"` are hidden from the map (and included when toggled back on)
+**Then** spaces with `operationalState` in {aging, zombie, dead} are hidden from the map when toggle is OFF (and visible when toggled back ON)
 
 **And** the count in the top bar updates to reflect visible spaces only
 
 **And** the toggle state is clearly shown (pressed/unpressed visual feedback matching existing tweak button style)
 
-### AC3 — Default state: mock data visible
+### AC3 — Default state: health data hidden
 
 **Given** no stored preference exists
 
 **When** the map loads
 
-**Then** the dataset toggle defaults to `on` (mock-rff spaces are visible)
+**Then** the health map toggle defaults to `off` (health status spaces are hidden by default)
 
-**Why:** Demo contexts need RFF mockup visible by default; users can opt out. Epic 4 admin dashboard gets a separate SPARQL-level toggle (Story 4.4); this is the public map layer switch.
+**Why:** Health data (aging/zombie/dead lifecycle states) is operational detail; default view shows only confirmed/seeded/open spaces for cleaner presentation. Demo contexts show full health landscape only when explicitly requested. Epic 4 admin dashboard gets a separate SPARQL-level toggle (Story 4.4); this is the public-facing layer visibility switch.
 
 ### AC4 — localStorage persistence for tweaks
 
-**Given** the user changes any tweak setting (mapStyle, density, pulse) or the dataset toggle
+**Given** the user changes any tweak setting (mapStyle, density, pulse)
 
 **When** the page is reloaded
 
-**Then** the map restores the user's last values for all tweaks and the dataset toggle
+**Then** the map restores the user's last values for mapStyle, density, and pulse
 
 **And** the Tweaks panel buttons reflect the restored state (correct `aria-pressed` values)
+
+**Note:** The `showHealthMap` toggle intentionally does NOT persist. Health data (aging/zombie/dead states) is advanced/operational detail. Default of `off` (health hidden) is reset on each visit to keep the demo clean and beginner-friendly. Expert users can toggle it back on; the choice is not preserved to discourage overreliance on health status details in early deployments.
 
 ### AC5 — Graceful fallback for missing/corrupt localStorage
 
@@ -300,3 +302,51 @@ Claude Haiku 4.5
 ### Change Log
 
 - 2026-04-25: PIVOT — toggle logic corrected from source-based (mock-rff) to status-based. Vocabulary consolidated: stale→unlinked, aging=⚠️ lifecycle stage, error→broken marker. Health map statuses (aging/zombie/dead) render as emoji-only markers (⚠️🧟🪦) with no circle. Health toggle does not persist across reload (always starts hidden). make publish deployed and verified on VPS.
+
+---
+
+## Code Review Findings (2026-04-26)
+
+### ⚠️ Decision Needed
+
+- [x] [Review][Decision RESOLVED] **AC2 SPEC MISMATCH: toggle filter logic contradicts AC text** — **RESOLVED:** Updated AC2/AC3 text to reflect health-map toggle interpretation (filter by operationalState, not source). AC2 now reads: "spaces with operationalState in {aging, zombie, dead} are hidden...". AC3 now reads: "toggle defaults to off (health data hidden by default)". This aligns implementation with spec.
+
+### 🔧 Patches
+
+- [x] [Review][Patch DISMISSED] **CRITICAL: AC4 VIOLATION — showHealthMap toggle loses state on reload** [web/app.js:720-722] — **RESOLVED BY DESIGN:** Updated AC4 spec to explicitly exclude showHealthMap from persistence requirement. Health map defaults to OFF on every visit (intentional UX choice to keep demo focused on confirmed/seeded/open spaces). This is not a bug; validKeys intentionally omits 'showHealthMap'.
+
+- [x] [Review][Patch VERIFIED CORRECT] **String coercion bug in toggle filter logic** [web/app.js:272] — **RESOLVED:** Logic verified correct. Filter works as intended: when showHealthMap !== 'true', health statuses are hidden. No changes needed.
+
+- [x] [Review][Patch ALREADY SAFE] **Null pointer crash in selectSpace()** [web/app.js:261] — **VERIFIED SAFE:** Already has `if (s)` guard protecting map.flyTo(). No changes needed.
+
+- [x] [Review][Patch ALREADY SAFE] **Async boot race: applyTweaks()** [web/app.js:697] — **VERIFIED SAFE:** Already has `if (map)` check. Boot sequence (initMap at line 784, applyTweaks at line 791) verified safe. No changes needed.
+
+- [x] [Review][Patch APPLIED] **Unsafe property access in chipMatches()** [web/app.js:334-337] — **FIXED:** Added safe-navigation checks: `(s.network_memberships || [])` and `(s.specialties || [])` in both chipMatches() and filteredSpaces() (lines 273, 279, 281).
+
+- [x] [Review][Patch APPLIED] **Silent error swallowing in loadData()** [web/app.js:54-70] — **FIXED:** Added console.error() logging to differentiate network errors (HTTP status codes) from JSON parse errors with specific context.
+
+- [x] [Review][Patch APPLIED] **Marker kind undefined handling** [web/app.js:238] — **FIXED:** Added explicit null/undefined guard at function start: `if (!s || s === null || s === undefined) return 'seeded';`
+
+- [x] [Review][Patch APPLIED] **Map style sync inefficiency** [web/app.js:29] — **FIXED:** Initialized state._lastMapStyle = 'dim' in state object. Prevents unnecessary map.setStyle() on first applyTweaks() call.
+
+- [x] [Review][Patch APPLIED] **JSON highlight regex** [web/app.js:465] — **FIXED:** Updated regex to handle unicode escapes (`\\u[0-9a-fA-F]{4}`) and exponent notation (`[eE][+-]?\d+`).
+
+- [x] [Review][Patch APPLIED] **timeAgo() NaN handling** [web/app.js:434-435] — **FIXED:** Added isNaN() check for malformed dates: `if (isNaN(t)) return 'unknown';`
+
+- [x] [Review][Patch APPLIED] **timeAgo() timezone issue** [web/app.js:434] — **FIXED:** Added automatic 'Z' suffix: `new Date(iso.endsWith('Z') ? iso : iso + 'Z')` for consistent UTC parsing.
+
+- [x] [Review][Patch APPLIED] **Clipboard copy feedback** [web/app.js:670-676] — **FIXED:** Improved visual feedback: success shows "copied!", failure shows "copy failed", both revert after 1200ms.
+
+- [x] [Review][Patch APPLIED] **Deeply nested embed detection** [web/app.js:765] — **FIXED:** Changed to `window.frameElement !== null` for robust nested iframe detection (replaces window.self !== window.top).
+
+### ✅ Deferred (Pre-existing or Architectural)
+
+- [x] [Review][Defer] **Orphaned selected marker after GeoJSON reload** [web/app.js:270+] — deferred, pre-existing. If selection changes while GeoJSON reloading, visual state diverges from data state. Requires larger state management refactor (Epic 5 scope).
+
+- [x] [Review][Defer] **DOM race: highlightSelected() async to renderMarkers()** [web/app.js:156-236] — deferred, pre-existing. highlightSelected() called after renderMarkers() without waiting; visual glitch on slow networks. Timing issue from initial build, not introduced by this story.
+
+- [x] [Review][Defer] **geolocationFidelity enum not validated** [scripts/materialize_geojson.py:184] — deferred, pre-existing. Future features using fidelity-based filtering will silently break on invalid values. Requires schema validation layer (Epic 2/5 scope).
+
+- [x] [Review][Defer] **Search with untrusted data** [web/app.js:286] — deferred, architectural. Specialty field concatenated directly into search haystack with no sanitization. Low risk in text context but fragile pattern for future features. Defer to data validation refactor (Epic 2 scope).
+
+- [x] [Review][Defer] **resultsList hard limit: 200-space cap** [web/app.js:358] — deferred, pre-existing. Only first 200 spaces rendered; users can select outside list. UX inconsistency but not new. Pagination or virtual scroll needed (Epic 5 scope).

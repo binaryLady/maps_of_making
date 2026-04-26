@@ -25,6 +25,7 @@
     },
     embed: { centerId: null },
     markers: new Map(),        // id -> maplibre.Marker
+    _lastMapStyle: 'dim',      // track last applied style to avoid redundant setStyle() calls
   };
 
   // ───────────────────────────── dom helpers
@@ -51,7 +52,7 @@
   async function loadData() {
     const res = await fetch('/data/spaces.geojson');
     if (!res.ok) {
-      // Graceful failure: show banner, no pins rendered
+      console.error(`[loadData] Network error: HTTP ${res.status} ${res.statusText}`);
       document.body.classList.add('data-load-error');
       const loader = document.getElementById('loader');
       if (loader) {
@@ -64,6 +65,7 @@
     try {
       json = await res.json();
     } catch (e) {
+      console.error('[loadData] JSON parse error:', e.message);
       document.body.classList.add('data-load-error');
       state.spaces = [];
       return;
@@ -233,6 +235,7 @@
   }
 
   function markerKind(s) {
+    if (!s || s === null || s === undefined) return 'seeded';
     if (s.status === 'broken' || s.status === 'error') return 'broken';
     if (s.status === 'unlinked' || s.status === 'stale') return 'unlinked';
     if (s.status === 'aging') return 'aging';
@@ -270,15 +273,15 @@
     const HEALTH_STATUSES = new Set(['aging', 'zombie', 'dead']);
     return state.spaces.filter((s) => {
       if (String(state.tweaks.showHealthMap) !== 'true' && HEALTH_STATUSES.has(s.status)) return false;
-      if (f.networks.size && !s.network_memberships.some((n) => f.networks.has(n))) return false;
+      if (f.networks.size && !(s.network_memberships || []).some((n) => f.networks.has(n))) return false;
       if (f.countries.size && !f.countries.has(s.country)) return false;
       if (f.statuses.size) {
         const tag = markerKind(s);
         if (!f.statuses.has(tag)) return false;
       }
-      if (f.specialties.size && !s.specialties.some((sp) => f.specialties.has(sp))) return false;
+      if (f.specialties.size && !(s.specialties || []).some((sp) => f.specialties.has(sp))) return false;
       if (q) {
-        const hay = (s.name + ' ' + s.city + ' ' + s.country + ' ' + s.specialties.join(' ') + ' ' + s.network_memberships.join(' ')).toLowerCase();
+        const hay = (s.name + ' ' + s.city + ' ' + s.country + ' ' + (s.specialties || []).join(' ') + ' ' + (s.network_memberships || []).join(' ')).toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
@@ -331,10 +334,10 @@
   }
 
   function chipMatches(selector, s, val) {
-    if (selector === '#chips-network') return s.network_memberships.includes(val);
+    if (selector === '#chips-network') return (s.network_memberships || []).includes(val);
     if (selector === '#chips-country') return s.country === val;
     if (selector === '#chips-status') return markerKind(s) === val;
-    if (selector === '#chips-spec') return s.specialties.includes(val);
+    if (selector === '#chips-spec') return (s.specialties || []).includes(val);
     return false;
   }
 
@@ -431,7 +434,8 @@
 
   function timeAgo(iso) {
     if (!iso) return 'never';
-    const t = new Date(iso).getTime();
+    const t = new Date(iso.endsWith('Z') ? iso : iso + 'Z').getTime();
+    if (isNaN(t)) return 'unknown';
     const sec = (Date.now() - t) / 1000;
     if (sec < 60) return `${Math.round(sec)}s`;
     if (sec < 3600) return `${Math.round(sec / 60)}m`;
@@ -461,7 +465,7 @@
     const txt = JSON.stringify(obj, null, 2);
     // minimal syntax highlight
     const frag = document.createDocumentFragment();
-    const re = /("(?:\\.|[^"\\])*")(\s*:)?|(\btrue\b|\bfalse\b|\bnull\b)|(-?\d+(?:\.\d+)?)/g;
+    const re = /("(?:\\(?:u[0-9a-fA-F]{4}|.)|[^"\\])*")(\s*:)?|(\btrue\b|\bfalse\b|\bnull\b)|(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g;
     let last = 0, m;
     while ((m = re.exec(txt))) {
       if (m.index > last) frag.appendChild(document.createTextNode(txt.slice(last, m.index)));
@@ -663,11 +667,15 @@
     $$('[data-copy]').forEach((b) => b.addEventListener('click', async () => {
       const id = b.dataset.copy;
       const txt = $('#' + id + '-text').textContent;
+      const original = b.textContent;
       try {
         await navigator.clipboard.writeText(txt);
-        const prev = b.textContent; b.textContent = 'copied!';
-        setTimeout(() => b.textContent = prev, 1200);
-      } catch { b.textContent = 'select & copy'; }
+        b.textContent = 'copied!';
+        setTimeout(() => b.textContent = original, 1200);
+      } catch (e) {
+        b.textContent = 'copy failed';
+        setTimeout(() => b.textContent = original, 1200);
+      }
     }));
 
     // Tweaks
@@ -760,7 +768,7 @@
   window.__map = () => map;
 
   // ───────────────────────────── embed detection
-  if (window.self !== window.top) {
+  if (window.frameElement !== null) {
     document.body.classList.add('embed-mode');
   }
 

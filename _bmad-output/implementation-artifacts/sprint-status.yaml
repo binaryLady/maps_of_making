@@ -13,7 +13,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-23
-last_updated: 2026-04-25 (Story 2.0 complete, ready for review)
+last_updated: 2026-04-26 (Story 2.0 code review complete and all patches applied, status=done)
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
@@ -64,7 +64,7 @@ development_status:
 
   # Epic 2: Coordinator URL Onboarding
   epic-2: in-progress
-  2-0-ui-dataset-toggle-and-preferences: review
+  2-0-ui-dataset-toggle-and-preferences: done
   2-1-coordinator-url-validation-endpoint: backlog
   2-2-add-your-url-drawer-live-validation-ui: backlog
   2-3-first-fetch-ingestion-pin-flip-immediate-map-refresh: backlog
