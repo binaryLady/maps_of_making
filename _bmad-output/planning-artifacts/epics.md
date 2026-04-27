@@ -676,30 +676,52 @@ So that I can trust whether the information is current — and coordinators can 
 
 ### Story 2.6: Mobile Responsive Layout
 
-*Added: Epic 1 retrospective 2026-04-25. Live testing on mobile revealed the phase-1 UI is not responsive — topbar overflows, drawers are desktop-only, map is compressed. PRD targets Mobile Chrome/Safari as a supported browser. This story makes the map usable on phone before the coordinator flow is demoed.*
+*Added: Epic 1 retrospective 2026-04-25. Updated 2026-04-27 with mobile-first design principle and new ACs. Implementation file: `_bmad-output/implementation-artifacts/2-6-mobile-responsive-layout.md` (authoritative — supersedes this summary).*
 
-As a maker or coordinator browsing on a phone,
-I want the map to fit and be usable on a mobile screen,
-So that I can browse spaces and initiate the "Add your URL" flow without needing a desktop.
+**Mobile-first design principle:** Mobile = browsing mode (find a space, go there, share it). Coordinator onboarding, health map, and management features are desktop-only.
 
-**Acceptance Criteria:**
+As a maker browsing on a phone,
+I want the map to fit, be usable, and help me find spaces near me,
+So that I can discover open spaces and share them with my group — without needing a desktop.
 
-**Given** the map SPA is loaded on a screen narrower than 768px
-**When** the page renders
-**Then** the topbar buttons (`Filters`, `Search`, `Add your URL`, `Tweaks`) do not overflow or wrap — either they collapse to a hamburger/icon row or the topbar scrolls horizontally without clipping
-**And** the map fills the full viewport height minus the topbar (no gap, no vertical scrollbar on the map itself)
-**And** the map is pannable and zoomable with touch gestures (pinch-to-zoom, drag-to-pan) — MapLibre touch handling must not be blocked by any overlay
-**And** all drawers (Filters, "Add your URL", detail drawer on pin click) open as bottom sheets on mobile (not side panels), covering ~60% of the screen height with a drag handle to dismiss
-**And** the loader and results-count text are readable at mobile font sizes (no text truncation, no overflow)
-**And** on screens ≥ 768px the layout is unchanged from current phase-1 desktop behaviour (no regression)
-**And** the fix is validated by Nicolas on his own phone before the story is marked done — not just by browser DevTools emulation
+**Key ACs (see story file for full detail):**
+- Topbar collapses to icon-only row (no overflow/wrap) on < 768px
+- All drawers open as bottom sheets; detail drawer at ~80–85% height
+- "Claim this pin" CTA suppressed on mobile — replaced with desktop whisper text
+- "📍 Near me" button: geolocation → flyTo zoom 12, silent on denial
+- "⎘ Copy space link" in detail drawer footer (copies `s.website || s.endpoint_url`)
+- Zone 3 (raw source JSON) hidden on mobile
+- Real-phone validation by Nicolas required before done
+- Desktop layout unchanged (≥ 768px)
 
 **Dev Notes:**
-- Deferred from phase-1 intentionally; now required before Epic 2 coordinator demo
-- MapLibre itself is touch-capable; the issue is CSS layout (topbar overflow, drawer positioning)
-- Bottom sheet pattern: use CSS `position: fixed; bottom: 0; width: 100%` with `transform: translateY` for open/close animation
-- The `prefers-reduced-motion` media query (already in codebase) must cover the bottom sheet animation too
-- Do NOT add a JS framework for this — vanilla CSS media queries and minimal JS
+- CSS-only approach — no JS framework
+- `prefers-reduced-motion` already covers drawers — extend to new mobile transitions
+- Existing `@media (max-width: 720px)` is a partial start; this story completes it
+
+---
+
+### Story 2.7: Card Zones + Pydantic Schema Foundation
+
+*Added: 2026-04-27. Addresses data flow incoherence between URL ingestion and card display. Implementation file: `_bmad-output/implementation-artifacts/2-7-card-zones-pydantic-schema-foundation.md` (authoritative).*
+
+As a maker or coordinator viewing a space detail card,
+I want to see clearly separated zones — identity, curated data, and raw source — and as a coordinator I want honest feedback about what my endpoint unlocks,
+So that I can trust what the map shows me and know exactly what to improve in my data file.
+
+**Data flow:** `URL → fetch → Pydantic validation → Oxigraph (curated fields + raw snapshot) → card (Zone 2 from Oxigraph, Zone 3 from raw snapshot)`
+
+**Key ACs (see story file for full detail):**
+- Pydantic `SpaceAPISchema` model classifies endpoints into subsets: `mom:required` → `mom:card` → `spaceapi:compatible`
+- Validation response includes `subset`, `unlock_message`, `next_unlock` (progressive fog-of-war incentive)
+- Raw endpoint JSON stored as `mom:rawContent` in snapshot graph (50KB cap)
+- `GET /api/space/{id}/raw` returns cached snapshot JSON
+- Card restructured: Zone 1 (identity/status), Zone 2 (ingested fields only — removes fake Founded/Capacity/Contact), Zone 3 (real source JSON, desktop only)
+- `jsonForSpace()` deleted — it was reconstructing fake "endpoint" data from GeoJSON props
+- `schema:description` surfaced in Zone 2 (was ingested but never displayed)
+
+**SpaceAPI compatibility reference:** https://github.com/SpaceApi/schema
+**Success metric:** One endpoint registers on MoM AND mapall.space without changes.
 
 ---
 

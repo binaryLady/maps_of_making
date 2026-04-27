@@ -770,6 +770,73 @@ networks:
 | FR37–42 NL bot | `harness/tasks/nl_to_sparql.py` + `harness/tasks/answer_format.py` + `harness/adapters/` |
 | FR43–44 Auth | nginx (shared-password basic auth header) |
 
+## External Schema References
+
+### SpaceAPI Compatibility
+
+Maps of Making aims for interoperability with the SpaceAPI ecosystem so that a hackerspace can register the same endpoint with both MoM and SpaceAPI-compatible services (e.g. [mapall.space](https://mapall.space/)).
+
+**Authoritative schema:** https://github.com/SpaceApi/schema
+- Current stable: `14.json` / `15.json`
+- Active draft: `16-draft.json` (most detailed — use as design reference)
+- Migration guide: `MIGRATION.md` in same repo
+
+**SpaceAPI v14 required fields** (minimum a space endpoint must contain):
+`api_compatibility`, `space` (name), `logo`, `url`, `location` (lat+lon), `contact`
+
+**SpaceAPI v16 required fields** (draft): same core set; `location` demoted to optional (≥1 property required if present); `linked_spaces` added for federation.
+
+**Key v16 additions relevant to MoM:**
+- `linked_spaces[]` — array of related spaces with `endpoint` or `website` URL → maps to consortium/network membership
+- `membership_plans[]` — pricing/access tiers → useful for long-term membership discovery ("I want to join a space near me") and newcomer onboarding queries; residency matchmaking is separate (EU-grant-financed programs, not membership subscriptions) and lives in `mom:extended`
+- `location.areas[]` — named zones with `square_meters` → equipment/workshop areas
+- `state.lastchange` — Unix timestamp of last open/closed change → freshness signal (Epic 7)
+- `spacefed.spacenet` / `spacefed.spacesaml` — federation auth → long-term interop
+
+**SpaceAPI has no native tags/specialties/equipment fields.** These are MoM extensions and must live in `mom:extended` subset. When publishing alongside SpaceAPI fields, extra JSON-LD properties are allowed by SpaceAPI validators — no breakage.
+
+**MoM schema subset model** (enforced via Pydantic in `link_handler/main.py` from Story 2.7):
+
+| Subset | Fields | Gate behaviour | Unlocks |
+|---|---|---|---|
+| `mom:required` | `space`, `url`, `location.lat/lon` | Hard reject if missing | Pin on map |
+| `mom:card` | `+location.address`, `contact.website`, `state.open`, `schema:openingHours` | Ingest with warning if missing | Full detail card |
+| `spaceapi:compatible` | Full SpaceAPI v14+ field set | Ingest; surface compatibility score | Interop with mapall.space etc. |
+| `mom:extended` | `mom:specialties`, `mom:equipment`, `mom:consortium`, `mom:residency`, `mom:membershipPlans` | Ingest; unlock advanced features | Consortium queries, residency matchmaking, membership discovery |
+| `mom:live` | `state.open` + presence webhook TTL | Epic 7 — schema slot reserved | "Open now" badge |
+
+**Progressive unlock UX (Story 2.7):** After ingestion, the validation response tells the coordinator which subset they've reached and what completing the next subset unlocks — fog-of-war incentive to enrich their endpoint over time.
+
+**`mom:extended` field definitions** (agreed 2026-04-27 — implemented from Epic 4+):
+
+```json
+"legal": { "type": "non-profit", "country": "BE", "founded": 2011 },
+"outward": {
+  "grant_experience": ["Erasmus+ KA210", "NLnet NGI"],
+  "partnership_scale": ["local", "national", "european"],
+  "working_languages": ["fr", "en", "nl"],
+  "thematic_areas": ["education", "neurodiversity", "open-hardware"],
+  "seeking_partners": true,
+  "grant_programme": "Erasmus+ KA220",
+  "seeking_description": "digital fabrication + youth, 2027 call"
+},
+"inward": {
+  "residency_open": true,
+  "residency_duration_weeks": { "min": 2, "max": 8 },
+  "residency_support": ["workspace", "materials"],
+  "residency_deadline": "2026-09-01",
+  "residency_profile": "Makers with textile or biofab background"
+}
+```
+
+Note: `seeking_partners_for` is split into structured `grant_programme` + free `seeking_description` for queryability. `residency` ≠ `membership_plans` (SpaceAPI): residency is project-based/EU-grant-funded; membership is local subscription/newcomer discovery. The maker schema (consent-gated individual layer) is future scope — see memory file for full field definitions.
+
+**Conceptual model:** Cell (maker) → Organ (space) → Organism (network) → Ecosystem (network of networks). Space schema = organ's public signal. Maker schema = cell's consented output. Nobody owns the cell.
+
+**Success metric:** A hackerspace registers one JSON endpoint and appears correctly on Maps of Making AND mapall.space AND any future SpaceAPI-compatible service. One endpoint, multiple maps, multiple publics.
+
+---
+
 ### Data Flow
 
 ```

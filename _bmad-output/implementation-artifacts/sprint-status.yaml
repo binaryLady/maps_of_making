@@ -13,7 +13,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-23
-last_updated: 2026-04-27 (story 2.6 created: mobile responsive layout)
+last_updated: 2026-04-27 (story 2.7 created: card zones + pydantic schema foundation)
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
@@ -70,6 +70,7 @@ development_status:
   2-1-coordinator-url-onboarding-e2e: done
   2-2-detail-drawer-provenance-ingestion-history: done
   2-6-mobile-responsive-layout: ready-for-dev
+  2-7-card-zones-pydantic-schema-foundation: ready-for-dev
   epic-2-retrospective: optional
 
   # Epic 3: Endpoint Health, Stale Detection & Magic-Link Recovery
