@@ -44,6 +44,12 @@
 - **F15 — GeoJSON re-fetch failure leaves new space out of `state.spaces`** — `selectSpace`/`embedSpace` silently find nothing if rematerialization hasn't completed when the browser re-fetches. Spec explicitly allowed re-fetch approach; patch in Epic 5 UX pass (patch state from API response as fallback).
 - **F19 — `confirmed_at` column in `seed_transition.py` shows `mom:lastFetched`** — no distinct `mom:confirmedAt` triple is written at registration time; if the space is ever re-fetched, the column drifts from actual registration time. Add a `mom:confirmedAt` triple in the SPARQL UPDATE if this distinction matters in Epic 3+ tooling.
 
+## Deferred from: Story 2.6 — Mobile Responsive Layout (2026-04-27)
+
+- **Shareable query URL** — "I filtered to confirmed + open + electronics in Hamburg — here's the link." Implies URL state management for active filters as query params (e.g. `?filter=confirmed&city=hamburg&specialty=electronics`). Similar to the embed code snippet but as a shareable URL. Right for pilot when coordinators share filtered map views to communities. → Epic 5 or dedicated pilot story.
+- **Swipe-to-dismiss bottom sheets** — drag-handle is visual only in 2.6; actual swipe gesture to dismiss requires a touch event handler. Low priority until user feedback confirms it's missed. → Epic 5 polish.
+- **Health map suppressed on mobile** — design decision: health map toggle (Tweaks panel) is a desktop analytics feature; mobile defaults to fresh/confirmed view only. If a mobile health map use case emerges from pilot, revisit. → monitor.
+
 ## Deferred from: Story 2.2 — Detail Drawer (2026-04-26)
 
 - **Admin: delete test/self-registered spaces** — No way to remove a space once registered. Test fixtures (e.g. `herberts-lab`) accumulate in Oxigraph. Cleanup requires `DROP GRAPH <urn:mak:space/{slug}>` plus `DROP SILENT` over snapshot graphs `urn:mak:space/{slug}/{YYYY-MM-DD}`, then rematerialize. Implement as admin row action: `DELETE /api/admin/space/{slug}` on `mak-link-handler`, gated by basic-auth at `/admin` (already wired in `infra/nginx/conf.d/app.conf:93`). → Story 4.5 (audit log) or new Story 4.6.
