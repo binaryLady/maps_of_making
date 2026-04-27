@@ -618,11 +618,6 @@
     const input = $('#url-input');
     if (result && !result.innerHTML && input && !input.value) return;
     $('.addurl-body').innerHTML = _addUrlOriginalHTML;
-    // Re-populate space dropdown (was inside original HTML, now blank again)
-    const sel = $('#url-space');
-    for (const s of [...state.spaces].sort((a, b) => a.name.localeCompare(b.name))) {
-      sel.appendChild(el('option', { value: s.id }, [`${s.name} — ${s.city}, ${s.country}`]));
-    }
     _wireAddUrlHandlers();
   }
 
@@ -631,7 +626,6 @@
       const sample = state.spaces.find((s) => s.status === 'seeded' && s.website);
       if (sample) {
         $('#url-input').value = `${sample.website}/maker.json`;
-        $('#url-space').value = sample.id;
       }
     });
     $('#btn-fetch-url').addEventListener('click', _onFetchUrl);
@@ -647,7 +641,7 @@
       const resp = await fetch('/api/validate-url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, space_id: $('#url-space').value || null }),
+        body: JSON.stringify({ url }),
       });
       if (!resp.ok && resp.headers.get('content-type')?.includes('text/html')) {
         out.innerHTML = `<span style="color:var(--accent);">✗ API error: HTTP ${resp.status} — backend may be down</span>`;
@@ -696,13 +690,6 @@
       return;
     }
 
-    // Pre-select space by name fuzzy match
-    if (data.name_found) {
-      const needle = data.name_found.toLowerCase();
-      const match = state.spaces.find((s) => s.name.toLowerCase().includes(needle) || needle.includes(s.name.toLowerCase()));
-      if (match) $('#url-space').value = match.id;
-    }
-
     const btn = el('button', { id: 'btn-confirm-register', class: 'btn btn-primary', style: 'margin-top:10px;' }, ['Confirm & register your space →']);
     out.appendChild(btn);
 
@@ -714,7 +701,7 @@
         const resp = await fetch('/api/register-url', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url, space_id: $('#url-space').value || null }),
+          body: JSON.stringify({ url }),
         });
         reg = await resp.json();
         if (!resp.ok) throw new Error(reg.detail?.error || `HTTP ${resp.status}`);
