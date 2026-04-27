@@ -32,7 +32,8 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 SELECT ?spaceUri ?name ?latitude ?longitude ?status ?geolocationFidelity ?geolocationNote
        ?street ?postcode ?city ?country ?website ?profileUrl ?openNow ?source
        ?endpointUrl ?lastFetched ?errorType
-       (GROUP_CONCAT(?specialty; separator="|") AS ?specialties)
+       (GROUP_CONCAT(DISTINCT ?specialty; separator="|") AS ?specialties)
+       (COALESCE(GROUP_CONCAT(DISTINCT STR(?network); separator="|"), "") AS ?networkMemberships)
 WHERE {
   {
     # VOW spaces (one space per named graph)
@@ -57,6 +58,7 @@ WHERE {
       OPTIONAL { ?spaceUri mom:endpointUrl ?endpointUrl }
       OPTIONAL { ?spaceUri mom:lastFetched ?lastFetched }
       OPTIONAL { ?spaceUri mom:errorType ?errorType }
+      OPTIONAL { ?spaceUri mom:memberOf ?network }
     }
     FILTER (STRSTARTS(STR(?spaceGraph), "urn:mak:space/"))
   }
@@ -84,6 +86,7 @@ WHERE {
       OPTIONAL { ?spaceUri mom:endpointUrl ?endpointUrl }
       OPTIONAL { ?spaceUri mom:lastFetched ?lastFetched }
       OPTIONAL { ?spaceUri mom:errorType ?errorType }
+      OPTIONAL { ?spaceUri mom:memberOf ?network }
     }
   }
   OPTIONAL {
@@ -171,6 +174,8 @@ def binding_to_space(binding: dict) -> dict:
     open_now = open_now_raw.lower() == "true" if open_now_raw is not None else False
     raw_specialties = binding.get("specialties", {}).get("value", "")
     specialties = [s for s in raw_specialties.split("|") if s] if raw_specialties else []
+    raw_networks = binding.get("networkMemberships", {}).get("value", "")
+    network_memberships = [n for n in raw_networks.split("|") if n] if raw_networks else []
     source = binding.get("source", {}).get("value")
     last_fetched = binding.get("lastFetched", {}).get("value", "")
     error_type = binding.get("errorType", {}).get("value", "")
@@ -200,12 +205,12 @@ def binding_to_space(binding: dict) -> dict:
             "specialties": specialties,
             "open_now": open_now,
             "source": source,
+            "network_memberships": network_memberships,
             # Fields not yet seeded — populated by Epic 2 individual endpoint fetch
             "opening_hours": "",
             "founded": "",
             "capacity": 0,
             "contact": "",
-            "network_memberships": [],
             "open_for_hosting": False,
             "last_fetched": last_fetched,
             "error_type": error_type,

@@ -129,6 +129,10 @@ def build_vow_insert(entry: dict) -> tuple[str, str]:
     if geo_note:
         triples += f" ;\n    mom:geolocationNote {sparql_str(geo_note)}"
 
+    member_of = entry.get("mom:memberOf")
+    if member_of:
+        triples += f" ;\n    mom:memberOf <{member_of}>"
+
     triples += " ."
 
     insert_query = f"""PREFIX schema: <https://schema.org/>
@@ -202,6 +206,9 @@ def build_rff_insert(entries: list) -> tuple[str, str]:
 
         if "mom:geolocationNote" in entry:
             entry_triples += f" ;\n      mom:geolocationNote {sparql_str(entry['mom:geolocationNote'])}"
+
+        if "mom:memberOf" in entry:
+            entry_triples += f" ;\n      mom:memberOf <{entry['mom:memberOf']}>"
 
         entry_triples += " ."
         triples_list.append(entry_triples)

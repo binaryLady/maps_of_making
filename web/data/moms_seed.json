@@ -32,7 +32,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -62,7 +63,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -90,7 +92,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -123,7 +126,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -157,7 +161,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -182,7 +187,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -209,7 +215,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -241,7 +248,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -267,7 +275,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -293,7 +302,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -327,7 +337,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -360,7 +371,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -391,7 +403,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -419,7 +432,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -443,7 +457,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -469,7 +484,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -494,7 +510,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -525,7 +542,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -554,7 +572,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -580,7 +599,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -609,7 +629,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -640,7 +661,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -671,7 +693,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -700,7 +723,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -729,7 +753,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -758,7 +783,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -782,7 +808,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -810,7 +837,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -834,7 +862,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -864,7 +893,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -892,7 +922,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -920,7 +951,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -948,7 +980,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -977,7 +1010,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1001,7 +1035,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1025,7 +1060,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1049,7 +1085,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1073,7 +1110,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1098,7 +1136,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1123,7 +1162,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1147,7 +1187,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1172,7 +1213,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1198,7 +1240,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1222,7 +1265,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1252,7 +1296,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1280,7 +1325,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1302,7 +1348,8 @@
     "schema:knowsAbout": [],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1336,7 +1383,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1360,7 +1408,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1387,7 +1436,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1413,7 +1463,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1441,7 +1492,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1474,7 +1526,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1500,7 +1553,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1531,7 +1585,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1559,7 +1614,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1587,7 +1643,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1623,7 +1680,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1649,7 +1707,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1678,7 +1737,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "country",
     "mom:geolocationNote": "Address incomplete — showing country-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1702,7 +1762,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1727,7 +1788,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1762,7 +1824,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1789,7 +1852,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1821,7 +1885,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1850,7 +1915,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1876,7 +1942,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1910,7 +1977,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1934,7 +2002,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1960,7 +2029,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -1984,7 +2054,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2016,7 +2087,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2044,7 +2116,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2071,7 +2144,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2100,7 +2174,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2132,7 +2207,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2163,7 +2239,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2191,7 +2268,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2222,7 +2300,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2248,7 +2327,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2272,7 +2352,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2301,7 +2382,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2329,7 +2411,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2358,7 +2441,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2382,7 +2466,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2406,7 +2491,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2431,7 +2517,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2465,7 +2552,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2494,7 +2582,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2520,7 +2609,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2556,7 +2646,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2587,7 +2678,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "country",
     "mom:geolocationNote": "Address incomplete — showing country-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2612,7 +2704,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "country",
     "mom:geolocationNote": "Address incomplete — showing country-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2636,7 +2729,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2660,7 +2754,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2684,7 +2779,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2711,7 +2807,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2738,7 +2835,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2771,7 +2869,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2806,7 +2905,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2828,7 +2928,8 @@
     "schema:knowsAbout": [],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2853,7 +2954,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2885,7 +2987,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2914,7 +3017,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2946,7 +3050,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -2973,7 +3078,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3002,7 +3108,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3031,7 +3138,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3062,7 +3170,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3091,7 +3200,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3121,7 +3231,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3156,7 +3267,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3189,7 +3301,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3218,7 +3331,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3247,7 +3361,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3276,7 +3391,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3311,7 +3427,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3338,7 +3455,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3369,7 +3487,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3394,7 +3513,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3424,7 +3544,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3452,7 +3573,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3479,7 +3601,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3513,7 +3636,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3543,7 +3667,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3571,7 +3696,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3604,7 +3730,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3632,7 +3759,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3664,7 +3792,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3698,7 +3827,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3725,7 +3855,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3760,7 +3891,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3788,7 +3920,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3822,7 +3955,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3851,7 +3985,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3880,7 +4015,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3902,7 +4038,8 @@
     "schema:knowsAbout": [],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3935,7 +4072,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3961,7 +4099,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "country",
     "mom:geolocationNote": "Address incomplete — showing country-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -3991,7 +4130,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4022,7 +4162,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4047,7 +4188,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4071,7 +4213,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4095,7 +4238,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4119,7 +4263,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4150,7 +4295,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "country",
     "mom:geolocationNote": "Address incomplete — showing country-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4183,7 +4329,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4208,7 +4355,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4232,7 +4380,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4257,7 +4406,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4291,7 +4441,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4313,7 +4464,8 @@
     "schema:knowsAbout": [],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4341,7 +4493,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4366,7 +4519,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4393,7 +4547,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4423,7 +4578,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4450,7 +4606,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4483,7 +4640,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4509,7 +4667,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4538,7 +4697,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4565,7 +4725,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4593,7 +4754,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4618,7 +4780,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4646,7 +4809,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4675,7 +4839,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4706,7 +4871,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4742,7 +4908,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4772,7 +4939,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4797,7 +4965,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4830,7 +4999,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4856,7 +5026,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4885,7 +5056,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4914,7 +5086,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4949,7 +5122,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -4978,7 +5152,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5006,7 +5181,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "country",
     "mom:geolocationNote": "Address incomplete — showing country-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5038,7 +5214,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5063,7 +5240,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5092,7 +5270,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5122,7 +5301,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5154,7 +5334,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5180,7 +5361,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5204,7 +5386,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5232,7 +5415,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5266,7 +5450,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5295,7 +5480,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5325,7 +5511,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5353,7 +5540,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "country",
     "mom:geolocationNote": "Address incomplete — showing country-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5375,7 +5563,8 @@
     "schema:knowsAbout": [],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5405,7 +5594,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5439,7 +5629,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5463,7 +5654,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5493,7 +5685,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5522,7 +5715,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5551,7 +5745,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5582,7 +5777,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5608,7 +5804,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5639,7 +5836,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5663,7 +5861,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5690,7 +5889,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5723,7 +5923,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5754,7 +5955,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5782,7 +5984,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5806,7 +6009,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5831,7 +6035,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5855,7 +6060,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5880,7 +6086,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5904,7 +6111,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5928,7 +6136,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5954,7 +6163,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -5982,7 +6192,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6007,7 +6218,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6031,7 +6243,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6055,7 +6268,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6089,7 +6303,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6123,7 +6338,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6147,7 +6363,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6171,7 +6388,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6204,7 +6422,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6232,7 +6451,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6258,7 +6478,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6287,7 +6508,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6317,7 +6539,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6345,7 +6568,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6370,7 +6594,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6399,7 +6624,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "country",
     "mom:geolocationNote": "Address incomplete — showing country-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6423,7 +6649,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6448,7 +6675,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6477,7 +6705,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6509,7 +6738,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6540,7 +6770,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6565,7 +6796,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6595,7 +6827,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6631,7 +6864,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6660,7 +6894,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6687,7 +6922,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6711,7 +6947,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6735,7 +6972,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6764,7 +7002,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6788,7 +7027,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6821,7 +7061,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6850,7 +7091,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6874,7 +7116,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6905,7 +7148,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6929,7 +7173,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6959,7 +7204,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -6987,7 +7233,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7013,7 +7260,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7039,7 +7287,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7066,7 +7315,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7094,7 +7344,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7124,7 +7375,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7152,7 +7404,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7179,7 +7432,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7206,7 +7460,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7231,7 +7486,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7256,7 +7512,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7281,7 +7538,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7309,7 +7567,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7339,7 +7598,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7363,7 +7623,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7390,7 +7651,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7414,7 +7676,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7441,7 +7704,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7471,7 +7735,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7495,7 +7760,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7530,7 +7796,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7560,7 +7827,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7587,7 +7855,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "country",
     "mom:geolocationNote": "Address incomplete — showing country-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7617,7 +7886,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7641,7 +7911,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7665,7 +7936,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7692,7 +7964,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7719,7 +7992,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7749,7 +8023,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7777,7 +8052,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7812,7 +8088,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7846,7 +8123,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7874,7 +8152,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7902,7 +8181,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7932,7 +8212,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7962,7 +8243,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -7994,7 +8276,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -8025,7 +8308,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -8052,7 +8336,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -8082,7 +8367,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -8110,7 +8396,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -8142,7 +8429,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -8178,7 +8466,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -8213,7 +8502,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -8240,7 +8530,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -8275,7 +8566,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -8311,7 +8603,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -8342,7 +8635,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -8376,7 +8670,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -8410,7 +8705,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -8436,7 +8732,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -8461,7 +8758,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -8493,7 +8791,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -8525,7 +8824,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -8555,7 +8855,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -8584,7 +8885,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -8613,7 +8915,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -8639,7 +8942,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -8670,7 +8974,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -8699,7 +9004,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -8733,7 +9039,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -8760,7 +9067,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -8789,7 +9097,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -8821,7 +9130,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -8848,7 +9158,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -8879,7 +9190,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -8909,7 +9221,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -8938,7 +9251,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -8969,7 +9283,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9000,7 +9315,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9026,7 +9342,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9060,7 +9377,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9089,7 +9407,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9119,7 +9438,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9150,7 +9470,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9176,7 +9497,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9206,7 +9528,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9237,7 +9560,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9264,7 +9588,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9290,7 +9615,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9318,7 +9644,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9347,7 +9674,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9372,7 +9700,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9399,7 +9728,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9428,7 +9758,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9457,7 +9788,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9482,7 +9814,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9513,7 +9846,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9540,7 +9874,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9568,7 +9903,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9593,7 +9929,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9625,7 +9962,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9648,7 +9986,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9683,7 +10022,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9710,7 +10050,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9736,7 +10077,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9762,7 +10104,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9786,7 +10129,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9810,7 +10154,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9841,7 +10186,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9867,7 +10213,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9891,7 +10238,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9915,7 +10263,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9939,7 +10288,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9963,7 +10313,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -9987,7 +10338,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10011,7 +10363,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10035,7 +10388,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10064,7 +10418,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10091,7 +10446,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10118,7 +10474,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10149,7 +10506,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "country",
     "mom:geolocationNote": "Address incomplete — showing country-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10177,7 +10535,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10205,7 +10564,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10230,7 +10590,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10257,7 +10618,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10289,7 +10651,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10313,7 +10676,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10337,7 +10701,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10361,7 +10726,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10390,7 +10756,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10418,7 +10785,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10445,7 +10813,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10473,7 +10842,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10498,7 +10868,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10525,7 +10896,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10558,7 +10930,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10583,7 +10956,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10612,7 +10986,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10641,7 +11016,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10669,7 +11045,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10695,7 +11072,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10724,7 +11102,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10748,7 +11127,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10776,7 +11156,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10801,7 +11182,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10830,7 +11212,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10860,7 +11243,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10886,7 +11270,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10912,7 +11297,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10941,7 +11327,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10968,7 +11355,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -10995,7 +11383,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11027,7 +11416,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "country",
     "mom:geolocationNote": "Address incomplete — showing country-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11055,7 +11445,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11084,7 +11475,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11114,7 +11506,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11138,7 +11531,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11162,7 +11556,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11184,7 +11579,8 @@
     "schema:knowsAbout": [],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11206,7 +11602,8 @@
     "schema:knowsAbout": [],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11234,7 +11631,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11259,7 +11657,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11290,7 +11689,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11316,7 +11716,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11345,7 +11746,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11376,7 +11778,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11406,7 +11809,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11431,7 +11835,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11456,7 +11861,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11480,7 +11886,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11507,7 +11914,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11535,7 +11943,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11559,7 +11968,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11583,7 +11993,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11607,7 +12018,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11631,7 +12043,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11655,7 +12068,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11679,7 +12093,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11711,7 +12126,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11743,7 +12159,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11769,7 +12186,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11793,7 +12211,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11823,7 +12242,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11847,7 +12267,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11876,7 +12297,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11906,7 +12328,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11930,7 +12353,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11959,7 +12383,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -11983,7 +12408,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12007,7 +12433,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12031,7 +12458,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12058,7 +12486,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12091,7 +12520,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12119,7 +12549,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12154,7 +12585,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12184,7 +12616,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12210,7 +12643,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12235,7 +12669,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12259,7 +12694,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12283,7 +12719,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12308,7 +12745,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12333,7 +12771,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12359,7 +12798,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12387,7 +12827,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12417,7 +12858,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12444,7 +12886,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12478,7 +12921,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12505,7 +12949,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12531,7 +12976,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12558,7 +13004,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12586,7 +13033,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12614,7 +13062,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12646,7 +13095,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12672,7 +13122,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12701,7 +13152,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12729,7 +13181,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12759,7 +13212,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12788,7 +13242,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12824,7 +13279,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12849,7 +13305,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12880,7 +13337,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12905,7 +13363,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12931,7 +13390,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12958,7 +13418,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -12987,7 +13448,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13016,7 +13478,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13046,7 +13509,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13077,7 +13541,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13107,7 +13572,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13136,7 +13602,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13165,7 +13632,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13197,7 +13665,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13230,7 +13699,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13266,7 +13736,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13300,7 +13771,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13324,7 +13796,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13351,7 +13824,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13375,7 +13849,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13408,7 +13883,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13441,7 +13917,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13481,7 +13958,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13509,7 +13987,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13533,7 +14012,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13561,7 +14041,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13592,7 +14073,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13620,7 +14102,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13642,7 +14125,8 @@
     "schema:knowsAbout": [],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13668,7 +14152,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13698,7 +14183,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13728,7 +14214,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13759,7 +14246,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13793,7 +14281,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "country",
     "mom:geolocationNote": "Address incomplete — showing country-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13822,7 +14311,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13853,7 +14343,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13881,7 +14372,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13908,7 +14400,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13942,7 +14435,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13969,7 +14463,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -13996,7 +14491,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14022,7 +14518,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14046,7 +14543,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14073,7 +14571,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14097,7 +14596,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14121,7 +14621,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14152,7 +14653,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14178,7 +14680,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14206,7 +14709,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14237,7 +14741,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14261,7 +14766,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14286,7 +14792,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14319,7 +14826,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14350,7 +14858,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14377,7 +14886,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14406,7 +14916,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14433,7 +14944,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14458,7 +14970,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14487,7 +15000,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14513,7 +15027,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14544,7 +15059,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14571,7 +15087,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14599,7 +15116,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14623,7 +15141,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14653,7 +15172,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14686,7 +15206,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14712,7 +15233,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14744,7 +15266,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14775,7 +15298,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14802,7 +15326,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14834,7 +15359,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14865,7 +15391,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14896,7 +15423,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14925,7 +15453,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14955,7 +15484,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -14987,7 +15517,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15011,7 +15542,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15039,7 +15571,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15066,7 +15599,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15094,7 +15628,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15123,7 +15658,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15151,7 +15687,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15183,7 +15720,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15205,7 +15743,8 @@
     "schema:knowsAbout": [],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15233,7 +15772,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15261,7 +15801,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15287,7 +15828,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15313,7 +15855,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15339,7 +15882,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15367,7 +15911,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15394,7 +15939,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15429,7 +15975,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15456,7 +16003,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15489,7 +16037,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15515,7 +16064,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15546,7 +16096,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15575,7 +16126,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15600,7 +16152,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15632,7 +16185,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15659,7 +16213,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15689,7 +16244,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15715,7 +16271,8 @@
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "city",
     "mom:geolocationNote": "Address incomplete — showing city-level location",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15742,7 +16299,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15764,7 +16322,8 @@
     "schema:knowsAbout": [],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15795,7 +16354,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15822,7 +16382,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15851,7 +16412,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15878,7 +16440,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15902,7 +16465,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15926,7 +16490,8 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   },
   {
     "@type": "mom:Space",
@@ -15950,6 +16515,7 @@
     ],
     "mom:source": "scraped-vow",
     "mom:geolocationFidelity": "exact",
-    "mom:operationalState": "seeded"
+    "mom:operationalState": "seeded",
+    "mom:memberOf": "urn:mak:network/vow"
   }
 ]
