@@ -433,6 +433,14 @@ web/
 
 No new Python packages needed — Pydantic is already a dependency (`from pydantic import BaseModel` at `main.py:11`).
 
+### Handoff from Story 2.6 (2026-04-28)
+
+**Zone 3 desktop-only guard already in place** — Story 2.6 added `if (window.innerWidth >= 768)` around the raw JSON block in `renderDetail()`. Task 4 of this story replaces the content inside that guard; the guard itself stays. Do not remove it.
+
+**`initAddUrl()` dead code removed** — Story 2.6 fixed a boot crash caused by `initAddUrl()` trying to populate `#url-space` (a select element that no longer exists in the HTML). The dead loop has been removed. If this story or a future one needs a space selector in the addurl drawer, add the `<select id="url-space">` element to `maps-of-making.html` deliberately first.
+
+**`window.innerWidth >= 768` pattern** — Mobile vs desktop branching in `renderDetail()` uses direct `window.innerWidth` checks (re-evaluated on each drawer open). No resize listener needed; consistent with CTA suppression added in 2.6.
+
 ### References
 
 - Current `renderDetail()`: `web/app.js:374–489`

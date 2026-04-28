@@ -3,6 +3,7 @@ REMOTE_APP  := /home/nicolas/maps_of_making
 REMOTE_GW   := /home/nicolas/hetzner-gateway/nginx/conf.d
 
 # Files/dirs excluded from app sync
+# data/ holds runtime state (oxigraph DB, nginx logs) — never overwrite from local
 RSYNC_EXCLUDE := \
 	--exclude='.git/' \
 	--exclude='_bmad/' \
@@ -16,7 +17,8 @@ RSYNC_EXCLUDE := \
 	--exclude='venv/' \
 	--exclude='__pycache__/' \
 	--exclude='*.pyc' \
-	--exclude='.pytest_cache/'
+	--exclude='.pytest_cache/' \
+	--exclude='data/'
 
 .PHONY: sync sync-app sync-gateway publish startdev help
 
@@ -32,9 +34,13 @@ startdev:
 	podman compose -f infra/docker-compose.yml -f infra/docker-compose.dev.yml up -d
 
 ## Full deploy: sync code then rebuild data on VPS
-## seed --force reloads the RFF graph (VOW skipped if unchanged); nginx picks up
-## the new spaces.geojson immediately via bind-mount — no container restart needed.
+## data/ (oxigraph DB, logs) is excluded from rsync — VPS runtime state is never overwritten.
+## Oxigraph is restarted so it picks up any infra/docker-compose.yml changes cleanly.
+## seed --force reloads the RFF graph (VOW skipped if graph already exists);
+## coordinator-registered spaces (urn:mak:space/* graphs) are never cleared.
 publish: sync-app
+	@echo "→ restarting Oxigraph on VPS..."
+	ssh $(REMOTE) 'cd $(REMOTE_APP) && docker compose -f infra/docker-compose.yml restart oxigraph'
 	@echo "→ reseeding Oxigraph on VPS..."
 	ssh $(REMOTE) 'cd $(REMOTE_APP) && source venv/bin/activate && python scripts/seed_import.py --force'
 	@echo "→ materializing GeoJSON on VPS..."

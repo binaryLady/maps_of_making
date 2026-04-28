@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <title>Maps of Making — demo</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Caveat:wght@600;700&display=swap" rel="stylesheet" />
@@ -27,7 +27,8 @@
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; height: 100%; background: var(--paper); color: var(--ink);
-    font-family: 'Inter Tight', system-ui, sans-serif; font-size: 14px; overflow: hidden; }
+    font-family: 'Inter Tight', system-ui, sans-serif; font-size: 14px; overflow: hidden;
+    overscroll-behavior: none; touch-action: pan-x pan-y; }
   :focus-visible { outline: 2.5px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
   button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
   a { color: var(--accent-2); }
@@ -65,6 +66,8 @@
   .chip-btn.active { background: var(--ink); color: var(--paper); }
   .chip-btn.active .count { color: var(--paper); opacity: 0.8; }
   .spacer { flex: 1; }
+  /* nav-group is transparent to flex layout on desktop */
+  .nav-group { display: contents; }
 
   /* Search — docked as a drawer from top */
   .search-drawer { position: absolute; top: 60px; left: 50%; transform: translateX(-50%) translateY(-10px);
@@ -293,13 +296,98 @@
   .maplibregl-ctrl-attrib { background: rgba(250,246,234,0.9) !important; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; }
   .maplibregl-ctrl-bottom-right { bottom: 60px !important; }
 
-  /* Media */
-  @media (max-width: 720px) {
-    .drawer.left, .drawer.right { top: 64px; bottom: 14px; width: calc(100vw - 28px); }
+  /* Media — mobile bottom-sheet layout (< 768px) */
+  @media (max-width: 767px) {
+    /* Task 1: topbar collapse — no wrapping, scroll horizontally */
+    .topbar { flex-wrap: nowrap; overflow-x: auto; gap: 6px; padding-right: 6px; }
+    .seg button { padding: 8px 10px; }
+    .seg button .label { display: none; }
+    .chip-btn .label { display: none; }
+    .chip-btn { padding: 8px 10px; }
+    .spacer { display: none; }
+
+    /* Hide desktop-only manage group */
+    #seg-manage { display: none; }
+
+    /* nav-group (Filters + Search + Near me) → fixed bottom-left */
+    .nav-group {
+      position: fixed;
+      bottom: 14px;
+      left: 14px;
+      display: flex;
+      z-index: 20;
+      pointer-events: auto;
+    }
+    /* Remove double border where seg meets chip-btn */
+    .nav-group .chip-btn { border-left: 0; }
+
+    /* Tweaks → fixed top-right */
+    #btn-tweaks {
+      position: fixed;
+      top: 14px;
+      right: 14px;
+      z-index: 20;
+    }
+
+    /* Prevent overlay surfaces from acting as scroll/zoom targets for the page */
+    .topbar, .drawer, .tweaks, .bot-drawer, .bot-fab, .legend { touch-action: pan-y; }
+    .drawer-body, #detail-body { touch-action: pan-y; }
+
+    /* Extra bottom padding so content clears the fixed Near me + Tweaks buttons */
+    .drawer-body { padding-bottom: 60px; }
+
+    /* Task 2: map fills full dvh minus topbar */
+    #map { top: 0; bottom: 0; left: 0; right: 0; height: 100dvh; }
+
+    /* Task 3: bottom sheet drawers */
+    .drawer.left, .drawer.right {
+      top: auto !important;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      width: 100% !important;
+      max-height: 85vh;
+      transform: translateY(110%) !important;
+      border-radius: 12px 12px 0 0;
+    }
+    .drawer.left.open, .drawer.right.open {
+      transform: translateY(0) !important;
+    }
+    /* Filters ~65%, detail ~85% */
+    #drawer-filters { max-height: 65vh; }
+    #drawer-detail { max-height: 85vh; }
+    /* addurl same as detail */
+    #drawer-addurl { max-height: 80vh; }
+
     .drawer.bottom { width: calc(100vw - 28px); max-height: 80vh; }
     .tweaks { width: calc(100vw - 28px); top: 60px; }
     .preset-body { grid-template-columns: 1fr; }
     .preset-col + .preset-col { border-left: 0; border-top: 1px dashed var(--rule); }
+
+    /* Drag handle on bottom sheets */
+    .drawer.left .drawer-head::before,
+    .drawer.right .drawer-head::before {
+      content: '';
+      display: block;
+      width: 40px;
+      height: 4px;
+      background: var(--rule);
+      opacity: 0.25;
+      border-radius: 2px;
+      margin: 0 auto 8px;
+    }
+
+    /* bot-drawer: full-width bottom sheet */
+    .bot-drawer {
+      right: 0;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      border-radius: 12px 12px 0 0;
+    }
+
+    /* legend: hide on mobile (not enough room) */
+    .legend { display: none; }
   }
 
   /* Reduce motion */
@@ -351,23 +439,31 @@
     <span class="logo">maps of making</span>
     <span class="tag">v0.1 · demo</span>
   </div>
-  <div class="seg" role="group" aria-label="Open panel">
-    <button id="btn-filters" aria-pressed="false" aria-controls="drawer-filters">
-      <span aria-hidden="true">▤</span> Filters <span class="mono" id="results-count" aria-live="polite">40</span>
+  <!-- nav-group moves to bottom-left on mobile via display:contents → fixed flex -->
+  <div class="nav-group">
+    <div class="seg" role="group" aria-label="Open panel">
+      <button id="btn-filters" aria-pressed="false" aria-controls="drawer-filters">
+        <span aria-hidden="true">▤</span> <span class="label">Filters</span> <span class="mono" id="results-count" aria-live="polite">40</span>
+      </button>
+      <button id="btn-search" aria-pressed="false" aria-controls="drawer-search">
+        <span aria-hidden="true">⌕</span> <span class="label">Search</span>
+      </button>
+    </div>
+    <button class="chip-btn" id="btn-nearme" title="Near me">
+      <span aria-hidden="true">📍</span> <span class="label">Near me</span>
     </button>
-    <button id="btn-search" aria-pressed="false" aria-controls="drawer-search">
-      <span aria-hidden="true">⌕</span> Search
-    </button>
+  </div>
+  <div class="seg" id="seg-manage" role="group" aria-label="Manage">
     <button id="btn-preset" aria-pressed="false" aria-controls="drawer-preset">
-      <span aria-hidden="true">⎘</span> Preset & embed
+      <span aria-hidden="true">⎘</span> <span class="label">Preset & embed</span>
     </button>
     <button id="btn-addurl" aria-pressed="false" aria-controls="drawer-addurl">
-      <span aria-hidden="true">＋</span> Add your URL
+      <span aria-hidden="true">＋</span> <span class="label">Add your URL</span>
     </button>
   </div>
   <div class="spacer"></div>
   <button class="chip-btn" id="btn-tweaks" aria-pressed="false" aria-controls="tweaks" title="Tweaks">
-    <span aria-hidden="true">⚙</span> Tweaks
+    <span aria-hidden="true">⚙</span> <span class="label">Tweaks</span>
   </button>
 </header>
 

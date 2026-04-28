@@ -395,15 +395,18 @@
       el('span', { class: 'dot' }),
       el('span', {}, [freshnessText(s)])
     ]));
-    // Claim CTA for seeded spaces
+    // Claim CTA for seeded spaces — desktop only (AC4b)
     if (s.status === 'seeded') {
-      const ctaBtn = el('div', { class: 'note', style: { margin: '12px 16px', padding: '12px', backgroundColor: 'var(--note-bg)', borderRadius: '4px', cursor: 'pointer' } }, [
-        el('strong', {}, ['Is this your space?']),
-        el('div', { style: { fontSize: '13px', color: 'var(--muted)', marginTop: '4px' } }, ['Claim it with a coordinator endpoint to update information.'])
-      ]);
-      ctaBtn.addEventListener('click', () => setDrawer('addurl'));
-      ctaBtn.style.cursor = 'pointer';
-      body.appendChild(ctaBtn);
+      if (window.innerWidth >= 768) {
+        const ctaBtn = el('div', { class: 'note', style: { margin: '12px 16px', padding: '12px', backgroundColor: 'var(--note-bg)', borderRadius: '4px', cursor: 'pointer' } }, [
+          el('strong', {}, ['Is this your space?']),
+          el('div', { style: { fontSize: '13px', color: 'var(--muted)', marginTop: '4px' } }, ['Claim it with a coordinator endpoint to update information.'])
+        ]);
+        ctaBtn.addEventListener('click', () => setDrawer('addurl'));
+        body.appendChild(ctaBtn);
+      } else {
+        body.appendChild(el('div', { class: 'wf-label', style: { padding: '8px 16px' } }, ['Visit on desktop to register this space.']));
+      }
     }
     // Quick facts
     body.appendChild(el('div', { class: 'detail-section' }, [
@@ -445,11 +448,13 @@
       el('div', { class: 'wf-label' }, ['Specialties']),
       el('div', { class: 'chips' }, s.specialties.map((sp) => el('span', { class: 'chip', 'aria-pressed': 'false', style: { cursor: 'default' } }, [sp])))
     ]));
-    // JSON
-    body.appendChild(el('div', { class: 'detail-section', style: { padding: 0 } }, [
-      el('div', { class: 'wf-label', style: { padding: '12px 16px 0' } }, ['Raw JSON from endpoint']),
-      el('pre', { class: 'json' }, [jsonHighlight(jsonForSpace(s))])
-    ]));
+    // JSON — desktop only
+    if (window.innerWidth >= 768) {
+      body.appendChild(el('div', { class: 'detail-section', style: { padding: 0 } }, [
+        el('div', { class: 'wf-label', style: { padding: '12px 16px 0' } }, ['Raw JSON from endpoint']),
+        el('pre', { class: 'json' }, [jsonHighlight(jsonForSpace(s))])
+      ]));
+    }
     // Fetch history (confirmed/broken spaces only)
     if (s.status === 'confirmed' || s.status === 'broken') {
       const histSection = el('div', { class: 'detail-section' }, [
@@ -482,10 +487,24 @@
           if (histEl) histEl.textContent = 'No fetch history yet.';
         });
     }
-    // Embed CTA
-    const embedBtn = el('button', { class: 'btn btn-primary', style: { margin: '12px 16px 16px', width: 'calc(100% - 32px)' } }, ['⎘ Embed this space →']);
-    embedBtn.addEventListener('click', () => embedSpace(s.id));
-    body.appendChild(embedBtn);
+    // Copy space link (AC8b)
+    const shareUrl = s.website || s.endpoint_url || '';
+    if (shareUrl) {
+      const copyBtn = el('button', { class: 'btn', style: { margin: '12px 16px 0', width: 'calc(100% - 32px)' } }, ['⎘ Copy space link']);
+      copyBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(shareUrl).then(() => {
+          copyBtn.textContent = 'Copied!';
+          setTimeout(() => { copyBtn.textContent = '⎘ Copy space link'; }, 1500);
+        });
+      });
+      body.appendChild(copyBtn);
+    }
+    // Embed CTA — desktop only
+    if (window.innerWidth >= 768) {
+      const embedBtn = el('button', { class: 'btn btn-primary', style: { margin: '12px 16px 16px', width: 'calc(100% - 32px)' } }, ['⎘ Embed this space →']);
+      embedBtn.addEventListener('click', () => embedSpace(s.id));
+      body.appendChild(embedBtn);
+    }
   }
 
   function freshnessText(s) {
@@ -748,10 +767,6 @@
 
   function initAddUrl() {
     _addUrlOriginalHTML = $('.addurl-body').innerHTML;
-    const sel = $('#url-space');
-    for (const s of [...state.spaces].sort((a, b) => a.name.localeCompare(b.name))) {
-      sel.appendChild(el('option', { value: s.id }, [`${s.name} — ${s.city}, ${s.country}`]));
-    }
     _wireAddUrlHandlers();
   }
 
@@ -814,6 +829,50 @@
     $('#btn-addurl').addEventListener('click', () => toggleDrawer('addurl'));
     $('#btn-tweaks').addEventListener('click', () => toggleDrawer('tweaks'));
     $('#btn-bot').addEventListener('click', () => toggleDrawer('bot'));
+    // Near me (AC5b)
+    $('#btn-nearme').addEventListener('click', function nearMeClick() {
+      if (!navigator.geolocation) {
+        console.warn('[near-me] geolocation API unavailable');
+        return;
+      }
+      const btn = $('#btn-nearme');
+      const original = btn.innerHTML;
+      btn.innerHTML = '<span aria-hidden="true">⏳</span> <span class="label">Locating…</span>';
+      btn.disabled = true;
+
+      function onSuccess(pos) {
+        btn.innerHTML = original;
+        btn.disabled = false;
+        map.flyTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: 12 });
+      }
+      function onError(err) {
+        btn.innerHTML = original;
+        btn.disabled = false;
+        console.warn('[near-me] geolocation error', err.code, err.message);
+      }
+
+      // Use Permissions API first on browsers that support it (Android Chrome 88+)
+      // This ensures the permission prompt fires in the same user-gesture tick.
+      if (navigator.permissions && navigator.permissions.query) {
+        navigator.permissions.query({ name: 'geolocation' }).then(function(result) {
+          console.log('[near-me] permission state:', result.state);
+          // 'granted', 'prompt', or 'denied'
+          if (result.state === 'denied') {
+            onError({ code: 1, message: 'Permission denied' });
+          } else {
+            navigator.geolocation.getCurrentPosition(onSuccess, onError,
+              { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 });
+          }
+        }).catch(function() {
+          // Permissions API failed — fall back to direct call
+          navigator.geolocation.getCurrentPosition(onSuccess, onError,
+            { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 });
+        });
+      } else {
+        navigator.geolocation.getCurrentPosition(onSuccess, onError,
+          { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 });
+      }
+    });
     $$('[data-close]').forEach((b) => b.addEventListener('click', () => closeDrawer(b.dataset.close)));
 
     // ESC closes topmost drawer
