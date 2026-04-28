@@ -57,7 +57,9 @@
       document.body.classList.add('data-load-error');
       const loader = document.getElementById('loader');
       if (loader) {
-        loader.innerHTML = '<div class="hand" style="color: var(--accent)">Map data temporarily unavailable</div><div class="mono">Try refreshing the page</div>';
+        loader.innerHTML = '';
+        loader.appendChild(el('div', { class: 'hand', style: { color: 'var(--accent)' } }, ['Map data temporarily unavailable']));
+        loader.appendChild(el('div', { class: 'mono' }, ['Try refreshing the page']));
       }
       state.spaces = [];
       return;
@@ -126,6 +128,7 @@
   }
 
   let map;
+  let mapInitialized = false;
   function initMap() {
     map = new maplibregl.Map({
       container: 'map',
@@ -146,12 +149,14 @@
       setTimeout(() => ld.remove(), 320);
     };
     map.on('load', () => {
+      if (mapInitialized) return;
+      mapInitialized = true;
       map.resize();
       renderMarkers();
       dismissLoader();
     });
     // Fallback: if tiles are blocked or load is slow, dismiss anyway.
-    setTimeout(() => { try { map.resize(); renderMarkers(); } catch {} dismissLoader(); }, 1500);
+    setTimeout(() => { if (!mapInitialized) { mapInitialized = true; try { map.resize(); renderMarkers(); } catch {} dismissLoader(); } }, 1500);
 
     // Close drawers when clicking the map
     map.on('click', (e) => {
@@ -236,7 +241,7 @@
   }
 
   function markerKind(s) {
-    if (!s || s === null || s === undefined) return 'seeded';
+    if (!s) return 'seeded';
     if (s.status === 'broken' || s.status === 'error') return 'broken';
     if (s.status === 'unlinked' || s.status === 'stale') return 'unlinked';
     if (s.status === 'aging') return 'aging';
@@ -273,7 +278,7 @@
     const q = state.search.trim().toLowerCase();
     const HEALTH_STATUSES = new Set(['aging', 'zombie', 'dead']);
     return state.spaces.filter((s) => {
-      if (String(state.tweaks.showHealthMap) !== 'true' && HEALTH_STATUSES.has(s.status)) return false;
+      if (!state.tweaks.showHealthMap && HEALTH_STATUSES.has(s.status)) return false;
       if (f.networks.size && !(s.network_memberships || []).some((n) => f.networks.has(n))) return false;
       if (f.countries.size && !f.countries.has(s.country)) return false;
       if (f.statuses.size) {
@@ -317,9 +322,19 @@
   function renderChips(selector, values, set, opts = {}) {
     const host = $(selector);
     host.innerHTML = '';
+    // Pre-compute match counts to avoid O(n) filter per chip
+    const counts = new Map();
+    for (const v of values) {
+      const [val] = Array.isArray(v) ? v : [v, v];
+      let count = 0;
+      for (const s of state.spaces) {
+        if (chipMatches(selector, s, val)) count++;
+      }
+      counts.set(val, count);
+    }
     for (const v of values) {
       const [val, label] = Array.isArray(v) ? v : [v, v];
-      const count = state.spaces.filter((s) => chipMatches(selector, s, val)).length;
+      const count = counts.get(val) || 0;
       const btn = el('button', { class: 'chip', 'aria-pressed': set.has(val) ? 'true' : 'false', type: 'button' }, [
         opts.swatch ? el('span', { class: `pin-swatch ${val}` }) : null,
         label.replace(/-/g, ' '),
@@ -360,8 +375,8 @@
         el('span', { class: `pin-swatch ${kind}`, style: { marginTop: '2px' } }),
         el('div', { style: { flex: 1, minWidth: 0 } }, [
           el('div', { class: 'name' }, [s.name]),
-          el('div', { class: 'meta' }, [`${s.city}, ${s.country} · ${s.network_memberships.join(' · ')}`]),
-          el('div', { class: 'tags' }, s.specialties.slice(0, 4).map((sp) => el('span', { class: 'tag' }, [sp]))),
+          el('div', { class: 'meta' }, [`${s.city}, ${s.country} · ${(s.network_memberships || []).join(' · ')}`]),
+          el('div', { class: 'tags' }, (s.specialties || []).slice(0, 4).map((sp) => el('span', { class: 'tag' }, [sp]))),
         ]),
         el('span', { class: `status-label ${kind}`, style: { alignSelf: 'flex-start' } }, [kind])
       ]);
@@ -386,7 +401,7 @@
       el('div', { class: 'where' }, [`${s.address}`]),
       el('div', { class: 'badges' }, [
         el('span', { class: `status-label ${kind}` }, [kind]),
-        ...s.network_memberships.map((n) => el('span', { class: 'status-label', style: { textTransform: 'none', color: 'var(--accent-2)', borderColor: 'var(--accent-2)' } }, [n])),
+        ...(s.network_memberships || []).map((n) => el('span', { class: 'status-label', style: { textTransform: 'none', color: 'var(--accent-2)', borderColor: 'var(--accent-2)' } }, [n])),
         s.open_for_hosting ? el('span', { class: 'status-label', style: { textTransform: 'none' } }, ['open for hosting']) : null,
       ])
     ]));
@@ -464,7 +479,7 @@
       body.appendChild(histSection);
 
       fetch(`/api/space/${s.id}/snapshots`)
-        .then((resp) => resp.ok ? resp.json() : Promise.reject(resp.status))
+        .then((resp) => resp.ok ? resp.json() : Promise.reject(new Error(`HTTP ${resp.status}`)))
         .then((snapshots) => {
           const histEl = document.getElementById('hist-content');
           if (!histEl) return;
@@ -474,11 +489,12 @@
           }
           histEl.innerHTML = '';
           snapshots.forEach((snap) => {
+            if (!snap || snap.date === undefined) return;
             const date = new Date(snap.date).toLocaleDateString();
             const time = new Date(snap.date).toLocaleTimeString();
             const status = snap.http_status ? `HTTP ${snap.http_status}` : '';
             histEl.appendChild(el('div', { style: { marginBottom: '8px' } }, [
-              `${date} ${time} · ${snap.summary} ${status}`.trim()
+              `${date} ${time} · ${snap.summary || 'unknown'} ${status}`.trim()
             ]));
           });
         })
@@ -494,6 +510,10 @@
       copyBtn.addEventListener('click', () => {
         navigator.clipboard.writeText(shareUrl).then(() => {
           copyBtn.textContent = 'Copied!';
+          setTimeout(() => { copyBtn.textContent = '⎘ Copy space link'; }, 1500);
+        }).catch((err) => {
+          console.warn('[copy-link] clipboard write failed:', err.message);
+          copyBtn.textContent = 'Copy failed';
           setTimeout(() => { copyBtn.textContent = '⎘ Copy space link'; }, 1500);
         });
       });
@@ -653,8 +673,10 @@
   async function _onFetchUrl() {
     const out = $('#url-result');
     const url = $('#url-input').value.trim();
-    if (!url) { out.innerHTML = '<span style="color:var(--accent);">✗ enter a URL first.</span>'; return; }
-    out.innerHTML = '<span style="color:var(--muted);">→ resolving DNS…</span>';
+    if (!url) { out.innerHTML = ''; out.appendChild(el('span', { style: { color: 'var(--accent)' } }, ['✗ enter a URL first.'])); return; }
+    // Basic URL validation
+    if (!url.startsWith('http://') && !url.startsWith('https://')) { out.innerHTML = ''; out.appendChild(el('span', { style: { color: 'var(--accent)' } }, ['✗ URL must start with http:// or https://'])); return; }
+    out.innerHTML = ''; out.appendChild(el('span', { style: { color: 'var(--muted)' } }, ['→ resolving DNS…']));
     let data;
     try {
       const resp = await fetch('/api/validate-url', {
@@ -663,12 +685,14 @@
         body: JSON.stringify({ url }),
       });
       if (!resp.ok && resp.headers.get('content-type')?.includes('text/html')) {
-        out.innerHTML = `<span style="color:var(--accent);">✗ API error: HTTP ${resp.status} — backend may be down</span>`;
+        out.innerHTML = '';
+        out.appendChild(el('span', { style: { color: 'var(--accent)' } }, [`✗ API error: HTTP ${resp.status} — backend may be down`]));
         return;
       }
       data = await resp.json();
     } catch (e) {
-      out.innerHTML = `<span style="color:var(--accent);">✗ Network error: ${e.message}</span>`;
+      out.innerHTML = '';
+      out.appendChild(el('span', { style: { color: 'var(--accent)' } }, [`✗ Network error: ${e.message}`]));
       return;
     }
 
@@ -727,7 +751,7 @@
       } catch (e) {
         btn.disabled = false;
         btn.textContent = 'Confirm & register your space →';
-        out.innerHTML += `<div style="color:var(--accent);margin-top:6px;">✗ Registration failed: ${e.message}</div>`;
+        out.appendChild(el('div', { style: { color: 'var(--accent)', marginTop: '6px' } }, [`✗ Registration failed: ${e.message}`]));
         return;
       }
 
@@ -739,12 +763,17 @@
           ...f.properties,
           coordinates: { lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0] },
         }));
+        // Validate selectedId still exists in refreshed data
+        if (state.selectedId && !state.spaces.find((s) => s.id === state.selectedId)) {
+          state.selectedId = null;
+        }
         renderMarkers();
       } catch (_) { /* non-fatal */ }
 
       const spaceName = reg.space_name || 'Your space';
       // space_uri is "urn:mak:space/{slug}" — extract slug as the local ID
-      const spaceId = reg.space_uri ? reg.space_uri.split('/').pop() : null;
+      const parts = reg.space_uri ? reg.space_uri.split('/') : [];
+      const spaceId = parts.length > 0 ? parts[parts.length - 1] : null;
       const hasSpace = Boolean(spaceId);
 
       $('.addurl-body').innerHTML = `
@@ -848,7 +877,13 @@
       function onError(err) {
         btn.innerHTML = original;
         btn.disabled = false;
-        console.warn('[near-me] geolocation error', err.code, err.message);
+        if (err.code === 1) {
+          console.warn('[near-me] geolocation permission denied');
+        } else if (err.code === 3) {
+          console.warn('[near-me] geolocation timeout (15s exceeded)');
+        } else {
+          console.warn('[near-me] geolocation error', err.code, err.message);
+        }
       }
 
       // Use Permissions API first on browsers that support it (Android Chrome 88+)
@@ -859,7 +894,12 @@
           // 'granted', 'prompt', or 'denied'
           if (result.state === 'denied') {
             onError({ code: 1, message: 'Permission denied' });
+          } else if (result.state === 'prompt') {
+            // State is 'prompt' — show dialog with getCurrentPosition
+            navigator.geolocation.getCurrentPosition(onSuccess, onError,
+              { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 });
           } else {
+            // State is 'granted' — proceed directly
             navigator.geolocation.getCurrentPosition(onSuccess, onError,
               { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 });
           }
@@ -900,7 +940,9 @@
       state.filters.statuses.clear();
       state.filters.specialties.clear();
       state.search = '';
-      $('#search-input').value = '';
+      const searchInput = $('#search-input');
+      searchInput.value = '';
+      searchInput.dispatchEvent(new Event('input', { bubbles: true }));
       buildFilterChips();
       renderMarkers();
     });
@@ -910,7 +952,12 @@
     // Copy buttons
     $$('[data-copy]').forEach((b) => b.addEventListener('click', async () => {
       const id = b.dataset.copy;
-      const txt = $('#' + id + '-text').textContent;
+      const elem = $('#' + id + '-text');
+      if (!elem) {
+        console.warn(`[copy] element not found: ${id}-text`);
+        return;
+      }
+      const txt = elem.textContent;
       const original = b.textContent;
       try {
         await navigator.clipboard.writeText(txt);
@@ -937,7 +984,8 @@
     });
 
     // Keep preset preview bbox fresh as map moves
-    if (map) {
+    if (map && !map._presetPreviewListenerAdded) {
+      map._presetPreviewListenerAdded = true;
       map.on('moveend', () => { if (state.openDrawer === 'preset') renderPresetPreview(); });
     }
   }

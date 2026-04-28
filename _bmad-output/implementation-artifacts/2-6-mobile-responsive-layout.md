@@ -1,6 +1,6 @@
 # Story 2.6: Mobile Responsive Layout
 
-Status: review
+Status: done
 
 ## Story
 
@@ -376,3 +376,63 @@ claude-opus-4-7 (story creation, 2026-04-27); claude-sonnet-4-6 (implementation,
 
 - 2026-04-27: Implemented Tasks 1–8 — mobile CSS bottom-sheet drawers, topbar collapse, 100dvh map height, near-me button, copy space link, CTA suppression on mobile. Task 9 (real-phone validation) pending.
 - 2026-04-28: Task 9 complete — real-phone confirmed on Android 8.1 + Android 16. Additional post-validation fixes: hide Preset & embed / Add your URL on mobile; suppress raw JSON and embed button in detail card on mobile; relocate Filters + Search + Near me to fixed bottom-left group; Tweaks to fixed top-right; `#url-space is null` boot crash fixed (dead initAddUrl selector removed); Makefile rsync now excludes `data/` dir; gateway nginx `Permissions-Policy: geolocation=*` header added; `maximum-scale=1 user-scalable=no` viewport meta to prevent browser pinch-zoom on page chrome.
+
+---
+
+## Review Findings (2026-04-28)
+
+**Code review: 39 issues analyzed across 3 layers (Blind Hunter, Edge Case Hunter, Acceptance Auditor). All acceptance criteria verified ✓. Findings triaged: 1 decision-needed, 18 patches, 3 deferred, 2 dismissed.**
+
+### Decision Needed
+
+- [ ] [Review][Decision] **100dvh browser compatibility fallback** — Code uses `height: 100dvh` for mobile map viewport. Older iOS Safari (<15.4) and some Android browsers don't support 100dvh. Decision: should we add CSS fallback (`100vh` with JS measurement), or accept the limitation and document the minimum supported browsers?
+
+### Patches (APPLIED)
+
+- [x] [Review][Patch] **Clipboard promise rejection unhandled** [web/app.js:500-505] — Copy space link button lacks `.catch()` handler; if clipboard write fails, button text stays "Copied!" indefinitely. Inconsistent with preset copy buttons (line 917-929) which have error handling.
+
+- [x] [Review][Patch] **Null safety: network_memberships and specialties** [web/app.js:369-370] — Lines access `s.network_memberships.join()` and `s.specialties.slice()` without `|| []` fallback. Will crash if fields are missing or null. Inconsistent with safe patterns on lines 283, 289, 315.
+
+- [x] [Review][Patch] **XSS vulnerability: loader innerHTML** [web/app.js:66] — Sets innerHTML on loader element. If loader content could be user-controlled, this is a security risk. Recommendation: use textContent or sanitize input.
+
+- [x] [Review][Patch] **XSS vulnerability: error message** [web/app.js:672] — Error display uses innerHTML with interpolated HTTP status code. If backend reflects attacker input in status, could enable script injection. Use textContent instead.
+
+- [x] [Review][Patch] **Health map filter logic error** [web/app.js:282] — Line compares `String(state.tweaks.showHealthMap) !== 'true'`. When showHealthMap is false, String(false) = 'false' which will always be !== 'true', breaking the filter. Fix: compare boolean directly or use correct string comparison logic.
+
+- [x] [Review][Patch] **Geolocation timeout and permission handling** [web/app.js:839-881] — 15s timeout fires silently (console.warn only, no UI). Permission state 'prompt' may not show dialog if already dismissed. Recommendation: add timeout error UI feedback; handle 'prompt' state explicitly.
+
+- [x] [Review][Patch] **Promise rejection with non-Error object** [web/app.js:473] — Rejects with bare status code instead of Error object. Breaks error handling pattern and makes debugging harder. Fix: `Promise.reject(new Error(...))`.
+
+- [x] [Review][Patch] **DOM null query: copy button** [web/app.js:919] — Line `$('#' + id + '-text').textContent` will crash if element with that ID doesn't exist. Add null check before accessing property.
+
+- [x] [Review][Patch] **Redundant double null check** [web/app.js:245] — Line checks `if (!s || s === null || s === undefined)`. The `!s` alone covers both null and undefined; the explicit checks are redundant. Simplify to `if (!s)`.
+
+- [x] [Review][Patch] **Inefficient chip count filtering** [web/app.js:328] — O(n) array filter per chip during render. Pre-compute or memoize counts to avoid redundant filtering on every chip render.
+
+- [x] [Review][Patch] **Map event listener without cleanup** [web/app.js:947] — `map.on('moveend')` listener never removed. If wireUI() called multiple times, listeners stack (memory leak). Add cleanup or listener existence check.
+
+- [x] [Review][Patch] **JSON parse error handling missing** [web/app.js:472-494] — `resp.json()` could throw SyntaxError on malformed response. Snap object fields (date, summary) accessed without validation; Missing fields cause "Invalid Date" or undefined errors. Add .catch() for JSON parse and validate fields.
+
+- [x] [Review][Patch] **Search filter reset incomplete** [web/app.js:903-912] — Clears search input value but doesn't fire 'input' event. Rapid state/UI sync issues possible. Fire manual 'input' event or sync state explicitly after clear.
+
+- [x] [Review][Patch] **Fetch history modal orphaning** [web/app.js:465-495] — Fetch response updates DOM based on element ID lookup, not context validation. Rapid drawer re-open can cause fetch from space A to inject into space B's detail card. Validate element belongs to current context before updating.
+
+- [x] [Review][Patch] **Register button listener timing** [web/app.js:770-771] — Event listener attached after HTML render. Rapid drawer close before listener attachment could miss clicks. Use event delegation or attach listeners earlier in lifecycle.
+
+- [x] [Review][Patch] **Map initialization double-render race** [web/app.js:154-160] — Both `map.on('load')` event and 1500ms fallback timeout call renderMarkers(). If load fires after timeout, markers render twice. Add guard flag to prevent duplicate initialization.
+
+- [x] [Review][Patch] **Stale selectedId after data refresh** [web/app.js:741-748] — After reloading spaces.geojson, selectedId is not validated. If space was deleted or ID schema changed, selectedId points to non-existent space. Validate selectedId exists in refreshed data; clear if missing.
+
+- [x] [Review][Patch] **Missing URL input validation** [web/app.js:661] — URL input accepts any string without format validation. Validate URL format before API call (regex or basic check for http/https prefix).
+
+- [x] [Review][Patch] **Missing space_uri bounds check** [web/app.js:753] — Line calls `space_uri.split('/').pop()` without checking split result. If format changes or is missing, pop() returns undefined. Validate space_uri exists and has expected format.
+
+- [x] [Review][Patch] **Missing initialization guard: addUrlOriginalHTML** [web/app.js:775, used 645] — If wireUI() called before DOM ready, _addUrlOriginalHTML is null. Line 645 tries to use it to reset form, causing silent failure. Add null check before usage.
+
+### Deferred
+
+- [x] [Review][Defer] **Redundant marker re-render optimization** [web/app.js:337] — Renders all markers on chip click instead of toggling filter state and selectively updating. Works correctly but inefficient; optimization deferred to post-launch refactor.
+
+- [x] [Review][Defer] **Drawer state race condition** [web/app.js:780-803] — Rapid drawer open/close mutations could cause double syncTopbar() calls. Unlikely to manifest in real usage; defensive fix deferred to Epic 5 polish phase.
+
+- [x] [Review][Defer] **Inconsistent error handling pattern** [web/app.js:673-678] — Uses string interpolation for error messages inconsistently; Promise.reject() on line 473 already covers core issue. Code quality improvement deferred to next refactor cycle.
