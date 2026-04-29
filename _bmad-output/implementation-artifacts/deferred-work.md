@@ -1,5 +1,20 @@
 # Deferred Work
 
+## Deferred from: code review of 2-7-card-zones-pydantic-schema-foundation (2026-04-28)
+
+- **W1 — "last fetch never ago" timestamp display bug** — `timeAgo()` receives a date-only `YYYY-MM-DD` string; needs a full ISO datetime. Pre-existing; visible now because a real coordinator space was registered. → Epic 5 / Story 4.2 fetch history polish.
+- **W2 — No fetch timeout on Zone 3 /raw fetch** — indefinite loading state on slow server. Pre-existing pattern across app fetches. → Epic 5 UI polish.
+- **W3 — Zone 3 error state: 500 vs network timeout collapse to same "Source unavailable."** — minor UX gap; spec allows this. → monitor.
+- **D2 — SpaceAPI schemaErrors[] not surfaced in validation drawer** — `POST /api/validate-url` does not call SpaceAPI validator or return field-level errors. "→ See schema guide" link is the current help. Full error surfacing deferred. → Epic 5 coordinator-feedback polish.
+
+## Deferred from: infra-nginx-new-domains spec + Epic 2 retro (2026-04-28 / 2026-04-29)
+
+- **Epic 4 Story 4.0 — Full mission-control dashboard** — spec `4-0-admin-foundation-subdomain-auth-space-comparison.md` (status: draft). Builds on top of the admin subdomain routing and basic landing page implemented in this story. Dashboard will display space ingestion lifecycle: seed data, live URL data, stored triples, and map card views side-by-side. Required for grant demos showing diagnostic capabilities.
+
+- **Admin nginx routing setup for Story 4.0** — current state: `admin.mapsofmaking.com` routes through gateway-nginx (`07-admin-mapsofmaking.conf`: `proxy_pass http://maps-nginx/admin/`) → maps-nginx (`location /admin` in `infra/nginx/conf.d/app.conf`). Auth is `auth_basic` with htpasswd on maps-nginx (not gateway). Landing page is `web/admin.html` → `/var/www/mapsofmaking/admin.html` in container. Story 4.0 replaces `web/admin.html` with a real dashboard; nginx config needs no changes.
+
+- **nginx quirk: `alias` + regex location = 500** — `alias` directive does not work with regex `location ~ ...` blocks in nginx (produces 500). Use `try_files /absolute-path.html =404` instead, which resolves relative to `root`. Applies to any future static file served at a non-root URL path. → keep in mind for Story 4.0 if adding sub-pages under `/admin/`.
+
 ## Deferred from: code review of 1-3-docker-compose-stack-nginx-security-routing (2026-04-24)
 
 - **Docker images not pinned to specific versions** — `infra/link_handler/Dockerfile` uses `python:3.12-slim` (no patch pin); `docker-compose.yml` uses `:latest` tags. Future deploys may break silently.
@@ -64,6 +79,18 @@
 ## Deferred from: Story 2.2 — Detail Drawer (2026-04-26)
 
 - **Admin: delete test/self-registered spaces** — No way to remove a space once registered. Test fixtures (e.g. `herberts-lab`) accumulate in Oxigraph. Cleanup requires `DROP GRAPH <urn:mak:space/{slug}>` plus `DROP SILENT` over snapshot graphs `urn:mak:space/{slug}/{YYYY-MM-DD}`, then rematerialize. Implement as admin row action: `DELETE /api/admin/space/{slug}` on `mak-link-handler`, gated by basic-auth at `/admin` (already wired in `infra/nginx/conf.d/app.conf:93`). → Story 4.5 (audit log) or new Story 4.6.
+
+## Deferred from: SKILL.md dual-validator exercise (2026-04-28)
+
+Generating a real openfab.jsonld against the `space-jsonld-generator` skill exposed gaps between our doc and reality. Park these — demo unblocked at `mom:required` tier; SpaceAPI compatibility is nice-to-have.
+
+- **SpaceAPI v14 minimum-fields requirement is non-trivial** — A partial JSON-LD (mom:required tier: name + coords) does NOT pass `validator.spaceapi.io`. SpaceAPI v14 mandates `space`, `logo`, `url`, `location.{lat,lon,address}`, `state`, `contact`, `api_compatibility` together. Our "subset tiers" model is correct in spirit (more fields = more interop) but the jump from `mom:card` → `spaceapi:compatible` is a cliff, not a gradient. → Story 2.7 review pass: rephrase tier docs to be honest about the cliff.
+- **SpaceAPI validator UI hides `schemaErrors[]`** — The web UI reports failure with no actionable detail. The API response includes a `schemaErrors[]` array (per [SpaceApi/validator](https://github.com/SpaceApi/validator)). `scripts/validate_dual.py` now surfaces these as `_schema_errors_summary`. A future coordinator UI should pass these through verbatim instead of a generic "failed" message. → Epic 5 coordinator-feedback polish.
+- **Dual-shape JSON-LD template is the canonical output** — `web/test-fixtures/SKILL.md` rewritten: SpaceAPI v14 flat keys (`space`, `location.lat`, …) with a JSON-LD `@context` that aliases each to mom/schema.org IRIs. One file, both validators. The Pydantic `SpaceAPISchema` was extended (`space`, `location.lat/lon/address` accepted alongside `schema:*` keys). → covered, but Story 2.7 review should re-validate that AC1 / classify_subset still describes the dual-shape inputs accurately.
+- **`@id` semantics need a doc explainer for coordinators** — `@id` is the IRI of the entity, not the file URL. The validator ignores it. Several confused questions in the dual-validator exercise; SKILL.md now documents this but a coordinator-facing FAQ entry would help. → Epic 6 / coordinator onboarding.
+- **`mom:operationalState` vs SpaceAPI `state` is a name collision** — SpaceAPI's `state` is dynamic open/closed; mom's `mom:operationalState` is long-term lifecycle (`active`/`dormant`/`closed`). Coordinators conflate them. SKILL.md aliases `state` → `mom:dynamicState` in the JSON-LD context to avoid the clash, but the ontology should grow an explicit `mom:dynamicState` term to make this legitimate. → Ontology repo update.
+- **"AI" tag vocabulary is fluid** — `agentic-ai`, `embedded-systems`, `ai-assisted-design`, `ai-empowered`, `aiot` are all valid, all mean different things to different coordinators. No clear canonical vocabulary yet. The `mom.ttl` ontology should grow a `mom:Activity` SKOS hierarchy (with `skos:altLabel` for synonyms across languages) so Oxigraph can resolve queries semantically rather than string-matching. → Ontology repo + new story (semantic layer for activity tags).
+- **Missing `opening_hours` for openfab.jsonld** — Founder didn't supply hours; file is at `mom:required` tier. → Pending input from coordinator before re-validating.
 
 ## Deferred from: Story 2.1 — Coordinator URL Onboarding E2E (2026-04-26)
 

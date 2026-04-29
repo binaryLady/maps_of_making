@@ -1,0 +1,45 @@
+{
+  "@context": {
+    "mom": "https://nicolasdb.github.io/mapsofmaking_ontology/ns#",
+    "schema": "https://schema.org/",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "space": "schema:name",
+    "url": "schema:url",
+    "logo": "schema:logo",
+    "location": "schema:geo",
+    "lat": "schema:latitude",
+    "lon": "schema:longitude",
+    "address": "schema:address",
+    "country_code": "schema:addressCountry",
+    "description": "schema:description",
+    "opening_hours": "schema:openingHours",
+    "knowsAbout": "schema:knowsAbout",
+    "contact": "schema:contactPoint",
+    "api_compatibility": "mom:apiCompatibility",
+    "state": "mom:dynamicState"
+  },
+  "@type": "mom:Space",
+  "@id": "https://openfab.be/spaces/openfab",
+  "api_compatibility": ["14"],
+  "space": "OpenFab",
+  "url": "https://openfab.be",
+  "description": "Brussels' original community fab lab (est. 2011) — a place to design, prototype and make with digital fabrication tools, electronics, game design, and agentic AI workflows.",
+  "location": {
+    "lat": 50.83302923867064,
+    "lon": 4.378383440647201,
+    "address": "158 Rue Gray, 1050 Ixelles, Belgium",
+    "country_code": "BE"
+  },
+  "knowsAbout": [
+    "3d-printing",
+    "laser-cutting",
+    "cnc",
+    "electronics",
+    "vinyl-cutting",
+    "game-design",
+    "agentic-ai",
+    "embedded-systems"
+  ],
+  "mom:operationalState": "active",
+  "mom:geolocationFidelity": "exact"
+}

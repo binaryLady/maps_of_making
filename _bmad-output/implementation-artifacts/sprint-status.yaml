@@ -13,7 +13,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-23
-last_updated: 2026-04-28 (story 2.6 code review complete: 20 patches applied, all ACs verified)
+last_updated: 2026-04-29 (story 2.7 code review complete: 9 patches applied, 2 decisions resolved, 3 deferred)
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
@@ -70,16 +70,8 @@ development_status:
   2-1-coordinator-url-onboarding-e2e: done
   2-2-detail-drawer-provenance-ingestion-history: done
   2-6-mobile-responsive-layout: done
-  2-7-card-zones-pydantic-schema-foundation: ready-for-dev
-  epic-2-retrospective: optional
-
-  # Epic 3: Endpoint Health, Stale Detection & Magic-Link Recovery
-  epic-3: backlog
-  3-1-heartbeat-scheduler-periodic-6h-fetch-cycle: backlog
-  3-2-freshness-state-machine-stale-broken-closed-transitions: backlog
-  3-3-magic-link-generation-link-handler-validation: backlog
-  3-4-coordinator-email-notification-with-pre-filled-recovery-link: backlog
-  epic-3-retrospective: optional
+  2-7-card-zones-pydantic-schema-foundation: done
+  epic-2-retrospective: done
 
   # Epic 4: Network Admin Fleet Health Dashboard
   epic-4: backlog
@@ -99,6 +91,14 @@ development_status:
   5-4-accessible-list-view-axe-core-in-ci: backlog
   5-5-phase-1-ui-hypothesis-validation-tweaks-panel-decision: backlog
   epic-5-retrospective: optional
+
+  # Epic 3: Endpoint Health, Stale Detection & Magic-Link Recovery
+  epic-3: backlog
+  3-1-heartbeat-scheduler-periodic-6h-fetch-cycle: backlog
+  3-2-freshness-state-machine-stale-broken-closed-transitions: backlog
+  3-3-magic-link-generation-link-handler-validation: backlog
+  3-4-coordinator-email-notification-with-pre-filled-recovery-link: backlog
+  epic-3-retrospective: optional
 
   # Epic 6: "Ask the Map" — NL Bot
   epic-6: backlog

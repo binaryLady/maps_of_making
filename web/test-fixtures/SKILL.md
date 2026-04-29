@@ -9,168 +9,168 @@ Produces a single JSON-LD document describing one making space (fab lab, hackers
 
 1. Validates against the Maps of Making `mak-link-handler` `/api/validate-url` endpoint.
 2. Conforms to the `mom` ontology at `https://nicolasdb.github.io/mapsofmaking_ontology/`.
-3. Can be hosted at any public URL (GitHub Pages, gist raw, S3, the space's own website) and registered via the "Add your space" flow.
+3. **Is byte-compatible with the SpaceAPI v14 validator at `validator.spaceapi.io`** when the optional fields are filled in.
+4. Can be hosted at any public URL (GitHub Pages, gist raw, S3, the space's own website) and registered via the "Add your space" flow.
 
 This skill is the human/LLM-facing counterpart to `infra/link_handler/main.py:_fetch_and_validate`. The validator is the source of truth — when in doubt, mirror its expectations.
 
-## When to invoke
+## Core principle: one file, two validators
 
-- User asks to "create a space JSON-LD", "generate a coordinator URL document", "make a test space file", "draft a JSON-LD for {space name}".
-- User wants test fixtures for the coordinator onboarding flow.
-- User is preparing to publish a makerspace's data at a real URL.
+We do NOT publish two separate files (one for mom, one for SpaceAPI). Instead, we use **SpaceAPI v14's flat key shape** as the document body, and add a JSON-LD `@context` that aliases each flat key to its mom/schema.org IRI. Both validators see what they expect:
+
+- The SpaceAPI validator reads `space`, `location.lat`, `location.lon`, `state`, `contact`, `api_compatibility` — the keys it requires.
+- The mom validator (and Oxigraph ingest) reads the same JSON, but resolves keys through `@context` to RDF triples (`schema:name`, `schema:geo.schema:latitude`, `mom:operationalState`…).
+
+The document can be partial — coordinators publish what they have, and adding fields unlocks more features. A doc with just `space` + `location.lat/lon` won't pass SpaceAPI v14 (which mandates more fields), but it WILL pass mom validation and earn a pin on the map.
+
+## Subset tiers — what your JSON unlocks
+
+| Tier | `subset_score` | Required fields | What it unlocks |
+|------|---------------|-----------------|-----------------|
+| `none` | 0 | (validation failed or missing name/coords) | Nothing — not registered |
+| `mom:required` | 1 | `space` (or `schema:name`) + coords | Pin on the map |
+| `mom:card` | 2 | + `url` + `opening_hours` (`schema:openingHours`) | Full detail card (Zone 2) |
+| `spaceapi:compatible` | 3 | + `api_compatibility` + `logo` + `contact` + `state` | Passes `validator.spaceapi.io`; interop with mapall.space etc. |
+
+> **Note:** Tier names are application-level classification labels in `classify_subset()`, not ontology terms. The vocabulary lives in `mom.ttl`.
 
 ## Inputs to gather
 
-### Required
-- **name** — human-readable space name (e.g. "Openfab Brussels")
-- **latitude / longitude** — decimal degrees, WGS84. If unknown, ask for an address and geocode (or instruct the user to obtain coordinates).
+### Required (mom:required tier)
+- **name** (→ `space`) — human-readable space name
+- **latitude / longitude** (→ `location.lat`, `location.lon`) — decimal degrees, WGS84
+
+### To reach mom:card tier
+- **website** (→ `url`)
+- **opening hours** (→ `opening_hours`, aliased to `schema:openingHours`) — schema.org string format, e.g. `"Mo-Fr 10:00-18:00"`
+
+### To reach spaceapi:compatible tier
+- **api_compatibility** — list of SpaceAPI versions, e.g. `["14"]`
+- **logo** — URL to the logo image
+- **contact** — object with at least one of `email`, `phone`, `twitter`, `mastodon`, `matrix`, etc. (only fields the space publishes publicly)
+- **state** — SpaceAPI dynamic state object, e.g. `{"open": null}` or `{"open": true, "lastchange": ...}`
 
 ### Strongly recommended
-- **streetAddress, postalCode, addressLocality, addressCountry** — full postal address
-- **website (schema:url)** — the space's main public website
-- **description** — 1–3 sentences
-- **specialties (schema:knowsAbout)** — list of activity tags (e.g. "3d-printing", "electronics", "woodworking", "textile", "bio-lab"). Use lowercase-hyphenated.
-- **operationalState** — one of `seed`, `active`, `dormant`, `closed`. Default `active`.
+- **address** (→ `location.address` as a string)
+- **country_code** (→ `location.country_code`, ISO-3166-1 alpha-2)
+- **description**
+- **knowsAbout** (→ `schema:knowsAbout`) — list of activity tags (lowercase-hyphenated)
+- **mom:operationalState** — `seed` | `active` | `dormant` | `closed`. Different from SpaceAPI `state` (which is dynamic open/closed).
+- **mom:geolocationFidelity** — `exact` | `approximate` | `city-only`
 
-### Optional
-- **openingHours** — schema.org openingHoursSpecification format
-- **founded** (schema:foundingDate, ISO 8601)
-- **email / contactPoint** — only if the space explicitly publishes it. Otherwise leave out (the validator scans for PII fields and will warn).
+### PII caution
+The validator scans for `foaf:mbox`. Organisational `contact.email` is allowed (LocalBusiness contact ≠ PII), but only include it if the space publishes it on their public site.
 
-## Output format
-
-Always emit a single JSON document with this shape:
+## Output format — canonical dual-shape template
 
 ```json
 {
   "@context": {
     "mom": "https://nicolasdb.github.io/mapsofmaking_ontology/ns#",
     "schema": "https://schema.org/",
-    "xsd": "http://www.w3.org/2001/XMLSchema#"
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "space": "schema:name",
+    "url": "schema:url",
+    "logo": "schema:logo",
+    "location": "schema:geo",
+    "lat": "schema:latitude",
+    "lon": "schema:longitude",
+    "address": "schema:address",
+    "country_code": "schema:addressCountry",
+    "description": "schema:description",
+    "opening_hours": "schema:openingHours",
+    "knowsAbout": "schema:knowsAbout",
+    "contact": "schema:contactPoint",
+    "api_compatibility": "mom:apiCompatibility",
+    "state": "mom:dynamicState"
   },
   "@type": "mom:Space",
-  "@id": "https://example.org/spaces/fab-lab-brussels",
-  "schema:name": "Fab Lab Brussels",
-  "schema:description": "A community fab lab in central Brussels...",
-  "schema:url": "https://fablab-brussels.example.org",
-  "schema:geo": {
-    "@type": "schema:GeoCoordinates",
-    "schema:latitude": 50.8503,
-    "schema:longitude": 4.3517
+  "@id": "https://example.org/spaces/example",
+  "api_compatibility": ["14"],
+  "space": "Example Space",
+  "logo": "https://example.org/logo.png",
+  "url": "https://example.org",
+  "description": "A community making space.",
+  "location": {
+    "lat": 50.8503,
+    "lon": 4.3517,
+    "address": "Rue de l'Exemple 12, 1000 Brussels, BE",
+    "country_code": "BE"
   },
-  "schema:address": {
-    "@type": "schema:PostalAddress",
-    "schema:streetAddress": "Rue de l'Exemple 12",
-    "schema:postalCode": "1000",
-    "schema:addressLocality": "Brussels",
-    "schema:addressCountry": "BE"
-  },
-  "schema:knowsAbout": ["3d-printing", "electronics", "laser-cutting"],
+  "state": { "open": null },
+  "contact": { "email": "contact@example.org" },
+  "opening_hours": "Mo-Fr 10:00-18:00, Sa 10:00-16:00",
+  "knowsAbout": ["3d-printing", "electronics", "laser-cutting"],
   "mom:operationalState": "active",
   "mom:geolocationFidelity": "exact"
 }
 ```
 
 ### Output Notes
-- `@id` should be the public URL where the document will be hosted (or a stable IRI for the space).
+- `@id` is the semantic IRI for the space-as-entity. It does NOT need to equal the file's hosting URL (the validator ignores `@id`). Convention: a stable URL the space controls.
 - Coordinates MUST be numeric, not strings.
-- `mom:geolocationFidelity` ∈ {`exact`, `approximate`, `city-only`}. Use `approximate` if you geocoded from an address; `exact` only if the coordinates come from the space itself.
-- Do NOT include `email`, `telephone`, `contactPoint.email`, or other PII unless the user explicitly confirms the space publishes it. The validator flags these.
-
-### Additional Schema Properties (Optional)
-
-| Field | Schema Property | Example |
-|-------|-----------------|---------|
-| Opening hours | `schema:openingHoursSpecification` | See schema.org format |
-| Founding date | `schema:foundingDate` | "2015-03-15" |
-| Logo/Image | `schema:image` | URL to logo |
-| Same-as links | `schema:sameAs` | Social media URLs |
+- `state` (SpaceAPI dynamic) ≠ `mom:operationalState` (long-term lifecycle). Both can coexist.
+- Keys outside SpaceAPI v14 (`mom:*`, `@type`, `@id`, `@context`) are ignored by SpaceAPI validators and parsed by mom.
+- Fields can be omitted to publish a partial doc — adding them unlocks higher tiers.
 
 ## Validator contract (must satisfy)
 
-The `/api/validate-url` endpoint requires:
+The mom `/api/validate-url` endpoint requires:
 - HTTP 200 with `Content-Type: application/json` (or anything `httpx` parses as JSON)
-- `schema:name` present and non-empty (also accepts plain `"name"`)
-- `schema:geo.schema:latitude` + `schema:geo.schema:longitude` present and float-coercible (also accepts plain `geo.lat`/`geo.lon`)
-- HTTPS scheme strongly preferred; `http://` is allowed but discouraged
-- Response under ~10s, no redirects (link handler uses `follow_redirects=False`)
+- Either `space`, `schema:name`, or `name` present and non-empty
+- Either `location.lat`/`lon` or `schema:geo.schema:latitude`/`schema:longitude` present and float-coercible
+- HTTPS preferred; `http://` allowed
+- Response under ~10s, no redirects (`follow_redirects=False`)
+
+The SpaceAPI v14 validator additionally requires `api_compatibility`, `logo`, `state`, `contact` and a `location.address` string.
 
 ## Workflow
 
-1. **Identify intent** → confirm it is a JSON-LD generation request
-2. **Gather required fields** → batch question for name + lat/lon (or address)
-3. **Geocode if needed** → if address provided but no coordinates:
-   - Call geocoding service → set `geolocationFidelity: "approximate"`
-   - Document source in response
-4. **Check for PII fields** → warn if user includes email/telephone, ask for confirmation, don't block.
-5. **Emit JSON-LD** → validate structure matches schema
-6. **Provide next steps** → hosting options + validation curl command
+1. **Identify intent** → confirm it is a JSON-LD generation request.
+2. **Determine target tier** → ask which fields the coordinator has. Default goal: reach `mom:card` (pin + card). `spaceapi:compatible` is a stretch goal.
+3. **Gather required fields** → batch question for name + lat/lon (or address).
+4. **Geocode if needed** → if address provided but no coordinates: call geocoding service → set `mom:geolocationFidelity: "approximate"`.
+5. **Check for PII fields** → warn if user includes personal email/phone, ask for confirmation, don't block.
+6. **Emit JSON-LD** → use the dual-shape template, omitting fields the coordinator doesn't have.
+7. **Provide next steps** → hosting options + dual-validation command + what each tier unlocks.
 
 ### Error recovery
-- **If validation fails** → parse error message, identify missing fields, re-prompt user
-- **If geocoding fails** → ask user for manual coordinates
-- **If address is ambiguous** → present top 3 candidates and ask user to confirm
+- **If validation fails** → parse error message, identify missing fields, re-prompt user.
+- **If geocoding fails** → ask user for manual coordinates.
+- **If address is ambiguous** → present top 3 candidates and ask user to confirm.
 
 ## Common Validation Errors
 
 | Error | Cause | Fix |
 |-------|-------|-----|
 | `latitude/longitude must be numeric` | String coordinates | Convert to float |
-| `name is required` | Missing schema:name | Add from user input |
-| `PII detected: email field` | Email included | Remove or confirm space publishes it |
+| `name is required` | Missing space/schema:name | Add from user input |
+| SpaceAPI: `'logo' is a required property` | Missing logo for tier 3 | Add logo URL or accept mom:card tier |
 
 ## Edge Cases
 
-- **No coordinates available**: Ask for address, geocode via Nominatim, set fidelity to `approximate`
-- **Address in non-Latin script**: Request transliteration before geocoding
-- **Very large/specialized space**: Add `schema:description` with capacity info
-- **Multiple locations**: Generate separate JSON-LD for each location
-- **Affiliated with larger org**: Consider adding `schema:memberOf` if applicable
+- **No coordinates available**: Ask for address, geocode via Nominatim, set fidelity to `approximate`.
+- **Address in non-Latin script**: Request transliteration before geocoding.
+- **Multiple locations**: Generate separate JSON-LD for each location.
+- **Affiliated with larger org**: Consider adding `schema:memberOf` if applicable.
 
-## Prompt Templates
+## Validation command
 
-### Initial field gathering
+```bash
+# mom validator (local)
+curl -X POST http://localhost/api/validate-url \
+  -H 'Content-Type: application/json' \
+  -d '{"url":"<your-public-url>"}'
+
+# Dual validation (mom + SpaceAPI v14):
+python scripts/validate_dual.py <your-public-url>
 ```
-To create a JSON-LD for [space name], I need a few details:
-- Coordinates (decimal degrees, e.g., 50.8503, 4.3517) OR full address
-- Specialties (e.g., 3d-printing, electronics, woodworking)
-
-Optional but helpful: website URL, description, founding date.
-```
-
-### PII warning
-```
-Note: The validator flags personal data fields. I will not include email/phone unless your space explicitly publishes these on its website.
-```
-
-### Confirmation prompt
-```
-Here is the JSON-LD for [space name]. Before hosting:
-
-1. Review the data for accuracy
-2. Choose a hosting location (GitHub Pages, gist, etc.)
-3. Run this command to validate:
-   curl -X POST http://localhost/api/validate-url \
-     -H 'Content-Type: application/json' \
-     -d '{"url":"<your-public-url>"}'
-```
-
-## Example Conversations
-
-**User:** "Generate JSON-LD for a fab lab in Berlin"
-**Agent:** "To create a JSON-LD for your fab lab, I need: 1) Coordinates (decimal degrees) or full address, 2) Specialties (e.g., 3d-printing, electronics). What are your space's coordinates and main activities?"
-
-**User:** "I have a makerspace called TechHub, it's at 123 Main St, London, and we do 3D printing and electronics"
-**Agent:** [Geocodes address, sets fidelity to "approximate", produces full JSON-LD with all provided fields]
-
-**User:** "Can you add our email to the JSON-LD?"
-**Agent:** "I can include email only if your makerspace explicitly publishes it on your website. The validator flags personal data. Do you publish this email publicly?"
 
 ## Future promotion path
 
 This skill is the seed for a future `mak-space-bot` service:
 - v1 (now): LLM skill, manual hosting.
-- v2: a `/api/draft-space` endpoint in `mak-link-handler` that takes `{name, address, ...}` and returns the JSON-LD body.
-- v3: a Discord/Telegram bot (Epic 6) that walks a coordinator through the fields conversationally and publishes to a Maps-of-Making-hosted gist on their behalf.
+- v2: a `/api/draft-space` endpoint in `mak-link-handler`.
+- v3: a Discord/Telegram bot (Epic 6) that walks a coordinator through the fields and publishes to a Maps-of-Making-hosted gist.
 
-When promoting, keep the validator contract above as the canonical schema — the bot's output and this skill's output must stay byte-compatible.
+When promoting, keep the validator contract above as the canonical schema — the bot's output and this skill's output must stay byte-compatible with the Pydantic `SpaceAPISchema` model in `infra/link_handler/main.py`.

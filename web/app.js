@@ -423,52 +423,61 @@
         body.appendChild(el('div', { class: 'wf-label', style: { padding: '8px 16px' } }, ['Visit on desktop to register this space.']));
       }
     }
-    // Quick facts
-    body.appendChild(el('div', { class: 'detail-section' }, [
-      el('div', { class: 'wf-label' }, ['Quick facts']),
-      el('dl', { class: 'kv' }, [
-        el('dt', {}, ['Hours']), el('dd', {}, [s.opening_hours]),
-        el('dt', {}, ['Founded']), el('dd', {}, [String(s.founded)]),
-        el('dt', {}, ['Capacity']), el('dd', {}, [`${s.capacity} members`]),
-        el('dt', {}, ['Contact']), el('dd', {}, [el('a', { href: `mailto:${s.contact}` }, [s.contact])]),
-        el('dt', {}, ['Website']), el('dd', {}, [el('a', { href: s.website, target: '_blank', rel: 'noopener' }, [s.website.replace(/^https?:\/\//, '')])]),
-      ])
-    ]));
-    // Provenance
-    const SOURCE_LABELS = {
-      'scraped-vow': 'VOW directory',
-      'mock-rff': 'RFF mockup (demo)',
-      'self-registered': 'Registered by coordinator'
-    };
-    if (s.endpoint_url || s.source || s.last_fetched) {
-      const provKids = [
-        el('dt', {}, ['Source']),
-        el('dd', {}, [SOURCE_LABELS[s.source] || s.source || '—']),
-      ];
-      if (s.endpoint_url) {
-        provKids.push(el('dt', {}, ['Endpoint URL']));
-        provKids.push(el('dd', {}, [el('a', { href: s.endpoint_url, target: '_blank', rel: 'noopener', title: s.endpoint_url }, [s.endpoint_url.replace(/^https?:\/\/(www\.)?/, '').slice(0, 40) + (s.endpoint_url.length > 40 ? '...' : '')])]));
-      }
-      if (s.last_fetched) {
-        provKids.push(el('dt', {}, ['Last fetched']));
-        provKids.push(el('dd', {}, [`${timeAgo(s.last_fetched)} ago`]));
-      }
+    // Zone 2 — Data card (confirmed and broken spaces only; seeded shows placeholder)
+    if (s.status === 'seeded') {
       body.appendChild(el('div', { class: 'detail-section' }, [
-        el('div', { class: 'wf-label' }, ['Provenance']),
-        el('dl', { class: 'kv' }, provKids)
+        el('div', { class: 'wf-label' }, ['Data from VOW / RFF network directory — not yet verified by coordinator.'])
+      ]));
+    } else {
+      const dataKids = [
+        el('dt', {}, ['Name']), el('dd', {}, [s.name || '—']),
+        el('dt', {}, ['Website']), el('dd', {}, [s.website ? el('a', { href: s.website, target: '_blank', rel: 'noopener' }, [s.website.replace(/^https?:\/\//, '')]) : '—']),
+        el('dt', {}, ['Opening hours']), el('dd', {}, [s.opening_hours || '—']),
+        el('dt', {}, ['Description']), el('dd', {}, [s.description || '—']),
+      ];
+      body.appendChild(el('div', { class: 'detail-section' }, [
+        el('div', { class: 'wf-label' }, ['Space data']),
+        el('dl', { class: 'kv' }, dataKids)
       ]));
     }
-    // Specialties
+    // Specialties (unchanged)
     body.appendChild(el('div', { class: 'detail-section' }, [
       el('div', { class: 'wf-label' }, ['Specialties']),
       el('div', { class: 'chips' }, s.specialties.map((sp) => el('span', { class: 'chip', 'aria-pressed': 'false', style: { cursor: 'default' } }, [sp])))
     ]));
-    // JSON — desktop only
-    if (window.innerWidth >= 768) {
-      body.appendChild(el('div', { class: 'detail-section', style: { padding: 0 } }, [
-        el('div', { class: 'wf-label', style: { padding: '12px 16px 0' } }, ['Raw JSON from endpoint']),
-        el('pre', { class: 'json' }, [jsonHighlight(jsonForSpace(s))])
-      ]));
+    // Zone 3 — Source (desktop only, confirmed/broken spaces only)
+    if (window.innerWidth >= 768 && s.status !== 'seeded') {
+      const zone3 = el('div', { class: 'detail-section zone-source' }, [
+        el('div', { class: 'zone-header', style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } }, [
+          el('div', { class: 'wf-label' }, ['Source data']),
+          s.endpoint_url ? el('a', { href: s.endpoint_url, target: '_blank', rel: 'noopener', class: 'wf-label', style: { marginLeft: 'auto', textDecoration: 'none' } }, ['↗ Open source']) : null,
+        ]),
+        el('div', { class: 'raw-content', style: { color: 'var(--muted)', fontSize: '11px', padding: '6px 16px' } }, ['Loading source data…'])
+      ]);
+      body.appendChild(zone3);
+      const rawEl = zone3.querySelector('.raw-content');
+
+      fetch(`/api/space/${s.id}/raw`)
+        .then(r => r.json())
+        .then(result => {
+          if (!rawEl) return;
+          if (result.error || result.truncated) {
+            rawEl.textContent = result.truncated ? 'Source data exceeds display limit.' : 'Source unavailable.';
+            return;
+          }
+          rawEl.innerHTML = '';
+          const tag = document.createElement('div');
+          tag.style.cssText = 'font-size:10px;color:var(--muted);padding:0 0 4px;';
+          tag.textContent = `snapshot · ${result.snapshot_date || ''}`;
+          rawEl.appendChild(tag);
+          const pre = document.createElement('pre');
+          pre.className = 'json';
+          pre.appendChild(jsonHighlight(result.raw));
+          rawEl.appendChild(pre);
+        })
+        .catch(() => {
+          if (rawEl) rawEl.textContent = 'Source unavailable.';
+        });
     }
     // Fetch history (confirmed/broken spaces only)
     if (s.status === 'confirmed' || s.status === 'broken') {
@@ -560,23 +569,6 @@
     return `${Math.round(sec / 86400)}d`;
   }
 
-  function jsonForSpace(s) {
-    // Serve a clean "as if from endpoint" shape, per the article
-    return {
-      name: s.name,
-      address: s.address,
-      website: s.website,
-      contact: s.contact,
-      status: s.status === 'broken' ? 'broken' : (s.open_now ? 'open' : (s.status === 'confirmed' ? 'open' : 'unknown')),
-      opening_hours: s.opening_hours,
-      specialties: s.specialties,
-      network_memberships: s.network_memberships,
-      open_for_hosting: s.open_for_hosting,
-      coordinates: s.coordinates,
-      endpoint_url: s.endpoint_url,
-      last_fetched: s.last_fetched,
-    };
-  }
 
   function jsonHighlight(obj) {
     const txt = JSON.stringify(obj, null, 2);
@@ -776,11 +768,31 @@
       const spaceId = parts.length > 0 ? parts[parts.length - 1] : null;
       const hasSpace = Boolean(spaceId);
 
+      // Build subset progress message
+      const subset = reg.subset || 'none';
+      const unlockMsg = reg.unlock_message;
+      const nextUnlock = reg.next_unlock;
+      const subsetBadge = subset !== 'none' ? `<span class="status-label" style="display:inline-block;margin-left:8px;">${escHtml(subset)}</span>` : '';
+
+      let subsetSection = '';
+      if (unlockMsg) {
+        subsetSection = `
+          <div style="margin-top:16px;padding:12px;background:var(--note-bg);border-radius:4px;">
+            <div style="margin-bottom:8px;">Your data unlocks: <strong>${escHtml(unlockMsg)}</strong></div>
+            ${nextUnlock ? `<div style="color:var(--muted);font-size:13px;">To unlock ${escHtml(reg.next_subset || 'full compatibility')}: ${escHtml(nextUnlock)}</div>` : ''}
+            <div style="color:var(--muted);font-size:12px;margin-top:8px;">
+              <a href="https://github.com/SpaceApi/schema" target="_blank" rel="noopener">See schema guide →</a>
+            </div>
+          </div>
+        `;
+      }
+
       $('.addurl-body').innerHTML = `
         <div style="text-align:center;padding:20px 0;">
-          <div style="font-size:22px;margin-bottom:8px;">✓ ${escHtml(spaceName)} is live on the map!</div>
+          <div style="font-size:22px;margin-bottom:8px;">✓ ${escHtml(spaceName)} is live on the map!${subsetBadge}</div>
           <div style="color:var(--muted);margin-bottom:18px;">Your pin has flipped from ⚪ to 🔵.</div>
-          <div class="btn-row" style="justify-content:center;">
+          ${subsetSection}
+          <div class="btn-row" style="justify-content:center;margin-top:16px;">
             <button class="btn btn-primary" id="btn-goto-embed"${hasSpace ? '' : ' disabled'}>Embed this space →</button>
             <button class="btn" id="btn-view-on-map"${hasSpace ? '' : ' disabled'}>View on map →</button>
             <button class="btn" id="btn-register-another" style="margin-top:8px;">Register another →</button>

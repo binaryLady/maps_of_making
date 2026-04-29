@@ -4,11 +4,11 @@ import os
 import re
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 
 import httpx
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, ConfigDict
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -48,7 +48,8 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 SELECT ?spaceUri ?name ?latitude ?longitude ?status ?geolocationFidelity ?geolocationNote
        ?street ?postcode ?city ?country ?website ?profileUrl ?openNow ?source
-       (GROUP_CONCAT(?specialty; separator="|") AS ?specialties)
+       ?openingHours ?description
+       (GROUP_CONCAT(DISTINCT ?specialty; separator="|") AS ?specialties)
 WHERE {
   {
     GRAPH ?spaceGraph {
@@ -69,6 +70,8 @@ WHERE {
       OPTIONAL { ?spaceUri mom:profileUrl ?profileUrl }
       OPTIONAL { ?spaceUri schema:knowsAbout ?specialty }
       OPTIONAL { ?spaceUri mom:source ?source }
+      OPTIONAL { ?spaceUri schema:openingHours ?openingHours }
+      OPTIONAL { ?spaceUri schema:description ?description }
     }
     FILTER (STRSTARTS(STR(?spaceGraph), "urn:mak:space/"))
   }
@@ -92,6 +95,8 @@ WHERE {
       OPTIONAL { ?spaceUri mom:profileUrl ?profileUrl }
       OPTIONAL { ?spaceUri schema:knowsAbout ?specialty }
       OPTIONAL { ?spaceUri mom:source ?source }
+      OPTIONAL { ?spaceUri schema:openingHours ?openingHours }
+      OPTIONAL { ?spaceUri schema:description ?description }
     }
   }
   OPTIONAL {
@@ -102,6 +107,7 @@ WHERE {
 }
 GROUP BY ?spaceUri ?name ?latitude ?longitude ?status ?geolocationFidelity ?geolocationNote
          ?street ?postcode ?city ?country ?website ?profileUrl ?openNow ?source
+         ?openingHours ?description
 ORDER BY ?spaceUri"""
 
 # Only flag fields that are unambiguously personal data (not business contact info).
@@ -113,6 +119,71 @@ _PII_FIELDS = {"foaf:mbox"}
 class UrlRequest(BaseModel):
     url: str
     space_id: Optional[str] = None
+
+
+class SpaceAPIGeo(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    latitude: Optional[float] = Field(None, alias="schema:latitude")
+    longitude: Optional[float] = Field(None, alias="schema:longitude")
+
+
+class SpaceAPILocation(BaseModel):
+    """SpaceAPI v14 flat `location` object: { lat, lon, address }."""
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
+
+    lat: Optional[float] = None
+    lon: Optional[float] = None
+    address: Optional[str] = None
+
+
+class SpaceAPISchema(BaseModel):
+    """Accepts both mom JSON-LD (`schema:name`, `schema:geo.schema:latitude`)
+    and SpaceAPI v14 flat shape (`space`, `location.lat/lon`). One document,
+    two validators — see web/test-fixtures/SKILL.md."""
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
+
+    name: Optional[str] = Field(None, alias="schema:name")
+    plain_name: Optional[str] = Field(None, alias="name")
+    space: Optional[str] = None  # SpaceAPI v14 flat key for name
+    geo: Optional[SpaceAPIGeo] = Field(None, alias="schema:geo")
+    location: Optional[SpaceAPILocation] = None  # SpaceAPI v14 flat key for coords
+    url: Optional[str] = Field(None, alias="schema:url")
+    plain_url: Optional[str] = Field(None, alias="url")  # SpaceAPI v14 flat key
+    opening_hours: Optional[str] = Field(None, alias="schema:openingHours")
+    plain_opening_hours: Optional[str] = Field(None, alias="opening_hours")  # SpaceAPI v14 flat key
+    description: Optional[str] = Field(None, alias="schema:description")
+    logo: Optional[str] = None
+    api_compatibility: Optional[List[str]] = None
+    contact: Optional[dict] = None
+
+    @property
+    def resolved_name(self) -> Optional[str]:
+        return self.name or self.plain_name or self.space
+
+    @property
+    def resolved_url(self) -> Optional[str]:
+        return self.url or self.plain_url
+
+    @property
+    def resolved_opening_hours(self) -> Optional[str]:
+        return self.opening_hours or self.plain_opening_hours
+
+    @property
+    def resolved_lat(self) -> Optional[float]:
+        if self.geo and self.geo.latitude is not None:
+            return self.geo.latitude
+        if self.location and self.location.lat is not None:
+            return self.location.lat
+        return None
+
+    @property
+    def resolved_lon(self) -> Optional[float]:
+        if self.geo and self.geo.longitude is not None:
+            return self.geo.longitude
+        if self.location and self.location.lon is not None:
+            return self.location.lon
+        return None
 
 
 def _extract_name(data: dict) -> Optional[str]:
@@ -153,6 +224,62 @@ def _extract_coords(data: dict) -> tuple[Optional[float], Optional[float]]:
 
 def _scan_pii(data: dict) -> list[str]:
     return [f for f in _PII_FIELDS if f in data]
+
+
+def classify_subset(schema: SpaceAPISchema) -> dict:
+    """Classify the subset level reached by the endpoint data."""
+    has_required = bool(schema.resolved_name and schema.resolved_lat is not None and schema.resolved_lon is not None)
+    has_card = has_required and bool(schema.resolved_url and schema.resolved_opening_hours)
+    has_spaceapi = has_card and bool(schema.api_compatibility and schema.logo and schema.contact)
+
+    if has_spaceapi:
+        return {
+            "subset": "spaceapi:compatible",
+            "subset_score": 3,
+            "missing_card_fields": [],
+            "unlock_message": "Full SpaceAPI compatibility — interoperable with mapall.space and other SpaceAPI maps.",
+            "next_subset": None,
+            "next_unlock": None,
+        }
+    elif has_card:
+        missing = []
+        if not schema.api_compatibility:
+            missing.append("api_compatibility")
+        if not schema.logo:
+            missing.append("logo")
+        if not schema.contact:
+            missing.append("contact")
+        return {
+            "subset": "mom:card",
+            "subset_score": 2,
+            "missing_card_fields": missing,
+            "unlock_message": "Full detail card unlocked.",
+            "next_subset": "spaceapi:compatible",
+            "next_unlock": "SpaceAPI compatibility is optional and requires several additional fields (api_compatibility, logo, contact, state, and more) — your card is already fully functional.",
+        }
+    elif has_required:
+        missing = []
+        if not schema.resolved_url:
+            missing.append("schema:url")
+        if not schema.resolved_opening_hours:
+            missing.append("schema:openingHours")
+        return {
+            "subset": "mom:required",
+            "subset_score": 1,
+            "missing_card_fields": missing,
+            "unlock_message": "Pin on map unlocked. Add website and opening hours for the full detail card.",
+            "next_subset": "mom:card",
+            "next_unlock": "Full detail card display",
+        }
+    else:
+        return {
+            "subset": "none",
+            "subset_score": 0,
+            "missing_card_fields": [],
+            "unlock_message": None,
+            "next_subset": None,
+            "next_unlock": None,
+        }
 
 
 _EMPTY_RESULT = {
@@ -199,9 +326,18 @@ async def _fetch_and_validate(url: str) -> dict:
             "error": "Response is not valid JSON",
         }
 
-    name = _extract_name(data)
-    lat, lon = _extract_coords(data)
+    # Validate through Pydantic schema
+    try:
+        schema = SpaceAPISchema.model_validate(data)
+    except Exception as e:
+        logger.warning("Pydantic validation failed: %s", e)
+        schema = SpaceAPISchema()
+
+    name = schema.resolved_name
+    lat = schema.resolved_lat
+    lon = schema.resolved_lon
     pii_found = _scan_pii(data)
+    subset_info = classify_subset(schema)
 
     result = {
         "reachable": True,
@@ -213,6 +349,12 @@ async def _fetch_and_validate(url: str) -> dict:
         "lon": lon,
         "pii_warning": bool(pii_found),
         "pii_fields": pii_found,
+        "subset": subset_info["subset"],
+        "subset_score": subset_info["subset_score"],
+        "missing_card_fields": subset_info["missing_card_fields"],
+        "unlock_message": subset_info["unlock_message"],
+        "next_subset": subset_info["next_subset"],
+        "next_unlock": subset_info["next_unlock"],
         "_data": data,  # internal — stripped before response
     }
     if not name:
@@ -240,9 +382,25 @@ def _build_sparql_update(graph_uri: str, space_uri: str, name: str, lat: float, 
     ]
 
     # Optional fields — skip PII; validate IRIs before inserting
-    if "schema:address" in data:
-        addr = _sparql_str(str(data["schema:address"]))
-        triples.append(f'  <{space_uri}> <{MOM}address> "{addr}" .')
+    addr_value = data.get("schema:address")
+    if addr_value is None:
+        loc = data.get("location")
+        if isinstance(loc, dict):
+            addr_value = loc.get("address")
+    if isinstance(addr_value, dict):
+        # Structured PostalAddress: write each component as the schema.org property
+        for json_key, schema_prop in (
+            ("schema:streetAddress", "streetAddress"),
+            ("schema:postalCode", "postalCode"),
+            ("schema:addressLocality", "addressLocality"),
+            ("schema:addressCountry", "addressCountry"),
+        ):
+            v = addr_value.get(json_key)
+            if v:
+                triples.append(f'  <{space_uri}> <{SCHEMA}{schema_prop}> "{_sparql_str(str(v))}" .')
+    elif addr_value:
+        # Flat address string (SpaceAPI v14 style): keep on mom:address
+        triples.append(f'  <{space_uri}> <{MOM}address> "{_sparql_str(str(addr_value))}" .')
     website = data.get("schema:url") or data.get("url")
     safe_website = _sparql_iri(str(website)) if website else None
     if safe_website:
@@ -250,9 +408,17 @@ def _build_sparql_update(graph_uri: str, space_uri: str, name: str, lat: float, 
     desc = data.get("schema:description")
     if desc:
         triples.append(f'  <{space_uri}> <{SCHEMA}description> "{_sparql_str(str(desc))}" .')
-    hours = data.get("schema:openingHours")
+    hours = data.get("schema:openingHours") or data.get("opening_hours")
     if hours:
         triples.append(f'  <{space_uri}> <{SCHEMA}openingHours> "{_sparql_str(str(hours))}" .')
+
+    # Specialties (schema:knowsAbout) — JSON-LD array OR SpaceAPI flat "knowsAbout"
+    specialties = data.get("schema:knowsAbout") or data.get("knowsAbout") or []
+    if isinstance(specialties, str):
+        specialties = [specialties]
+    for sp in specialties:
+        if sp:
+            triples.append(f'  <{space_uri}> <{SCHEMA}knowsAbout> "{_sparql_str(str(sp))}" .')
 
     triples_str = "\n".join(triples)
     return f"""DROP SILENT GRAPH <{graph_uri}> ;
@@ -304,7 +470,8 @@ def _binding_to_feature(b: dict) -> Optional[dict]:
             "specialties": specialties,
             "open_now": open_now,
             "source": b.get("source", {}).get("value"),
-            "opening_hours": "",
+            "opening_hours": b.get("openingHours", {}).get("value", ""),
+            "description": b.get("description", {}).get("value", ""),
             "founded": "",
             "capacity": 0,
             "contact": "",
@@ -358,6 +525,7 @@ async def claim_link(token: str):
 async def validate_url(req: UrlRequest):
     result = await _fetch_and_validate(req.url)
     result.pop("_data", None)
+    # Subset info already in result from _fetch_and_validate
     return result
 
 
@@ -396,12 +564,26 @@ async def register_url(req: UrlRequest):
     # Write snapshot graph with ingestion metadata
     snapshot_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     snapshot_graph = f"urn:mak:space/{slug}/{snapshot_date}"
+
+    # Serialize raw JSON — cap at 50 KB
+    raw_json = json.dumps(data, separators=(",", ":"))
+    raw_truncated = False
+    if len(raw_json) > 50_000:
+        logger.warning("raw endpoint content for %s exceeds 50KB (%d bytes), dropping raw storage", slug, len(raw_json))
+        raw_json = "{}"
+        raw_truncated = True
+
+    # Escape for SPARQL string literal
+    escaped_raw = raw_json.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t")
+
+    truncated_triple = f'    <{space_uri}> <{MOM}rawTruncated> "true"^^<http://www.w3.org/2001/XMLSchema#boolean> .\n' if raw_truncated else ""
     snapshot_update = f"""INSERT DATA {{
   GRAPH <{snapshot_graph}> {{
     <{space_uri}> <{MOM}snapshotDate> "{snapshot_date}" .
     <{space_uri}> <{MOM}snapshotSummary> "First registration" .
     <{space_uri}> <{MOM}lastHttpStatus> 200 .
-  }}
+    <{space_uri}> <{MOM}rawContent> "{escaped_raw}"^^<http://www.w3.org/2001/XMLSchema#string> .
+{truncated_triple}  }}
 }}"""
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
@@ -420,12 +602,23 @@ async def register_url(req: UrlRequest):
         logger.error("GeoJSON rematerialization failed (non-fatal): %s", e)
 
     logger.info("registered space: %s (%s)", name, space_uri)
-    return {"status": "confirmed", "space_uri": space_uri, "space_name": name}
+    return {
+        "status": "confirmed",
+        "space_uri": space_uri,
+        "space_name": name,
+        "subset": result.get("subset"),
+        "subset_score": result.get("subset_score"),
+        "unlock_message": result.get("unlock_message"),
+        "next_subset": result.get("next_subset"),
+        "next_unlock": result.get("next_unlock"),
+    }
 
 
 @app.get("/api/space/{space_id}/snapshots")
 async def get_space_snapshots(space_id: str):
     """Fetch ingestion history snapshots for a space."""
+    if not re.match(r'^[a-zA-Z0-9_-]+$', space_id):
+        return []
     sparql_query = f"""PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
 
 SELECT ?graph ?snapshotDate ?snapshotSummary ?lastHttpStatus
@@ -465,3 +658,64 @@ ORDER BY DESC(?snapshotDate)
         snapshots.append(snapshot)
 
     return snapshots
+
+
+@app.get("/api/space/{space_id}/raw")
+async def get_space_raw(space_id: str):
+    """Fetch raw endpoint JSON for a space from the cached snapshot.
+
+    Note: live re-fetch is intentionally NOT done here — endpoint freshness is
+    the responsibility of the periodic heartbeat (Epic 3), which flips the space
+    to broken/stale states when the endpoint stops responding.
+    """
+    if not re.match(r'^[a-zA-Z0-9_-]+$', space_id):
+        return {"error": "no_snapshot", "message": "This space has no cached endpoint content yet."}
+
+    sparql_query = f"""PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
+
+SELECT ?rawContent ?snapshotDate
+WHERE {{
+  GRAPH ?graph {{
+    <urn:mak:space/{space_id}> <{MOM}rawContent> ?rawContent ;
+                                 <{MOM}snapshotDate> ?snapshotDate .
+  }}
+  FILTER (STRSTARTS(STR(?graph), "urn:mak:space/{space_id}/"))
+}}
+ORDER BY DESC(?snapshotDate)
+LIMIT 1
+"""
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(
+                f"{OXIGRAPH_ENDPOINT}/query",
+                content=sparql_query,
+                headers={
+                    "Content-Type": "application/sparql-query",
+                    "Accept": "application/sparql-results+json",
+                },
+            )
+            resp.raise_for_status()
+            bindings = resp.json().get("results", {}).get("bindings", [])
+    except Exception as e:
+        logger.warning("Failed to fetch raw content for space %s: %s", space_id, e)
+        return {"error": "no_snapshot", "message": "This space has no cached endpoint content yet."}
+
+    if not bindings:
+        return {"error": "no_snapshot", "message": "This space has no cached endpoint content yet."}
+
+    binding = bindings[0]
+    raw_json_str = binding.get("rawContent", {}).get("value", "")
+    snapshot_date = binding.get("snapshotDate", {}).get("value", "")
+
+    try:
+        raw_obj = json.loads(raw_json_str)
+    except (json.JSONDecodeError, TypeError):
+        logger.warning("Failed to parse raw content JSON for space %s", space_id)
+        return {"error": "no_snapshot", "message": "This space has no cached endpoint content yet."}
+
+    return {
+        "raw": raw_obj if raw_obj != {} else None,
+        "truncated": raw_obj == {},
+        "snapshot_date": snapshot_date,
+        "source": "cached"
+    }

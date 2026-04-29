@@ -31,7 +31,7 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 SELECT ?spaceUri ?name ?latitude ?longitude ?status ?geolocationFidelity ?geolocationNote
        ?street ?postcode ?city ?country ?website ?profileUrl ?openNow ?source
-       ?endpointUrl ?lastFetched ?errorType
+       ?endpointUrl ?lastFetched ?errorType ?description
        (GROUP_CONCAT(DISTINCT ?specialty; separator="|") AS ?specialties)
        (COALESCE(GROUP_CONCAT(DISTINCT STR(?network); separator="|"), "") AS ?networkMemberships)
 WHERE {
@@ -58,6 +58,7 @@ WHERE {
       OPTIONAL { ?spaceUri mom:endpointUrl ?endpointUrl }
       OPTIONAL { ?spaceUri mom:lastFetched ?lastFetched }
       OPTIONAL { ?spaceUri mom:errorType ?errorType }
+      OPTIONAL { ?spaceUri schema:description ?description }
       OPTIONAL { ?spaceUri mom:memberOf ?network }
     }
     FILTER (STRSTARTS(STR(?spaceGraph), "urn:mak:space/"))
@@ -86,6 +87,7 @@ WHERE {
       OPTIONAL { ?spaceUri mom:endpointUrl ?endpointUrl }
       OPTIONAL { ?spaceUri mom:lastFetched ?lastFetched }
       OPTIONAL { ?spaceUri mom:errorType ?errorType }
+      OPTIONAL { ?spaceUri schema:description ?description }
       OPTIONAL { ?spaceUri mom:memberOf ?network }
     }
   }
@@ -97,7 +99,7 @@ WHERE {
 }
 GROUP BY ?spaceUri ?name ?latitude ?longitude ?status ?geolocationFidelity ?geolocationNote
          ?street ?postcode ?city ?country ?website ?profileUrl ?openNow ?source
-         ?endpointUrl ?lastFetched ?errorType
+         ?endpointUrl ?lastFetched ?errorType ?description
 ORDER BY ?spaceUri"""
 
 
@@ -179,6 +181,7 @@ def binding_to_space(binding: dict) -> dict:
     source = binding.get("source", {}).get("value")
     last_fetched = binding.get("lastFetched", {}).get("value", "")
     error_type = binding.get("errorType", {}).get("value", "")
+    description = binding.get("description", {}).get("value", "")
 
     # Compose address string from available parts
     address_parts = [p for p in [street, f"{postcode} {city}".strip()] if p]
@@ -201,6 +204,7 @@ def binding_to_space(binding: dict) -> dict:
             "city": city,
             "country": country,
             "website": website,
+            "description": description,
             "endpoint_url": endpoint_url,
             "specialties": specialties,
             "open_now": open_now,
