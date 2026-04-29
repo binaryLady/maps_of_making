@@ -3,11 +3,15 @@ stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 lastStep: 8
 status: 'complete'
 completedAt: '2026-04-22'
+lastEdited: '2026-04-29'
 inputDocuments: ['_bmad-output/planning-artifacts/prd.md', '_bmad-output/planning-artifacts/next-session.md', 'archive/docs/architecture/architecture.md', 'archive/docs/project-overview.md', 'archive/docs/index.md']
 workflowType: 'architecture'
 project_name: 'maps_of_making'
 user_name: 'nicolas'
 date: '2026-04-22'
+editHistory:
+  - date: '2026-04-29'
+    changes: 'Added ADR-015 (SpaceAPI JSON → MOM JSON-LD transformation layer, raw snapshot to disk); updated Primary Users (3-way split: coordinator / network coordinator Luca / operator Nicolas); updated Data Flow (3-stage pipeline, operator inspection panel, Luca public toggle); updated FR mapping table; added /data/snapshots/ to project structure'
 ---
 
 # Architecture Decision Document — maps_of_making
@@ -28,9 +32,10 @@ Maps of Making is federated infrastructure for the European maker ecosystem, pil
 
 ### Primary Users
 
-1. **Space managers** — submit one JSON endpoint URL, see their pin flip ⚪→🔵, get nudged if their endpoint goes stale
-2. **Network admins** — fleet health dashboard, identify aging/broken spaces, dispatch nudges, export stats
-3. **Makers (secondary)** — browse confirmed spaces, use bot queries in their community channel
+1. **Space coordinators** — submit one JSON endpoint URL (SpaceAPI-compatible), see their pin flip ⚪→🔵, get nudged if their endpoint goes stale. They own and publish their data; MOM only reads it.
+2. **Network coordinators (e.g. Luca/VOW)** — use the public health map toggle (Tweaks panel) to read fleet state at a glance. No login, no admin access. Available to any interested party.
+3. **MOM operator (Nicolas)** — infrastructure observability: system health (Oxigraph, ingestion process), space registry with last-probe timestamps, raw/ingested/displayed inspection panel for pipeline diagnosis. This is the `/admin` dashboard audience.
+4. **Makers (secondary)** — browse confirmed spaces, use bot queries in their community channel
 
 ### Functional Requirements Summary
 
@@ -441,6 +446,67 @@ CREATE TABLE llm_cost_log (
 
 ---
 
+### ADR-015: Ingestion Transformation Layer — SpaceAPI JSON → MOM JSON-LD
+
+**Decision:** Spaces publish flat SpaceAPI-compatible JSON. MOM provides an explicit transformation layer that converts this into MOM JSON-LD before writing to Oxigraph. The raw pre-transformation payload is written to disk before any transformation occurs.
+
+**The pipeline — three explicit stages:**
+
+```
+Stage 1 — FETCH
+  Space publishes SpaceAPI JSON at their URL
+  Heartbeat does conditional GET (ETag / Last-Modified)
+  Raw JSON written to disk: /data/snapshots/{id}/latest.json
+  (with fetch timestamp — this is the Zone 3 source and audit trail)
+
+Stage 2 — TRANSFORM
+  SpaceAPI JSON → MOM JSON-LD mapping (ontology applied)
+  Explicit field-by-field mapping defined in tasks/ingest.py
+  Normalize before compare: strip ephemeral timestamps, sort arrays
+  If payload unchanged vs stored snapshot → update timestamp only, skip Stage 3
+  If changed → proceed to Stage 3
+
+Stage 3 — INGEST
+  MOM JSON-LD → Oxigraph triples
+  Write to <urn:mak:space/{id}> (current) + <urn:mak:space/{id}/{date}> (snapshot)
+  Write decision log: "ingested" | "no_change" | "error" — every fetch logged
+```
+
+**Why raw snapshot to disk, not Oxigraph:**
+The raw pre-transformation JSON is the audit trail and Zone 3 source. Storing it in Oxigraph would couple the debugging tool to the triplestore — fragile if Oxigraph is what's being diagnosed. Disk is boring and correct. The admin inspection panel reads raw from disk; transformed from Oxigraph.
+
+**The ontology's role in transformation:**
+The `.ttl` is the specification; `tasks/ingest.py` is its implementation. They are coupled. If `mom.ttl` declares `mom:MakerSpace rdfs:subClassOf schema:LocalBusiness`, the transformation must emit `@type: ["mom:MakerSpace", "schema:LocalBusiness"]`. Drift between spec and implementation means silent data errors.
+
+**SpaceAPI → MOM field mapping (explicit contract):**
+
+| SpaceAPI field | MOM JSON-LD mapping | Notes |
+|---|---|---|
+| `space` | `schema:name` | Required |
+| `url` | `schema:url` | Required |
+| `location.lat/lon` | `schema:geo` → `schema:GeoCoordinates` | Required |
+| `location.address` | `schema:address` → `schema:PostalAddress` | Card subset |
+| `contact.website` | `schema:url` (space website) | Card subset |
+| `state.open` | `mom:isCurrentlyOpen` | Card subset |
+| `opening_hours` | `schema:openingHoursSpecification` | Card subset |
+| `linked_spaces[]` | `mom:NetworkMembership` | Extended subset |
+| `membership_plans[]` | `mom:membershipPlans` | Extended subset |
+| *(no SpaceAPI equivalent)* | `mom:consortium` | MOM extension |
+| *(no SpaceAPI equivalent)* | `mom:residency` | MOM extension |
+| *(no SpaceAPI equivalent)* | `mom:specialties`, `mom:equipment` | MOM extension |
+
+**MOM extension fields (no SpaceAPI equivalent):** live in `mom:extended` subset. Ingested when present; never required. Progressive unlock UX signals which subset a space has reached.
+
+**Long-term ambition:** This transformation layer is MOM's core value-add. Spaces need zero knowledge of linked data. The bridge pattern at community scale is MOM's argument for SpaceAPI adopting JSON-LD natively — making this implementation the reference.
+
+**Snapshot file convention (pinned — Epic 3 must write this path):**
+```
+/data/snapshots/{space_id}/latest.json      # always the most recent raw fetch
+/data/snapshots/{space_id}/{timestamp}.json # append-only archive (optional, configurable)
+```
+
+---
+
 ### ADR-014: Backup Strategy — rsync for PoC, IPFS+IPLD Direction for Production
 
 **Decision:** PoC uses host-level rsync/cron for daily N-Quads dumps. IPFS+IPLD is the production target but not implemented at PoC.
@@ -646,9 +712,8 @@ maps_of_making/
 │       ├── moms_seed.json               # bootstrap seed data (retire at pilot)
 │       └── vow_workshops.json           # VOW seed data
 │
-├── admin/                               # Phase 2 — admin dashboard
-│   ├── index.html                       # auth-gated, separate subdomain
-│   └── admin.js                         # fleet health, per-space drill-down
+├── admin.html                           # Phase 2 — admin landing page (auth-gated, served at /admin)
+├── admin.js                             # fleet health, per-space drill-down (Story 4.0+)
 │
 ├── ontology/                            # MOM vocabulary + IoP reference
 │   ├── mom.ttl                          # MOM ontology (GitHub Pages hosted, w3id.org IRI)
@@ -660,8 +725,15 @@ maps_of_making/
 ├── nanobot-config/                      # Nanobot agent configuration
 │   └── config.json                      # channel adapters, LLM models, scheduling
 │
+├── data/
+│   └── snapshots/                       # Raw pre-transformation JSON, one dir per space
+│       └── {space_id}/
+│           ├── latest.json              # most recent raw fetch (Zone 3 source + audit trail)
+│           └── {timestamp}.json         # append-only archive (configurable retention)
+│
 ├── tasks/                               # Custom task modules (invoked by Nanobot)
-│   ├── heartbeat.py                     # fetch URL, diff JSON-LD, write triples (invoked by HEARTBEAT.md)
+│   ├── heartbeat.py                     # Stage 1: fetch URL, conditional GET, write snapshot to disk
+│   ├── ingest.py                        # Stage 2+3: SpaceAPI JSON → MOM JSON-LD → Oxigraph (ADR-015)
 │   ├── nl_to_sparql.py                  # NL → SPARQL string (temp=0.0, Sonnet)
 │   ├── answer_format.py                 # SPARQL result dict → plain language str
 │   ├── notify_dispatch.py               # read queue, fill template, send, mark dispatched
@@ -763,9 +835,9 @@ networks:
 | FR1–11 Map display, filters, search | `web/app.js` |
 | FR12–14b Space detail drawer | `web/app.js` |
 | FR15–18 Embed & sharing | `web/app.js` + nginx iframe headers |
-| FR19–23 Coordinator registration | `harness/tasks/heartbeat.py` + `harness/magic_link.py` |
-| FR24–27b Endpoint health / ingestion | `harness/tasks/heartbeat.py` + `harness/tasks/notify_dispatch.py` |
-| FR28–33b Admin dashboard | `admin/` |
+| FR19–23 Coordinator registration | `tasks/heartbeat.py` + `link_handler/main.py` |
+| FR24–27b Endpoint health / ingestion | `tasks/heartbeat.py` (fetch+compare) + `tasks/ingest.py` (transform) + `tasks/notify_dispatch.py` + `/data/snapshots/` (raw disk store) |
+| FR28–33b Operator dashboard | `web/admin.html` + `web/admin.js` + FastAPI `/admin/api/status` endpoint in `infra/link_handler/main.py` |
 | FR34–36 SPARQL federated query | Oxigraph service + nginx routing |
 | FR37–42 NL bot | `harness/tasks/nl_to_sparql.py` + `harness/tasks/answer_format.py` + `harness/adapters/` |
 | FR43–44 Auth | nginx (shared-password basic auth header) |
@@ -840,34 +912,59 @@ Note: `seeking_partners_for` is split into structured `grant_programme` + free `
 ### Data Flow
 
 ```
-Space publishes JSON-LD at URL
-  ↓ (scheduled heartbeat, conditional GET)
-harness/tasks/heartbeat.py
-  → diff against stored snapshot
-  → SPARQL UPDATE → <urn:mak:space/{id}> named graph
-  → SPARQL UPDATE → <urn:mak:status> (mak:confirmed)
-  ↓ (if stale/error)
-harness/tasks/notify_dispatch.py
+Space publishes SpaceAPI JSON at their URL
+  ↓ (scheduled heartbeat, conditional GET — ETag/Last-Modified)
+tasks/heartbeat.py — STAGE 1: FETCH
+  → raw JSON written to /data/snapshots/{id}/latest.json (with timestamp)
+  → normalize payload (strip ephemeral timestamps, sort arrays)
+  → compare with stored snapshot
+  → if UNCHANGED: update timestamp only, log "no_change", STOP
+  → if CHANGED: proceed to Stage 2
+
+tasks/ingest.py — STAGE 2: TRANSFORM  (ADR-015)
+  → SpaceAPI JSON → MOM JSON-LD (ontology applied, field-by-field mapping)
+  → validate against mom:required subset (hard reject if missing)
+  → validate against mom:card / mom:extended subsets (warn + log if missing)
+
+tasks/heartbeat.py — STAGE 3: INGEST
+  → SPARQL UPDATE → <urn:mak:space/{id}> (current triples)
+  → SPARQL UPDATE → <urn:mak:space/{id}/{date}> (append-only snapshot)
+  → SPARQL UPDATE → <urn:mak:status> (mak:confirmed + mak:lastChecked)
+  → log decision: "ingested" with diff summary
+
+  ↓ (if stale/error threshold crossed)
+tasks/notify_dispatch.py
   → read <urn:mak:notifications>
   → fill template + generate magic link token
   → send email / Discord DM
   ↓ (on magic link YES click)
-harness/magic_link.py
+link_handler/main.py
   → validate token (single-use, 72h TTL)
   → SPARQL UPDATE reset timer → mak:confirmed
 
 User query in Discord channel
   ↓
-harness/adapters/discord_adapter.py
+adapters/discord_adapter.py
   → defer(thinking=True)
-  → harness/tasks/nl_to_sparql.py (OpenRouter Sonnet, temp=0)
+  → tasks/nl_to_sparql.py (OpenRouter Sonnet, temp=0)
   → sparql_client.run_select(sparql)
-  → harness/tasks/answer_format.py (OpenRouter Minimax)
+  → tasks/answer_format.py (OpenRouter Minimax)
   → followup.send(answer)
 
-Admin opens dashboard
+Operator opens /admin dashboard
   ↓
-admin/admin.js → nginx /sparql/query
-  → SELECT on <urn:mak:status> — fleet health overview
-  → toggle ON → SELECT on mak:operationalState aging/zombie/dead
+admin.js → FastAPI /admin/api/status
+  → Oxigraph ping (ASK {}) → health pill: Oxigraph LIVE/DOWN
+  → ingestion heartbeat file mtime → health pill: Ingestion RUNNING/IDLE(Nh)
+  → SELECT on <urn:mak:status> → spaces reachable count + registry table
+  → operator clicks space row → inspection panel:
+      col 1: read /data/snapshots/{id}/latest.json (raw fetch, from disk)
+      col 2: SPARQL DESCRIBE <urn:mak:space/{id}> (ingested triples)
+      col 3: card display fields query (what public map renders)
+
+Network coordinator opens public map
+  ↓
+web/app.js → Tweaks panel health map toggle
+  → SELECT on mak:operationalState aging/zombie/dead (overlay layer)
+  → pin colour reflects freshness lifecycle — no auth, no admin access
 ```

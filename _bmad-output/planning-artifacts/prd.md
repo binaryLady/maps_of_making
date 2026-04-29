@@ -1,7 +1,11 @@
 ---
-stepsCompleted: ['step-01-init', 'step-02-discovery', 'step-02b-vision', 'step-02c-executive-summary', 'step-03-success', 'step-04-journeys', 'step-05-domain', 'step-06-innovation', 'step-07-project-type', 'step-08-scoping', 'step-09-functional', 'step-10-nonfunctional', 'step-11-polish', 'step-12-complete']
+stepsCompleted: ['step-01-init', 'step-02-discovery', 'step-02b-vision', 'step-02c-executive-summary', 'step-03-success', 'step-04-journeys', 'step-05-domain', 'step-06-innovation', 'step-07-project-type', 'step-08-scoping', 'step-09-functional', 'step-10-nonfunctional', 'step-11-polish', 'step-12-complete', 'step-e-01-discovery', 'step-e-02-review', 'step-e-03-edit']
 inputDocuments: ['maps_of_making-handoff.zip/Maps of Making.html', 'maps_of_making-handoff.zip/app.js', 'ndb_hugo/content/posts/map-of-making-locker/index.md']
 workflowType: 'prd'
+lastEdited: '2026-04-29'
+editHistory:
+  - date: '2026-04-29'
+    changes: 'Reframed MOM as semantic bridge/IPO service; split admin persona into Luca (public health map toggle) and Nicolas (operator dashboard); added Journey 3b; updated Success Criteria; FR13 Zone 3 as trust receipt; FR24-FR27 heartbeat pattern + aging/zombie/dead lifecycle; FR28-FR33 operator observability reframe; magic link flagged as parallel non-blocking; Innovation section updated with semantic bridge ambition'
 briefCount: 0
 researchCount: 0
 brainstormingCount: 0
@@ -21,13 +25,15 @@ classification:
 
 ## Executive Summary
 
-Maps of Making is a federated open-data platform for the European maker ecosystem, piloting with RFF (France) and VOW (Germany). It inverts the broken directory model: instead of spaces registering on platforms they never update, each space publishes one structured JSON endpoint they control — and the map reads from it live. Freshness is automatic. No logins, no forms, no middlemen.
+Maps of Making (MOM) is a semantic bridge for the European maker ecosystem, piloting with RFF (France) and VOW (Germany). It inverts the broken directory model: spaces publish one JSON endpoint they already control (SpaceAPI-compatible), and MOM transforms it into linked open data — stored as RDF triples in Oxigraph, queryable via SPARQL, displayed on a live map. No logins, no forms, no middlemen.
 
-The immediate deliverable is a production-ready SPA built on the existing hi-fi prototype: a fullscreen MapLibre map with Protomaps vector tiles (replacing blocked OSM/Carto raster tiles), filter/search/detail drawers, and embeddable iframe + web component output. Phase 1 ships a convincing, working map with federation UI placeholders clearly labelled as phase 2.
+MOM's dual promise: **freshness** (periodic health probes signal when endpoints go dark) and **transparency** (nothing is altered — raw source JSON is displayed verbatim on every space card as a provenance receipt). Spaces retain full data sovereignty; MOM only enhances accessibility and visibility.
 
-Phase 2 wires the federated backend: URL ingestion, Oxigraph SPARQL triplestore, and a Nanobot agent (OpenRouter-compatible, Discord + Telegram built-in) enabling natural language queries over live endpoints. Space coordinators add their URL once and see their pin flip ⚪→🔵. Network admins get a dashboard with endpoint health monitoring, diff detection, and Oxigraph sync status.
+The immediate deliverable is a production-ready SPA: a fullscreen MapLibre map with Protomaps vector tiles, filter/search/detail drawers, and embeddable iframe + web component output. Phase 1 ships a convincing, working map with federation UI placeholders clearly labelled as phase 2.
 
-**Primary users:** Space coordinators (claim your pin, publish once, forget it); network admins (confidence dashboard — who's live, stale, or broken at a glance). Makers browsing the map are secondary users.
+Phase 2 wires the federated backend: SpaceAPI JSON → MOM JSON-LD ingestion pipeline, Oxigraph SPARQL triplestore, and a Nanobot agent (OpenRouter-compatible, Discord + Telegram built-in) enabling natural language queries over live endpoints. Space coordinators add their URL once and see their pin flip ⚪→🔵. The MOM operator gets an observability dashboard — system health, ingestion pipeline status, and a per-space raw/ingested/displayed inspection panel.
+
+**Primary users:** Space coordinators (publish once, forget it — MOM handles the rest); makers browsing the map. **Operator:** Nicolas (MOM infrastructure health and ingestion pipeline observability). Network coordinators (e.g. VOW, RFF admins) are secondary users via the public health map toggle.
 
 ### What Makes This Special
 
@@ -48,7 +54,8 @@ The group chat question "is the Venice fab lab still open?" is the metric. This 
 ### User Success
 
 - **Coordinator:** Adds URL via "Add your URL" drawer, sees pin flip ⚪→🔵 within minutes, requires no follow-up support after initial workshop onboarding
-- **Network admin:** Opens dashboard, identifies live/stale/broken spaces at a glance, can triage and contact a broken space in under 2 minutes
+- **Network coordinator (Luca):** Enables health map toggle on public map, reads fleet state (confirmed/stale/broken counts) at a glance — no login required
+- **Operator (Nicolas):** Opens `/admin`, reads system health (Oxigraph, ingestion, reachable count) in one glance, can identify and diagnose a pipeline discrepancy via raw/ingested/displayed inspection panel in under 5 minutes
 - **Maker (secondary):** Finds a confirmed open space near their destination without posting in a group chat
 
 ### Business Success
@@ -104,11 +111,19 @@ She clicks the map link. It loads. There's a pin near Lyon — grey, unclaimed. 
 
 ---
 
-### Journey 3 — The Network Admin: "I need to know the state of the fleet"
+### Journey 3 — The Network Coordinator: "I need to know the state of my network"
 
-**Meet Luca**, network coordinator at VOW. He manages 60+ member spaces across Germany. Every month: "are we on the map?" from members, "how many confirmed spaces?" from grant reviewers. He opens the admin dashboard: 23 confirmed (🔵), 18 seeded (⚪), 4 stale (dashed), 2 broken (🔴). Clicks broken ones — one 404, one CORS error. Hits "Send reminder" on both. Exports confirmed count for the grant report. Done in 8 minutes.
+**Meet Luca**, network coordinator at VOW. He manages 60+ member spaces across Germany. Every month: "are we on the map?" from members, "how many confirmed spaces?" from grant reviewers. He opens the public map, enables the health map toggle in the Tweaks panel: pins colour by state — 23 confirmed (🔵), 18 seeded (⚪), 4 stale (dashed), 2 broken (🔴). He screenshots it for the grant report. No login, no admin access needed. Done in 2 minutes.
 
-**Capabilities required:** Admin dashboard with fleet health overview, per-space drill-down, one-click coordinator contact, exportable stats, Oxigraph sync status.
+**Capabilities required:** Public health map toggle (Tweaks panel), pin state legend, visual fleet overview — no auth required, available to any interested party.
+
+---
+
+### Journey 3b — The Operator: "Is MOM itself healthy?"
+
+**Meet Nicolas**, the MOM infrastructure operator. He opens `/admin` on a Tuesday morning. Three status pills at the top: Oxigraph LIVE · Ingestion IDLE (4h) · Spaces reachable 603/606. The amber Ingestion pill catches his eye — not alarming, but worth checking. He scrolls to the space registry table, spots the two unreachable spaces (red row highlight), clicks one. A panel slides open: three columns — raw JSON from last fetch, ingested triples in Oxigraph, and what currently renders on the public card. He sees immediately that a field present in the raw JSON is missing from the card: the ingestion mapping dropped it. He knows exactly where to look in the pipeline.
+
+**Capabilities required:** System health status pills (Oxigraph, ingestion process, reachable count), space registry table with last-probe timestamps and status, per-space inspection panel with raw/ingested/displayed side-by-side comparison.
 
 ---
 
@@ -134,7 +149,8 @@ She clicks the map link. It loads. There's a pin near Lyon — grey, unclaimed. 
 |---|---|
 | Coordinator onboarding | URL validation, geocoding, pin state confirmation |
 | Coordinator recovery | Health monitoring, failure notification, pre-filled recovery UX |
-| Admin dashboard | Fleet health view, per-space status, contact dispatch, export, sync status |
+| Network coordinator (Luca) | Public health map toggle, pin state legend — no auth |
+| Operator (Nicolas) | System health pills, space registry table, raw/ingested/displayed inspection panel |
 | Maker discovery | Filter/search, detail drawer, embed on third-party site |
 | Bot query (Phase 2) | Agent + Oxigraph integration, channel bot, SPARQL validation |
 
@@ -184,8 +200,8 @@ Multi-network expansion beyond RFF/VOW; LLM-assisted JSON generator for self-ser
 
 ### Detected Innovation Areas
 
-**1. The Data Sovereignty Flip**
-Every existing maker directory pulls data toward a central platform. Maps of Making inverts this: the space is the authoritative source, the map is a reader. The innovation isn't a new technology — it's a new *contract* between spaces and directories, built on SpaceAPI's proven pattern and extended to the broader maker ecosystem at network scale (RFF + VOW).
+**1. The Data Sovereignty Flip + Semantic Bridge**
+Every existing maker directory pulls data toward a central platform. Maps of Making inverts this: the space is the authoritative source, the map is a reader. Spaces publish flat SpaceAPI JSON they already maintain — MOM provides the transformation layer (SpaceAPI JSON → MOM JSON-LD → Oxigraph triples). Spaces need zero knowledge of linked data. MOM is the bridge. The long-term ambition: demonstrate the bridge pattern at community scale and advocate for SpaceAPI adopting linked open data natively — making MOM the reference implementation that shapes the standard.
 
 **2. Freshness as a First-Class Signal**
 No existing maker map treats data freshness as a product concern. Maps of Making makes staleness *visible* and *self-healing*. Pin states: ⚪ seeded · 🔵 confirmed · dashed stale · 🔴 broken · 🟢 live now. The 🟢 state — future tier — is fed by edge device and webhook pings (door sensor, channel activity, fridge ping). Something happened; the place is alive. More trustworthy than any form field.
@@ -299,7 +315,8 @@ Authoritative performance targets are defined in the Non-Functional Requirements
 - [ ] Nanobot agent: Discord + Telegram built-in, Mattermost custom adapter at pilot; IoP-ontology-constrained SPARQL, validation gate, graceful failure → clarify → log gap
 - [ ] Coordinator notification: email on endpoint failure with pre-filled recovery link
 
-**Out of scope for Phase 2:** Matrix/Discord channels, 🟢 live-now edge pings, JSON generator, SOLID data layer.
+**Out of scope for Phase 2 main sequence:** Matrix/Discord channels, 🟢 live-now edge pings, JSON generator, SOLID data layer.
+**Parallel non-blocking (Phase 2):** Magic link coordinator claim flow (token-based, FastAPI `mak-link-handler`) — useful but not demo-blocking; tracked as a standalone parallel epic.
 
 ### Phase 3 — Expansion (Post-PoC Vision)
 
@@ -346,7 +363,7 @@ Multi-network beyond RFF/VOW; Matrix + Discord bot; 🟢 live-now tier via webho
 
 ### Space Detail (Phase 1 + 2)
 - **FR12** Click pin → detail drawer with space info, hours, machines, contact, links
-- **FR13** Detail drawer shows data provenance: endpoint URL + last-ingested timestamp
+- **FR13** Detail drawer Zone 3 (desktop only) displays raw source JSON verbatim — unmodified payload from the registered endpoint — alongside the endpoint URL and last-fetch timestamp. This is a transparency receipt: proof that MOM has not altered the space's data. Fetch status shown: "responded" or "unreachable (last known)".
 - **FR14** Copy-to-clipboard for contact/address
 - **FR14b** Ingestion history visible: list of dated snapshots with diff summary
 
@@ -364,21 +381,21 @@ Multi-network beyond RFF/VOW; Matrix + Discord bot; 🟢 live-now tier via webho
 - **FR23** No edit UI — coordinators update their data by editing their JSON at the URL
 
 ### Endpoint Health & Ingestion (Phase 2)
-- **FR24** Periodic fetch of all registered endpoints (6-hour cadence, configurable)
-- **FR25** Endpoint state machine: confirmed → stale (N failed fetches) → broken → closed
+- **FR24** Heartbeat fetch of all registered endpoints (6-hour cadence, configurable). Raw payload stored to disk with timestamp before transformation. If payload unchanged (normalized compare): update timestamp only, skip re-ingestion. If changed: store new snapshot + ingest update into Oxigraph.
+- **FR25** Endpoint freshness lifecycle driven by time since last successful fetch: **confirmed** (recently updated) → **aging** (>1 month, configurable) → **zombie** (>3 months) → **dead** (>6 months). Pin visual states map to this lifecycle. Epic 7 (future): webhook/device ping resets the timer without requiring a file update.
 - **FR25b** Closure logic: JSON self-reports closed OR N consecutive fetch failures → PII removed, space marked closed-at-date, pin retained for historical record
-- **FR26** Diff detection between snapshots flags meaningful changes
-- **FR27** Ingestion failures logged with reason (timeout, 4xx, 5xx, schema invalid)
+- **FR26** Diff detection between snapshots flags meaningful changes (normalize before compare — strip ephemeral timestamps, sort arrays to avoid false positives)
+- **FR27** Ingestion failures logged with reason (timeout, 4xx, 5xx, schema invalid); every fetch decision logged (including "no change detected") for pipeline auditability
 - **FR27b** Append-only versioned snapshots — ingested data never overwritten, each fetch stored with timestamp
 
-### Admin Dashboard (Phase 2)
-- **FR28** Admin dashboard on separate subdomain showing all endpoints with current state
-- **FR29** Dashboard filters: all / confirmed / stale / broken / closed
-- **FR30** Per-endpoint detail: fetch history, last diff, error log
-- **FR31** Manual re-fetch trigger per endpoint
-- **FR32** Oxigraph sync status per endpoint
-- **FR33** Export endpoint registry (CSV/JSON)
-- **FR33b** Admin audit log: all admin actions timestamped and attributable
+### Operator Dashboard (Phase 2)
+- **FR28** Operator dashboard at `admin.*` subdomain (basic auth, operator-only). Single-page tool for infrastructure observability — not a network coordinator view (Luca uses the public health map toggle).
+- **FR29** System health strip at page top: three status pills — Oxigraph (live/down), Ingestion process (running/idle + time since last run), Spaces reachable (count/total). Binary: green or amber/red. Last-checked timestamp.
+- **FR30** Space registry table: space name, endpoint URL, last probe timestamp, probe result (HTTP status). Sortable. Rows with failures highlighted. Each row clickable.
+- **FR31** Per-space inspection panel (opens on row click): three columns — (1) raw source JSON from last disk snapshot with fetch timestamp, (2) ingested triples from Oxigraph (`DESCRIBE urn:mak:space/{id}`), (3) card display fields as rendered on the public map. Enables git-diff-style pipeline diagnosis.
+- **FR32** Manual re-fetch trigger per endpoint (resets heartbeat cycle for that space)
+- **FR33** Export space registry (CSV/JSON) with last-probe state
+- **FR33b** All operator actions (manual re-fetch, export) logged with timestamp
 
 ### Federated Query Layer (Phase 2)
 - **FR34** Oxigraph SPARQL 1.1 endpoint exposes federated graph of all ingested spaces

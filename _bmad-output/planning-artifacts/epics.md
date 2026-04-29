@@ -1,5 +1,7 @@
 ---
-stepsCompleted: ['step-01-validate-prerequisites', 'step-02-design-epics', 'step-03-create-stories']
+stepsCompleted: ['step-01-validate-prerequisites', 'step-02-design-epics', 'step-03-create-stories', 'edit-2026-04-29']
+lastEdited: '2026-04-29'
+editSummary: 'Epic 3 reframed as ingestion pipeline prerequisite (added Story 3.0: ADR-015 transformation layer, aging/zombie/dead lifecycle in Story 3.2); Epic 4 replaced — operator observability dashboard (health pills, registry table, raw/ingested/displayed inspection panel); Epic 4b added as parallel non-blocking magic-link recovery (Stories 3.3-3.4 migrated); critical path updated: Epic 1 → 0 → 2 → 3 → 4'
 inputDocuments:
   - _bmad-output/planning-artifacts/prd.md
   - _bmad-output/planning-artifacts/architecture.md
@@ -342,15 +344,22 @@ A coordinator pastes their JSON-LD endpoint URL, sees live validation feedback (
 
 ---
 
-### Epic 4: Network Admin Fleet Health Dashboard
-Luca (VOW network admin) opens `admin.*`, reads fleet state at a glance (confirmed / seeded / stale / broken counts + sparkline), drills into any space for fetch history and error log, triggers manual re-fetch, sends a coordinator nudge, exports the registry for grant reporting, reviews the audit log. RFF mockup data populates stale/broken/dead states for demo richness.
+### Epic 4: Operator Observability Dashboard
+Nicolas (MOM operator) opens `/admin`, reads system health at a glance (Oxigraph status, ingestion process, spaces reachable count), scans the space registry table for failures, drills into any space for a raw/ingested/displayed side-by-side inspection panel. This is infrastructure observability for the pipeline operator — not a network coordinator view (Luca uses the public health map toggle, no auth required).
 
-**Demo toggle:** admin dashboard includes a "Show mock data" flag to include/exclude the `<urn:mak:mock/rff-health>` graph so grant reviewers see a full health view while real pilot data stays clean.
+**Depends on:** Epic 3's raw snapshot-to-disk output and status graph. Epic 4 is a consumer, not a builder, of the pipeline.
 
 **FRs:** FR28–FR33b, FR43
 **NFRs:** NFR-S1, NFR-S4, NFR-S6, NFR-O1, NFR-O2, NFR-P5
-**ARs:** AR-INF2 (admin subdomain + auth), AR-METR1 (/metrics endpoint read)
-**UX-DRs:** UX-DR17–21
+**ARs:** AR-INF2 (admin subdomain + auth), AR-METR1 (/metrics endpoint read), ADR-015 (raw snapshot disk path)
+
+---
+
+### Epic 4b: Magic Link Coordinator Recovery *(parallel non-blocking)*
+Space coordinators receive a magic-link email when their endpoint goes stale — YES refreshes pin, NO gracefully archives with GDPR closure. Parallel to Epic 4, non-demo-blocking. Depends on Epic 3's notification queue.
+
+**FRs:** FR25b (closure logic)
+**ARs:** AR-MLNK1–3
 
 ---
 
@@ -363,13 +372,12 @@ The map now runs on real federated data: filters/search/detail drawer all read l
 
 ---
 
-### Epic 3: Endpoint Health, Stale Detection & Magic-Link Recovery *(nice-to-have for demo; post-demo priority)*
-The heartbeat scheduler runs its full 6h cycle. When a space goes stale, the coordinator receives a templated email with a magic link — YES refreshes their pin, NO gracefully archives with GDPR closure. Distinct from Epic 4 (dashboard gives admins the view; this epic gives coordinators the self-heal).
+### Epic 3: Ingestion Pipeline + Endpoint Health + Stale Detection *(prerequisite for Epic 4)*
+The full ingestion pipeline becomes real: SpaceAPI JSON is fetched, raw snapshot written to disk, transformed to MOM JSON-LD via the ontology mapping layer (ADR-015), and ingested into Oxigraph. Heartbeat scheduler runs the full 6h cycle with aging/zombie/dead lifecycle. Epic 4 reads from this epic's outputs. Magic-link coordinator recovery is extracted to Epic 4b (parallel, non-blocking).
 
-**FRs:** FR24, FR25, FR25b, FR26, FR27
-**NFRs:** NFR-R2, NFR-R3, NFR-R5, NFR-C1
-**ARs:** AR-MLNK1–3, AR-DATA2 (freshness lifecycle), AR-METR1 (heartbeat_log writes)
-**UX-DRs:** UX-DR9, UX-DR10, UX-DR13, UX-DR16
+**FRs:** FR24, FR25, FR25b, FR26, FR27, FR27b
+**NFRs:** NFR-R1, NFR-R2, NFR-R3, NFR-R5, NFR-C1
+**ARs:** AR-DATA2 (freshness lifecycle), AR-METR1 (heartbeat_log writes), ADR-015 (transformation layer + snapshot path)
 
 ---
 
@@ -396,9 +404,11 @@ A space's 🟢 badge fires when a webhook/door-sensor/channel-activity ping hits
 - VOW real data = read-only, no onboarding tests against it
 - Openfab Brussels (Nicolas) = live acceptance test — real URL, real pin flip, embed on openfab.be validates end-to-end delay
 
-**Demo critical path:** Epic 1 → Epic 0 → Epic 2 → Epic 4 (+ Epic 5 as rolling polish)
-**Parallel post-demo:** Epic 3 // Epic 6
-**Reserved post-demo side quest:** Epic 7
+**Demo critical path:** Epic 1 → Epic 0 → Epic 2 → Epic 3 → Epic 4 (+ Epic 5 as rolling polish)
+**Parallel non-blocking:** Epic 4b (magic link) // Epic 6 (NL bot) — neither blocks demo
+**Reserved post-demo side quest:** Epic 7 (🟢 open-now presence layer)
+
+**Key dependency:** Epic 4 (operator dashboard) requires Epic 3's raw snapshot files (`/data/snapshots/{id}/latest.json`) and status graph (`<urn:mak:status>`). Story sequencing within Epic 3 must deliver these before Epic 4 stories begin.
 
 ---
 
@@ -725,112 +735,170 @@ So that I can trust what the map shows me and know exactly what to improve in my
 
 ---
 
-## Epic 4: Network Admin Fleet Health Dashboard
+## Epic 4: Operator Observability Dashboard
 
-Luca (VOW network admin) opens `admin.*`, reads fleet state at a glance, drills into any space, dispatches nudges, exports data for grant reporting, and reviews the audit log. The RFF mockup dataset populates stale/broken/aging states for demo richness. A demo toggle keeps real and mockup data cleanly separated.
+Nicolas (MOM infrastructure operator) opens `/admin`, reads system health at a glance (Oxigraph status, ingestion process, reachable count), scans the space registry table for failures, and drills into any space for a raw/ingested/displayed inspection panel. This is pipeline observability — the tool that proves the system isn't lying. Luca (VOW) uses the public health map toggle; no admin access needed.
 
 **Auth:** shared password from `.env` via nginx basic auth (FR43, NFR-S1). No login UI to build.
+**Depends on:** Epic 3 raw snapshots at `/data/snapshots/{id}/latest.json` and `<urn:mak:status>` graph.
 
 ---
 
-### Story 4.1: Fleet Health Overview — Status Counts + Sparkline
+### Story 4.1: System Health Strip — Three Status Pills
 
-As a network admin,
-I want to open the admin dashboard and immediately see the health state of the entire endpoint fleet — counts by status and a 7-day activity sparkline,
-So that I can answer "how many spaces are confirmed?" in under 10 seconds without clicking anything.
+As the MOM operator,
+I want to open `/admin` and immediately see whether Oxigraph is up, the ingestion process is running, and how many spaces are reachable,
+So that I can read the system state in under 5 seconds and know whether anything needs attention.
 
 **Acceptance Criteria:**
 
 **Given** the admin subdomain is open and the shared password has been entered
-**When** `admin/index.html` loads
-**Then** it queries `GET /sparql/query` with a SPARQL SELECT aggregating counts by `mak:healthStatus` across all spaces (excluding mock graph unless demo toggle is on)
-**And** displays a status summary bar with five labelled counts: Confirmed 🔵 / Seeded ⚪ / Stale (dashed) / Broken 🔴 / Closed — each count is a clickable filter
-**And** displays a 7-day sparkline of ingestion events (successful fetches per day) queried from `heartbeat_log` via `GET /scheduler/metrics`
-**And** below the summary, a paginated table of all spaces shows: name, network, status badge, last fetched timestamp, consecutive failure count — sortable by each column
-**And** the page auto-refreshes the counts every 60 seconds without a full page reload (fetch + DOM update)
-**And** the zine aesthetic from the public map is carried over: `--paper`, `--ink`, `--accent` tokens, Caveat headings, JetBrains Mono data fields — the admin page looks like it belongs to the same product
+**When** `admin.html` loads
+**Then** a FastAPI endpoint `GET /admin/api/status` is called, assembling:
+  - Oxigraph health: `ASK {}` query via `sparql_client.run_select()` → LIVE (green) / DOWN (red)
+  - Ingestion heartbeat: last-modified timestamp on a heartbeat marker file written by the scheduler after each cycle → RUNNING (green) / IDLE Nh (amber, N = hours since last run) / STALLED (red, > configured threshold)
+  - Spaces reachable: count of spaces with `mak:probeResult "ok"` vs total in `<urn:mak:status>` → "603 / 606" (green if ratio above threshold, amber otherwise)
+**And** three status pills are rendered at the top of the page: `● Oxigraph LIVE · ● Ingestion IDLE (4h) · ● Spaces reachable 603/606`
+**And** a "Last checked: N minutes ago" timestamp shows when `/admin/api/status` last ran (auto-refreshes every 60s without full page reload)
+**And** if Oxigraph is DOWN, the pill is red and all other data on the page shows "— unavailable" rather than stale/incorrect data
 **And** all data is operational metrics only — no raw endpoint payloads, no coordinator identifiers beyond what's public on the map (NFR-S6)
 
 ---
 
-### Story 4.2: Per-Space Drill-Down — Fetch History, Error Log, Manual Re-fetch
+### Story 4.2: Space Registry Table
 
-As a network admin,
-I want to click any space in the fleet table and see its full fetch history, last diff summary, and error details — and trigger a manual re-fetch if needed,
-So that I can diagnose a broken space and act on it in under 2 minutes (the Journey 3 success metric).
-
-**Acceptance Criteria:**
-
-**Given** the admin dashboard is showing the fleet table (Story 4.1)
-**When** the admin clicks a space row
-**Then** a detail panel expands (or slides in as a right drawer, same pattern as public map) showing:
-- Space name, URI, current status badge, endpoint URL
-- Fetch history: last 10 fetches as a timeline — date, HTTP status, latency ms, outcome (ok / changed / error / timeout)
-- Last diff summary: what changed between the last two snapshots ("name updated", "hours changed", "schema field added", "no change") — queried from Oxigraph snapshot comparison
-- Error log: last 3 errors with category in plain language — "404 Not Found", "Connection timeout (>60s)", "Schema missing required field: schema:geo", "CORS block" — never raw HTTP response body
-- Oxigraph sync status: "In sync" / "Pending update" / "Sync error" (FR32)
-**And** a "Re-fetch now" button triggers an immediate call to `tasks/heartbeat.py` for that space's URI, shows a spinner, then refreshes the detail panel with the new result (FR31)
-**And** if the re-fetch succeeds and status changes (e.g. broken → confirmed), the fleet table count updates without a full page reload
-**And** all fetch history data comes from `heartbeat_log` SQLite table via `GET /scheduler/metrics?space_uri={uri}`
-
----
-
-### Story 4.3: Coordinator Nudge Dispatch
-
-As a network admin,
-I want to send a nudge to a coordinator whose space is stale or broken — with one click, no copy-pasting,
-So that recovery is initiated immediately without switching to email or Mattermost.
+As the MOM operator,
+I want a table of all registered spaces with their endpoint URL, last probe timestamp, and probe result,
+So that I can scan for failures at a glance and click into any space that needs investigation.
 
 **Acceptance Criteria:**
 
-**Given** the per-space detail panel is open (Story 4.2) and the space status is stale, broken, or aging
-**When** the admin clicks "Send nudge"
-**Then** a confirmation dialog shows the nudge content: coordinator contact (space-level email or webform URL from Oxigraph, never a personal email), the error summary, and a pre-filled recovery link back to the "Add your URL" drawer with the space URI pre-selected
-**And** confirming dispatches the nudge via `tasks/notify_dispatch.py` (writes `mak:pendingNotification` triple to Oxigraph queue, dispatch worker sends)
-**And** after dispatch, the detail panel shows: "Nudge sent {timestamp}" and the "Send nudge" button is disabled for 24h (prevents spam — checked via `mak:dispatched` triple timestamp)
-**And** the action is written to the admin audit log: `{ action: "nudge_dispatched", space_uri, admin: "shared", timestamp }` (FR33b)
-**And** for the demo: if the space has no contact address (RFF mockup spaces may be synthetic), the button shows "No contact address — add manually" with a disabled state and a plain explanation, never a silent failure
+**Given** the system health strip is loaded (Story 4.1) and `<urn:mak:status>` contains space probe records
+**When** the admin page renders below the health strip
+**Then** a SPARQL SELECT over `<urn:mak:status>` builds a table with columns: space name, endpoint URL, last probe timestamp, probe result (HTTP status or error category)
+**And** rows with non-200 probe results have a muted red background — the only colour used to signal failure
+**And** the table is sortable by last probe timestamp (default: most recently failed first) and by probe result
+**And** a text filter input narrows rows by space name or endpoint URL substring (client-side, no re-query)
+**And** each row is clickable, opening the inspection panel (Story 4.3)
+**And** a "Re-probe now" button per row triggers an immediate `tasks/heartbeat.py` fetch for that space, shows a spinner, and refreshes the row result on completion (FR31)
+**And** the re-probe action is written to the operator action log: `{ action: "reprobe_triggered", space_uri, timestamp }` (FR33b)
 
 ---
 
-### Story 4.4: Demo Data Toggle — Include/Exclude RFF Mockup Graph
+### Story 4.3: Per-Space Inspection Panel — Raw / Ingested / Displayed
 
-As a network admin running a demo,
-I want to toggle RFF mockup data in and out of the dashboard view,
-So that I can show grant reviewers a realistically populated health view while keeping the real pilot data separate and uncorrupted.
+As the MOM operator,
+I want to click a space and see three columns side-by-side: the raw JSON from the last fetch, the ingested triples from Oxigraph, and what actually renders on the public card,
+So that I can identify exactly where a discrepancy enters the pipeline without grepping logs.
+
+**Acceptance Criteria:**
+
+**Given** the space registry table is showing (Story 4.2)
+**When** the operator clicks a space row
+**Then** an inspection panel opens (right drawer or accordion below the row) with three columns:
+
+**Column 1 — RAW FETCH:**
+- Reads `/data/snapshots/{space_id}/latest.json` from disk (written by Epic 3 pipeline)
+- Displays raw JSON in a monospaced block with fetch timestamp and endpoint URL
+- Shows fetch status: "responded" or "unreachable (last known {timestamp})"
+- This is the Zone 3 source of truth — verbatim, unmodified
+
+**Column 2 — INGESTED:**
+- Runs `SPARQL DESCRIBE <urn:mak:space/{id}>` via `/sparql/query`
+- Displays the result as a readable key→value list (not raw Turtle): predicate label → value
+- Shows triple count and last-ingested timestamp
+
+**Column 3 — CARD DISPLAY:**
+- Runs a SELECT query fetching the exact fields used by `app.js` to render a space card
+- Displays as a mini card preview: name, address, status, hours, specialties
+- Any field absent from the card but present in Column 1 is flagged with ⚠ "not displayed"
+
+**And** mismatches between Column 1 and Column 2 (fields present in raw JSON but absent from ingested triples) are flagged with ⚠ inline — these signal transformation gaps in `tasks/ingest.py`
+**And** mismatches between Column 2 and Column 3 (triples ingested but not rendered) are flagged with ⚠ inline — these signal display mapping gaps in `app.js`
+**And** the panel is the primary diagnostic tool — no raw log access, no SSH required to diagnose a pipeline discrepancy
+
+---
+
+### Story 4.4: Export Registry + Operator Action Log
+
+As the MOM operator,
+I want to export the space registry and review a log of all operator actions taken through the dashboard,
+So that I can produce a dataset snapshot and audit what was done manually.
 
 **Acceptance Criteria:**
 
 **Given** the admin dashboard is loaded
-**When** the admin activates the "Show demo data (RFF mockup)" toggle
-**Then** all SPARQL queries append `FROM NAMED <urn:mak:mock/rff-health>` to include the mockup graph alongside real space graphs
-**And** the fleet counts update to reflect the combined dataset (real VOW + Openfab + RFF mockup)
-**And** all RFF mockup spaces are visually tagged in the table with a "demo" badge so the admin can distinguish them at a glance
-**And** when the toggle is off (default), all queries use only `<urn:mak:space/*>` and `<urn:mak:status>` — the mockup graph is completely excluded
-**And** the toggle state is stored in `sessionStorage` (survives page refresh within the same session, resets on new session)
-**And** the toggle is labelled clearly: "Demo data ON — showing RFF mockup spaces" / "Demo data OFF — showing real spaces only" — no ambiguity about what is real
+**When** the operator clicks "Export registry"
+**Then** a SPARQL SELECT queries all spaces and returns: space name, URI, endpoint URL, status, last probe timestamp, probe result — exported as CSV and JSON download options (FR33)
+**And** the export excludes: raw endpoint payloads, coordinator contact details not already public on the map (NFR-S6)
+
+**Given** the operator action log section is open
+**When** the operator views it
+**Then** it displays a reverse-chronological list: timestamp, action type (reprobe_triggered / export_downloaded), space URI or "all", result (FR33b)
+**And** the log is append-only — no delete, no edit
+**And** the export action itself is recorded: `{ action: "export_downloaded", format, space_count, timestamp }`
 
 ---
 
-### Story 4.5: Export Registry + Audit Log
+## Epic 4b: Magic Link Coordinator Recovery *(parallel non-blocking)*
 
-As a network admin,
-I want to export the endpoint registry and review the admin audit log,
-So that I can produce grant-reporting numbers and maintain accountability for all admin actions.
+When a space goes stale, the coordinator receives a templated email with a magic link — YES refreshes their pin, NO gracefully archives the space with GDPR closure. Parallel to Epic 4; non-demo-blocking. Depends on Epic 3's notification queue and status graph. Stories originally numbered 3.3–3.4.
+
+**Auth:** none — magic links are publicly accessible by design (token-secured, single-use).
+**Depends on:** Epic 3 (notification queue in `<urn:mak:notifications>`, status transitions from Story 3.2).
+
+---
+
+### Story 4b.1: Magic Link Generation + Link-Handler Validation
+
+*(Previously Story 3.3 — content unchanged, re-sequenced to parallel epic)*
+
+As a coordinator receiving a nudge email,
+I want a single-click link that either confirms my space is still active or gracefully closes it,
+So that recovery requires no login, no form, and no context-switching — just one honest click.
 
 **Acceptance Criteria:**
 
-**Given** the admin dashboard is loaded
-**When** the admin clicks "Export registry"
-**Then** a SPARQL SELECT queries confirmed spaces (optionally including mockup if toggle is on) and returns: space name, URI, endpoint URL, status, last fetched, network tag — exported as both CSV and JSON download options (FR33)
-**And** the export excludes: raw endpoint payloads, coordinator notification emails, any field not already public on the map (NFR-S6)
-**And** mock spaces are included in the export only if the demo toggle is on, and are flagged with a `source: mock-rff` column so they're distinguishable in the exported file
+**Given** `tasks/magic_link.py` exists and `LINK_SECRET` is set in `.env`
+**When** a magic link is generated for a space
+**Then** the token is `base64url(HMAC-SHA256(uuid + expiry + space_uri, LINK_SECRET))` — stored as hash only in Oxigraph, never in plaintext (AR-MLNK2)
+**And** the token has a 72h TTL written as `mak:expiresAt` triple
+**And** `GET /claim/{token}?action=yes` on `mak-link-handler`:
+- Validates token exists in Oxigraph (`ASK` query)
+- Validates token not expired
+- Validates token not already consumed
+- On valid: writes `mak:consumed true`, resets timer, sets status `mak:confirmed`, returns a confirmation HTML page ("Your space is live again 🔵")
+**And** `GET /claim/{token}?action=no`:
+- Same validation steps
+- On valid: marks space `mak:closed`, removes PII contact fields, writes `mak:closedAt`, returns a graceful closure page
+**And** a second click on any consumed token returns: "This link has already been used." — no silent failure
+**And** an expired token returns: "This link expired {N} hours ago — contact your network admin for a new one."
 
-**Given** the audit log section is open
-**When** the admin views it
-**Then** it displays a reverse-chronological list of all admin actions: timestamp, action type (nudge_dispatched / refetch_triggered / export_downloaded), space URI or "all", result (success / error) (FR33b)
-**And** the audit log is append-only — no delete, no edit; displayed entries match what's in Oxigraph exactly
-**And** the export action itself is recorded in the audit log: `{ action: "export_downloaded", format: "csv"|"json", space_count, timestamp }`
+---
+
+### Story 4b.2: Coordinator Email Notification with Pre-filled Recovery Link
+
+*(Previously Story 3.4 — content unchanged, re-sequenced to parallel epic)*
+
+As a coordinator whose space endpoint has gone stale,
+I want to receive an email that tells me exactly what's wrong and gives me a one-click path to fix it,
+So that I can recover my pin without needing to remember what a JSON endpoint is or where to go.
+
+**Acceptance Criteria:**
+
+**Given** a space transitions to `mak:aging` or `mak:broken` (Story 3.2) and has a space-level contact address in Oxigraph
+**When** the dispatch worker reads `<urn:mak:notifications>` queue
+**Then** it generates a magic link token (Story 4b.1), fills the notification template, and dispatches an email containing:
+- Plain-language subject: "Your space [Name] on Maps of Making needs attention"
+- Error summary: what happened and when (last successful fetch date, error category)
+- YES link: "My space is still active — refresh my pin" → `/claim/{token}?action=yes`
+- NO link: "My space has closed — remove it from the map" → `/claim/{token}?action=no`
+- Link expiry notice: "These links expire in 72 hours"
+- Footer: link to the space's public map pin and the network admin contact
+**And** delivery failure retries 3× with progressive backoff (1h, 6h, 24h); after 3 failures, a `mak:escalated` triple is written (AR-MLNK3)
+**And** if the space has no contact address, the notification is skipped and an admin alert is written instead
+**And** the dispatch action is written to the operator action log: `{ action: "notification_dispatched", space_uri, reason, timestamp }`
+**And** the `mak:dispatched` triple timestamp prevents re-dispatch within 24h for the same space
 
 ---
 
@@ -947,11 +1015,39 @@ So that the demo map carries only UI that earns its cognitive load — nothing i
 
 ---
 
-## Epic 3: Endpoint Health, Stale Detection & Magic-Link Recovery
+## Epic 3: Ingestion Pipeline + Endpoint Health + Stale Detection
 
-*(Post-demo priority — nice-to-have for demo, must-have for pilot)*
+*(Prerequisite for Epic 4 — must ship before operator dashboard stories begin)*
 
-The heartbeat scheduler runs its full cycle. When a space goes stale the coordinator receives a magic-link email — YES refreshes their pin, NO gracefully archives the space with GDPR closure. This is the self-healing layer that keeps the federated model trustworthy without admin intervention.
+The full ingestion pipeline becomes real: SpaceAPI JSON fetched from space endpoints, raw snapshot written to disk before any transformation, then transformed to MOM JSON-LD via the explicit ontology mapping layer (ADR-015), and ingested into Oxigraph. Heartbeat scheduler runs the full 6h cycle producing the status graph Epic 4 reads from. Magic-link coordinator recovery is a separate parallel epic (4b).
+
+---
+
+### Story 3.0: Ingestion Transformation Layer — SpaceAPI JSON → MOM JSON-LD
+
+As the MOM pipeline,
+I want an explicit transformation step that maps SpaceAPI JSON fields to MOM JSON-LD before anything is written to Oxigraph,
+So that the boundary between "what the space published" and "what we store" is a named, auditable step — and the raw source is preserved on disk as a trust receipt.
+
+**Acceptance Criteria:**
+
+**Given** a registered endpoint URL exists in Oxigraph with `mak:confirmed` or `mak:seeded` status
+**When** `tasks/heartbeat.py` fetches the endpoint
+**Then** the raw JSON response is written to `/data/snapshots/{space_id}/latest.json` immediately on receipt, before any parsing or transformation (this is the Zone 3 source and Epic 4 inspection panel source)
+**And** a fetch timestamp is written alongside: `/data/snapshots/{space_id}/meta.json` with `{ fetched_at, http_status, etag, endpoint_url }`
+**And** the payload is normalized before comparison: ephemeral fields (e.g. `lastchange` unix timestamps that tick every request) are stripped, arrays are sorted — this prevents false-positive "changed" detections
+**And** if the normalized payload matches the stored snapshot hash: only the `fetched_at` timestamp is updated; Oxigraph is NOT touched; outcome logged as `"no_change"`
+**And** if the normalized payload differs: `tasks/ingest.py` is called with the raw JSON
+
+**Given** `tasks/ingest.py` is called with raw SpaceAPI JSON
+**When** the transformation runs
+**Then** each SpaceAPI field is mapped to its MOM JSON-LD equivalent using the explicit field mapping from ADR-015 (implemented as a mapping table in `tasks/ingest.py`, not ad-hoc logic)
+**And** `mom:required` fields (`space`, `url`, `location.lat/lon`) that are missing cause a hard reject with outcome `"schema_invalid"` logged — no partial ingestion
+**And** `mom:card` fields that are missing are ingested with a structured warning logged: `"card_field_missing: {field}"` — never silently dropped
+**And** `mom:extended` fields present in the JSON are mapped to their MOM predicates; absent fields are silently skipped (they're optional)
+**And** the resulting MOM JSON-LD is written to `<urn:mak:space/{id}>` (current) and `<urn:mak:space/{id}/{date}>` (append-only snapshot) via SPARQL UPDATE
+**And** every fetch decision is logged to `heartbeat_log`: `space_uri`, `checked_at`, `outcome` (`ok` / `changed` / `no_change` / `schema_invalid` / `error` / `timeout`) — never silently dropped
+**And** the snapshot path convention is exactly `/data/snapshots/{space_id}/latest.json` — this path is pinned here and referenced in Epic 4 stories
 
 ---
 
@@ -975,28 +1071,37 @@ So that the federated dataset stays fresh without any manual intervention and wi
 
 ---
 
-### Story 3.2: Freshness State Machine — Stale / Broken / Closed Transitions
+### Story 3.2: Freshness Lifecycle — Aging / Zombie / Dead Transitions
 
 As a maker browsing the map,
-I want pin states to reflect the true health of each space's endpoint over time,
-So that a pin I see as 🔵 confirmed is genuinely reachable — and stale or broken pins are visibly distinct before I rely on their data.
+I want pin states to reflect the true freshness of each space's endpoint over time,
+So that a pin I see as 🔵 confirmed is genuinely reachable — and aging/zombie/dead pins are visibly distinct before I rely on their data.
 
 **Acceptance Criteria:**
 
-**Given** the heartbeat scheduler is running (Story 3.1) and a space accumulates consecutive fetch failures
+**Given** the heartbeat scheduler is running (Story 3.1) and a space's endpoint goes unreachable or its data stops updating
 **When** the scheduler job runs after each cycle
-**Then** it writes updated status triples to `<urn:mak:status>` based on the failure count thresholds from `config.yaml`:
-- `consecutiveFailures >= stale_threshold` → `mak:operationalState mak:stale`, `mak:visibility "public"` (dashed pin)
-- `consecutiveFailures >= broken_threshold` → `mak:operationalState mak:broken`, `mak:visibility "public"` (🔴 pin)
-- `consecutiveFailures >= closed_threshold` OR space JSON self-reports `status: closed` → `mak:operationalState mak:closed`, PII contact fields removed from Oxigraph, `mak:closedAt {timestamp}` written, pin retained as historical record (FR25b, NFR-C1)
-**And** when a previously stale/broken space returns a successful fetch, status resets to `mak:confirmed` immediately in the same cycle
-**And** all threshold values (`stale_threshold`, `broken_threshold`, `closed_threshold`) are read from `config.yaml` with documented defaults (NFR-R3)
+**Then** it writes updated status triples to `<urn:mak:status>` based on time since last successful fetch, read from `config.yaml`:
+- `time_since_update > aging_threshold` (default 30d) → `mak:operationalState mak:aging` (dashed pin, amber in health map)
+- `time_since_update > zombie_threshold` (default 90d) → `mak:operationalState mak:zombie` (dashed pin, orange)
+- `time_since_update > dead_threshold` (default 180d) → `mak:operationalState mak:dead` (removed from default map view, retained in Oxigraph for admin query)
+- `consecutiveFailures >= broken_threshold` → `mak:operationalState mak:broken`, `mak:visibility "public"` (🔴 pin) — distinct from time-based aging
+- Space JSON self-reports `status: closed` OR N consecutive fetch failures → `mak:operationalState mak:closed`, PII contact fields removed from Oxigraph, `mak:closedAt {timestamp}` written, pin retained as historical record (FR25b, NFR-C1)
+**And** when a previously aging/broken space returns a successful fetch with changed data, the timer resets and status returns to `mak:confirmed` immediately
+**And** all threshold values are read from `config.yaml` with documented defaults — never hardcoded (NFR-R3)
 **And** every status write is idempotent — uses `ASK` before `INSERT`, never blind overwrites (AR-CONV4)
 **And** `materialize_geojson.py` is called after status updates so the map reflects the new state within minutes
+**And** Epic 7 note: when a webhook ping arrives for a space, the `time_since_update` timer resets — this is the mechanism that removes the need to edit the JSON file monthly just to stay "confirmed". Schema slot reserved; implementation deferred to Epic 7.
 
 ---
 
-### Story 3.3: Magic Link Generation + Link-Handler Validation
+---
+
+> **Stories 3.3 and 3.4 (magic link generation + coordinator email) are moved to Epic 4b** — parallel non-blocking epic. See Epic 4b below.
+
+---
+
+### Story 3.3 → Epic 4b: Magic Link Generation + Link-Handler Validation
 
 As a coordinator receiving a nudge email,
 I want a single-click link that either confirms my space is still active or gracefully closes it,
