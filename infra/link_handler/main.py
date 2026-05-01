@@ -10,36 +10,18 @@ import httpx
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, ConfigDict
 
+from utils import MOM, SCHEMA, _ALLOWED_SCHEMES, _sparql_str, _sparql_iri, _slug
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Maps of Making Link Handler")
 
 _TOKEN_RE = re.compile(r'^[A-Za-z0-9_\-]{8,255}$')
-_ALLOWED_SCHEMES = {"http", "https"}
 
 OXIGRAPH_ENDPOINT = os.getenv("OXIGRAPH_ENDPOINT", "http://oxigraph:7878")
 GEOJSON_OUTPUT = os.getenv("GEOJSON_OUTPUT", "/app/web_data/spaces.geojson")
 
-MOM = "https://nicolasdb.github.io/mapsofmaking_ontology/ns#"
-SCHEMA = "https://schema.org/"
-
-
-def _sparql_str(s: str) -> str:
-    """Escape a string for use in a SPARQL double-quoted literal."""
-    return s.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n").replace("\r", "\\r")
-
-
-def _sparql_iri(url: str) -> Optional[str]:
-    """Validate and return a safe IRI string, or None if invalid."""
-    from urllib.parse import urlparse
-    parsed = urlparse(url)
-    if parsed.scheme not in _ALLOWED_SCHEMES:
-        return None
-    # IRIs must not contain unencoded < or >
-    if "<" in url or ">" in url or " " in url:
-        return None
-    return url
 
 # Same SELECT query as scripts/materialize_geojson.py — kept in sync intentionally
 _SPARQL_SELECT = """PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
@@ -141,7 +123,7 @@ class SpaceAPISchema(BaseModel):
     """Accepts both mom JSON-LD (`schema:name`, `schema:geo.schema:latitude`)
     and SpaceAPI v14 flat shape (`space`, `location.lat/lon`). One document,
     two validators — see web/test-fixtures/SKILL.md."""
-    model_config = ConfigDict(populate_by_name=True, extra="allow")
+    model_config = ConfigDict(populate_by_name=True, extra="allow", validate_default=True)
 
     name: Optional[str] = Field(None, alias="schema:name")
     plain_name: Optional[str] = Field(None, alias="name")
@@ -156,6 +138,19 @@ class SpaceAPISchema(BaseModel):
     logo: Optional[str] = None
     api_compatibility: Optional[List[str]] = None
     contact: Optional[dict] = None
+    # Full SpaceAPI v14 tier
+    state: Optional[str] = None  # "open", "closed", "unknown"
+    networks: Optional[List[str]] = None
+    tags: Optional[List[str]] = Field(None, alias="schema:knowsAbout")
+    plain_tags: Optional[List[str]] = Field(None, alias="knowsAbout")
+    # MOM geolocation enrichment
+    geolocation_fidelity: Optional[str] = Field(None, alias="mom:geolocationFidelity")
+    geolocation_note: Optional[str] = Field(None, alias="mom:geolocationNote")
+    # Extended address fields (AC1 extended tier)
+    address_locality: Optional[str] = Field(None, alias="schema:addressLocality")
+    postal_code: Optional[str] = Field(None, alias="schema:postalCode")
+    street_address: Optional[str] = Field(None, alias="schema:streetAddress")
+    address_country: Optional[str] = Field(None, alias="schema:addressCountry")
 
     @property
     def resolved_name(self) -> Optional[str]:
@@ -184,6 +179,17 @@ class SpaceAPISchema(BaseModel):
         if self.location and self.location.lon is not None:
             return self.location.lon
         return None
+
+    @property
+    def resolved_tags(self) -> List[str]:
+        raw = self.tags or self.plain_tags or []
+        if isinstance(raw, str):
+            return [raw]
+        return list(raw)
+
+    @property
+    def resolved_geolocation_fidelity(self) -> Optional[str]:
+        return self.geolocation_fidelity
 
 
 def _extract_name(data: dict) -> Optional[str]:
@@ -362,10 +368,6 @@ async def _fetch_and_validate(url: str) -> dict:
     elif lat is None or lon is None:
         result["coords_error"] = "Missing coordinates — add schema:geo with schema:latitude and schema:longitude"
     return result
-
-
-def _slug(name: str) -> str:
-    return re.sub(r'-+', '-', re.sub(r'[^a-z0-9]+', '-', name.lower())).strip('-')
 
 
 def _build_sparql_update(graph_uri: str, space_uri: str, name: str, lat: float, lon: float,
@@ -547,7 +549,13 @@ async def register_url(req: UrlRequest):
     graph_uri = f"urn:mak:space/{slug}"
     space_uri = f"urn:mak:space/{slug}"
 
-    sparql_update = _build_sparql_update(graph_uri, space_uri, name, lat, lon, req.url, data)
+    from transformer import transform_to_sparql
+    try:
+        schema_obj = SpaceAPISchema.model_validate(data)
+        sparql_update, _ = transform_to_sparql(schema_obj, {"endpoint_url": req.url, "space_id": slug})
+    except Exception as e:
+        logger.exception("transform_to_sparql failed, falling back to legacy builder: %s", e)
+        sparql_update = _build_sparql_update(graph_uri, space_uri, name, lat, lon, req.url, data)
 
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:

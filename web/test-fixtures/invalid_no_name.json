@@ -1,0 +1,7 @@
+{
+  "schema:geo": {
+    "schema:latitude": 50.5,
+    "schema:longitude": 4.5
+  },
+  "schema:url": "https://example.com"
+}

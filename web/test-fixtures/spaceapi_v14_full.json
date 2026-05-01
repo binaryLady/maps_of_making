@@ -1,0 +1,26 @@
+{
+  "space": "TestFab",
+  "url": "https://testfab.example.com",
+  "logo": "https://testfab.example.com/logo.png",
+  "location": {
+    "lat": 52.52,
+    "lon": 13.405,
+    "address": "Unter den Linden 1, 10117 Berlin"
+  },
+  "contact": {
+    "email": "info@testfab.example.com",
+    "twitter": "@testfab",
+    "mastodon": "@testfab@chaos.social"
+  },
+  "opening_hours": "Mo-Fr 09:00-21:00; Sa 10:00-18:00",
+  "state": {
+    "open": true,
+    "message": "We are open!"
+  },
+  "description": "A community-operated makerspace in central Berlin.",
+  "api_compatibility": ["14"],
+  "networks": ["Hackerspaces.org"],
+  "tags": ["3d-printing", "electronics", "laser-cutting", "woodworking"],
+  "mom:geolocationFidelity": "exact",
+  "mom:geolocationNote": "GPS-verified entrance coordinates"
+}

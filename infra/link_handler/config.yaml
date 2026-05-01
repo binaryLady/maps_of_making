@@ -1,0 +1,11 @@
+operational_state:
+  aging_days_threshold: 30
+  zombie_days_threshold: 90
+  zombie_failures_threshold: 3
+  dead_failures_threshold: 5
+
+bandwidth:
+  heartbeat_log_path: "/app/tasks/heartbeat_log.db"
+  gap_log_path: "/app/tasks/gap_log.txt"
+
+activity_map_path: "/app/scripts/activity_map.yaml"
