@@ -735,6 +735,29 @@ So that I can trust what the map shows me and know exactly what to improve in my
 
 ---
 
+### Story 3.0-A: Space Profile Card — UX Refinement
+
+*Added: 2026-05-04. Post-3.0 UX polish pass: profile naming, freshness signals, contact pictos, logo, share CTA, manual fetch stub, and timing fix. Implementation file: `_bmad-output/implementation-artifacts/3-0-A-space-profile-card-ux-refinement.md` (authoritative).*
+
+As Luca (coordinator) and as a visitor,
+I want the space profile to clearly reflect what the endpoint provides, let me share it easily, and signal when it was last updated,
+So that the card earns trust without adding friction.
+
+**Key ACs (see story file for full detail):**
+- Drawer renamed "Space Profile" (label-only; element ids unchanged)
+- Post-registration timing: 8s if unlock guidance present, 2s if none
+- Zone 1: logo thumbnail inline with name; "Last updated: {timeAgo}" replaces freshness banner; share picto CTA (desktop only)
+- Zone 2: contact channel pictos with click-to-copy; subset nudge ("What your data unlocks") now permanent, field-by-field; embed CTA moved here from below Zone 3
+- Zone 3: raw JSON flush (no side padding); "Last fetched: {local datetime}" precise header; manual fetch button rendered disabled (endpoint ships in Story 3.1)
+- Fetch history section removed
+- GeoJSON surfaces: `logo`, `contact` (JSON string), `last_updated`
+- `classify_subset()` updated to identify single lowest-effort next field (not a list)
+
+**Depends on:** Story 2.7 (zones, `/raw` endpoint, Pydantic subsets)
+**Deferred to Story 3.1:** `POST /api/heartbeat-space/{id}` endpoint + manual fetch button activation
+
+---
+
 ## Epic 4: Operator Observability Dashboard
 
 Nicolas (MOM infrastructure operator) opens `/admin`, reads system health at a glance (Oxigraph status, ingestion process, reachable count), scans the space registry table for failures, and drills into any space for a raw/ingested/displayed inspection panel. This is pipeline observability — the tool that proves the system isn't lying. Luca (VOW) uses the public health map toggle; no admin access needed.
@@ -1051,11 +1074,15 @@ So that the boundary between "what the space published" and "what we store" is a
 
 ---
 
-### Story 3.1: Heartbeat Scheduler — Periodic 6h Fetch Cycle
+### Story 3.1: Heartbeat Scheduler — Periodic Fetch Cycle + Manual Trigger
 
 As the system,
-I want a scheduled job that fetches all registered endpoint URLs every 6 hours using conditional GET,
+I want a scheduled job that fetches all registered endpoint URLs every 10 minutes using conditional GET,
 So that the federated dataset stays fresh without any manual intervention and without hammering space servers unnecessarily.
+
+As Luca (coordinator),
+I want a "Refresh from endpoint" button on the space profile,
+So that I can force an immediate update after editing my JSON without waiting for the next cycle.
 
 **Acceptance Criteria:**
 

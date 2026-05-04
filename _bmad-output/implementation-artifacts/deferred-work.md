@@ -107,3 +107,12 @@ Generating a real openfab.jsonld against the `space-jsonld-generator` skill expo
 - **detect_diff json.dumps silent fallback for non-serializable values** — `transformer.py:152` — sort key raises TypeError on datetime/set values, silently falls back to unsorted list (no diff reported for those elements). Current callers produce only string values from SPARQL results. → Future if detect_diff is reused in other contexts
 - **test_transform_idempotent snapshot URI fragile at UTC midnight** — `test_transformer.py:279` — `snap1 == snap2` assertion fails if test runs across date boundary. Use freezegun or inject fixed date. → Test polish
 - **Negative age_days from future-dated Last-Modified always returns "confirmed"** — `transformer.py:classify_operational_state` — clock skew on remote server produces negative age_days; all thresholds missed, silently returns "confirmed". Undocumented but acceptable. → Future monitoring story
+
+## Deferred from: UX design session for 3-0-A-space-profile-card-ux-refinement (2026-05-04)
+
+- **Manual fetch button wired (disabled stub in 3.0-A)** — Zone 3 "↺ Refresh from endpoint" button renders disabled pending `POST /api/heartbeat-space/{space_id}` endpoint. Full implementation (click handler, cooldown, Zone 3 re-render) → Story 3.1 heartbeat scheduler.
+- **True change-detection for "last updated"** — `mom:lastUpdated` written at every successful registration/heartbeat write; does not diff snapshot content. "Last updated" = "last time we wrote to Oxigraph for this space", which is good enough for now. Genuine change detection (only update timestamp when content differs) → Epic 7.
+- **`state` open/closed dynamic signal → green marker** — SpaceAPI `state` object (dynamic open/closed + lastchange) detected but not yet acted on. If present, could enable green marker and freshness sensing for demo. → Epic 7.
+- **Space name collision / duplicate space resolution** — Two unrelated spaces sharing the same name (e.g. OpenFab Brussels vs OpenFab Istanbul) are currently disambiguated only by endpoint URL. No UI for collision detection or coordinator disambiguation. → Pilot phase.
+- **Endpoint URL swap / trust attack** — A bad actor could register an existing seeded space's slug with a different endpoint URL, replacing legitimate data. No auth or ownership verification at registration time. → Pilot phase security hardening.
+- **Rate limiting persistence across restarts** — Manual fetch cooldown (60s per space) stored in-memory dict; resets on container restart. → Epic 5 polish.
