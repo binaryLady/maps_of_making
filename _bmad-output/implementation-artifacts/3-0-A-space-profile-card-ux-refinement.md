@@ -192,7 +192,9 @@ OPTIONAL { ?spaceUri mom:lastUpdated ?lastUpdated }
 ```
 infra/
   link_handler/
-    main.py              ← contactJson + mom:lastUpdated writes
+    main.py              ← classify_subset() field-by-field refactor (AC4)
+                           _build_sparql_update() + transform_to_sparql(): contactJson + mom:lastUpdated writes (AC6)
+                           _SPARQL_SELECT: add logo, contactJson, lastUpdated optionals (AC6)
                            (POST /api/heartbeat-space/{id} → Story 3.1)
 
 scripts/
@@ -206,3 +208,187 @@ web/
                             post-registration timing conditional (8s / 2s)
   maps-of-making.html    ← drawer title → "Space Profile"
 ```
+
+---
+
+## Tasks / Subtasks
+
+- [ ] AC1 — Rename drawer to "Space Profile" in HTML
+  - [ ] `web/maps-of-making.html:518` — change `<h2>Detail</h2>` → `<h2>Space Profile</h2>`
+  - [ ] `web/maps-of-making.html:516` — change `aria-label="Space detail"` → `aria-label="Space profile"`
+
+- [ ] AC2 — Post-registration timing conditional
+  - [ ] `web/app.js:794` — change `"Opening your space card…"` → `"Opening your space profile…"`
+  - [ ] `web/app.js:800` — replace fixed `4000` with `unlockMsg ? 8000 : 2000`
+
+- [ ] AC3 — Zone 1: logo, share CTA, last_updated timestamp
+  - [ ] In `renderDetail()` (app.js:389): add logo `<img>` inline-left of `<h3>` in `.detail-hero`
+  - [ ] Add share CTA picto button in drawer header (left of close button); hidden on mobile
+  - [ ] Remove freshness banner block (`el('div', { class: 'freshness ...})` at app.js:409–412)
+  - [ ] Add `"Last updated: " + timeAgo(s.last_updated)` line in Zone 1 (below badges)
+
+- [ ] AC4 — Zone 2: contact pictos, subset nudge, embed CTA
+  - [ ] Remove fetch history section (`app.js:483–514`) entirely
+  - [ ] Remove embed button from below Zone 3 (`app.js:533–535`); move to bottom of Zone 2
+  - [ ] Add contact picto row using `s.contact` (render only if present)
+  - [ ] Add permanent "What your data unlocks" nudge section (confirmed/broken only, not seeded)
+  - [ ] Refactor `classify_subset()` in `infra/link_handler/main.py:235` for field-by-field nudge (see Dev Notes)
+
+- [ ] AC5 — Zone 3: padding, timestamp, disabled fetch button
+  - [ ] Remove left/right padding from `.json` `<pre>` element
+  - [ ] Replace `snapshot · ${result.snapshot_date}` tag with `"Last fetched: " + new Date(result.snapshot_date).toLocaleString()`
+  - [ ] Add disabled `<button>` below JSON block: `"↺ Refresh from endpoint"`, `disabled`, `title="Manual refresh available soon"`
+
+- [ ] AC6 — GeoJSON: surface logo, contact, last_updated
+  - [ ] `infra/link_handler/main.py` — `_SPARQL_SELECT` (line 27): add `OPTIONAL { ?spaceUri schema:logo ?logo }`, `OPTIONAL { ?spaceUri schema:contactJson ?contactJson }`, `OPTIONAL { ?spaceUri mom:lastUpdated ?lastUpdated }` to both UNION branches; add to `GROUP BY`
+  - [ ] `infra/link_handler/main.py` — `_binding_to_feature()` (line 434): map `logo` → `s.logo`, parse `contactJson` → `s.contact`, `lastUpdated` → `s.last_updated`
+  - [ ] `infra/link_handler/main.py` — `_build_sparql_update()` (line 373): add `schema:contactJson` and `mom:lastUpdated` triples
+  - [ ] `infra/link_handler/main.py` — `transform_to_sparql()` in transformer.py: add same triples
+  - [ ] `scripts/materialize_geojson.py` — add same three OPTIONAL clauses + `binding_to_space()` mapping
+
+- [ ] AC7 — Verify no regression
+  - [ ] Seeded space display: Zone 2 placeholder unchanged, no Zone 3
+  - [ ] Broken space display unchanged
+  - [ ] Mobile suppression: Zone 3, embed CTA, share CTA all hidden at `< 768px`
+  - [ ] Registration flow (`_onFetchUrl` → `register_url`) unchanged
+
+---
+
+## Dev Notes
+
+### `renderDetail()` — current structure to navigate safely
+
+Full function at `web/app.js:389–535`. Sections in order:
+
+1. **Hero** (`app.js:399–407`) — `el('div', { class: 'detail-hero' })` with `<h3>` name, `.where` address, `.badges` status/network
+2. **Freshness banner** (`app.js:409–412`) — `el('div', { class: 'freshness ...' })` → **DELETE entirely** (AC3 replaces with "Last updated" in hero)
+3. **Seeded CTA** (`app.js:414–425`) — keep unchanged
+4. **Zone 2 data card** (`app.js:426–442`) — currently Name / Website / Opening hours / Description as `<dl class="kv">`; keep structure, add contact pictos + subset nudge below it
+5. **Specialties** (`app.js:443–447`) — keep unchanged
+6. **Zone 3** (`app.js:449–481`) — currently has `snapshot · {date}` tag → replace with precise timestamp; add disabled button below `<pre>`
+7. **Fetch history** (`app.js:483–514`) — **DELETE entirely** (AC5)
+8. **Copy space link button** (`app.js:516–535`) — **REPLACE** with share CTA picto in header (AC3); remove this bottom button
+
+### Post-registration timing — exact lines
+
+- `app.js:772`: `const unlockMsg = reg.unlock_message;`
+- `app.js:794`: `'Opening your space card…'` → `'Opening your space profile…'`
+- `app.js:800`: `}, 4000);` → `}, unlockMsg ? 8000 : 2000);`
+
+### Drawer title — exact lines
+
+- `web/maps-of-making.html:516`: `aria-label="Space detail"` → `aria-label="Space profile"`
+- `web/maps-of-making.html:518`: `<h2>Detail</h2>` → `<h2>Space Profile</h2>`
+- HTML element `id="drawer-detail"` and all JS references to `'detail'` as drawer key — **DO NOT change** (AC1 spec: label-only, no refactor)
+
+### `classify_subset()` — field-by-field refactor
+
+Current implementation at `infra/link_handler/main.py:235` uses group checks:
+- `has_card = has_required AND url AND opening_hours`
+- Returns `"unlock_message": "Add website and opening hours"` even when one is already present
+
+AC4 requires single-field nudge: find the first missing field in tier order and suggest only that one. New logic:
+
+```python
+# mom:required tier → mom:card tier: check url first, then opening_hours
+if not schema.resolved_url:
+    next_unlock = "Add schema:url (website) to unlock the full detail card"
+elif not schema.resolved_opening_hours:
+    next_unlock = "Add schema:openingHours to unlock the full detail card"
+# mom:card → spaceapi:compatible: check api_compatibility first, then logo, then contact
+```
+
+Return shape stays identical (`subset`, `subset_score`, `unlock_message`, `next_subset`, `next_unlock`) — only the `unlock_message` / `next_unlock` strings change. All callers (`_fetch_and_validate`, Zone 2 permanent nudge) use `next_unlock`.
+
+### `_SPARQL_SELECT` in main.py vs materialize_geojson.py
+
+**Both SPARQL queries must be updated** — they are separate:
+- `infra/link_handler/main.py:27` — used by `_rematerialize_geojson()` (called after registration and heartbeat)
+- `scripts/materialize_geojson.py` SPARQL_QUERY — used by manual `make publish` runs
+
+Both feed the same `spaces.geojson`. Missing the update in either one causes `s.logo` / `s.contact` / `s.last_updated` to be absent from the GeoJSON intermittently depending on which path last ran.
+
+### `_build_sparql_update()` — new triples to add
+
+At `infra/link_handler/main.py:373`. Add alongside existing triples:
+
+```python
+contact_dict = schema.contact if hasattr(schema, 'contact') else None
+if contact_dict:
+    contact_json = json.dumps(contact_dict, separators=(',', ':'))
+    triples.append(f'  <{space_uri}> <{SCHEMA}contactJson> "{_sparql_str(contact_json)}"^^<http://www.w3.org/2001/XMLSchema#string> .')
+
+now_iso = datetime.now(timezone.utc).isoformat()
+triples.append(f'  <{space_uri}> <{MOM}lastUpdated> "{now_iso}"^^<http://www.w3.org/2001/XMLSchema#dateTime> .')
+
+if schema.logo:
+    triples.append(f'  <{space_uri}> <{SCHEMA}logo> "{_sparql_str(str(schema.logo))}" .')
+```
+
+Same pattern applies in `transformer.py`'s `transform_to_sparql()`.
+
+### Contact picto channel → action mapping (AC4)
+
+```javascript
+const CONTACT_PICTOS = {
+  email:    { icon: '✉', action: 'copy' },
+  phone:    { icon: '☎', action: 'copy' },
+  twitter:  { icon: '🐦', action: 'url' },
+  mastodon: { icon: '🐘', action: 'url' },
+  irc:      { icon: '#', action: 'copy' },
+  website:  { icon: '↗', action: 'url' },
+  ml:       { icon: '↗', action: 'url' },
+};
+// fallback for unknown keys: icon='⬡', action='copy'
+```
+
+`s.contact` arrives as a parsed object (mapped from `contactJson` in `_binding_to_feature`). Render one `<button>` per key found. Copy action: `navigator.clipboard.writeText(value)` then switch icon to `✓` for 1.5s. URL action: `window.open(value, '_blank', 'noopener')`.
+
+### Logo rendering (AC3)
+
+```javascript
+if (s.logo) {
+  const img = document.createElement('img');
+  img.src = s.logo;
+  img.style.cssText = 'max-height:32px;max-width:80px;object-fit:contain;border-radius:4px;margin-right:8px;vertical-align:middle;';
+  img.onerror = () => img.remove();
+  // insert before the <h3> text node inside .detail-hero
+}
+```
+
+### Share CTA picto button (AC3)
+
+Place in drawer header bar (`.drawer-head` in `maps-of-making.html`), left of the existing close `×` button. Use `window.location.origin + '/?space=' + s.id` as the share URL. Hidden via CSS at `< 768px` (`display: none` with a responsive class or inline style check). Switch icon to `✓` for 1.5s on click.
+
+### Project Structure Notes
+
+- `infra/link_handler/main.py` imports `datetime` and `json` already — no new imports needed for triple writes
+- `SCHEMA` and `MOM` constants already imported in `main.py` from `utils.py`
+- `_sparql_str()` already available for escaping contact JSON string
+- `s.contact` in GeoJSON features is parsed JSON object — `_binding_to_feature()` must call `json.loads()` on the SPARQL string result with a try/except fallback to `null`
+
+### References
+
+- [Source: web/app.js:389–535] — `renderDetail()` full current implementation
+- [Source: web/app.js:772–800] — post-registration confirmation block with `unlockMsg` and 4000ms timeout
+- [Source: web/maps-of-making.html:516–518] — drawer `id`, `aria-label`, `<h2>` to update
+- [Source: infra/link_handler/main.py:27–93] — `_SPARQL_SELECT` (needs logo/contact/lastUpdated optionals)
+- [Source: infra/link_handler/main.py:235–288] — `classify_subset()` current group logic to replace
+- [Source: infra/link_handler/main.py:373–432] — `_build_sparql_update()` triple write pattern
+- [Source: infra/link_handler/main.py:434–485] — `_binding_to_feature()` GeoJSON mapping
+- [Source: scripts/materialize_geojson.py] — parallel SPARQL query + `binding_to_space()` to update
+- [Source: deferred-work.md#UX-design-session-3-0-A] — deferred items: manual fetch wired in 3.1, change-detection in Epic 7
+
+---
+
+## Dev Agent Record
+
+### Agent Model Used
+
+claude-sonnet-4-6
+
+### Debug Log References
+
+### Completion Notes List
+
+### File List
