@@ -1,5 +1,10 @@
+import json
+from pathlib import Path
+
 import pytest
 from main import SpaceAPISchema, SpaceAPIGeo, classify_subset
+
+FIXTURES = Path(__file__).resolve().parents[2] / "web" / "test-fixtures"
 
 
 def test_spaceapi_geo_parsing():
@@ -160,6 +165,17 @@ def test_spaceapi_flat_key_required():
     result = classify_subset(schema)
     assert result["subset"] == "mom:required"
     assert result["subset_score"] == 1
+
+
+def test_spaceapi_v14_state_object_does_not_break_validation():
+    """Real SpaceAPI v14 endpoints (e.g. 57north) send `state` as an object,
+    not a string. Pydantic must accept it so resolved_name/lat/lon still populate."""
+    data = json.loads((FIXTURES / "spaceapi_v14_57north.json").read_text())
+    assert isinstance(data["state"], dict)  # sanity
+    schema = SpaceAPISchema.model_validate(data)
+    assert schema.resolved_name == "57North Hacklab"
+    assert schema.resolved_lat == 57.17947
+    assert schema.resolved_lon == -2.110614
 
 
 def test_spaceapi_flat_key_card():

@@ -1,0 +1,27 @@
+{
+  "api": "0.13",
+  "space": "57North Hacklab",
+  "url": "https://57north.org.uk/",
+  "logo": "https://57north.org.uk/wiki_logo.png",
+  "location": {
+    "address": "57North Hacklab, Aberdeen AB22 8GU",
+    "lat": 57.17947,
+    "lon": -2.110614
+  },
+  "state": {
+    "open": false,
+    "lastchange": 1776814485,
+    "message": "alrighty then",
+    "trigger_person": "someone pressing The Button",
+    "icon": {
+      "open": "https://57north.org.uk/57_North_CLL_open.png",
+      "closed": "https://57north.org.uk/57_North_CLL_closed.png"
+    }
+  },
+  "contact": {
+    "irc": "irc://irc.libera.chat/#57N",
+    "phone": "+443304450576",
+    "twitter": "@57NorthHacklab"
+  },
+  "issue_report_channels": ["issue_mail"]
+}

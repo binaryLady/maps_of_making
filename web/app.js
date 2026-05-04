@@ -653,12 +653,6 @@
   }
 
   function _wireAddUrlHandlers() {
-    $('#btn-sample').addEventListener('click', () => {
-      const sample = state.spaces.find((s) => s.status === 'seeded' && s.website);
-      if (sample) {
-        $('#url-input').value = `${sample.website}/maker.json`;
-      }
-    });
     $('#btn-fetch-url').addEventListener('click', _onFetchUrl);
   }
 
@@ -697,13 +691,18 @@
     } else {
       lines.push({ ok: true, text: `reachable (${escHtml(data.status_code)} OK)` });
       if (!data.json_ld_valid) {
-        lines.push({ ok: false, text: `JSON-LD invalid — ${escHtml(data.error || 'missing schema:name or name field')}` });
+        lines.push({ ok: false, text: `schema not recognised — ${escHtml(data.error || 'missing name or space field')}` });
         blocking = true;
       } else {
-        lines.push({ ok: true, text: `JSON-LD valid` });
+        const schemaLabel = {
+          'spaceapi:compatible': 'SpaceAPI v14 compatible',
+          'mom:card': 'SpaceAPI — full detail card',
+          'mom:required': 'SpaceAPI — pin only (missing website / opening hours)',
+        }[data.subset] || 'schema recognised';
+        lines.push({ ok: true, text: schemaLabel });
         lines.push({ ok: true, text: `name: ${escHtml(data.name_found)}` });
         if (!data.coords_found) {
-          lines.push({ ok: false, text: 'coordinates missing — add schema:geo with schema:latitude and schema:longitude' });
+          lines.push({ ok: false, text: 'coordinates missing — add lat/lon under location or schema:geo' });
           blocking = true;
         } else {
           lines.push({ ok: true, text: `coordinates found (${escHtml(data.lat)}, ${escHtml(data.lon)})` });
@@ -792,17 +791,14 @@
           <div style="font-size:22px;margin-bottom:8px;">✓ ${escHtml(spaceName)} is live on the map!${subsetBadge}</div>
           <div style="color:var(--muted);margin-bottom:18px;">Your pin has flipped from ⚪ to 🔵.</div>
           ${subsetSection}
-          <div class="btn-row" style="justify-content:center;margin-top:16px;">
-            <button class="btn btn-primary" id="btn-goto-embed"${hasSpace ? '' : ' disabled'}>Embed this space →</button>
-            <button class="btn" id="btn-view-on-map"${hasSpace ? '' : ' disabled'}>View on map →</button>
-            <button class="btn" id="btn-register-another" style="margin-top:8px;">Register another →</button>
-          </div>
+          <div style="color:var(--muted);font-size:12px;margin-top:16px;">Opening your space card…</div>
         </div>`;
-      if (spaceId) {
-        $('#btn-goto-embed').addEventListener('click', () => embedSpace(spaceId));
-        $('#btn-view-on-map').addEventListener('click', () => { closeDrawer('addurl'); selectSpace(spaceId, { fly: true }); });
+      if (hasSpace) {
+        setTimeout(() => {
+          closeDrawer('addurl');
+          selectSpace(spaceId, { fly: true });
+        }, 4000);
       }
-      $('#btn-register-another').addEventListener('click', () => _resetAddUrlForm());
     });
   }
 

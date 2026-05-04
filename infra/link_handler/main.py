@@ -4,7 +4,7 @@ import os
 import re
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional, List
+from typing import Any, Optional, List
 
 import httpx
 from fastapi import FastAPI, HTTPException
@@ -139,7 +139,7 @@ class SpaceAPISchema(BaseModel):
     api_compatibility: Optional[List[str]] = None
     contact: Optional[dict] = None
     # Full SpaceAPI v14 tier
-    state: Optional[str] = None  # "open", "closed", "unknown"
+    state: Optional[Any] = None  # SpaceAPI v14 `state` may be a string ("open"/"closed"/"unknown") or an object {open: bool, lastchange: int, message: str, ...}. Accept either; classify_subset only checks truthiness.
     networks: Optional[List[str]] = None
     tags: Optional[List[str]] = Field(None, alias="schema:knowsAbout")
     plain_tags: Optional[List[str]] = Field(None, alias="knowsAbout")
@@ -364,9 +364,9 @@ async def _fetch_and_validate(url: str) -> dict:
         "_data": data,  # internal — stripped before response
     }
     if not name:
-        result["error"] = "Missing schema:name or name field"
+        result["error"] = "Name not found — expected 'space' (SpaceAPI) or 'schema:name' / 'name' (JSON-LD)"
     elif lat is None or lon is None:
-        result["coords_error"] = "Missing coordinates — add schema:geo with schema:latitude and schema:longitude"
+        result["coords_error"] = "Coordinates not found — expected location.lat/lon (SpaceAPI) or schema:geo (JSON-LD)"
     return result
 
 
