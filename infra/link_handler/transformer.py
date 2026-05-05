@@ -257,6 +257,12 @@ def transform_to_sparql(
         if safe_logo:
             triples.append(f"  <{space_uri}> <{SCHEMA}logo> <{safe_logo}> .")
 
+    if validated_data.contact and isinstance(validated_data.contact, dict):
+        contact_json = json.dumps(validated_data.contact, separators=(',', ':'))
+        triples.append(f'  <{space_uri}> <{SCHEMA}contactJson> "{_sparql_str(contact_json)}"^^<http://www.w3.org/2001/XMLSchema#string> .')
+
+    triples.append(f'  <{space_uri}> <{MOM}lastUpdated> "{now}"^^<http://www.w3.org/2001/XMLSchema#dateTime> .')
+
     for activity in activity_iris:
         if activity.startswith("http"):
             safe = _sparql_iri(activity)
@@ -276,6 +282,13 @@ def transform_to_sparql(
     loc = validated_data.location
     if loc and loc.address:
         triples.append(f'  <{space_uri}> <{MOM}address> "{_sparql_str(loc.address)}" .')
+
+    subset = metadata.get("subset", "")
+    if subset:
+        triples.append(f'  <{space_uri}> <{MOM}subset> "{_sparql_str(subset)}" .')
+    next_unlock = metadata.get("next_unlock")
+    if next_unlock:
+        triples.append(f'  <{space_uri}> <{MOM}nextUnlock> "{_sparql_str(next_unlock)}" .')
 
     triples_str = "\n".join(triples)
     http_status = metadata.get("http_status", 200)

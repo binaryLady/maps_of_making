@@ -90,9 +90,9 @@ def test_classify_subset_card():
     result = classify_subset(schema)
     assert result["subset"] == "mom:card"
     assert result["subset_score"] == 2
-    assert "api_compatibility" in result["missing_card_fields"]
     assert "logo" in result["missing_card_fields"]
     assert "contact" in result["missing_card_fields"]
+    assert "api_compatibility" not in result["missing_card_fields"]
     assert result["next_subset"] == "spaceapi:compatible"
 
 

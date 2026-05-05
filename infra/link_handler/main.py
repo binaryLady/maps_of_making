@@ -30,7 +30,7 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 SELECT ?spaceUri ?name ?latitude ?longitude ?status ?geolocationFidelity ?geolocationNote
        ?street ?postcode ?city ?country ?website ?profileUrl ?openNow ?source
-       ?openingHours ?description
+       ?openingHours ?description ?logo ?contactJson ?lastUpdated ?subset ?nextUnlock
        (GROUP_CONCAT(DISTINCT ?specialty; separator="|") AS ?specialties)
 WHERE {
   {
@@ -54,6 +54,11 @@ WHERE {
       OPTIONAL { ?spaceUri mom:source ?source }
       OPTIONAL { ?spaceUri schema:openingHours ?openingHours }
       OPTIONAL { ?spaceUri schema:description ?description }
+      OPTIONAL { ?spaceUri schema:logo ?logo }
+      OPTIONAL { ?spaceUri schema:contactJson ?contactJson }
+      OPTIONAL { ?spaceUri mom:lastUpdated ?lastUpdated }
+      OPTIONAL { ?spaceUri mom:subset ?subset }
+      OPTIONAL { ?spaceUri mom:nextUnlock ?nextUnlock }
     }
     FILTER (STRSTARTS(STR(?spaceGraph), "urn:mak:space/"))
   }
@@ -79,6 +84,11 @@ WHERE {
       OPTIONAL { ?spaceUri mom:source ?source }
       OPTIONAL { ?spaceUri schema:openingHours ?openingHours }
       OPTIONAL { ?spaceUri schema:description ?description }
+      OPTIONAL { ?spaceUri schema:logo ?logo }
+      OPTIONAL { ?spaceUri schema:contactJson ?contactJson }
+      OPTIONAL { ?spaceUri mom:lastUpdated ?lastUpdated }
+      OPTIONAL { ?spaceUri mom:subset ?subset }
+      OPTIONAL { ?spaceUri mom:nextUnlock ?nextUnlock }
     }
   }
   OPTIONAL {
@@ -89,7 +99,7 @@ WHERE {
 }
 GROUP BY ?spaceUri ?name ?latitude ?longitude ?status ?geolocationFidelity ?geolocationNote
          ?street ?postcode ?city ?country ?website ?profileUrl ?openNow ?source
-         ?openingHours ?description
+         ?openingHours ?description ?logo ?contactJson ?lastUpdated ?subset ?nextUnlock
 ORDER BY ?spaceUri"""
 
 # Only flag fields that are unambiguously personal data (not business contact info).
@@ -233,10 +243,15 @@ def _scan_pii(data: dict) -> list[str]:
 
 
 def classify_subset(schema: SpaceAPISchema) -> dict:
-    """Classify the subset level reached by the endpoint data."""
+    """Classify the subset level reached by the endpoint data.
+
+    api_compatibility is intentionally excluded from tier checks — it is a SpaceAPI
+    interop signal with no MoM-specific feature unlock. Logo and contact are sufficient
+    for the spaceapi:compatible tier on MoM.
+    """
     has_required = bool(schema.resolved_name and schema.resolved_lat is not None and schema.resolved_lon is not None)
     has_card = has_required and bool(schema.resolved_url and schema.resolved_opening_hours)
-    has_spaceapi = has_card and bool(schema.api_compatibility and schema.logo and schema.contact)
+    has_spaceapi = has_card and bool(schema.logo and schema.contact)
 
     if has_spaceapi:
         return {
@@ -249,19 +264,23 @@ def classify_subset(schema: SpaceAPISchema) -> dict:
         }
     elif has_card:
         missing = []
-        if not schema.api_compatibility:
-            missing.append("api_compatibility")
         if not schema.logo:
             missing.append("logo")
         if not schema.contact:
             missing.append("contact")
+        if not schema.logo:
+            next_unlock = "Add logo to unlock SpaceAPI compatibility"
+        elif not schema.contact:
+            next_unlock = "Add contact to unlock SpaceAPI compatibility"
+        else:
+            next_unlock = None
         return {
             "subset": "mom:card",
             "subset_score": 2,
             "missing_card_fields": missing,
             "unlock_message": "Full detail card unlocked.",
             "next_subset": "spaceapi:compatible",
-            "next_unlock": "SpaceAPI compatibility is optional and requires several additional fields (api_compatibility, logo, contact, state, and more) — your card is already fully functional.",
+            "next_unlock": next_unlock,
         }
     elif has_required:
         missing = []
@@ -269,13 +288,19 @@ def classify_subset(schema: SpaceAPISchema) -> dict:
             missing.append("schema:url")
         if not schema.resolved_opening_hours:
             missing.append("schema:openingHours")
+        if not schema.resolved_url:
+            next_unlock = "Add schema:url (website) to unlock the full detail card"
+        elif not schema.resolved_opening_hours:
+            next_unlock = "Add schema:openingHours to unlock the full detail card"
+        else:
+            next_unlock = None
         return {
             "subset": "mom:required",
             "subset_score": 1,
             "missing_card_fields": missing,
-            "unlock_message": "Pin on map unlocked. Add website and opening hours for the full detail card.",
+            "unlock_message": "Pin on map unlocked.",
             "next_subset": "mom:card",
-            "next_unlock": "Full detail card display",
+            "next_unlock": next_unlock,
         }
     else:
         return {
@@ -371,7 +396,8 @@ async def _fetch_and_validate(url: str) -> dict:
 
 
 def _build_sparql_update(graph_uri: str, space_uri: str, name: str, lat: float, lon: float,
-                          endpoint_url: str, data: dict) -> str:
+                          endpoint_url: str, data: dict,
+                          subset: str = "", next_unlock: Optional[str] = None) -> str:
     now = datetime.now(timezone.utc).isoformat()
     triples = [
         f"  <{space_uri}> a <{MOM}Space> .",
@@ -422,6 +448,22 @@ def _build_sparql_update(graph_uri: str, space_uri: str, name: str, lat: float, 
         if sp:
             triples.append(f'  <{space_uri}> <{SCHEMA}knowsAbout> "{_sparql_str(str(sp))}" .')
 
+    logo_val = data.get("schema:logo") or data.get("logo")
+    if logo_val:
+        triples.append(f'  <{space_uri}> <{SCHEMA}logo> "{_sparql_str(str(logo_val))}" .')
+
+    contact_val = data.get("contact")
+    if contact_val and isinstance(contact_val, dict):
+        contact_json = json.dumps(contact_val, separators=(',', ':'))
+        triples.append(f'  <{space_uri}> <{SCHEMA}contactJson> "{_sparql_str(contact_json)}"^^<http://www.w3.org/2001/XMLSchema#string> .')
+
+    triples.append(f'  <{space_uri}> <{MOM}lastUpdated> "{now}"^^<http://www.w3.org/2001/XMLSchema#dateTime> .')
+
+    if subset:
+        triples.append(f'  <{space_uri}> <{MOM}subset> "{_sparql_str(subset)}" .')
+    if next_unlock:
+        triples.append(f'  <{space_uri}> <{MOM}nextUnlock> "{_sparql_str(next_unlock)}" .')
+
     triples_str = "\n".join(triples)
     return f"""DROP SILENT GRAPH <{graph_uri}> ;
 INSERT DATA {{
@@ -429,6 +471,15 @@ INSERT DATA {{
 {triples_str}
   }}
 }}"""
+
+
+def _parse_contact_json(raw: Optional[str]) -> Optional[dict]:
+    if not raw:
+        return None
+    try:
+        return json.loads(raw)
+    except (json.JSONDecodeError, TypeError):
+        return None
 
 
 def _binding_to_feature(b: dict) -> Optional[dict]:
@@ -474,9 +525,13 @@ def _binding_to_feature(b: dict) -> Optional[dict]:
             "source": b.get("source", {}).get("value"),
             "opening_hours": b.get("openingHours", {}).get("value", ""),
             "description": b.get("description", {}).get("value", ""),
+            "logo": b.get("logo", {}).get("value", ""),
+            "contact": _parse_contact_json(b.get("contactJson", {}).get("value")),
+            "last_updated": b.get("lastUpdated", {}).get("value", ""),
+            "subset": b.get("subset", {}).get("value", ""),
+            "next_unlock": b.get("nextUnlock", {}).get("value", ""),
             "founded": "",
             "capacity": 0,
-            "contact": "",
             "network_memberships": [],
             "open_for_hosting": False,
             "last_fetched": "",
@@ -552,10 +607,22 @@ async def register_url(req: UrlRequest):
     from transformer import transform_to_sparql
     try:
         schema_obj = SpaceAPISchema.model_validate(data)
-        sparql_update, _ = transform_to_sparql(schema_obj, {"endpoint_url": req.url, "space_id": slug})
+        cls = classify_subset(schema_obj)
+        sparql_update, _ = transform_to_sparql(schema_obj, {
+            "endpoint_url": req.url, "space_id": slug,
+            "subset": cls.get("subset", ""), "next_unlock": cls.get("next_unlock"),
+        })
     except Exception as e:
         logger.exception("transform_to_sparql failed, falling back to legacy builder: %s", e)
-        sparql_update = _build_sparql_update(graph_uri, space_uri, name, lat, lon, req.url, data)
+        try:
+            _fallback_schema = SpaceAPISchema.model_validate(data)
+            _cls = classify_subset(_fallback_schema)
+        except Exception:
+            _cls = {}
+        sparql_update = _build_sparql_update(
+            graph_uri, space_uri, name, lat, lon, req.url, data,
+            subset=_cls.get("subset", ""), next_unlock=_cls.get("next_unlock"),
+        )
 
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:

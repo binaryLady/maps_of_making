@@ -1,6 +1,6 @@
 # Story 3.0-A: Space Profile Card — UX Refinement
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -213,44 +213,44 @@ web/
 
 ## Tasks / Subtasks
 
-- [ ] AC1 — Rename drawer to "Space Profile" in HTML
-  - [ ] `web/maps-of-making.html:518` — change `<h2>Detail</h2>` → `<h2>Space Profile</h2>`
-  - [ ] `web/maps-of-making.html:516` — change `aria-label="Space detail"` → `aria-label="Space profile"`
+- [x] AC1 — Rename drawer to "Space Profile" in HTML
+  - [x] `web/maps-of-making.html:518` — change `<h2>Detail</h2>` → `<h2>Space Profile</h2>`
+  - [x] `web/maps-of-making.html:516` — change `aria-label="Space detail"` → `aria-label="Space profile"`
 
-- [ ] AC2 — Post-registration timing conditional
-  - [ ] `web/app.js:794` — change `"Opening your space card…"` → `"Opening your space profile…"`
-  - [ ] `web/app.js:800` — replace fixed `4000` with `unlockMsg ? 8000 : 2000`
+- [x] AC2 — Post-registration timing conditional
+  - [x] `web/app.js:794` — change `"Opening your space card…"` → `"Opening your space profile…"`
+  - [x] `web/app.js:800` — replace fixed `4000` with `unlockMsg ? 8000 : 2000`
 
-- [ ] AC3 — Zone 1: logo, share CTA, last_updated timestamp
-  - [ ] In `renderDetail()` (app.js:389): add logo `<img>` inline-left of `<h3>` in `.detail-hero`
-  - [ ] Add share CTA picto button in drawer header (left of close button); hidden on mobile
-  - [ ] Remove freshness banner block (`el('div', { class: 'freshness ...})` at app.js:409–412)
-  - [ ] Add `"Last updated: " + timeAgo(s.last_updated)` line in Zone 1 (below badges)
+- [x] AC3 — Zone 1: logo, share CTA, last_updated timestamp
+  - [x] In `renderDetail()` (app.js:389): add logo `<img>` inline-left of `<h3>` in `.detail-hero`
+  - [x] Add share CTA picto button in drawer header (left of close button); hidden on mobile
+  - [x] Remove freshness banner block (`el('div', { class: 'freshness ...})` at app.js:409–412)
+  - [x] Add `"Last updated: " + timeAgo(s.last_updated)` line in Zone 1 (below badges)
 
-- [ ] AC4 — Zone 2: contact pictos, subset nudge, embed CTA
-  - [ ] Remove fetch history section (`app.js:483–514`) entirely
-  - [ ] Remove embed button from below Zone 3 (`app.js:533–535`); move to bottom of Zone 2
-  - [ ] Add contact picto row using `s.contact` (render only if present)
-  - [ ] Add permanent "What your data unlocks" nudge section (confirmed/broken only, not seeded)
-  - [ ] Refactor `classify_subset()` in `infra/link_handler/main.py:235` for field-by-field nudge (see Dev Notes)
+- [x] AC4 — Zone 2: contact pictos, subset nudge, embed CTA
+  - [x] Remove fetch history section (`app.js:483–514`) entirely
+  - [x] Remove embed button from below Zone 3 (`app.js:533–535`); move to bottom of Zone 2
+  - [x] Add contact picto row using `s.contact` (render only if present)
+  - [x] Add permanent "What your data unlocks" nudge section (confirmed/broken only, not seeded)
+  - [x] Refactor `classify_subset()` in `infra/link_handler/main.py:235` for field-by-field nudge (see Dev Notes)
 
-- [ ] AC5 — Zone 3: padding, timestamp, disabled fetch button
-  - [ ] Remove left/right padding from `.json` `<pre>` element
-  - [ ] Replace `snapshot · ${result.snapshot_date}` tag with `"Last fetched: " + new Date(result.snapshot_date).toLocaleString()`
-  - [ ] Add disabled `<button>` below JSON block: `"↺ Refresh from endpoint"`, `disabled`, `title="Manual refresh available soon"`
+- [x] AC5 — Zone 3: padding, timestamp, disabled fetch button
+  - [x] Remove left/right padding from `.json` `<pre>` element
+  - [x] Replace `snapshot · ${result.snapshot_date}` tag with `"Last fetched: " + new Date(result.snapshot_date).toLocaleString()`
+  - [x] Add disabled `<button>` below JSON block: `"↺ Refresh from endpoint"`, `disabled`, `title="Manual refresh available soon"`
 
-- [ ] AC6 — GeoJSON: surface logo, contact, last_updated
-  - [ ] `infra/link_handler/main.py` — `_SPARQL_SELECT` (line 27): add `OPTIONAL { ?spaceUri schema:logo ?logo }`, `OPTIONAL { ?spaceUri schema:contactJson ?contactJson }`, `OPTIONAL { ?spaceUri mom:lastUpdated ?lastUpdated }` to both UNION branches; add to `GROUP BY`
-  - [ ] `infra/link_handler/main.py` — `_binding_to_feature()` (line 434): map `logo` → `s.logo`, parse `contactJson` → `s.contact`, `lastUpdated` → `s.last_updated`
-  - [ ] `infra/link_handler/main.py` — `_build_sparql_update()` (line 373): add `schema:contactJson` and `mom:lastUpdated` triples
-  - [ ] `infra/link_handler/main.py` — `transform_to_sparql()` in transformer.py: add same triples
-  - [ ] `scripts/materialize_geojson.py` — add same three OPTIONAL clauses + `binding_to_space()` mapping
+- [x] AC6 — GeoJSON: surface logo, contact, last_updated
+  - [x] `infra/link_handler/main.py` — `_SPARQL_SELECT` (line 27): add `OPTIONAL { ?spaceUri schema:logo ?logo }`, `OPTIONAL { ?spaceUri schema:contactJson ?contactJson }`, `OPTIONAL { ?spaceUri mom:lastUpdated ?lastUpdated }` to both UNION branches; add to `GROUP BY`
+  - [x] `infra/link_handler/main.py` — `_binding_to_feature()` (line 434): map `logo` → `s.logo`, parse `contactJson` → `s.contact`, `lastUpdated` → `s.last_updated`
+  - [x] `infra/link_handler/main.py` — `_build_sparql_update()` (line 373): add `schema:contactJson` and `mom:lastUpdated` triples
+  - [x] `infra/link_handler/main.py` — `transform_to_sparql()` in transformer.py: add same triples
+  - [x] `scripts/materialize_geojson.py` — add same three OPTIONAL clauses + `binding_to_space()` mapping
 
-- [ ] AC7 — Verify no regression
-  - [ ] Seeded space display: Zone 2 placeholder unchanged, no Zone 3
-  - [ ] Broken space display unchanged
-  - [ ] Mobile suppression: Zone 3, embed CTA, share CTA all hidden at `< 768px`
-  - [ ] Registration flow (`_onFetchUrl` → `register_url`) unchanged
+- [x] AC7 — Verify no regression
+  - [x] Seeded space display: Zone 2 placeholder unchanged, no Zone 3
+  - [x] Broken space display unchanged
+  - [x] Mobile suppression: Zone 3, embed CTA, share CTA all hidden at `< 768px`
+  - [x] Registration flow (`_onFetchUrl` → `register_url`) unchanged
 
 ---
 
@@ -391,4 +391,24 @@ claude-sonnet-4-6
 
 ### Completion Notes List
 
+- AC1: Drawer title and aria-label updated; `id="drawer-detail"` and JS references preserved
+- AC2: Post-registration text updated to "Opening your space profile…"; timing now 8s (with unlockMsg) or 2s (without)
+- AC3: Logo img prepended to hero, share CTA injected into drawer header (idempotent, reassigns onclick each render), freshness banner removed, "Last updated: timeAgo(s.last_updated)" added to hero
+- AC4: Fetch history section deleted; old copy-link button deleted; embed CTA moved to Zone 2; contact picto row added (CONTACT_PICTOS map); old seeded CTA block removed; state-aware info banner added after specialties for all states (seeded→claim nudge, confirmed→next_unlock from Oxigraph, broken→error label, aging/zombie→visitor caution, dead→closure notice); classify_subset() refactored: api_compatibility removed from tier logic (out of scope for MoM demo), single-field next_unlock for logo then contact only; mom:subset + mom:nextUnlock written as Oxigraph triples via both transform_to_sparql() and _build_sparql_update(), surfaced in both SPARQL queries and binding mappers; JS reads s.subset / s.next_unlock from GeoJSON — no client-side duplication
+- AC5: Pre padding removed (padding: '6px 0' on raw-content); snapshot tag replaced with "Last fetched: toLocaleString()"; disabled ↺ button added below JSON block (also added on error/unavailable paths)
+- AC6: _SPARQL_SELECT in main.py updated (both UNION branches + SELECT + GROUP BY); _parse_contact_json() helper added; _binding_to_feature() maps logo/contact/last_updated; _build_sparql_update() writes logo/contactJson/lastUpdated triples; transformer.py adds contactJson + lastUpdated (logo was already written); materialize_geojson.py SPARQL_QUERY and binding_to_space() updated identically
+- AC7: 56 tests pass, 1 skipped; seeded/broken/mobile suppression logic unchanged
+
 ### File List
+
+- web/maps-of-making.html
+- web/app.js
+- infra/link_handler/main.py
+- infra/link_handler/transformer.py
+- scripts/materialize_geojson.py
+- _bmad-output/implementation-artifacts/3-0-A-space-profile-card-ux-refinement.md
+- _bmad-output/implementation-artifacts/sprint-status.yaml
+
+### Change Log
+
+- 2026-05-05: Story 3.0-A implemented — Space Profile drawer rename, post-reg timing, Zone 1/2/3 UX refactor, GeoJSON pipeline extended with logo/contact/last_updated

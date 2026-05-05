@@ -395,56 +395,159 @@
       return;
     }
     const kind = markerKind(s);
+    // Share CTA in drawer header (hidden on mobile via CSS)
+    const drawerHead = document.querySelector('#drawer-detail .drawer-head');
+    let shareBtn = drawerHead && drawerHead.querySelector('.share-cta');
+    if (drawerHead && !shareBtn) {
+      shareBtn = el('button', { class: 'share-cta', title: 'Copy profile link', style: { marginLeft: 'auto', width: '28px', height: '28px', border: '1.5px solid var(--rule)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', cursor: 'pointer', borderRadius: '2px' } }, ['⎘']);
+      const closeBtn = drawerHead.querySelector('.close');
+      drawerHead.insertBefore(shareBtn, closeBtn);
+    }
+    if (shareBtn) {
+      shareBtn.onclick = () => {
+        const url = window.location.origin + '/?space=' + s.id;
+        navigator.clipboard.writeText(url).then(() => {
+          shareBtn.textContent = '✓';
+          setTimeout(() => { shareBtn.textContent = '⎘'; }, 1500);
+        }).catch(() => {});
+      };
+    }
     // Hero
-    body.appendChild(el('div', { class: 'detail-hero' }, [
+    const heroKids = [];
+    if (s.logo) {
+      const img = document.createElement('img');
+      img.src = s.logo;
+      img.style.cssText = 'max-height:32px;max-width:80px;object-fit:contain;border-radius:4px;margin-right:8px;vertical-align:middle;';
+      img.onerror = () => img.remove();
+      heroKids.push(img);
+    }
+    heroKids.push(
       el('h3', {}, [s.name]),
       el('div', { class: 'where' }, [`${s.address}`]),
       el('div', { class: 'badges' }, [
         el('span', { class: `status-label ${kind}` }, [kind]),
         ...(s.network_memberships || []).map((n) => el('span', { class: 'status-label', style: { textTransform: 'none', color: 'var(--accent-2)', borderColor: 'var(--accent-2)' } }, [n])),
         s.open_for_hosting ? el('span', { class: 'status-label', style: { textTransform: 'none' } }, ['open for hosting']) : null,
+      ]),
+      el('div', { style: { fontSize: '12px', color: 'var(--muted)', marginTop: '4px' } }, [
+        'Last updated: ' + (s.last_updated ? timeAgo(s.last_updated) : 'unknown')
       ])
-    ]));
-    // Freshness
-    body.appendChild(el('div', { class: `freshness ${kind}` }, [
-      el('span', { class: 'dot' }),
-      el('span', {}, [freshnessText(s)])
-    ]));
-    // Claim CTA for seeded spaces — desktop only (AC4b)
-    if (s.status === 'seeded') {
-      if (window.innerWidth >= 768) {
-        const ctaBtn = el('div', { class: 'note', style: { margin: '12px 16px', padding: '12px', backgroundColor: 'var(--note-bg)', borderRadius: '4px', cursor: 'pointer' } }, [
-          el('strong', {}, ['Is this your space?']),
-          el('div', { style: { fontSize: '13px', color: 'var(--muted)', marginTop: '4px' } }, ['Claim it with a coordinator endpoint to update information.'])
-        ]);
-        ctaBtn.addEventListener('click', () => setDrawer('addurl'));
-        body.appendChild(ctaBtn);
-      } else {
-        body.appendChild(el('div', { class: 'wf-label', style: { padding: '8px 16px' } }, ['Visit on desktop to register this space.']));
-      }
-    }
-    // Zone 2 — Data card (confirmed and broken spaces only; seeded shows placeholder)
-    if (s.status === 'seeded') {
-      body.appendChild(el('div', { class: 'detail-section' }, [
-        el('div', { class: 'wf-label' }, ['Data from VOW / RFF network directory — not yet verified by coordinator.'])
-      ]));
-    } else {
+    );
+    body.appendChild(el('div', { class: 'detail-hero' }, heroKids));
+    // Zone 2 — Data card (all non-seeded states)
+    if (s.status !== 'seeded') {
       const dataKids = [
         el('dt', {}, ['Name']), el('dd', {}, [s.name || '—']),
         el('dt', {}, ['Website']), el('dd', {}, [s.website ? el('a', { href: s.website, target: '_blank', rel: 'noopener' }, [s.website.replace(/^https?:\/\//, '')]) : '—']),
         el('dt', {}, ['Opening hours']), el('dd', {}, [s.opening_hours || '—']),
         el('dt', {}, ['Description']), el('dd', {}, [s.description || '—']),
       ];
-      body.appendChild(el('div', { class: 'detail-section' }, [
+      const zone2Section = el('div', { class: 'detail-section' }, [
         el('div', { class: 'wf-label' }, ['Space data']),
         el('dl', { class: 'kv' }, dataKids)
-      ]));
+      ]);
+
+      // Contact picto row
+      const CONTACT_PICTOS = {
+        email:    { icon: '✉', action: 'copy' },
+        phone:    { icon: '☎', action: 'copy' },
+        twitter:  { icon: '🐦', action: 'url' },
+        mastodon: { icon: '🐘', action: 'url' },
+        irc:      { icon: '#', action: 'copy' },
+        website:  { icon: '↗', action: 'url' },
+        ml:       { icon: '↗', action: 'url' },
+      };
+      if (s.contact && typeof s.contact === 'object' && Object.keys(s.contact).length > 0) {
+        const contactBtns = Object.entries(s.contact).map(([key, val]) => {
+          const picto = CONTACT_PICTOS[key] || { icon: '⬡', action: 'copy' };
+          const btn = el('button', { class: 'close', title: `${key}: ${val}`, style: { fontSize: '16px', margin: '0 2px' } }, [picto.icon]);
+          btn.addEventListener('click', () => {
+            if (picto.action === 'url') {
+              window.open(val, '_blank', 'noopener');
+            } else {
+              navigator.clipboard.writeText(val).then(() => {
+                btn.textContent = '✓';
+                setTimeout(() => { btn.textContent = picto.icon; }, 1500);
+              }).catch(() => {});
+            }
+          });
+          return btn;
+        });
+        zone2Section.appendChild(el('div', { style: { display: 'flex', gap: '4px', padding: '8px 0 0' } }, contactBtns));
+      }
+
+      // Embed CTA — desktop only
+      if (window.innerWidth >= 768) {
+        const embedBtn = el('button', { class: 'btn btn-primary', style: { margin: '12px 0 4px', width: '100%' } }, ['⎘ Embed this space →']);
+        embedBtn.addEventListener('click', () => embedSpace(s.id));
+        zone2Section.appendChild(embedBtn);
+      }
+
+      body.appendChild(zone2Section);
     }
     // Specialties (unchanged)
     body.appendChild(el('div', { class: 'detail-section' }, [
       el('div', { class: 'wf-label' }, ['Specialties']),
       el('div', { class: 'chips' }, s.specialties.map((sp) => el('span', { class: 'chip', 'aria-pressed': 'false', style: { cursor: 'default' } }, [sp])))
     ]));
+    // Info banner — state-aware, all states
+    {
+      const ERROR_LABELS = {
+        'connection_timeout': 'Connection timeout',
+        'invalid_json_ld': 'Invalid JSON-LD',
+        'missing_coordinates': 'Missing coordinates',
+        'http_error': 'HTTP error',
+        '404': 'Endpoint not found (404)',
+        '500': 'Server error (500)',
+      };
+      let bannerLabel = null;
+      let bannerText = null;
+      let bannerStyle = { fontSize: '13px', color: 'var(--muted)', marginTop: '4px' };
+      let bannerAction = null;
+
+      if (s.status === 'seeded') {
+        bannerLabel = 'Is this your space?';
+        bannerText = 'Register your SpaceAPI endpoint to activate it on the map and keep your information up to date.';
+        bannerAction = () => setDrawer('addurl');
+      } else if (s.status === 'confirmed') {
+        if (s.next_unlock) {
+          bannerLabel = 'What your data unlocks';
+          bannerText = s.next_unlock;
+        } else if (s.subset === 'spaceapi:compatible') {
+          bannerLabel = 'What your data unlocks';
+          bannerText = 'Full SpaceAPI compatibility — interoperable with mapall.space.';
+        }
+      } else if (s.status === 'broken') {
+        const errLabel = ERROR_LABELS[s.error_type] || s.error_type || 'Endpoint unavailable';
+        bannerLabel = 'Endpoint issue';
+        bannerText = `${errLabel} — check your SpaceAPI endpoint is reachable and returns valid JSON-LD.`;
+        bannerStyle = { ...bannerStyle, color: 'var(--error, #c0392b)' };
+      } else if (s.status === 'aging') {
+        bannerLabel = 'Heads up';
+        const agingAgo = s.last_fetched ? ` — last fetched ${timeAgo(s.last_fetched)} ago` : '';
+        bannerText = `Going quiet${agingAgo}. Data may be slightly stale.`;
+      } else if (s.status === 'zombie') {
+        bannerLabel = 'Heads up';
+        const zombieAgo = s.last_fetched ? `. Last seen ${timeAgo(s.last_fetched)} ago` : '';
+        bannerText = `Unreachable for a while — information may be outdated${zombieAgo}.`;
+        bannerStyle = { ...bannerStyle, color: 'var(--error, #c0392b)' };
+      } else if (s.status === 'dead') {
+        bannerLabel = 'Space status';
+        bannerText = 'This space is permanently closed.';
+      }
+
+      if (bannerLabel) {
+        const bannerDiv = el('div', { class: 'detail-section' }, [
+          el('div', { class: 'wf-label' }, [bannerLabel]),
+          el('div', { style: bannerStyle }, [bannerText])
+        ]);
+        if (bannerAction) {
+          bannerDiv.style.cursor = 'pointer';
+          bannerDiv.addEventListener('click', bannerAction);
+        }
+        body.appendChild(bannerDiv);
+      }
+    }
     // Zone 3 — Source (desktop only, confirmed/broken spaces only)
     if (window.innerWidth >= 768 && s.status !== 'seeded') {
       const zone3 = el('div', { class: 'detail-section zone-source' }, [
@@ -452,7 +555,7 @@
           el('div', { class: 'wf-label' }, ['Source data']),
           s.endpoint_url ? el('a', { href: s.endpoint_url, target: '_blank', rel: 'noopener', class: 'wf-label', style: { marginLeft: 'auto', textDecoration: 'none' } }, ['↗ Open source']) : null,
         ]),
-        el('div', { class: 'raw-content', style: { color: 'var(--muted)', fontSize: '11px', padding: '6px 16px' } }, ['Loading source data…'])
+        el('div', { class: 'raw-content', style: { color: 'var(--muted)', fontSize: '11px', padding: '6px 0' } }, ['Loading source data…'])
       ]);
       body.appendChild(zone3);
       const rawEl = zone3.querySelector('.raw-content');
@@ -463,76 +566,29 @@
           if (!rawEl) return;
           if (result.error || result.truncated) {
             rawEl.textContent = result.truncated ? 'Source data exceeds display limit.' : 'Source unavailable.';
+            const fetchBtn = el('button', { class: 'btn', disabled: true, title: 'Manual refresh available soon', style: { marginTop: '8px', width: '100%' } }, ['↺ Refresh from endpoint']);
+            rawEl.parentElement.appendChild(fetchBtn);
             return;
           }
           rawEl.innerHTML = '';
           const tag = document.createElement('div');
-          tag.style.cssText = 'font-size:10px;color:var(--muted);padding:0 0 4px;';
-          tag.textContent = `snapshot · ${result.snapshot_date || ''}`;
+          tag.style.cssText = 'font-size:11px;color:var(--muted);padding:0 0 4px;';
+          tag.textContent = 'Last fetched: ' + (result.snapshot_date ? new Date(result.snapshot_date).toLocaleString() : '—');
           rawEl.appendChild(tag);
           const pre = document.createElement('pre');
           pre.className = 'json';
           pre.appendChild(jsonHighlight(result.raw));
           rawEl.appendChild(pre);
+          const fetchBtn = el('button', { class: 'btn', disabled: true, title: 'Manual refresh available soon', style: { marginTop: '8px', width: '100%' } }, ['↺ Refresh from endpoint']);
+          rawEl.appendChild(fetchBtn);
         })
         .catch(() => {
-          if (rawEl) rawEl.textContent = 'Source unavailable.';
-        });
-    }
-    // Fetch history (confirmed/broken spaces only)
-    if (s.status === 'confirmed' || s.status === 'broken') {
-      const histSection = el('div', { class: 'detail-section' }, [
-        el('div', { class: 'wf-label' }, ['Fetch history']),
-        el('div', { id: 'hist-content', style: { fontSize: '13px', color: 'var(--muted)' } }, ['Loading...'])
-      ]);
-      body.appendChild(histSection);
-
-      fetch(`/api/space/${s.id}/snapshots`)
-        .then((resp) => resp.ok ? resp.json() : Promise.reject(new Error(`HTTP ${resp.status}`)))
-        .then((snapshots) => {
-          const histEl = document.getElementById('hist-content');
-          if (!histEl) return;
-          if (!snapshots || snapshots.length === 0) {
-            histEl.textContent = 'No fetch history yet.';
-            return;
+          if (rawEl) {
+            rawEl.textContent = 'Source unavailable.';
+            const fetchBtn = el('button', { class: 'btn', disabled: true, title: 'Manual refresh available soon', style: { marginTop: '8px', width: '100%' } }, ['↺ Refresh from endpoint']);
+            rawEl.parentElement.appendChild(fetchBtn);
           }
-          histEl.innerHTML = '';
-          snapshots.forEach((snap) => {
-            if (!snap || snap.date === undefined) return;
-            const date = new Date(snap.date).toLocaleDateString();
-            const time = new Date(snap.date).toLocaleTimeString();
-            const status = snap.http_status ? `HTTP ${snap.http_status}` : '';
-            histEl.appendChild(el('div', { style: { marginBottom: '8px' } }, [
-              `${date} ${time} · ${snap.summary || 'unknown'} ${status}`.trim()
-            ]));
-          });
-        })
-        .catch((err) => {
-          const histEl = document.getElementById('hist-content');
-          if (histEl) histEl.textContent = 'No fetch history yet.';
         });
-    }
-    // Copy space link (AC8b)
-    const shareUrl = s.website || s.endpoint_url || '';
-    if (shareUrl) {
-      const copyBtn = el('button', { class: 'btn', style: { margin: '12px 16px 0', width: 'calc(100% - 32px)' } }, ['⎘ Copy space link']);
-      copyBtn.addEventListener('click', () => {
-        navigator.clipboard.writeText(shareUrl).then(() => {
-          copyBtn.textContent = 'Copied!';
-          setTimeout(() => { copyBtn.textContent = '⎘ Copy space link'; }, 1500);
-        }).catch((err) => {
-          console.warn('[copy-link] clipboard write failed:', err.message);
-          copyBtn.textContent = 'Copy failed';
-          setTimeout(() => { copyBtn.textContent = '⎘ Copy space link'; }, 1500);
-        });
-      });
-      body.appendChild(copyBtn);
-    }
-    // Embed CTA — desktop only
-    if (window.innerWidth >= 768) {
-      const embedBtn = el('button', { class: 'btn btn-primary', style: { margin: '12px 16px 16px', width: 'calc(100% - 32px)' } }, ['⎘ Embed this space →']);
-      embedBtn.addEventListener('click', () => embedSpace(s.id));
-      body.appendChild(embedBtn);
     }
   }
 
@@ -791,13 +847,13 @@
           <div style="font-size:22px;margin-bottom:8px;">✓ ${escHtml(spaceName)} is live on the map!${subsetBadge}</div>
           <div style="color:var(--muted);margin-bottom:18px;">Your pin has flipped from ⚪ to 🔵.</div>
           ${subsetSection}
-          <div style="color:var(--muted);font-size:12px;margin-top:16px;">Opening your space card…</div>
+          <div style="color:var(--muted);font-size:12px;margin-top:16px;">Opening your space profile…</div>
         </div>`;
       if (hasSpace) {
         setTimeout(() => {
           closeDrawer('addurl');
           selectSpace(spaceId, { fly: true });
-        }, 4000);
+        }, unlockMsg ? 8000 : 2000);
       }
     });
   }

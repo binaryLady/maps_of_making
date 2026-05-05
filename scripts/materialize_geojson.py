@@ -31,7 +31,7 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 SELECT ?spaceUri ?name ?latitude ?longitude ?status ?geolocationFidelity ?geolocationNote
        ?street ?postcode ?city ?country ?website ?profileUrl ?openNow ?source
-       ?endpointUrl ?lastFetched ?errorType ?description
+       ?endpointUrl ?lastFetched ?errorType ?description ?logo ?contactJson ?lastUpdated ?subset ?nextUnlock
        (GROUP_CONCAT(DISTINCT ?specialty; separator="|") AS ?specialties)
        (COALESCE(GROUP_CONCAT(DISTINCT STR(?network); separator="|"), "") AS ?networkMemberships)
 WHERE {
@@ -60,6 +60,11 @@ WHERE {
       OPTIONAL { ?spaceUri mom:errorType ?errorType }
       OPTIONAL { ?spaceUri schema:description ?description }
       OPTIONAL { ?spaceUri mom:memberOf ?network }
+      OPTIONAL { ?spaceUri schema:logo ?logo }
+      OPTIONAL { ?spaceUri schema:contactJson ?contactJson }
+      OPTIONAL { ?spaceUri mom:lastUpdated ?lastUpdated }
+      OPTIONAL { ?spaceUri mom:subset ?subset }
+      OPTIONAL { ?spaceUri mom:nextUnlock ?nextUnlock }
     }
     FILTER (STRSTARTS(STR(?spaceGraph), "urn:mak:space/"))
   }
@@ -89,6 +94,11 @@ WHERE {
       OPTIONAL { ?spaceUri mom:errorType ?errorType }
       OPTIONAL { ?spaceUri schema:description ?description }
       OPTIONAL { ?spaceUri mom:memberOf ?network }
+      OPTIONAL { ?spaceUri schema:logo ?logo }
+      OPTIONAL { ?spaceUri schema:contactJson ?contactJson }
+      OPTIONAL { ?spaceUri mom:lastUpdated ?lastUpdated }
+      OPTIONAL { ?spaceUri mom:subset ?subset }
+      OPTIONAL { ?spaceUri mom:nextUnlock ?nextUnlock }
     }
   }
   OPTIONAL {
@@ -99,7 +109,7 @@ WHERE {
 }
 GROUP BY ?spaceUri ?name ?latitude ?longitude ?status ?geolocationFidelity ?geolocationNote
          ?street ?postcode ?city ?country ?website ?profileUrl ?openNow ?source
-         ?endpointUrl ?lastFetched ?errorType ?description
+         ?endpointUrl ?lastFetched ?errorType ?description ?logo ?contactJson ?lastUpdated ?subset ?nextUnlock
 ORDER BY ?spaceUri"""
 
 
@@ -182,6 +192,15 @@ def binding_to_space(binding: dict) -> dict:
     last_fetched = binding.get("lastFetched", {}).get("value", "")
     error_type = binding.get("errorType", {}).get("value", "")
     description = binding.get("description", {}).get("value", "")
+    logo = binding.get("logo", {}).get("value", "")
+    contact_raw = binding.get("contactJson", {}).get("value")
+    try:
+        contact = json.loads(contact_raw) if contact_raw else None
+    except (json.JSONDecodeError, TypeError):
+        contact = None
+    last_updated = binding.get("lastUpdated", {}).get("value", "")
+    subset = binding.get("subset", {}).get("value", "")
+    next_unlock = binding.get("nextUnlock", {}).get("value", "")
 
     # Compose address string from available parts
     address_parts = [p for p in [street, f"{postcode} {city}".strip()] if p]
@@ -210,11 +229,14 @@ def binding_to_space(binding: dict) -> dict:
             "open_now": open_now,
             "source": source,
             "network_memberships": network_memberships,
-            # Fields not yet seeded — populated by Epic 2 individual endpoint fetch
+            "logo": logo,
+            "contact": contact,
+            "last_updated": last_updated,
+            "subset": subset,
+            "next_unlock": next_unlock,
             "opening_hours": "",
             "founded": "",
             "capacity": 0,
-            "contact": "",
             "open_for_hosting": False,
             "last_fetched": last_fetched,
             "error_type": error_type,
