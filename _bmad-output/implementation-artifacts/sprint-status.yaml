@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-01
-last_updated: 2026-05-05 (Story 3.0-A done: review patches applied — network badges, hero layout, XSS guard, broken-space nudge)
+last_updated: 2026-05-05 (Story 3.0-B done: Space Profile v2 UI — sp-* CSS, status bar, quick-facts grid, terminal source block, stepped unlock section)
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
@@ -100,6 +100,7 @@ development_status:
   epic-3: in-progress
   3-0-ingestion-transformation-layer-spaceapi-json-to-mom-json-ld: done
   3-0-A-space-profile-card-ux-refinement: done
+  3-0-B-space-profile-v2-ui: done
   3-1-heartbeat-scheduler-periodic-10min-fetch-cycle-manual-trigger: ready-for-dev
   3-2-freshness-lifecycle-aging-zombie-dead-transitions: backlog
   3-3-magic-link-generation-link-handler-validation: backlog

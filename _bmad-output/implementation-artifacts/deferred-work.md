@@ -121,3 +121,7 @@ Generating a real openfab.jsonld against the `space-jsonld-generator` skill expo
 - **Space name collision / duplicate space resolution** — Two unrelated spaces sharing the same name (e.g. OpenFab Brussels vs OpenFab Istanbul) are currently disambiguated only by endpoint URL. No UI for collision detection or coordinator disambiguation. → Pilot phase.
 - **Endpoint URL swap / trust attack** — A bad actor could register an existing seeded space's slug with a different endpoint URL, replacing legitimate data. No auth or ownership verification at registration time. → Pilot phase security hardening.
 - **Rate limiting persistence across restarts** — Manual fetch cooldown (60s per space) stored in-memory dict; resets on container restart. → Epic 5 polish.
+
+## Deferred from: Space Profile v2 UI implementation (2026-05-05)
+
+- **SVG contact channel icon collection** — Space Profile v2 includes inline SVG icons for email, twitter, mastodon, facebook. All other channels (phone, irc, matrix, foursquare, website, ml, unknown keys) render text abbreviations (`[ph]`, `[#]`, `[mx]`, `[fs]`, `↗`). A full collection of platform SVGs (at minimum the 15 most common SpaceAPI contact keys) is needed before public launch. → Epic 5 / UI polish

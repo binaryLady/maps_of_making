@@ -386,6 +386,39 @@
     }
   }
 
+  // ───────────────────────────── detail drawer helpers
+  function _logoPlaceholder() {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', '22'); svg.setAttribute('height', '22'); svg.setAttribute('viewBox', '0 0 20 20'); svg.setAttribute('fill', 'none');
+    svg.innerHTML = '<rect x="3" y="3" width="14" height="14" stroke="#8a8070" stroke-width="1.4"/><circle cx="7" cy="7.5" r="1.4" fill="#8a8070"/><polyline points="3,14 7,10 10,13 13,10 17,14" stroke="#8a8070" stroke-width="1.4" fill="none"/>';
+    return svg;
+  }
+
+  function _contactChannel(key) {
+    const SVG_ICONS = {
+      email: '<path d="M1.5 3h11l-5.5 5L1.5 3zm-1 1v7.5c0 .3.2.5.5.5h12c.3 0 .5-.2.5-.5V4l-6.5 5.5L.5 4z"/>',
+      twitter: '<path d="M13 1.5L8.5 6.7l5 5.8H11L7.5 8.4 3.5 12.5H1l4.7-5.4L1.2 1.5H4L7.2 5l3.7-3.5H13z"/>',
+      mastodon: '<path d="M7 1C4.2 1 2 3 2 5.5v3C2 10.5 3.8 12 6 12c.4.6.9 1 1 1s.6-.4 1-1c2.2 0 4-1.5 4-3.5v-3C12 3 9.8 1 7 1zm0 1.5c2 0 3.5 1.3 3.5 3V9c0 1.1-1.1 2-2.5 2l-.4.6-.6-.6C5.6 11 4.5 10.1 4.5 9V5.5C4.5 4.3 5.8 2.5 7 2.5zM5.5 5v3.5h1V5h-1zm2 0v3.5h1V5h-1z"/>',
+      facebook: '<path d="M8.5 2H7C5.9 2 5 2.9 5 4v1H3.5v2H5v5h2V7h1.5l.5-2H7V4.2c0-.4.2-.7.7-.7H8.5V2z"/>',
+    };
+    const URL_KEYS = new Set(['twitter', 'mastodon', 'facebook', 'website', 'ml', 'blog']);
+    const TEXT_LABELS = { phone: '[ph]', irc: '[#]', website: '↗', ml: '↗', matrix: '[mx]', foursquare: '[fs]' };
+
+    const action = URL_KEYS.has(key) ? 'url' : 'copy';
+    let node;
+    if (SVG_ICONS[key]) {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('viewBox', '0 0 14 14'); svg.setAttribute('fill', 'currentColor');
+      svg.setAttribute('width', '15'); svg.setAttribute('height', '15');
+      svg.innerHTML = SVG_ICONS[key];
+      node = svg;
+    } else {
+      const label = TEXT_LABELS[key] || '[' + key.slice(0, 2) + ']';
+      node = document.createTextNode(label);
+    }
+    return { node, action };
+  }
+
   // ───────────────────────────── detail drawer
   function renderDetail() {
     const body = $('#detail-body');
@@ -399,8 +432,10 @@
     // Share CTA in drawer header (hidden on mobile via CSS)
     const drawerHead = document.querySelector('#drawer-detail .drawer-head');
     let shareBtn = drawerHead && drawerHead.querySelector('.share-cta');
+    const SHARE_SVG = '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><circle cx="11" cy="3" r="1.6"/><circle cx="11" cy="11" r="1.6"/><circle cx="3" cy="7" r="1.6"/><line x1="9.7" y1="3.7" x2="4.3" y2="6.3"/><line x1="4.3" y1="7.7" x2="9.7" y2="10.3"/></svg>';
     if (drawerHead && !shareBtn) {
-      shareBtn = el('button', { class: 'share-cta', title: 'Copy profile link', style: { marginLeft: 'auto', width: '28px', height: '28px', border: '1.5px solid var(--rule)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', cursor: 'pointer', borderRadius: '2px' } }, ['⎘']);
+      shareBtn = el('button', { class: 'share-cta', title: 'Copy profile link', style: { marginLeft: 'auto', width: '28px', height: '28px', border: '1.5px solid var(--rule)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', cursor: 'pointer', borderRadius: '2px', marginRight: '0' } }, []);
+      shareBtn.innerHTML = SHARE_SVG;
       const closeBtn = drawerHead.querySelector('.close');
       drawerHead.insertBefore(shareBtn, closeBtn);
     }
@@ -409,63 +444,82 @@
         const url = window.location.origin + '/?space=' + s.id;
         navigator.clipboard.writeText(url).then(() => {
           shareBtn.textContent = '✓';
-          setTimeout(() => { shareBtn.textContent = '⎘'; }, 1500);
+          setTimeout(() => { shareBtn.innerHTML = SHARE_SVG; }, 1500);
         }).catch(() => {});
       };
     }
-    // Hero — name left / logo right / address / badges / last updated
     const networkLabel = (urn) => urn.split('/').pop().toUpperCase();
-    const nameRow = el('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' } }, [
-      el('h3', { style: { margin: '0' } }, [s.name]),
-    ]);
+
+    // ── Hero ──
+    const logoBox = el('div', { class: 'sp-logo' });
     if (s.logo) {
       const img = document.createElement('img');
       img.src = s.logo;
-      img.style.cssText = 'max-height:32px;max-width:80px;object-fit:contain;border-radius:4px;flex-shrink:0;';
-      img.onerror = () => img.remove();
-      nameRow.appendChild(img);
+      img.alt = '';
+      img.onerror = () => { img.remove(); logoBox.classList.add('is-placeholder'); logoBox.appendChild(_logoPlaceholder()); };
+      logoBox.appendChild(img);
+    } else {
+      logoBox.classList.add('is-placeholder');
+      logoBox.appendChild(_logoPlaceholder());
     }
-    body.appendChild(el('div', { class: 'detail-hero' }, [
-      nameRow,
-      el('div', { class: 'where' }, [s.address || '']),
-      el('div', { class: 'badges' }, [
-        el('span', { class: `status-label ${kind}` }, [kind]),
-        ...(s.network_memberships || []).map((n) => el('span', { class: 'status-label', style: { textTransform: 'none', color: 'var(--accent-2)', borderColor: 'var(--accent-2)' } }, [networkLabel(n)])),
-        s.open_for_hosting ? el('span', { class: 'status-label', style: { textTransform: 'none' } }, ['open for hosting']) : null,
+    const badgeKindClass = { open: 'sp-badge-open', confirmed: 'sp-badge-confirmed', broken: 'sp-badge-broken', seeded: 'sp-badge-seeded' };
+    body.appendChild(el('div', { class: 'sp-hero' }, [
+      el('div', { class: 'sp-name-row' }, [
+        el('div', { class: 'sp-name' }, [s.name]),
+        logoBox,
       ]),
-      el('div', { style: { fontSize: '12px', color: 'var(--muted)', marginTop: '4px' } }, [
-        'Last updated: ' + (s.last_updated ? timeAgo(s.last_updated) : 'unknown')
-      ])
+      el('div', { class: 'sp-address' }, [s.address || el('em', { class: 'sp-fact-empty' }, ['address not provided'])]),
+      el('div', { class: 'sp-badges-row' }, [
+        el('span', { class: `sp-badge ${badgeKindClass[kind] || 'sp-badge-tag'}` }, [kind]),
+        ...(s.network_memberships || []).map((n) => el('span', { class: 'sp-badge sp-badge-tag' }, [networkLabel(n)])),
+        s.open_for_hosting ? el('span', { class: 'sp-badge sp-badge-tag' }, ['open for hosting']) : null,
+      ]),
     ]));
-    // Zone 2 — Data card (all non-seeded states)
-    if (s.status !== 'seeded') {
-      const dataKids = [
-        el('dt', {}, ['Name']), el('dd', {}, [s.name || '—']),
-        el('dt', {}, ['Website']), el('dd', {}, [s.website ? el('a', { href: s.website, target: '_blank', rel: 'noopener' }, [s.website.replace(/^https?:\/\//, '')]) : '—']),
-        el('dt', {}, ['Opening hours']), el('dd', {}, [s.opening_hours || '—']),
-        el('dt', {}, ['Description']), el('dd', {}, [s.description || '—']),
-      ];
-      const zone2Section = el('div', { class: 'detail-section' }, [
-        el('div', { class: 'wf-label' }, ['Space data']),
-        el('dl', { class: 'kv' }, dataKids)
-      ]);
 
-      // Contact picto row
-      const CONTACT_PICTOS = {
-        email:    { icon: '✉', action: 'copy' },
-        phone:    { icon: '☎', action: 'copy' },
-        twitter:  { icon: '🐦', action: 'url' },
-        mastodon: { icon: '🐘', action: 'url' },
-        irc:      { icon: '#', action: 'copy' },
-        website:  { icon: '↗', action: 'url' },
-        ml:       { icon: '↗', action: 'url' },
-      };
-      if (s.contact && typeof s.contact === 'object' && Object.keys(s.contact).length > 0) {
-        const contactBtns = Object.entries(s.contact).map(([key, val]) => {
-          const picto = CONTACT_PICTOS[key] || { icon: '⬡', action: 'copy' };
-          const btn = el('button', { class: 'close', title: `${key}: ${val}`, style: { fontSize: '16px', margin: '0 2px' } }, [picto.icon]);
+    // ── Status bar (non-seeded) ──
+    if (s.status !== 'seeded') {
+      const dotClass = ['aging', 'zombie'].includes(s.status) ? 'sp-dot sp-dot-stale'
+        : s.status === 'broken' ? 'sp-dot sp-dot-error' : 'sp-dot';
+      const statusPhrases = { open: 'Open right now', confirmed: 'Confirmed', broken: 'Endpoint issue', aging: 'Going quiet', zombie: 'Unreachable', dead: 'Permanently closed' };
+      const phrase = statusPhrases[kind] || kind;
+      body.appendChild(el('div', { class: 'sp-status-bar' }, [
+        el('div', { class: 'sp-status-left' }, [
+          el('div', { class: dotClass }),
+          el('span', {}, [phrase]),
+        ]),
+        el('div', { class: 'sp-status-right' }, [
+          'updated ' + (s.last_updated ? timeAgo(s.last_updated) : 'unknown')
+        ]),
+      ]));
+    }
+
+    // ── Quick Facts (non-seeded) ──
+    if (s.status !== 'seeded') {
+      const factsKids = [
+        el('span', { class: 'sp-fact-key' }, ['Description']),
+        el('span', { class: 'sp-fact-val' }, [s.description || el('em', { class: 'sp-fact-empty' }, ['—'])]),
+        el('span', { class: 'sp-fact-key' }, ['Website']),
+        el('span', { class: 'sp-fact-val' }, [s.website
+          ? el('a', { href: s.website, target: '_blank', rel: 'noopener' }, [s.website.replace(/^https?:\/\//, '')])
+          : el('em', { class: 'sp-fact-empty' }, ['—'])]),
+        el('span', { class: 'sp-fact-key' }, ['Hours']),
+        el('span', { class: 'sp-fact-val' }, [s.opening_hours || el('em', { class: 'sp-fact-empty' }, ['—'])]),
+      ];
+      // Next event — always rendered (— when missing) so visitors see the gap
+      factsKids.push(el('span', { class: 'sp-fact-key' }, ['Next event']));
+      factsKids.push(el('span', { class: 'sp-fact-val' }, [s.next_event || el('em', { class: 'sp-fact-empty' }, ['—'])]));
+
+      // Contact — always rendered
+      factsKids.push(el('span', { class: 'sp-fact-key' }, ['Contact']));
+      const hasContact = s.contact && typeof s.contact === 'object' && Object.keys(s.contact).length > 0;
+      if (hasContact) {
+        const channelsDiv = el('div', { class: 'sp-channels' });
+        Object.entries(s.contact).forEach(([key, val]) => {
+          const { node: iconNode, action } = _contactChannel(key);
+          const btn = el('button', { class: 'sp-channel', title: `${key}: ${val}` }, []);
+          btn.appendChild(iconNode);
           btn.addEventListener('click', () => {
-            if (picto.action === 'url') {
+            if (action === 'url') {
               const safeVal = String(val);
               if (safeVal.startsWith('https://') || safeVal.startsWith('http://')) {
                 window.open(safeVal, '_blank', 'noopener');
@@ -473,30 +527,39 @@
             } else {
               navigator.clipboard.writeText(String(val)).then(() => {
                 btn.textContent = '✓';
-                setTimeout(() => { btn.textContent = picto.icon; }, 1500);
+                setTimeout(() => { btn.innerHTML = ''; btn.appendChild(_contactChannel(key).node); }, 1500);
               }).catch(() => {});
             }
           });
-          return btn;
+          channelsDiv.appendChild(btn);
         });
-        zone2Section.appendChild(el('div', { style: { display: 'flex', gap: '4px', padding: '8px 0 0' } }, contactBtns));
+        factsKids.push(el('span', { class: 'sp-fact-val' }, [channelsDiv]));
+      } else {
+        factsKids.push(el('span', { class: 'sp-fact-val' }, [el('em', { class: 'sp-fact-empty' }, ['—'])]));
       }
-
-      // Embed CTA — desktop only
-      if (window.innerWidth >= 768) {
-        const embedBtn = el('button', { class: 'btn btn-primary', style: { margin: '12px 0 4px', width: '100%' } }, ['⎘ Embed this space →']);
-        embedBtn.addEventListener('click', () => embedSpace(s.id));
-        zone2Section.appendChild(embedBtn);
-      }
-
-      body.appendChild(zone2Section);
+      body.appendChild(el('div', { class: 'sp-section' }, [
+        el('div', { class: 'sp-section-label' }, ['Quick Facts']),
+        el('div', { class: 'sp-facts' }, factsKids),
+      ]));
     }
-    // Specialties (unchanged)
-    body.appendChild(el('div', { class: 'detail-section' }, [
-      el('div', { class: 'wf-label' }, ['Specialties']),
-      el('div', { class: 'chips' }, s.specialties.map((sp) => el('span', { class: 'chip', 'aria-pressed': 'false', style: { cursor: 'default' } }, [sp])))
-    ]));
-    // Info banner — state-aware, all states
+
+    // ── Specialties ──
+    if (s.specialties && s.specialties.length > 0) {
+      body.appendChild(el('div', { class: 'sp-section' }, [
+        el('div', { class: 'sp-section-label' }, ['Specialties']),
+        el('div', { class: 'sp-pills' }, s.specialties.map((sp) => el('span', { class: 'sp-pill' }, [sp]))),
+      ]));
+    }
+
+    // ── Embed CTA (desktop-only via CSS) ──
+    if (s.status !== 'seeded') {
+      const embedBtn = el('button', { class: 'sp-embed-btn' }, []);
+      embedBtn.innerHTML = '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="4.5,3 1.5,7 4.5,11"/><polyline points="9.5,3 12.5,7 9.5,11"/><line x1="8.2" y1="2.5" x2="5.8" y2="11.5"/></svg> Embed this space →';
+      embedBtn.addEventListener('click', () => embedSpace(s.id));
+      body.appendChild(el('div', { class: 'sp-section sp-embed-wrap' }, [embedBtn]));
+    }
+
+    // ── What your data unlocks / state banners ──
     {
       const ERROR_LABELS = {
         'connection_timeout': 'Connection timeout',
@@ -506,100 +569,123 @@
         '404': 'Endpoint not found (404)',
         '500': 'Server error (500)',
       };
-      let bannerLabel = null;
-      let bannerText = null;
-      let bannerStyle = { fontSize: '13px', color: 'var(--muted)', marginTop: '4px' };
-      let bannerAction = null;
 
       if (s.status === 'seeded') {
-        bannerLabel = 'Is this your space?';
-        bannerText = 'Register your SpaceAPI endpoint to activate it on the map and keep your information up to date.';
-        bannerAction = () => setDrawer('addurl');
-      } else if (s.status === 'confirmed') {
-        if (s.next_unlock) {
-          bannerLabel = 'What your data unlocks';
-          bannerText = s.next_unlock;
-        } else if (s.subset === 'spaceapi:compatible') {
-          bannerLabel = 'What your data unlocks';
-          bannerText = 'Full SpaceAPI compatibility — interoperable with mapall.space.';
-        }
+        const bannerDiv = el('div', { class: 'sp-section', style: { cursor: 'pointer' } }, [
+          el('div', { class: 'sp-section-label' }, ['Is this your space?']),
+          el('div', { style: { fontSize: '13px', color: 'var(--muted)', marginTop: '4px' } }, ['Register your SpaceAPI endpoint to activate it on the map and keep your information up to date.']),
+        ]);
+        bannerDiv.addEventListener('click', () => setDrawer('addurl'));
+        body.appendChild(bannerDiv);
       } else if (s.status === 'broken') {
         const errLabel = ERROR_LABELS[s.error_type] || 'Endpoint unavailable';
-        bannerLabel = 'Endpoint issue';
-        bannerText = `${errLabel} — check your SpaceAPI endpoint is reachable and returns valid JSON-LD.`;
-        bannerStyle = { ...bannerStyle, color: 'var(--error, #c0392b)' };
+        body.appendChild(el('div', { class: 'sp-section' }, [
+          el('div', { class: 'sp-section-label' }, ['Endpoint issue']),
+          el('div', { style: { fontSize: '13px', color: 'var(--error, #c0392b)', marginTop: '4px' } }, [`${errLabel} — check your SpaceAPI endpoint is reachable and returns valid JSON-LD.`]),
+        ]));
       } else if (s.status === 'aging') {
-        bannerLabel = 'Heads up';
         const agingAgo = s.last_fetched ? ` — last fetched ${timeAgo(s.last_fetched)} ago` : '';
-        bannerText = `Going quiet${agingAgo}. Data may be slightly stale.`;
+        body.appendChild(el('div', { class: 'sp-section' }, [
+          el('div', { class: 'sp-section-label' }, ['Heads up']),
+          el('div', { style: { fontSize: '13px', color: 'var(--muted)', marginTop: '4px' } }, [`Going quiet${agingAgo}. Data may be slightly stale.`]),
+        ]));
       } else if (s.status === 'zombie') {
-        bannerLabel = 'Heads up';
         const zombieAgo = s.last_fetched ? `. Last seen ${timeAgo(s.last_fetched)} ago` : '';
-        bannerText = `Unreachable for a while — information may be outdated${zombieAgo}.`;
-        bannerStyle = { ...bannerStyle, color: 'var(--error, #c0392b)' };
+        body.appendChild(el('div', { class: 'sp-section' }, [
+          el('div', { class: 'sp-section-label' }, ['Heads up']),
+          el('div', { style: { fontSize: '13px', color: 'var(--error, #c0392b)', marginTop: '4px' } }, [`Unreachable for a while — information may be outdated${zombieAgo}.`]),
+        ]));
       } else if (s.status === 'dead') {
-        bannerLabel = 'Space status';
-        bannerText = 'This space is permanently closed.';
-      }
-
-      if (bannerLabel) {
-        const bannerDiv = el('div', { class: 'detail-section' }, [
-          el('div', { class: 'wf-label' }, [bannerLabel]),
-          el('div', { style: bannerStyle }, [bannerText])
-        ]);
-        if (bannerAction) {
-          bannerDiv.style.cursor = 'pointer';
-          bannerDiv.addEventListener('click', bannerAction);
-        }
-        body.appendChild(bannerDiv);
-      }
-      // Subset nudge for broken spaces (endpoint issue doesn't block unlock guidance)
-      if (s.status === 'broken' && s.next_unlock) {
-        body.appendChild(el('div', { class: 'detail-section' }, [
-          el('div', { class: 'wf-label' }, ['What your data unlocks']),
-          el('div', { style: { fontSize: '13px', color: 'var(--muted)', marginTop: '4px' } }, [s.next_unlock])
+        body.appendChild(el('div', { class: 'sp-section' }, [
+          el('div', { class: 'sp-section-label' }, ['Space status']),
+          el('div', { style: { fontSize: '13px', color: 'var(--muted)', marginTop: '4px' } }, ['This space is permanently closed.']),
         ]));
       }
+
+      // Stepped unlock section — confirmed or broken-with-guidance
+      const showUnlock = (s.status === 'confirmed') || (s.status === 'broken' && s.next_unlock);
+      if (showUnlock) {
+        const unlockSection = el('div', { class: 'sp-section' }, [
+          el('div', { class: 'sp-section-label' }, ['What your data unlocks']),
+        ]);
+        if (s.subset === 'spaceapi:compatible') {
+          const step = el('div', { class: 'sp-unlock-step' }, [
+            el('div', { class: 'sp-unlock-marker done' }, ['✓']),
+            el('div', { class: 'sp-unlock-body' }, []),
+          ]);
+          step.querySelector('.sp-unlock-body').innerHTML = '<strong>Full SpaceAPI compatibility</strong> — interoperable with mapall.space.';
+          unlockSection.appendChild(step);
+        } else {
+          const stepDone = el('div', { class: 'sp-unlock-step' }, [
+            el('div', { class: 'sp-unlock-marker done' }, ['✓']),
+            el('div', { class: 'sp-unlock-body' }, []),
+          ]);
+          stepDone.querySelector('.sp-unlock-body').innerHTML = "<strong>You're here.</strong> Space is registered on the map.";
+          unlockSection.appendChild(stepDone);
+          if (s.next_unlock) {
+            const stepNext = el('div', { class: 'sp-unlock-step' }, [
+              el('div', { class: 'sp-unlock-marker next' }, ['→']),
+              el('div', { class: 'sp-unlock-body' }, []),
+            ]);
+            stepNext.querySelector('.sp-unlock-body').innerHTML = '<strong>Level up.</strong> ' + s.next_unlock.replace(/<|>/g, (c) => c === '<' ? '&lt;' : '&gt;');
+            unlockSection.appendChild(stepNext);
+          }
+        }
+        body.appendChild(unlockSection);
+      }
     }
-    // Zone 3 — Source (desktop only, confirmed/broken spaces only)
+
+    // ── Source Data — desktop only, non-seeded ──
     if (window.innerWidth >= 768 && s.status !== 'seeded') {
-      const zone3 = el('div', { class: 'detail-section zone-source' }, [
-        el('div', { class: 'zone-header', style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } }, [
-          el('div', { class: 'wf-label' }, ['Source data']),
-          s.endpoint_url ? el('a', { href: s.endpoint_url, target: '_blank', rel: 'noopener', class: 'wf-label', style: { marginLeft: 'auto', textDecoration: 'none' } }, ['↗ Open source']) : null,
+      const zone3 = el('div', { class: 'detail-section zone-source', style: { padding: '12px 14px', borderBottom: '1px dashed var(--rule)' } }, [
+        el('div', { class: 'sp-section-header' }, [
+          el('div', { class: 'sp-section-label' }, ['Source Data']),
+          s.endpoint_url ? el('a', { href: s.endpoint_url, target: '_blank', rel: 'noopener', class: 'sp-section-label', style: { textDecoration: 'none', marginBottom: '0' } }, ['↗ Open source']) : null,
         ]),
-        el('div', { class: 'raw-content', style: { color: 'var(--muted)', fontSize: '11px', padding: '6px 0' } }, ['Loading source data…'])
+        el('div', { class: 'raw-content', style: { color: 'var(--muted)', fontSize: '11px' } }, ['Loading source data…']),
       ]);
       body.appendChild(zone3);
       const rawEl = zone3.querySelector('.raw-content');
+
+      const _makeRefreshBtn = (lastFetched) => {
+        const btn = document.createElement('button');
+        btn.className = 'sp-refresh-btn';
+        btn.disabled = true;
+        btn.title = 'Manual refresh available soon';
+        btn.innerHTML = '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M12.5 2v3.5h-3.5"/><path d="M12.3 5.3A5.5 5.5 0 1 1 10.1 2.5"/></svg> Refresh from endpoint'
+          + (lastFetched ? `<span class="sp-refresh-meta">last: ${timeAgo(lastFetched)}</span>` : '');
+        return btn;
+      };
 
       fetch(`/api/space/${s.id}/raw`)
         .then(r => r.json())
         .then(result => {
           if (!rawEl) return;
+          rawEl.innerHTML = '';
           if (result.error || result.truncated) {
             rawEl.textContent = result.truncated ? 'Source data exceeds display limit.' : 'Source unavailable.';
-            const fetchBtn = el('button', { class: 'btn', disabled: true, title: 'Manual refresh available soon', style: { marginTop: '8px', width: '100%' } }, ['↺ Refresh from endpoint']);
-            if (rawEl.parentElement) rawEl.parentElement.appendChild(fetchBtn);
+            if (rawEl.parentElement) rawEl.parentElement.appendChild(_makeRefreshBtn(null));
             return;
           }
-          rawEl.innerHTML = '';
-          const tag = document.createElement('div');
-          tag.style.cssText = 'font-size:11px;color:var(--muted);padding:0 0 4px;';
-          tag.textContent = 'Last fetched: ' + (result.snapshot_date ? new Date(result.snapshot_date).toLocaleString() : '—');
-          rawEl.appendChild(tag);
+          const termWrap = el('div', { class: 'sp-terminal-wrap' }, [
+            el('div', { class: 'sp-terminal-head' }, [
+              el('span', { class: 'sp-terminal-head-label' }, ['JSON · Endpoint Response']),
+              el('span', { class: 'sp-terminal-head-meta' }, [result.snapshot_date ? new Date(result.snapshot_date).toLocaleString() : '—']),
+            ]),
+          ]);
           const pre = document.createElement('pre');
-          pre.className = 'json';
+          pre.className = 'json sp-terminal-body';
           pre.appendChild(jsonHighlight(result.raw));
-          rawEl.appendChild(pre);
-          const fetchBtn = el('button', { class: 'btn', disabled: true, title: 'Manual refresh available soon', style: { marginTop: '8px', width: '100%' } }, ['↺ Refresh from endpoint']);
-          rawEl.appendChild(fetchBtn);
+          termWrap.appendChild(pre);
+          rawEl.appendChild(termWrap);
+          const trustLine = el('div', { class: 'sp-trust-line' }, ['The map only reads & enhances your data — it never edits the source.']);
+          rawEl.appendChild(trustLine);
+          if (rawEl.parentElement) rawEl.parentElement.appendChild(_makeRefreshBtn(result.snapshot_date));
         })
         .catch(() => {
           if (rawEl) {
             rawEl.textContent = 'Source unavailable.';
-            const fetchBtn = el('button', { class: 'btn', disabled: true, title: 'Manual refresh available soon', style: { marginTop: '8px', width: '100%' } }, ['↺ Refresh from endpoint']);
-            if (rawEl.parentElement) rawEl.parentElement.appendChild(fetchBtn);
+            if (rawEl.parentElement) rawEl.parentElement.appendChild(_makeRefreshBtn(null));
           }
         });
     }
