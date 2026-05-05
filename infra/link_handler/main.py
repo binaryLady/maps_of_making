@@ -2,25 +2,61 @@ import json
 import logging
 import os
 import re
-from datetime import datetime, timezone
+from contextlib import asynccontextmanager
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Optional, List
 
 import httpx
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.interval import IntervalTrigger
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, ConfigDict
 
+from transformer import get_config, query_active_spaces, process_one_space, run_heartbeat_cycle
 from utils import MOM, SCHEMA, _ALLOWED_SCHEMES, _sparql_str, _sparql_iri, _slug
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Maps of Making Link Handler")
-
-_TOKEN_RE = re.compile(r'^[A-Za-z0-9_\-]{8,255}$')
+_manual_refresh_cooldowns: dict[str, datetime] = {}
+COOLDOWN_SECONDS = 60
 
 OXIGRAPH_ENDPOINT = os.getenv("OXIGRAPH_ENDPOINT", "http://oxigraph:7878")
 GEOJSON_OUTPUT = os.getenv("GEOJSON_OUTPUT", "/app/web_data/spaces.geojson")
+
+_TOKEN_RE = re.compile(r'^[A-Za-z0-9_\-]{8,255}$')
+
+_scheduler = AsyncIOScheduler()
+
+
+async def _heartbeat_job():
+    await run_heartbeat_cycle(OXIGRAPH_ENDPOINT, _rematerialize_geojson)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    cfg = get_config()
+    interval = cfg.get("bandwidth", {}).get("heartbeat_interval_seconds", 600)
+    try:
+        _scheduler.add_job(
+            _heartbeat_job,
+            IntervalTrigger(seconds=interval),
+            id="heartbeat",
+            replace_existing=True,
+        )
+        _scheduler.start()
+        logger.info("APScheduler started — heartbeat every %ds", interval)
+    except Exception as e:
+        logger.error("APScheduler failed to start: %s", e)
+    yield
+    try:
+        _scheduler.shutdown(wait=False)
+    except Exception:
+        pass
+
+
+app = FastAPI(title="Maps of Making Link Handler", lifespan=lifespan)
 
 
 # Same SELECT query as scripts/materialize_geojson.py — kept in sync intentionally
@@ -29,7 +65,7 @@ PREFIX schema: <https://schema.org/>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 SELECT ?spaceUri ?name ?latitude ?longitude ?status ?geolocationFidelity ?geolocationNote
-       ?street ?postcode ?city ?country ?website ?profileUrl ?openNow ?source
+       ?street ?postcode ?city ?country ?address ?website ?profileUrl ?openNow ?source
        ?openingHours ?description ?logo ?contactJson ?lastUpdated ?subset ?nextUnlock
        (GROUP_CONCAT(DISTINCT ?specialty; separator="|") AS ?specialties)
 WHERE {
@@ -48,6 +84,7 @@ WHERE {
       OPTIONAL { ?spaceUri schema:postalCode ?postcode }
       OPTIONAL { ?spaceUri schema:addressLocality ?city }
       OPTIONAL { ?spaceUri schema:addressCountry ?country }
+      OPTIONAL { ?spaceUri mom:address ?address }
       OPTIONAL { ?spaceUri schema:url ?website }
       OPTIONAL { ?spaceUri mom:profileUrl ?profileUrl }
       OPTIONAL { ?spaceUri schema:knowsAbout ?specialty }
@@ -78,6 +115,7 @@ WHERE {
       OPTIONAL { ?spaceUri schema:postalCode ?postcode }
       OPTIONAL { ?spaceUri schema:addressLocality ?city }
       OPTIONAL { ?spaceUri schema:addressCountry ?country }
+      OPTIONAL { ?spaceUri mom:address ?address }
       OPTIONAL { ?spaceUri schema:url ?website }
       OPTIONAL { ?spaceUri mom:profileUrl ?profileUrl }
       OPTIONAL { ?spaceUri schema:knowsAbout ?specialty }
@@ -98,7 +136,7 @@ WHERE {
   }
 }
 GROUP BY ?spaceUri ?name ?latitude ?longitude ?status ?geolocationFidelity ?geolocationNote
-         ?street ?postcode ?city ?country ?website ?profileUrl ?openNow ?source
+         ?street ?postcode ?city ?country ?address ?website ?profileUrl ?openNow ?source
          ?openingHours ?description ?logo ?contactJson ?lastUpdated ?subset ?nextUnlock
 ORDER BY ?spaceUri"""
 
@@ -153,6 +191,7 @@ class SpaceAPISchema(BaseModel):
     networks: Optional[List[str]] = None
     tags: Optional[List[str]] = Field(None, alias="schema:knowsAbout")
     plain_tags: Optional[List[str]] = Field(None, alias="knowsAbout")
+    specialties: Optional[List[str]] = None  # mom alias for knowsAbout — same triple, more intuitive key
     # MOM geolocation enrichment
     geolocation_fidelity: Optional[str] = Field(None, alias="mom:geolocationFidelity")
     geolocation_note: Optional[str] = Field(None, alias="mom:geolocationNote")
@@ -192,7 +231,7 @@ class SpaceAPISchema(BaseModel):
 
     @property
     def resolved_tags(self) -> List[str]:
-        raw = self.tags or self.plain_tags or []
+        raw = self.tags or self.plain_tags or self.specialties or []
         if isinstance(raw, str):
             return [raw]
         return list(raw)
@@ -316,7 +355,7 @@ def classify_subset(schema: SpaceAPISchema) -> dict:
 _EMPTY_RESULT = {
     "reachable": False,
     "status_code": None,
-    "json_ld_valid": False,
+    "schema_valid": False,
     "name_found": None,
     "coords_found": False,
     "lat": None,
@@ -353,7 +392,7 @@ async def _fetch_and_validate(url: str) -> dict:
         return {
             "reachable": True,
             "status_code": resp.status_code,
-            "json_ld_valid": False,
+            "schema_valid": False,
             "error": "Response is not valid JSON",
         }
 
@@ -373,7 +412,7 @@ async def _fetch_and_validate(url: str) -> dict:
     result = {
         "reachable": True,
         "status_code": resp.status_code,
-        "json_ld_valid": bool(name),
+        "schema_valid": bool(name),
         "name_found": name,
         "coords_found": lat is not None and lon is not None,
         "lat": lat,
@@ -389,7 +428,7 @@ async def _fetch_and_validate(url: str) -> dict:
         "_data": data,  # internal — stripped before response
     }
     if not name:
-        result["error"] = "Name not found — expected 'space' (SpaceAPI) or 'schema:name' / 'name' (JSON-LD)"
+        result["error"] = "Name not found — expected 'space' (SpaceAPI v13–15) or 'schema:name' / 'name'"
     elif lat is None or lon is None:
         result["coords_error"] = "Coordinates not found — expected location.lat/lon (SpaceAPI) or schema:geo (JSON-LD)"
     return result
@@ -441,7 +480,7 @@ def _build_sparql_update(graph_uri: str, space_uri: str, name: str, lat: float, 
         triples.append(f'  <{space_uri}> <{SCHEMA}openingHours> "{_sparql_str(str(hours))}" .')
 
     # Specialties (schema:knowsAbout) — JSON-LD array OR SpaceAPI flat "knowsAbout"
-    specialties = data.get("schema:knowsAbout") or data.get("knowsAbout") or []
+    specialties = data.get("schema:knowsAbout") or data.get("knowsAbout") or data.get("specialties") or []
     if isinstance(specialties, str):
         specialties = [specialties]
     for sp in specialties:
@@ -503,7 +542,12 @@ def _binding_to_feature(b: dict) -> Optional[dict]:
     street = b.get("street", {}).get("value", "")
     postcode = b.get("postcode", {}).get("value", "")
     city = b.get("city", {}).get("value", "")
-    address_parts = [p for p in [street, f"{postcode} {city}".strip()] if p]
+    raw_address = b.get("address", {}).get("value", "")
+    if raw_address:
+        address = raw_address
+    else:
+        address_parts = [p for p in [street, f"{postcode} {city}".strip()] if p]
+        address = ", ".join(address_parts)
 
     return {
         "type": "Feature",
@@ -515,7 +559,7 @@ def _binding_to_feature(b: dict) -> Optional[dict]:
             "status": status,
             "geolocationFidelity": b.get("geolocationFidelity", {}).get("value", ""),
             "geolocationNote": b.get("geolocationNote", {}).get("value", ""),
-            "address": ", ".join(address_parts),
+            "address": address,
             "city": city,
             "country": b.get("country", {}).get("value", ""),
             "website": b.get("website", {}).get("value", ""),
@@ -564,9 +608,58 @@ async def _rematerialize_geojson() -> None:
     logger.info("rematerialized %d spaces → %s", len(features), out_path)
 
 
+_SPACE_ID_RE = re.compile(r'^[a-zA-Z0-9_-]{1,64}$')
+
+
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+
+@app.post("/api/heartbeat-space/{space_id}")
+async def heartbeat_space(space_id: str):
+    if not _SPACE_ID_RE.match(space_id):
+        raise HTTPException(status_code=400, detail={"error": "invalid_space_id"})
+
+    now = datetime.now(timezone.utc)
+    last = _manual_refresh_cooldowns.get(space_id)
+    if last and (now - last) < timedelta(seconds=COOLDOWN_SECONDS):
+        retry_after = COOLDOWN_SECONDS - int((now - last).total_seconds())
+        raise HTTPException(
+            status_code=429,
+            detail={"error": "rate_limited", "retry_after_seconds": retry_after},
+        )
+
+    space_uri = f"urn:mak:space/{space_id}"
+    sparql = f"""PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
+SELECT ?endpointUrl WHERE {{
+  GRAPH <{space_uri}> {{
+    <{space_uri}> mom:endpointUrl ?endpointUrl .
+  }}
+}}"""
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.post(
+            f"{OXIGRAPH_ENDPOINT}/query",
+            content=sparql,
+            headers={
+                "Content-Type": "application/sparql-query",
+                "Accept": "application/sparql-results+json",
+            },
+        )
+        resp.raise_for_status()
+    bindings = resp.json().get("results", {}).get("bindings", [])
+    if not bindings:
+        raise HTTPException(
+            status_code=404,
+            detail={"error": "no_endpoint", "message": "Space has no registered endpoint URL"},
+        )
+
+    endpoint_url = bindings[0]["endpointUrl"]["value"]
+    _manual_refresh_cooldowns[space_id] = now
+
+    outcome = await process_one_space(space_uri, endpoint_url, OXIGRAPH_ENDPOINT)
+    await _rematerialize_geojson()
+    return {"status": "ok", "space_id": space_id, "outcome": outcome}
 
 
 @app.get("/claim/{token}")
@@ -591,7 +684,7 @@ async def register_url(req: UrlRequest):
     result = await _fetch_and_validate(req.url)
     data = result.pop("_data", {})
 
-    if not result.get("reachable") or not result.get("json_ld_valid") or not result.get("coords_found"):
+    if not result.get("reachable") or not result.get("schema_valid") or not result.get("coords_found"):
         raise HTTPException(status_code=422, detail={"validation": result})
 
     name = result["name_found"]

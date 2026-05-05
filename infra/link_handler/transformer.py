@@ -367,7 +367,8 @@ async def fetch_endpoint_conditional(
         if row[1]:
             req_headers["If-Modified-Since"] = row[1]
 
-    async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+    fetch_timeout = cfg.get("bandwidth", {}).get("heartbeat_timeout_seconds", 60.0)
+    async with httpx.AsyncClient(timeout=fetch_timeout, follow_redirects=True) as client:
         resp = await client.get(endpoint_url, headers=req_headers)
 
     was_304 = resp.status_code == 304
@@ -410,3 +411,114 @@ async def fetch_endpoint_conditional(
         logger.info("304 Not Modified for %s — bandwidth saved", space_id)
         return None, response_headers, True
     return resp, response_headers, False
+
+
+_SPARQL_ACTIVE_SPACES = """PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
+SELECT ?spaceUri ?endpointUrl WHERE {
+  GRAPH ?g {
+    ?spaceUri mom:endpointUrl ?endpointUrl .
+    OPTIONAL { ?spaceUri mom:operationalState ?state }
+    FILTER (!BOUND(?state) || ?state != "dead")
+  }
+  FILTER (STRSTARTS(STR(?g), "urn:mak:space/"))
+}"""
+
+
+async def query_active_spaces(oxigraph_endpoint: str) -> list[dict]:
+    """Return list of {space_uri, endpoint_url} for all non-dead spaces with an endpoint."""
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        resp = await client.post(
+            f"{oxigraph_endpoint}/query",
+            content=_SPARQL_ACTIVE_SPACES,
+            headers={
+                "Content-Type": "application/sparql-query",
+                "Accept": "application/sparql-results+json",
+            },
+        )
+        resp.raise_for_status()
+    bindings = resp.json().get("results", {}).get("bindings", [])
+    return [
+        {
+            "space_uri": b["spaceUri"]["value"],
+            "endpoint_url": b["endpointUrl"]["value"],
+        }
+        for b in bindings
+    ]
+
+
+async def process_one_space(
+    space_uri: str,
+    endpoint_url: str,
+    oxigraph_endpoint: str,
+) -> str:
+    """Fetch, validate, transform and write one space. Returns 'refreshed' or 'not_modified'."""
+    from main import SpaceAPISchema, classify_subset, _build_sparql_update
+
+    space_id = space_uri.split("/")[-1] if "/" in space_uri else space_uri
+
+    resp, _headers, was_304 = await fetch_endpoint_conditional(endpoint_url, space_id)
+    if was_304:
+        return "not_modified"
+
+    if resp is None or resp.status_code != 200:
+        logger.warning("heartbeat fetch failed for %s: status=%s", space_id,
+                       resp.status_code if resp else "no response")
+        return "error"
+
+    try:
+        data = resp.json()
+    except Exception:
+        logger.warning("heartbeat JSON parse failed for %s", space_id)
+        return "error"
+
+    cls: dict = {}
+    try:
+        schema_obj = SpaceAPISchema.model_validate(data)
+        cls = classify_subset(schema_obj)
+        sparql_update, _ = transform_to_sparql(schema_obj, {
+            "endpoint_url": endpoint_url,
+            "space_id": space_id,
+            "subset": cls.get("subset", ""),
+            "next_unlock": cls.get("next_unlock"),
+            "raw_content": resp.text,
+        })
+    except Exception as e:
+        logger.exception("transform_to_sparql failed for %s, using legacy builder: %s", space_id, e)
+        sparql_update = _build_sparql_update(
+            f"urn:mak:space/{space_id}", f"urn:mak:space/{space_id}",
+            data.get("space", space_id), None, None, endpoint_url, data,
+            subset=cls.get("subset", ""), next_unlock=cls.get("next_unlock"),
+        )
+
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        upd = await client.post(
+            f"{oxigraph_endpoint}/update",
+            content=sparql_update,
+            headers={"Content-Type": "application/sparql-update"},
+        )
+        upd.raise_for_status()
+
+    logger.info("heartbeat refreshed %s", space_id)
+    return "refreshed"
+
+
+async def run_heartbeat_cycle(oxigraph_endpoint: str, rematerialize_fn) -> None:
+    """Fetch all active spaces sequentially, then rematerialize GeoJSON once."""
+    try:
+        spaces = await query_active_spaces(oxigraph_endpoint)
+    except Exception as e:
+        logger.error("heartbeat cycle: failed to query active spaces: %s", e)
+        return
+
+    logger.info("heartbeat cycle: %d spaces to check", len(spaces))
+    for entry in spaces:
+        try:
+            await process_one_space(entry["space_uri"], entry["endpoint_url"], oxigraph_endpoint)
+        except Exception as e:
+            logger.error("heartbeat cycle: error processing %s: %s", entry["space_uri"], e)
+
+    try:
+        await rematerialize_fn()
+        logger.info("heartbeat cycle: rematerialization complete")
+    except Exception as e:
+        logger.error("heartbeat cycle: rematerialization failed: %s", e)

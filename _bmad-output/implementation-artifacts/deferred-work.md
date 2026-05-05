@@ -1,5 +1,16 @@
 # Deferred Work
 
+## Deferred from: code review of 3-1-heartbeat-scheduler (2026-05-05)
+
+- **Circular import (transformer ← main)** — `process_one_space` uses `from main import SpaceAPISchema, classify_subset, _build_sparql_update` at call time. Works at runtime; breaks test isolation. Extract shared types to `schemas.py` in a future refactor story.
+- **Concurrent scheduler + manual trigger race** — Both code paths write to Oxigraph and rematerialize GeoJSON independently with no asyncio lock. Safe at 6 spaces / 10min; add mutex in Epic 4 ops story.
+- **Mobile suppression of refresh button** — Not confirmed in diff; likely inherited from Zone 3 CSS (Story 3.0-A). Verify in CSS audit during Epic 5 polish.
+- **APScheduler startup failure has no `/health` signal** — Spec requires catch+log (not fail-fast). Add scheduler health status to `/health` in Epic 4 observability.
+- **SVG innerHTML duplicated 3× in click handler** — Extract to `_REFRESH_SVG` const in future UI pass.
+- **New `httpx.AsyncClient` per space per heartbeat cycle** — Harmless at 6 spaces; pass shared client when scaling to larger fleet.
+- **`_rematerialize_geojson` called unconditionally even on "not_modified"** — Skip rematerialize when outcome is `"not_modified"` in manual endpoint; minor I/O waste.
+- **Cooldown UX refinement (pilot)** — Current: 60s cooldown starts on any non-rate-limited attempt, including 404 (no endpoint). Pilot improvement: only engage cooldown after a successful or not-modified fetch; 404 (space has no endpoint) should not lock out the user. → post-demo pilot story.
+
 ## Deferred from: code review of 3-0-A-space-profile-card-ux-refinement (2026-05-05)
 
 - **D1 — Raw `s.error_type` displayed to user when key not in ERROR_LABELS** — broken spaces with unlisted error types show internal key strings (e.g., `dns_resolution_failed`) in the info banner. Text-safe (no XSS). Defer to Epic 5 UX polish / coordinator feedback story.
@@ -115,8 +126,8 @@ Generating a real openfab.jsonld against the `space-jsonld-generator` skill expo
 
 ## Deferred from: UX design session for 3-0-A-space-profile-card-ux-refinement (2026-05-04)
 
-- **Manual fetch button wired (disabled stub in 3.0-A)** — Zone 3 "↺ Refresh from endpoint" button renders disabled pending `POST /api/heartbeat-space/{space_id}` endpoint. Full implementation (click handler, cooldown, Zone 3 re-render) → Story 3.1 heartbeat scheduler.
-- **True change-detection for "last updated"** — `mom:lastUpdated` written at every successful registration/heartbeat write; does not diff snapshot content. "Last updated" = "last time we wrote to Oxigraph for this space", which is good enough for now. Genuine change detection (only update timestamp when content differs) → Epic 7.
+- **Manual fetch button wired (disabled stub in 3.0-A)** — ✅ DONE in Story 3.1.
+- **True change-detection for "last updated"** — `mom:lastUpdated` written at every successful 200 fetch; does not diff content. "fetched:" timestamp in Zone 3 = last 200 response; field-level change history is nice-to-have for trust/transparency story but not critical for demo. `detect_diff()` exists in transformer.py but is not called. → Epic 7 / future history story. Note: 304 conditional GET already prevents redundant writes when server honours ETags.
 - **`state` open/closed dynamic signal → green marker** — SpaceAPI `state` object (dynamic open/closed + lastchange) detected but not yet acted on. If present, could enable green marker and freshness sensing for demo. → Epic 7.
 - **Space name collision / duplicate space resolution** — Two unrelated spaces sharing the same name (e.g. OpenFab Brussels vs OpenFab Istanbul) are currently disambiguated only by endpoint URL. No UI for collision detection or coordinator disambiguation. → Pilot phase.
 - **Endpoint URL swap / trust attack** — A bad actor could register an existing seeded space's slug with a different endpoint URL, replacing legitimate data. No auth or ownership verification at registration time. → Pilot phase security hardening.

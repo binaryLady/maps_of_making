@@ -3,4 +3,5 @@ uvicorn[standard]
 httpx
 pydantic
 pyyaml
+apscheduler>=3.10
 pytest-asyncio

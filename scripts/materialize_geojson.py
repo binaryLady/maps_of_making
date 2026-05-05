@@ -30,7 +30,7 @@ PREFIX schema: <https://schema.org/>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 SELECT ?spaceUri ?name ?latitude ?longitude ?status ?geolocationFidelity ?geolocationNote
-       ?street ?postcode ?city ?country ?website ?profileUrl ?openNow ?source
+       ?street ?postcode ?city ?country ?address ?website ?profileUrl ?openNow ?source
        ?endpointUrl ?lastFetched ?errorType ?description ?logo ?contactJson ?lastUpdated ?subset ?nextUnlock
        (GROUP_CONCAT(DISTINCT ?specialty; separator="|") AS ?specialties)
        (COALESCE(GROUP_CONCAT(DISTINCT STR(?network); separator="|"), "") AS ?networkMemberships)
@@ -51,6 +51,7 @@ WHERE {
       OPTIONAL { ?spaceUri schema:postalCode ?postcode }
       OPTIONAL { ?spaceUri schema:addressLocality ?city }
       OPTIONAL { ?spaceUri schema:addressCountry ?country }
+      OPTIONAL { ?spaceUri mom:address ?address }
       OPTIONAL { ?spaceUri schema:url ?website }
       OPTIONAL { ?spaceUri mom:profileUrl ?profileUrl }
       OPTIONAL { ?spaceUri schema:knowsAbout ?specialty }
@@ -85,6 +86,7 @@ WHERE {
       OPTIONAL { ?spaceUri schema:postalCode ?postcode }
       OPTIONAL { ?spaceUri schema:addressLocality ?city }
       OPTIONAL { ?spaceUri schema:addressCountry ?country }
+      OPTIONAL { ?spaceUri mom:address ?address }
       OPTIONAL { ?spaceUri schema:url ?website }
       OPTIONAL { ?spaceUri mom:profileUrl ?profileUrl }
       OPTIONAL { ?spaceUri schema:knowsAbout ?specialty }
@@ -108,7 +110,7 @@ WHERE {
   }
 }
 GROUP BY ?spaceUri ?name ?latitude ?longitude ?status ?geolocationFidelity ?geolocationNote
-         ?street ?postcode ?city ?country ?website ?profileUrl ?openNow ?source
+         ?street ?postcode ?city ?country ?address ?website ?profileUrl ?openNow ?source
          ?endpointUrl ?lastFetched ?errorType ?description ?logo ?contactJson ?lastUpdated ?subset ?nextUnlock
 ORDER BY ?spaceUri"""
 
@@ -202,9 +204,12 @@ def binding_to_space(binding: dict) -> dict:
     subset = binding.get("subset", {}).get("value", "")
     next_unlock = binding.get("nextUnlock", {}).get("value", "")
 
-    # Compose address string from available parts
-    address_parts = [p for p in [street, f"{postcode} {city}".strip()] if p]
-    address = ", ".join(address_parts)
+    raw_address = binding.get("address", {}).get("value", "")
+    if raw_address:
+        address = raw_address
+    else:
+        address_parts = [p for p in [street, f"{postcode} {city}".strip()] if p]
+        address = ", ".join(address_parts)
 
     return {
         "type": "Feature",

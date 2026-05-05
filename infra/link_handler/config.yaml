@@ -5,6 +5,8 @@ operational_state:
   dead_failures_threshold: 5
 
 bandwidth:
+  heartbeat_interval_seconds: 600
+  heartbeat_timeout_seconds: 60
   heartbeat_log_path: "/app/tasks/heartbeat_log.db"
   gap_log_path: "/app/tasks/gap_log.txt"
 

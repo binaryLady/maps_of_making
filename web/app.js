@@ -647,47 +647,98 @@
       body.appendChild(zone3);
       const rawEl = zone3.querySelector('.raw-content');
 
+      const _loadZone3 = () => {
+        if (!rawEl) return;
+        rawEl.innerHTML = '';
+        fetch(`/api/space/${s.id}/raw`)
+          .then(r => r.json())
+          .then(result => {
+            if (!rawEl) return;
+            rawEl.innerHTML = '';
+            if (result.error || result.truncated) {
+              rawEl.textContent = result.truncated ? 'Source data exceeds display limit.' : 'Source unavailable.';
+              if (rawEl.parentElement) {
+                rawEl.parentElement.querySelector('.sp-refresh-btn')?.remove();
+                rawEl.parentElement.appendChild(_makeRefreshBtn(null));
+              }
+              return;
+            }
+            const termWrap = el('div', { class: 'sp-terminal-wrap' }, [
+              el('div', { class: 'sp-terminal-head' }, [
+                el('span', { class: 'sp-terminal-head-label' }, ['JSON · Endpoint Response']),
+                el('span', { class: 'sp-terminal-head-meta' }, [result.snapshot_date ? new Date(result.snapshot_date).toLocaleString() : '—']),
+              ]),
+            ]);
+            const pre = document.createElement('pre');
+            pre.className = 'json sp-terminal-body';
+            pre.appendChild(jsonHighlight(result.raw));
+            termWrap.appendChild(pre);
+            rawEl.appendChild(termWrap);
+            const trustLine = el('div', { class: 'sp-trust-line' }, ['The map only reads & enhances your data — it never edits the source.']);
+            rawEl.appendChild(trustLine);
+            if (rawEl.parentElement) {
+              rawEl.parentElement.querySelector('.sp-refresh-btn')?.remove();
+              rawEl.parentElement.appendChild(_makeRefreshBtn(result.snapshot_date));
+            }
+          })
+          .catch(() => {
+            if (rawEl) {
+              rawEl.textContent = 'Source unavailable.';
+              if (rawEl.parentElement) {
+                rawEl.parentElement.querySelector('.sp-refresh-btn')?.remove();
+                rawEl.parentElement.appendChild(_makeRefreshBtn(null));
+              }
+            }
+          });
+      };
+
       const _makeRefreshBtn = (lastFetched) => {
         const btn = document.createElement('button');
         btn.className = 'sp-refresh-btn';
-        btn.disabled = true;
-        btn.title = 'Manual refresh available soon';
+        btn.title = 'Refresh data from endpoint';
         btn.innerHTML = '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M12.5 2v3.5h-3.5"/><path d="M12.3 5.3A5.5 5.5 0 1 1 10.1 2.5"/></svg> Refresh from endpoint'
-          + (lastFetched ? `<span class="sp-refresh-meta">last: ${timeAgo(lastFetched)}</span>` : '');
+          + (lastFetched ? `<span class="sp-refresh-meta">fetched: ${timeAgo(lastFetched)}</span>` : '');
+        btn.addEventListener('click', () => {
+          btn.disabled = true;
+          btn.innerHTML = '… Refreshing';
+          const msgEl = btn.nextSibling && btn.nextSibling.className === 'sp-refresh-msg' ? btn.nextSibling : null;
+          if (msgEl) msgEl.remove();
+          fetch(`/api/heartbeat-space/${s.id}`, { method: 'POST' })
+            .then(r => r.json().then(body => ({ ok: r.ok, status: r.status, body })))
+            .then(({ ok, status, body }) => {
+              btn.innerHTML = '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M12.5 2v3.5h-3.5"/><path d="M12.3 5.3A5.5 5.5 0 1 1 10.1 2.5"/></svg> Refresh from endpoint';
+              btn.disabled = false;
+              if (status === 429) {
+                const msg = document.createElement('span');
+                msg.className = 'sp-refresh-msg';
+                const retryAfter = body?.detail?.retry_after_seconds;
+                msg.textContent = retryAfter ? `Refreshed recently — try again in ${retryAfter}s` : 'Refreshed recently — try again shortly';
+                btn.after(msg);
+                setTimeout(() => msg.remove(), 3000);
+              } else if (ok) {
+                _loadZone3();
+              } else {
+                const msg = document.createElement('span');
+                msg.className = 'sp-refresh-msg sp-refresh-msg--error';
+                msg.textContent = 'Refresh failed — try again later';
+                btn.after(msg);
+                setTimeout(() => msg.remove(), 3000);
+              }
+            })
+            .catch(() => {
+              btn.innerHTML = '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M12.5 2v3.5h-3.5"/><path d="M12.3 5.3A5.5 5.5 0 1 1 10.1 2.5"/></svg> Refresh from endpoint';
+              btn.disabled = false;
+              const msg = document.createElement('span');
+              msg.className = 'sp-refresh-msg sp-refresh-msg--error';
+              msg.textContent = 'Refresh failed — try again later';
+              btn.after(msg);
+              setTimeout(() => msg.remove(), 3000);
+            });
+        });
         return btn;
       };
 
-      fetch(`/api/space/${s.id}/raw`)
-        .then(r => r.json())
-        .then(result => {
-          if (!rawEl) return;
-          rawEl.innerHTML = '';
-          if (result.error || result.truncated) {
-            rawEl.textContent = result.truncated ? 'Source data exceeds display limit.' : 'Source unavailable.';
-            if (rawEl.parentElement) rawEl.parentElement.appendChild(_makeRefreshBtn(null));
-            return;
-          }
-          const termWrap = el('div', { class: 'sp-terminal-wrap' }, [
-            el('div', { class: 'sp-terminal-head' }, [
-              el('span', { class: 'sp-terminal-head-label' }, ['JSON · Endpoint Response']),
-              el('span', { class: 'sp-terminal-head-meta' }, [result.snapshot_date ? new Date(result.snapshot_date).toLocaleString() : '—']),
-            ]),
-          ]);
-          const pre = document.createElement('pre');
-          pre.className = 'json sp-terminal-body';
-          pre.appendChild(jsonHighlight(result.raw));
-          termWrap.appendChild(pre);
-          rawEl.appendChild(termWrap);
-          const trustLine = el('div', { class: 'sp-trust-line' }, ['The map only reads & enhances your data — it never edits the source.']);
-          rawEl.appendChild(trustLine);
-          if (rawEl.parentElement) rawEl.parentElement.appendChild(_makeRefreshBtn(result.snapshot_date));
-        })
-        .catch(() => {
-          if (rawEl) {
-            rawEl.textContent = 'Source unavailable.';
-            if (rawEl.parentElement) rawEl.parentElement.appendChild(_makeRefreshBtn(null));
-          }
-        });
+      _loadZone3();
     }
   }
 
@@ -845,7 +896,7 @@
       blocking = true;
     } else {
       lines.push({ ok: true, text: `reachable (${escHtml(data.status_code)} OK)` });
-      if (!data.json_ld_valid) {
+      if (!data.schema_valid) {
         lines.push({ ok: false, text: `schema not recognised — ${escHtml(data.error || 'missing name or space field')}` });
         blocking = true;
       } else {

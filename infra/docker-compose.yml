@@ -83,6 +83,7 @@ services:
       - "8000"
     volumes:
       - ../web/data:/app/web_data
+      - ../scripts/activity_map.yaml:/app/scripts/activity_map.yaml:ro
     environment:
       - OXIGRAPH_ENDPOINT=http://oxigraph:7878
       - LINK_SECRET=${LINK_SECRET:?LINK_SECRET must be set in .env}
