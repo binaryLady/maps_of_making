@@ -308,7 +308,8 @@
   // ───────────────────────────── filter chips
   function buildFilterChips() {
     // Networks
-    const networks = unique(state.spaces.flatMap((s) => s.network_memberships));
+    const networks = unique(state.spaces.flatMap((s) => s.network_memberships))
+      .map((n) => [n, n.split('/').pop().toUpperCase()]);
     const countries = unique(state.spaces.map((s) => s.country));
     const statuses = ['seeded', 'confirmed', 'open', 'unlinked', 'broken'];
     const specialties = unique(state.spaces.flatMap((s) => s.specialties)).sort();
@@ -375,7 +376,7 @@
         el('span', { class: `pin-swatch ${kind}`, style: { marginTop: '2px' } }),
         el('div', { style: { flex: 1, minWidth: 0 } }, [
           el('div', { class: 'name' }, [s.name]),
-          el('div', { class: 'meta' }, [`${s.city}, ${s.country} · ${(s.network_memberships || []).join(' · ')}`]),
+          el('div', { class: 'meta' }, [`${s.city}, ${s.country}${(s.network_memberships || []).length ? ' · ' + s.network_memberships.map((n) => n.split('/').pop().toUpperCase()).join(' · ') : ''}`]),
           el('div', { class: 'tags' }, (s.specialties || []).slice(0, 4).map((sp) => el('span', { class: 'tag' }, [sp]))),
         ]),
         el('span', { class: `status-label ${kind}`, style: { alignSelf: 'flex-start' } }, [kind])
@@ -412,28 +413,30 @@
         }).catch(() => {});
       };
     }
-    // Hero
-    const heroKids = [];
+    // Hero — name left / logo right / address / badges / last updated
+    const networkLabel = (urn) => urn.split('/').pop().toUpperCase();
+    const nameRow = el('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' } }, [
+      el('h3', { style: { margin: '0' } }, [s.name]),
+    ]);
     if (s.logo) {
       const img = document.createElement('img');
       img.src = s.logo;
-      img.style.cssText = 'max-height:32px;max-width:80px;object-fit:contain;border-radius:4px;margin-right:8px;vertical-align:middle;';
+      img.style.cssText = 'max-height:32px;max-width:80px;object-fit:contain;border-radius:4px;flex-shrink:0;';
       img.onerror = () => img.remove();
-      heroKids.push(img);
+      nameRow.appendChild(img);
     }
-    heroKids.push(
-      el('h3', {}, [s.name]),
-      el('div', { class: 'where' }, [`${s.address}`]),
+    body.appendChild(el('div', { class: 'detail-hero' }, [
+      nameRow,
+      el('div', { class: 'where' }, [s.address || '']),
       el('div', { class: 'badges' }, [
         el('span', { class: `status-label ${kind}` }, [kind]),
-        ...(s.network_memberships || []).map((n) => el('span', { class: 'status-label', style: { textTransform: 'none', color: 'var(--accent-2)', borderColor: 'var(--accent-2)' } }, [n])),
+        ...(s.network_memberships || []).map((n) => el('span', { class: 'status-label', style: { textTransform: 'none', color: 'var(--accent-2)', borderColor: 'var(--accent-2)' } }, [networkLabel(n)])),
         s.open_for_hosting ? el('span', { class: 'status-label', style: { textTransform: 'none' } }, ['open for hosting']) : null,
       ]),
       el('div', { style: { fontSize: '12px', color: 'var(--muted)', marginTop: '4px' } }, [
         'Last updated: ' + (s.last_updated ? timeAgo(s.last_updated) : 'unknown')
       ])
-    );
-    body.appendChild(el('div', { class: 'detail-hero' }, heroKids));
+    ]));
     // Zone 2 — Data card (all non-seeded states)
     if (s.status !== 'seeded') {
       const dataKids = [
@@ -463,9 +466,12 @@
           const btn = el('button', { class: 'close', title: `${key}: ${val}`, style: { fontSize: '16px', margin: '0 2px' } }, [picto.icon]);
           btn.addEventListener('click', () => {
             if (picto.action === 'url') {
-              window.open(val, '_blank', 'noopener');
+              const safeVal = String(val);
+              if (safeVal.startsWith('https://') || safeVal.startsWith('http://')) {
+                window.open(safeVal, '_blank', 'noopener');
+              }
             } else {
-              navigator.clipboard.writeText(val).then(() => {
+              navigator.clipboard.writeText(String(val)).then(() => {
                 btn.textContent = '✓';
                 setTimeout(() => { btn.textContent = picto.icon; }, 1500);
               }).catch(() => {});
@@ -518,7 +524,7 @@
           bannerText = 'Full SpaceAPI compatibility — interoperable with mapall.space.';
         }
       } else if (s.status === 'broken') {
-        const errLabel = ERROR_LABELS[s.error_type] || s.error_type || 'Endpoint unavailable';
+        const errLabel = ERROR_LABELS[s.error_type] || 'Endpoint unavailable';
         bannerLabel = 'Endpoint issue';
         bannerText = `${errLabel} — check your SpaceAPI endpoint is reachable and returns valid JSON-LD.`;
         bannerStyle = { ...bannerStyle, color: 'var(--error, #c0392b)' };
@@ -547,6 +553,13 @@
         }
         body.appendChild(bannerDiv);
       }
+      // Subset nudge for broken spaces (endpoint issue doesn't block unlock guidance)
+      if (s.status === 'broken' && s.next_unlock) {
+        body.appendChild(el('div', { class: 'detail-section' }, [
+          el('div', { class: 'wf-label' }, ['What your data unlocks']),
+          el('div', { style: { fontSize: '13px', color: 'var(--muted)', marginTop: '4px' } }, [s.next_unlock])
+        ]));
+      }
     }
     // Zone 3 — Source (desktop only, confirmed/broken spaces only)
     if (window.innerWidth >= 768 && s.status !== 'seeded') {
@@ -567,7 +580,7 @@
           if (result.error || result.truncated) {
             rawEl.textContent = result.truncated ? 'Source data exceeds display limit.' : 'Source unavailable.';
             const fetchBtn = el('button', { class: 'btn', disabled: true, title: 'Manual refresh available soon', style: { marginTop: '8px', width: '100%' } }, ['↺ Refresh from endpoint']);
-            rawEl.parentElement.appendChild(fetchBtn);
+            if (rawEl.parentElement) rawEl.parentElement.appendChild(fetchBtn);
             return;
           }
           rawEl.innerHTML = '';
@@ -586,7 +599,7 @@
           if (rawEl) {
             rawEl.textContent = 'Source unavailable.';
             const fetchBtn = el('button', { class: 'btn', disabled: true, title: 'Manual refresh available soon', style: { marginTop: '8px', width: '100%' } }, ['↺ Refresh from endpoint']);
-            rawEl.parentElement.appendChild(fetchBtn);
+            if (rawEl.parentElement) rawEl.parentElement.appendChild(fetchBtn);
           }
         });
     }

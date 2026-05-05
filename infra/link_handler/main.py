@@ -605,6 +605,7 @@ async def register_url(req: UrlRequest):
     space_uri = f"urn:mak:space/{slug}"
 
     from transformer import transform_to_sparql
+    cls: dict = {}
     try:
         schema_obj = SpaceAPISchema.model_validate(data)
         cls = classify_subset(schema_obj)
@@ -614,14 +615,9 @@ async def register_url(req: UrlRequest):
         })
     except Exception as e:
         logger.exception("transform_to_sparql failed, falling back to legacy builder: %s", e)
-        try:
-            _fallback_schema = SpaceAPISchema.model_validate(data)
-            _cls = classify_subset(_fallback_schema)
-        except Exception:
-            _cls = {}
         sparql_update = _build_sparql_update(
             graph_uri, space_uri, name, lat, lon, req.url, data,
-            subset=_cls.get("subset", ""), next_unlock=_cls.get("next_unlock"),
+            subset=cls.get("subset", ""), next_unlock=cls.get("next_unlock"),
         )
 
     try:

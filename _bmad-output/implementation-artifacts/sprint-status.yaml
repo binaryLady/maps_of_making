@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-01
-last_updated: 2026-05-04 (Story 3.0 done; Story 3.0-A created: ready-for-dev; Story 3.1 created: ready-for-dev; heartbeat period updated to 10min)
+last_updated: 2026-05-05 (Story 3.0-A done: review patches applied — network badges, hero layout, XSS guard, broken-space nudge)
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
@@ -99,7 +99,7 @@ development_status:
   # Next priority — prerequisite for Epic 4 operator dashboard
   epic-3: in-progress
   3-0-ingestion-transformation-layer-spaceapi-json-to-mom-json-ld: done
-  3-0-A-space-profile-card-ux-refinement: review
+  3-0-A-space-profile-card-ux-refinement: done
   3-1-heartbeat-scheduler-periodic-10min-fetch-cycle-manual-trigger: ready-for-dev
   3-2-freshness-lifecycle-aging-zombie-dead-transitions: backlog
   3-3-magic-link-generation-link-handler-validation: backlog

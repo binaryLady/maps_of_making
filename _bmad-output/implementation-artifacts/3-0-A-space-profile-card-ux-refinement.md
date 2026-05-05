@@ -1,6 +1,6 @@
 # Story 3.0-A: Space Profile Card — UX Refinement
 
-Status: review
+Status: done
 
 ## Story
 
@@ -378,6 +378,21 @@ Place in drawer header bar (`.drawer-head` in `maps-of-making.html`), left of th
 - [Source: infra/link_handler/main.py:434–485] — `_binding_to_feature()` GeoJSON mapping
 - [Source: scripts/materialize_geojson.py] — parallel SPARQL query + `binding_to_space()` to update
 - [Source: deferred-work.md#UX-design-session-3-0-A] — deferred items: manual fetch wired in 3.1, change-detection in Epic 7
+
+---
+
+### Review Findings
+
+- [x] [Review][Decision] AC7 — Seeded Zone 2 "Data from VOW/RFF" placeholder → intentional redesign; info banner replaces it. Network badges now show VOW/RFF from memberOf URN [web/app.js]
+- [x] [Review][Decision] AC4 — Broken spaces now get subset nudge after error banner [web/app.js:~520]
+- [x] [Review][Decision] AC5 — `toLocaleString()` seconds precision — accepted as-is
+- [x] [Review][Patch] XSS: `window.open(val)` — scheme guard added (http/https only) [web/app.js:~465]
+- [x] [Review][Patch] Null deref in `.catch` — `rawEl.parentElement &&` guard added [web/app.js:~570, ~589]
+- [x] [Review][Patch] `String(val)` coercion for clipboard.writeText [web/app.js:~468]
+- [x] [Review][Patch] Fallback path — removed redundant model_validate; reuses `cls` with safe `{}` default [main.py:~607]
+- [x] [Review][Patch] `has_required` else branch — unreachable by logic; no fix needed (false positive)
+- [x] [Review][Defer] Raw `s.error_type` value displayed when not in ERROR_LABELS — `s.error_type` fallback removed from banner; defer to Epic 5 [web/app.js:~521]
+- [x] [Review][UX] Hero layout: name left / logo right (not stacked); address restored as subtitle; network badges show VOW/RFF labels [web/app.js:~415]
 
 ---
 

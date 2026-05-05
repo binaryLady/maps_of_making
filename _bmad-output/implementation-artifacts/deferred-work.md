@@ -1,5 +1,10 @@
 # Deferred Work
 
+## Deferred from: code review of 3-0-A-space-profile-card-ux-refinement (2026-05-05)
+
+- **D1 — Raw `s.error_type` displayed to user when key not in ERROR_LABELS** — broken spaces with unlisted error types show internal key strings (e.g., `dns_resolution_failed`) in the info banner. Text-safe (no XSS). Defer to Epic 5 UX polish / coordinator feedback story.
+- **D2 — Network label externalization** — Currently network URNs are displayed as uppercased final segment (e.g., `urn:mak:network/vow` → `VOW`). This works for known networks but is fragile for federation/arbitrary networks. Solution: add network resource definitions to ontology with `rdfs:label`, surface via SPARQL optional lookup in both materialize_geojson.py and main.py SPARQL queries, add `networkLabels: { urn → label }` dict to GeoJSON binding, render from that in UI. → Epic 5 networking polish or Epic 4 admin dashboard refactor.
+
 ## Deferred from: code review of 2-7-card-zones-pydantic-schema-foundation (2026-04-28)
 
 - **W1 — "last fetch never ago" timestamp display bug** — `timeAgo()` receives a date-only `YYYY-MM-DD` string; needs a full ISO datetime. Pre-existing; visible now because a real coordinator space was registered. → Epic 5 / Story 4.2 fetch history polish.
