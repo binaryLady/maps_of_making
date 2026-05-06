@@ -1116,13 +1116,65 @@ As MOM, I want the heartbeat to interpret each fetch into three independent trut
 
 ---
 
+### Story 3.3: Mother Sands Canary Space — Virtual Space Seed + Lifecycle Demo
+
+> **Sourced from deferred-work lore session 2026-05-06.** Addresses the gap between Epic 3's pipeline and a live, observable proof-of-life before Epic 4 dashboard work begins.
+
+As MOM, I want a virtual makerspace ("Mother Sands / Unit M") that is a fully real entry in the system — seeded, heartbeat-scheduled, and publicly visible on the map — so that the ingestion pipeline has an always-on canary exercising all lifecycle states without waiting for real coordinator data to age.
+
+**Concept:**
+- **Mother Sands** — public display name. The mythical eighth Maunsell sea fort that was never built. Pinned to a historically plausible gap in the Thames estuary arc (approx. 51.60° N, 1.15° E) between the Army group and the Navy group further east.
+- **Unit M** — operator callsign used in heartbeat logs, admin dashboard, and sprint docs. On each `dead` → `confirmed` rebirth cycle, the script migrates coordinates to the next fort in the U2–U7 rotation (U1 / Roughs Tower excluded — Sealand's platform).
+
+**Endpoint architecture:**
+- The `mom.mapsofmaking.org` subdomain is the **space's website** — the MOM explainer wiki and lore page visitors see.
+- The **SpaceAPI JSON endpoint** is a file served at a distinct path on the same subdomain: `mom.mapsofmaking.org/mom_v15status.json` (or `/spaceapi.json`). These are two different things on the same host — the website root ≠ the machine-readable endpoint.
+- The space's `schema:url` field → `https://mom.mapsofmaking.org` (human site). The heartbeat polls `https://mom.mapsofmaking.org/mom_v15status.json` (machine endpoint).
+
+**Acceptance Criteria:**
+
+**Given** a seed JSON-LD file for Mother Sands exists in `data/seed/` with all required mom:required fields, valid coordinates, and `schema:url` pointing to `https://mom.mapsofmaking.org`
+
+**When** `make publish` runs
+**Then** Mother Sands appears on the public map as a `confirmed` space with the correct pin
+
+**Given** a Python script (`scripts/canary_cycle.py`) and a served `mom_v15status.json` on `mom.mapsofmaking.org`
+**When** the heartbeat scheduler polls the endpoint on its regular cycle
+**Then** Phase 1 (endpoint health cycle): the script flips `state.open` true→false→true on a 15-min cadence; dropping the endpoint to HTTP 503 exercises the `broken` health path — no fakery, fully live
+
+**Given** `mom:simulatedAge` annotation is present on the Mother Sands named graph
+**When** `classify_lifecycle` reads the space
+**Then** it respects the override (add a one-line seam: read `mom:simulatedAge` from the named graph if present, use as `days_since_last_update`)
+**And** Phase 2 (lifecycle cycle): the canary script sets `mom:simulatedAge` to 0 → 95 → 200 → 0, walking the marker through `confirmed` → `aging` → `zombie` → `dead` → `confirmed`
+
+**Given** the space reaches `dead` state
+**When** the canary script triggers the rebirth
+**Then** `schema:geo` coordinates update to the next fort in the U2–U7 array (cyclic), and the map marker relocates on next heartbeat
+
+**Fort rotation array (U2–U7):**
+- U2 Sunk Head: 51.7347° N, 1.2369° E
+- U3 Tongue Sands: 51.4964° N, 1.2344° E
+- U4 Knock John: 51.5039° N, 0.9928° E
+- U5 Nore: 51.4431° N, 0.7441° E
+- U6 Red Sands: 51.4656° N, 0.9725° E
+- U7 Shivering Sands: 51.5261° N, 1.0814° E
+
+**Dependencies:**
+- `mom.mapsofmaking.org` subdomain configured in hetzner-gateway nginx (reuse pattern from `admin.mapsofmaking.com`)
+- `mom:simulatedAge` seam in `classify_lifecycle` (1-line change; does not affect real spaces)
+- Story 3.2 complete (lifecycle classification in place)
+
+**Deferred to Epic 4 / post-demo:**
+- Phase 2 live cycle script (Phase 1 endpoint health flip is the demo deliverable)
+- Fort relocation automation (can be done manually for demo)
+
 ---
 
-> **Stories 3.3 and 3.4 (magic link generation + coordinator email) are moved to Epic 4b** — parallel non-blocking epic. See Epic 4b below.
+> **Stories 3.3 (original) and 3.4 (magic link generation + coordinator email) are moved to Epic 4b** — parallel non-blocking epic. See Epic 4b below.
 
 ---
 
-### Story 3.3 → Epic 4b: Magic Link Generation + Link-Handler Validation
+### Story 3.3 (original) → Epic 4b: Magic Link Generation + Link-Handler Validation
 
 As a coordinator receiving a nudge email,
 I want a single-click link that either confirms my space is still active or gracefully closes it,

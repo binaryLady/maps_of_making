@@ -14,7 +14,7 @@ The Maunsell sea forts (1942–1945) were the first line of defence for the Tham
 The space's declared specialties: AI systems, linked open data, geography/cartography, offshore engineering, pirate-radio history. Spirit: anarchist-creative, open-source, international-waters freedom-of-information. Vibe: second-hand offshore platform, solar-powered, satellite uplink, dry-erase ontology diagrams on the bulkhead walls.
 
 ### Technical implementation (deferred to Epic 4 / canary story)
-- SpaceAPI JSON endpoint hosted at `mom.mapsofmaking.org` (proposed subdomain — also candidate for the MOM wiki/explainer site).
+- `mom.mapsofmaking.org` is the **space's website** (MOM wiki/explainer, human-readable). The **SpaceAPI JSON endpoint** is a distinct file path on the same host: `https://mom.mapsofmaking.org/mom_v15status.json` (or `/spaceapi.json`). `schema:url` points to the root; the heartbeat polls the file path. These must not be conflated.
 - `mom:simulatedAge` annotation on the space record: `classify_lifecycle` respects this override when present, allowing Phase 2 lifecycle-cycle demo without waiting 30–180 real days. `classify_lifecycle` already accepts a `days_since_last_update` parameter — add a seam to read override from the space's named graph if present.
 - **Phase 1 (endpoint health cycle):** Script flips `state.open` true→false→true on a 15-min cycle; then drops the endpoint (HTTP 503) to exercise `broken` health. Fully live, no fakery.
 - **Phase 2 (lifecycle cycle):** Script sets `mom:simulatedAge` to 0 → 95 → 200 → 0 on the same 15-min cadence, walking the map marker through confirmed → aging → zombie → dead → confirmed. Visible on the public map as real state changes.

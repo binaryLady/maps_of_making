@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-01
-last_updated: 2026-05-06 (sprint-planning sync: Epic 4 stories realigned to current epics.md; 4-0 draft orphaned → flagged)
+last_updated: 2026-05-06 (3-2-b story file created → ready-for-dev)
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
@@ -103,9 +103,10 @@ development_status:
   3-0-B-space-profile-v2-ui: done
   3-1-heartbeat-scheduler-periodic-10min-fetch-cycle-manual-trigger: done
   3-2-freshness-lifecycle-aging-zombie-dead-transitions: done
-  3-2-b-mak-closed-pii-strip: backlog
-  3-3-magic-link-generation-link-handler-validation: backlog
-  3-4-coordinator-email-notification-with-pre-filled-recovery-link: backlog
+  3-2-b-mak-closed-pii-strip: ready-for-dev
+  3-3-mother-sands-canary-space-virtual-space-seed-lifecycle-demo: backlog
+  # Note: original Story 3.3 (magic link) and 3.4 (coordinator email) moved to Epic 4b
+
   epic-3-retrospective: optional
 
   # Epic 4: Operator Observability Dashboard
