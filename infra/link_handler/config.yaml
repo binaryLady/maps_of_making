@@ -15,3 +15,6 @@ bandwidth:
   gap_log_path: "/app/tasks/gap_log.txt"
 
 activity_map_path: "/app/scripts/activity_map.yaml"
+
+closure:
+  closed_cycles_threshold: 6

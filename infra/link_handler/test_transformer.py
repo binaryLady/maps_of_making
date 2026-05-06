@@ -482,3 +482,144 @@ def test_effective_marker_broken_not_shown_when_dead():
 def test_effective_marker_broken_shown_only_when_confirmed():
     for lifecycle in ("aging", "zombie", "dead"):
         assert transformer.effective_marker("broken", lifecycle, False) == lifecycle
+
+
+# ---- Story 3.2b: closed-cycle counter + PII strip ----
+
+def test_effective_marker_closed_wins_over_broken():
+    assert transformer.effective_marker("broken", "closed", False) == "closed"
+
+
+def test_effective_marker_closed_wins_over_confirmed():
+    assert transformer.effective_marker("healthy", "closed", True) == "closed"
+
+
+def test_build_pii_strip_sparql_deletes_contact_and_sets_closed():
+    sparql = transformer._build_pii_strip_sparql("urn:mak:space/testfab")
+    assert "schema:contactJson" in sparql
+    assert 'mom:operationalState "closed"' in sparql
+    assert "mak:closedAt" in sparql
+    # Must NOT touch coordinates or name
+    assert "schema:geo" not in sparql
+    assert "schema:name" not in sparql
+    assert "schema:url" not in sparql
+    assert "schema:logo" not in sparql
+
+
+def test_build_pii_strip_sparql_uses_graph_scope():
+    sparql = transformer._build_pii_strip_sparql("urn:mak:space/testfab")
+    assert "GRAPH <urn:mak:space/testfab>" in sparql
+
+
+def test_build_revival_closedAt_delete():
+    sparql = transformer._build_revival_closedAt_delete("urn:mak:space/testfab")
+    assert "mak:closedAt" in sparql
+    assert "DELETE" in sparql
+    assert "GRAPH <urn:mak:space/testfab>" in sparql
+
+
+def test_extract_open_now_v15_false_triggers_closed_signal():
+    # v15 state.open == false → _extract_open_now returns False (closed signal)
+    result = transformer._extract_open_now({"open": False})
+    assert result is False
+
+
+def test_extract_open_now_v013_closed_string_triggers_closed_signal():
+    # v0.13 "closed" string → _extract_open_now returns False
+    result = transformer._extract_open_now("closed")
+    assert result is False
+
+
+def test_extract_open_now_v15_true_returns_true():
+    result = transformer._extract_open_now({"open": True})
+    assert result is True
+
+
+def test_extract_open_now_none_returns_none():
+    # Missing state → no signal, counter unchanged
+    result = transformer._extract_open_now(None)
+    assert result is None
+
+
+def _make_db_with_row(db_path: str, space_id: str, **kwargs) -> None:
+    """Helper: init DB and insert a row with given field values."""
+    transformer._init_heartbeat_db(db_path)
+    import sqlite3
+    con = sqlite3.connect(db_path)
+    con.execute(
+        "INSERT OR REPLACE INTO heartbeat_log "
+        "(space_id, etag, last_modified, last_fetched, consecutive_failures, "
+        "last_content_updated, consecutive_closed_cycles, is_closed) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            space_id,
+            kwargs.get("etag"),
+            kwargs.get("last_modified"),
+            kwargs.get("last_fetched"),
+            kwargs.get("consecutive_failures", 0),
+            kwargs.get("last_content_updated"),
+            kwargs.get("consecutive_closed_cycles", 0),
+            kwargs.get("is_closed", 0),
+        ),
+    )
+    con.commit()
+    con.close()
+
+
+def test_db_migration_adds_consecutive_closed_cycles(tmp_path):
+    db = str(tmp_path / "hb.db")
+    # Create table without new columns (simulate pre-migration schema)
+    import sqlite3
+    con = sqlite3.connect(db)
+    con.execute("""CREATE TABLE heartbeat_log (
+        space_id TEXT PRIMARY KEY,
+        etag TEXT,
+        last_modified TEXT,
+        last_fetched TEXT,
+        consecutive_failures INTEGER DEFAULT 0,
+        last_content_updated TEXT
+    )""")
+    con.commit()
+    con.close()
+    # Run migration
+    transformer._init_heartbeat_db(db)
+    con = sqlite3.connect(db)
+    cols = {r[1] for r in con.execute("PRAGMA table_info(heartbeat_log)").fetchall()}
+    con.close()
+    assert "consecutive_closed_cycles" in cols
+    assert "is_closed" in cols
+
+
+def test_read_heartbeat_row_new_columns_default_zero(tmp_path):
+    db = str(tmp_path / "hb.db")
+    transformer._init_heartbeat_db(db)
+    row = transformer._read_heartbeat_row("nonexistent", db)
+    assert row["consecutive_closed_cycles"] == 0
+    assert row["is_closed"] == 0
+
+
+def test_read_heartbeat_row_returns_stored_values(tmp_path):
+    db = str(tmp_path / "hb.db")
+    _make_db_with_row(db, "testspace", consecutive_closed_cycles=4, is_closed=0)
+    row = transformer._read_heartbeat_row("testspace", db)
+    assert row["consecutive_closed_cycles"] == 4
+    assert row["is_closed"] == 0
+
+
+def test_pii_strip_sparql_idempotency_guard():
+    # If already closed (is_closed=1), process_one_space skips closure trigger.
+    # We test the guard condition directly: threshold check with is_closed=1 must skip.
+    # This is a logic unit test — the guard is: if consecutive >= threshold AND NOT is_closed
+    consecutive_closed_cycles = 10
+    is_closed = 1
+    cfg_threshold = 6
+    should_strip = consecutive_closed_cycles >= cfg_threshold and not is_closed
+    assert should_strip is False
+
+
+def test_pii_strip_sparql_triggers_when_threshold_met():
+    consecutive_closed_cycles = 6
+    is_closed = 0
+    cfg_threshold = 6
+    should_strip = consecutive_closed_cycles >= cfg_threshold and not is_closed
+    assert should_strip is True

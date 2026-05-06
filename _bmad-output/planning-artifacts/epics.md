@@ -1112,7 +1112,7 @@ As MOM, I want the heartbeat to interpret each fetch into three independent trut
 - **Dynamic open/closed** — `state.open` (v15 object) or `"open"`/`"closed"` (v0.13 string) → `mom:openNow` boolean + optional `mom:lastOpenChange`. **`state.open` flips count as material content changes** — they reset the lifecycle clock. `sensors.*` flips do not. This is the designed freshness incentive.
 - **Conflict resolution:** lifecycle supersedes endpoint. A dead space with vanished hosting still shows as dead, not merely broken. Resolved server-side in `transformer.effective_marker(...)`; GeoJSON exposes a single resolved `status` plus the raw signals for Epic 4.
 
-**Story 3.2b** carries the original `mak:closed` + PII-strip flow (closed for N cycles → strip contact fields, write `mak:closedAt`, revive on next material diff). Different blast radius (triple deletion) — separate review.
+**Story 3.2b** carries the original `mak:closed` + PII-strip flow (closed for N cycles → strip contact fields, write `mak:closedAt`, revive on next material diff). Different blast radius (triple deletion) — separate review. ✅ **Completed 2026-05-06.**
 
 ---
 

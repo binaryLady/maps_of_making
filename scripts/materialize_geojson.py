@@ -31,6 +31,7 @@ def effective_marker(endpoint_health: str, lifecycle_state: str, open_now: bool)
     Duplicated from infra/link_handler/transformer.py — keep in sync.
     Lifecycle supersedes endpoint health.
     """
+    if lifecycle_state == "closed": return "closed"
     if lifecycle_state == "dead":   return "dead"
     if lifecycle_state == "zombie": return "zombie"
     if lifecycle_state == "aging":  return "aging"

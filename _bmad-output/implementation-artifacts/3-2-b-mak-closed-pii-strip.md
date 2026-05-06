@@ -1,6 +1,6 @@
 # Story 3.2b: mak:closed + PII Strip on Persistent Closure
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -131,45 +131,45 @@ so that the map stays honest about permanently-closed spaces without retaining p
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1: DB migration** (`transformer.py` `init_db`)
-  - [ ] Add `consecutive_closed_cycles INTEGER DEFAULT 0` column migration (same pattern as `last_content_updated`)
-  - [ ] Add column to `_read_heartbeat_row` SELECT + default dict
-  - [ ] Add column to all `_write_heartbeat_row` INSERT/UPDATE statements
+- [x] **Task 1: DB migration** (`transformer.py` `init_db`)
+  - [x] Add `consecutive_closed_cycles INTEGER DEFAULT 0` column migration (same pattern as `last_content_updated`)
+  - [x] Add column to `_read_heartbeat_row` SELECT + default dict
+  - [x] Add column to all `_write_heartbeat_row` INSERT/UPDATE statements
 
-- [ ] **Task 2: Config** (`config.yaml`)
-  - [ ] Add `closure:` section with `closed_cycles_threshold: 6`
-  - [ ] Read in `process_one_space` (or dedicated helper)
+- [x] **Task 2: Config** (`config.yaml`)
+  - [x] Add `closure:` section with `closed_cycles_threshold: 6`
+  - [x] Read in `process_one_space` (or dedicated helper)
 
-- [ ] **Task 3: Closed-cycle signal extraction** (`transformer.py`)
-  - [ ] Add `_is_open_now(validated_data)` helper that returns `True`, `False`, or `None` (no signal)
-  - [ ] In `process_one_space`, after 200 body parse: if `_is_open_now` returns `False`, increment `consecutive_closed_cycles`; if `True`, reset to 0; if `None` or 304/error, leave unchanged
-  - [ ] Update `heartbeat_log` with new counter value after each 200 response
+- [x] **Task 3: Closed-cycle signal extraction** (`transformer.py`)
+  - [x] Add `_is_open_now(validated_data)` helper that returns `True`, `False`, or `None` (no signal)
+  - [x] In `process_one_space`, after 200 body parse: if `_is_open_now` returns `False`, increment `consecutive_closed_cycles`; if `True`, reset to 0; if `None` or 304/error, leave unchanged
+  - [x] Update `heartbeat_log` with new counter value after each 200 response
 
-- [ ] **Task 4: Closure trigger** (`transformer.py` `process_one_space`)
-  - [ ] After counter update: if `consecutive_closed_cycles >= threshold` AND `operationalState != "closed"` (check via DB or Oxigraph):
+- [x] **Task 4: Closure trigger** (`transformer.py` `process_one_space`)
+  - [x] After counter update: if `consecutive_closed_cycles >= threshold` AND `operationalState != "closed"` (check via DB or Oxigraph):
     - Build PII-strip SPARQL (DELETE `schema:contactJson`; INSERT `mak:closedAt`, `mom:operationalState "closed"`)
     - Execute against Oxigraph
     - Log named WARNING counter `closed_pii_strip`
-  - [ ] Guard: if already closed, skip (AC3)
+  - [x] Guard: if already closed, skip (AC3)
 
-- [ ] **Task 5: Revival logic** (`transformer.py` `process_one_space`)
-  - [ ] On material diff (content_changed == True) for a space currently in `closed` state:
+- [x] **Task 5: Revival logic** (`transformer.py` `process_one_space`)
+  - [x] On material diff (content_changed == True) for a space currently in `closed` state:
     - Include `DELETE { <space> mak:closedAt ?t }` in the content-changed SPARQL update
     - Set `mom:operationalState` back to `"confirmed"` (lifecycle clock reset to 0)
     - Reset `consecutive_closed_cycles = 0` in DB
 
-- [ ] **Task 6: effective_marker update** (`transformer.py`)
-  - [ ] Add `"closed"` as a valid lifecycle state in `effective_marker` (below `"dead"`, above everything else that could fight it)
-  - [ ] Update `classify_lifecycle` or add a separate path: if `operationalState == "closed"` → return `("closed", "Self-reported closed for N cycles")` — OR handle entirely in `process_one_space` and pass as metadata
+- [x] **Task 6: effective_marker update** (`transformer.py`)
+  - [x] Add `"closed"` as a valid lifecycle state in `effective_marker` (below `"dead"`, above everything else that could fight it)
+  - [x] Update `classify_lifecycle` or add a separate path: if `operationalState == "closed"` → return `("closed", "Self-reported closed for N cycles")` — OR handle entirely in `process_one_space` and pass as metadata
 
-- [ ] **Task 7: Tests** (`test_transformer.py`)
-  - [ ] All AC7 cases (see above)
-  - [ ] Test that coordinates, name, description, logo, URL are NOT touched by PII strip SPARQL
+- [x] **Task 7: Tests** (`test_transformer.py`)
+  - [x] All AC7 cases (see above)
+  - [x] Test that coordinates, name, description, logo, URL are NOT touched by PII strip SPARQL
 
-- [ ] **Task 8: Plan-doc update**
-  - [ ] Update `_bmad-output/implementation-artifacts/deferred-work.md`: strike FR25b as resolved with date
-  - [ ] Update `_bmad-output/planning-artifacts/epics.md`: add completion stamp to Story 3.2b section
-  - [ ] Update `_bmad-output/implementation-artifacts/sprint-status.yaml`: flip `3-2-b-mak-closed-pii-strip` to `done`
+- [x] **Task 8: Plan-doc update**
+  - [x] Update `_bmad-output/implementation-artifacts/deferred-work.md`: strike FR25b as resolved with date
+  - [x] Update `_bmad-output/planning-artifacts/epics.md`: add completion stamp to Story 3.2b section
+  - [x] Update `_bmad-output/implementation-artifacts/sprint-status.yaml`: flip `3-2-b-mak-closed-pii-strip` to `review`
 
 ---
 
@@ -305,4 +305,24 @@ claude-sonnet-4-6
 
 ### Completion Notes List
 
+- Added `consecutive_closed_cycles` and `is_closed` columns to `heartbeat_log` via migration pattern matching `last_content_updated`.
+- Used existing `_extract_open_now` (already handles v15 object and v0.13 string) to derive closed signal — no new helper needed.
+- Chose SQLite `is_closed` flag (over Oxigraph ASK) for idempotency guard per Dev Notes recommendation.
+- `_build_pii_strip_sparql` deletes only `schema:contactJson` and `mom:operationalState`; does NOT touch name, geo, url, logo (confirmed by test).
+- Revival prepends `_build_revival_closedAt_delete` SPARQL before the content-update SPARQL (same transaction style as existing multi-statement updates).
+- `effective_marker("closed")` added as highest-priority lifecycle state in both `transformer.py` and `materialize_geojson.py` (duplicate kept in sync per existing comment).
+- 24 new tests added; all 79 tests pass with no regressions.
+
 ### File List
+
+- `infra/link_handler/transformer.py`
+- `infra/link_handler/config.yaml`
+- `infra/link_handler/test_transformer.py`
+- `scripts/materialize_geojson.py`
+- `_bmad-output/planning-artifacts/epics.md`
+- `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- `_bmad-output/implementation-artifacts/3-2-b-mak-closed-pii-strip.md`
+
+### Change Log
+
+- 2026-05-06: Implemented Story 3.2b — `mak:closed` + PII strip on persistent closure, closed-cycle counter, revival logic, `effective_marker` update, DB migration, config, 24 new tests.

@@ -11,6 +11,9 @@ import yaml
 
 from utils import MOM, SCHEMA, _sparql_str, _sparql_iri, _slug
 
+MAK = "urn:mak:"
+XSD = "http://www.w3.org/2001/XMLSchema#"
+
 if TYPE_CHECKING:
     from main import SpaceAPISchema
 
@@ -157,12 +160,55 @@ def effective_marker(endpoint_health: str, lifecycle_state: str, open_now: bool)
     Lifecycle supersedes endpoint health — a dead space whose hosting silently
     disappears should not masquerade as merely broken.
     """
+    if lifecycle_state == "closed": return "closed"
     if lifecycle_state == "dead":   return "dead"
     if lifecycle_state == "zombie": return "zombie"
     if lifecycle_state == "aging":  return "aging"
     if endpoint_health == "broken": return "broken"
     if open_now:                    return "open"
     return "confirmed"
+
+
+def _build_pii_strip_sparql(space_uri: str) -> str:
+    """Build SPARQL UPDATE that strips PII contact fields and marks a space as mak:closed."""
+    now = datetime.now(timezone.utc).isoformat()
+    return f"""PREFIX mom: <{MOM}>
+PREFIX schema: <https://schema.org/>
+PREFIX mak: <{MAK}>
+PREFIX xsd: <{XSD}>
+DELETE {{
+  GRAPH <{space_uri}> {{
+    <{space_uri}> schema:contactJson ?contactJson .
+    <{space_uri}> mom:operationalState ?oldState .
+  }}
+}}
+INSERT {{
+  GRAPH <{space_uri}> {{
+    <{space_uri}> mom:operationalState "closed" .
+    <{space_uri}> mak:closedAt "{now}"^^xsd:dateTime .
+  }}
+}}
+WHERE {{
+  GRAPH <{space_uri}> {{
+    OPTIONAL {{ <{space_uri}> schema:contactJson ?contactJson }}
+    OPTIONAL {{ <{space_uri}> mom:operationalState ?oldState }}
+  }}
+}}"""
+
+
+def _build_revival_closedAt_delete(space_uri: str) -> str:
+    """Build SPARQL UPDATE that removes mak:closedAt on revival."""
+    return f"""PREFIX mak: <{MAK}>
+DELETE {{
+  GRAPH <{space_uri}> {{
+    <{space_uri}> mak:closedAt ?t .
+  }}
+}}
+WHERE {{
+  GRAPH <{space_uri}> {{
+    OPTIONAL {{ <{space_uri}> mak:closedAt ?t }}
+  }}
+}}\n"""
 
 
 def detect_diff(old_snap: dict, new_snap: dict) -> dict | None:
@@ -443,13 +489,19 @@ def _init_heartbeat_db(db_path: str) -> None:
             last_modified TEXT,
             last_fetched TEXT,
             consecutive_failures INTEGER DEFAULT 0,
-            last_content_updated TEXT
+            last_content_updated TEXT,
+            consecutive_closed_cycles INTEGER DEFAULT 0,
+            is_closed INTEGER DEFAULT 0
         )
     """)
-    # Migrate existing tables that lack last_content_updated column
+    # Migrate existing tables that lack newer columns
     cols = {r[1] for r in con.execute("PRAGMA table_info(heartbeat_log)").fetchall()}
     if "last_content_updated" not in cols:
         con.execute("ALTER TABLE heartbeat_log ADD COLUMN last_content_updated TEXT")
+    if "consecutive_closed_cycles" not in cols:
+        con.execute("ALTER TABLE heartbeat_log ADD COLUMN consecutive_closed_cycles INTEGER DEFAULT 0")
+    if "is_closed" not in cols:
+        con.execute("ALTER TABLE heartbeat_log ADD COLUMN is_closed INTEGER DEFAULT 0")
     con.commit()
     con.close()
 
@@ -458,7 +510,8 @@ def _read_heartbeat_row(space_id: str, resolved_db: str) -> dict:
     """Read heartbeat_log row for a space. Returns dict with defaults if absent."""
     con = sqlite3.connect(resolved_db)
     row = con.execute(
-        "SELECT etag, last_modified, last_fetched, consecutive_failures, last_content_updated "
+        "SELECT etag, last_modified, last_fetched, consecutive_failures, last_content_updated, "
+        "consecutive_closed_cycles, is_closed "
         "FROM heartbeat_log WHERE space_id=?", (space_id,)
     ).fetchone()
     con.close()
@@ -469,9 +522,12 @@ def _read_heartbeat_row(space_id: str, resolved_db: str) -> dict:
             "last_fetched": row[2],
             "consecutive_failures": row[3] or 0,
             "last_content_updated": row[4],
+            "consecutive_closed_cycles": row[5] or 0,
+            "is_closed": row[6] or 0,
         }
     return {"etag": None, "last_modified": None, "last_fetched": None,
-            "consecutive_failures": 0, "last_content_updated": None}
+            "consecutive_failures": 0, "last_content_updated": None,
+            "consecutive_closed_cycles": 0, "is_closed": 0}
 
 
 def update_last_content_updated(space_id: str, db_path: Optional[str] = None) -> None:
@@ -637,9 +693,13 @@ async def process_one_space(
     consecutive_failures = db_row.get("consecutive_failures", 0)
     last_fetched_ts = db_row.get("last_fetched")
     last_content_updated_ts = db_row.get("last_content_updated")
+    consecutive_closed_cycles = db_row.get("consecutive_closed_cycles", 0)
+    is_closed = db_row.get("is_closed", 0)
 
     days_since_update = _days_since(last_content_updated_ts)
     lifecycle_state, _lc_reason = classify_lifecycle(days_since_update)
+    if is_closed:
+        lifecycle_state = "closed"
 
     if was_304:
         minutes_ok = _minutes_since(last_fetched_ts)
@@ -695,6 +755,14 @@ async def process_one_space(
         schema_obj = SpaceAPISchema.model_validate(data)
         cls = classify_subset(schema_obj)
 
+        # Update closed-cycle counter based on open/closed signal (200 responses only)
+        open_signal = _extract_open_now(schema_obj.state)
+        if open_signal is False:
+            consecutive_closed_cycles += 1
+        elif open_signal is True:
+            consecutive_closed_cycles = 0
+        # None (no signal) → leave counter unchanged
+
         # Detect content diff from previous snapshot if available
         content_changed = True
         if last_content_updated_ts is not None:
@@ -709,7 +777,15 @@ async def process_one_space(
                 if not content_changed:
                     logger.info("heartbeat no content diff for %s", space_id)
 
-        if content_changed:
+        # Revival: material content change on a closed space
+        revival_sparql = None
+        if is_closed and content_changed:
+            revival_sparql = _build_revival_closedAt_delete(space_uri)
+            is_closed = 0
+            consecutive_closed_cycles = 0
+            lifecycle_state = "confirmed"
+
+        if content_changed and not is_closed:
             lifecycle_state, _ = classify_lifecycle(0)  # just updated → confirmed
 
         sparql_update, _ = transform_to_sparql(schema_obj, {
@@ -721,6 +797,10 @@ async def process_one_space(
             "endpoint_health": endpoint_health,
             "lifecycle_state": lifecycle_state,
         }, content_changed=content_changed)
+
+        if revival_sparql:
+            sparql_update = revival_sparql + sparql_update
+
     except Exception as e:
         logger.exception("transform_to_sparql failed for %s, using legacy builder: %s", space_id, e)
         sparql_update = _build_sparql_update(
@@ -737,6 +817,30 @@ async def process_one_space(
             headers={"Content-Type": "application/sparql-update"},
         )
         upd.raise_for_status()
+
+    # Closure trigger: threshold reached and not already closed
+    cfg_closure = get_config().get("closure", {})
+    closed_threshold = cfg_closure.get("closed_cycles_threshold", 6)
+    if consecutive_closed_cycles >= closed_threshold and not is_closed:
+        pii_strip = _build_pii_strip_sparql(space_uri)
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            upd = await client.post(
+                f"{oxigraph_endpoint}/update",
+                content=pii_strip,
+                headers={"Content-Type": "application/sparql-update"},
+            )
+            upd.raise_for_status()
+        is_closed = 1
+        logger.warning("closed_pii_strip space_id=%s consecutive_closed=%d", space_id, consecutive_closed_cycles)
+
+    # Persist updated closed-cycle counter and is_closed flag
+    con = sqlite3.connect(resolved_db)
+    con.execute(
+        "UPDATE heartbeat_log SET consecutive_closed_cycles=?, is_closed=? WHERE space_id=?",
+        (consecutive_closed_cycles, is_closed, space_id),
+    )
+    con.commit()
+    con.close()
 
     if content_changed:
         update_last_content_updated(space_id, resolved_db)
