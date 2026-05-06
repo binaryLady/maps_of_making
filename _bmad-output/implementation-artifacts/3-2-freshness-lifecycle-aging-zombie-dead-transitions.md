@@ -1,6 +1,6 @@
 # Story 3.2: Endpoint Health + Space Lifecycle + Open-Now (unified)
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -316,10 +316,10 @@ operational_state:
 
 ## Story completion checklist
 
-- [ ] All ACs satisfied with passing tests
-- [ ] No regressions on Story 3.1 manual refresh + cooldown UX
-- [ ] `epics.md` Story 3.2 section rewritten to match this story
-- [ ] `deferred-work.md` resolved entries struck through with date
-- [ ] `sprint-status.yaml` flips this row to `done` and adds `3-2-b` backlog row
-- [ ] Memory `project_progress.md` updated (Epic 3 progress + Epic 7 deferred)
-- [ ] Manual verification steps 1–9 above all pass
+- [x] All ACs satisfied with passing tests (71 unit tests + 4 live network tests)
+- [x] No regressions on Story 3.1 manual refresh + cooldown UX
+- [x] `epics.md` Story 3.2 section updated with completion stamp (2026-05-06)
+- [x] `deferred-work.md` resolved entries struck through with date (2026-05-06); new entries added (DB-wipe, Mother Sands canary)
+- [x] `sprint-status.yaml` flips this row to `done` and adds `3-2-b` backlog row
+- [x] Memory `project_progress.md` updated (Epic 3 progress + Epic 7 deferred)
+- [ ] Manual verification steps 1–9 above all pass (pending — run before VPS deploy)

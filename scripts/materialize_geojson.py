@@ -25,13 +25,29 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger(__name__)
 
 
+def effective_marker(endpoint_health: str, lifecycle_state: str, open_now: bool) -> str:
+    """Resolve three signals into a single public map marker status.
+
+    Duplicated from infra/link_handler/transformer.py — keep in sync.
+    Lifecycle supersedes endpoint health.
+    """
+    if lifecycle_state == "dead":   return "dead"
+    if lifecycle_state == "zombie": return "zombie"
+    if lifecycle_state == "aging":  return "aging"
+    if endpoint_health == "broken": return "broken"
+    if open_now:                    return "open"
+    return "confirmed"
+
+
 SPARQL_QUERY = """PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
 PREFIX schema: <https://schema.org/>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
-SELECT ?spaceUri ?name ?latitude ?longitude ?status ?geolocationFidelity ?geolocationNote
-       ?street ?postcode ?city ?country ?address ?website ?profileUrl ?openNow ?source
-       ?endpointUrl ?lastFetched ?errorType ?description ?logo ?contactJson ?lastUpdated ?subset ?nextUnlock
+SELECT ?spaceUri ?name ?latitude ?longitude ?operationalState ?endpointHealth
+       ?geolocationFidelity ?geolocationNote
+       ?street ?postcode ?city ?country ?address ?website ?profileUrl ?openNow ?lastOpenChange
+       ?source ?endpointUrl ?lastFetched ?errorType ?description ?logo ?contactJson
+       ?lastUpdated ?subset ?nextUnlock
        (GROUP_CONCAT(DISTINCT ?specialty; separator="|") AS ?specialties)
        (COALESCE(GROUP_CONCAT(DISTINCT STR(?network); separator="|"), "") AS ?networkMemberships)
 WHERE {
@@ -44,7 +60,8 @@ WHERE {
           schema:latitude ?latitude ;
           schema:longitude ?longitude
         ] .
-      OPTIONAL { ?spaceUri mom:operationalState ?status }
+      OPTIONAL { ?spaceUri mom:operationalState ?operationalState }
+      OPTIONAL { ?spaceUri mom:endpointHealth ?endpointHealth }
       OPTIONAL { ?spaceUri mom:geolocationFidelity ?geolocationFidelity }
       OPTIONAL { ?spaceUri mom:geolocationNote ?geolocationNote }
       OPTIONAL { ?spaceUri schema:streetAddress ?street }
@@ -64,6 +81,8 @@ WHERE {
       OPTIONAL { ?spaceUri schema:logo ?logo }
       OPTIONAL { ?spaceUri schema:contactJson ?contactJson }
       OPTIONAL { ?spaceUri mom:lastUpdated ?lastUpdated }
+      OPTIONAL { ?spaceUri mom:openNow ?openNow }
+      OPTIONAL { ?spaceUri mom:lastOpenChange ?lastOpenChange }
       OPTIONAL { ?spaceUri mom:subset ?subset }
       OPTIONAL { ?spaceUri mom:nextUnlock ?nextUnlock }
     }
@@ -79,7 +98,8 @@ WHERE {
           schema:latitude ?latitude ;
           schema:longitude ?longitude
         ] .
-      OPTIONAL { ?spaceUri mom:operationalState ?status }
+      OPTIONAL { ?spaceUri mom:operationalState ?operationalState }
+      OPTIONAL { ?spaceUri mom:endpointHealth ?endpointHealth }
       OPTIONAL { ?spaceUri mom:geolocationFidelity ?geolocationFidelity }
       OPTIONAL { ?spaceUri mom:geolocationNote ?geolocationNote }
       OPTIONAL { ?spaceUri schema:streetAddress ?street }
@@ -99,19 +119,18 @@ WHERE {
       OPTIONAL { ?spaceUri schema:logo ?logo }
       OPTIONAL { ?spaceUri schema:contactJson ?contactJson }
       OPTIONAL { ?spaceUri mom:lastUpdated ?lastUpdated }
+      OPTIONAL { ?spaceUri mom:openNow ?openNow }
+      OPTIONAL { ?spaceUri mom:lastOpenChange ?lastOpenChange }
       OPTIONAL { ?spaceUri mom:subset ?subset }
       OPTIONAL { ?spaceUri mom:nextUnlock ?nextUnlock }
     }
   }
-  OPTIONAL {
-    GRAPH <urn:mak:presence> {
-      ?spaceUri mom:openNow ?openNow .
-    }
-  }
 }
-GROUP BY ?spaceUri ?name ?latitude ?longitude ?status ?geolocationFidelity ?geolocationNote
-         ?street ?postcode ?city ?country ?address ?website ?profileUrl ?openNow ?source
-         ?endpointUrl ?lastFetched ?errorType ?description ?logo ?contactJson ?lastUpdated ?subset ?nextUnlock
+GROUP BY ?spaceUri ?name ?latitude ?longitude ?operationalState ?endpointHealth
+         ?geolocationFidelity ?geolocationNote
+         ?street ?postcode ?city ?country ?address ?website ?profileUrl ?openNow ?lastOpenChange
+         ?source ?endpointUrl ?lastFetched ?errorType ?description ?logo ?contactJson
+         ?lastUpdated ?subset ?nextUnlock
 ORDER BY ?spaceUri"""
 
 
@@ -174,7 +193,8 @@ def binding_to_space(binding: dict) -> dict:
     latitude = float(lat_raw)
     longitude = float(lon_raw)
 
-    status = binding.get("status", {}).get("value", "seeded")
+    operational_state = binding.get("operationalState", {}).get("value", "seeded")
+    endpoint_health_raw = binding.get("endpointHealth", {}).get("value", "healthy")
     fidelity = binding.get("geolocationFidelity", {}).get("value", "")
     geo_note = binding.get("geolocationNote", {}).get("value", "")
     street = binding.get("street", {}).get("value", "")
@@ -186,6 +206,8 @@ def binding_to_space(binding: dict) -> dict:
     endpoint_url = binding.get("endpointUrl", {}).get("value") or binding.get("profileUrl", {}).get("value", "")
     open_now_raw = binding.get("openNow", {}).get("value")
     open_now = open_now_raw.lower() == "true" if open_now_raw is not None else False
+    last_open_change = binding.get("lastOpenChange", {}).get("value", "")
+    resolved_status = effective_marker(endpoint_health_raw, operational_state, open_now)
     raw_specialties = binding.get("specialties", {}).get("value", "")
     specialties = [s for s in raw_specialties.split("|") if s] if raw_specialties else []
     raw_networks = binding.get("networkMemberships", {}).get("value", "")
@@ -221,7 +243,9 @@ def binding_to_space(binding: dict) -> dict:
             "id": space_id,
             "uri": space_uri,
             "name": name,
-            "status": status,
+            "status": resolved_status,
+            "endpoint_health": endpoint_health_raw,
+            "operational_state": operational_state,
             "geolocationFidelity": fidelity,
             "geolocationNote": geo_note,
             "address": address,
@@ -232,6 +256,7 @@ def binding_to_space(binding: dict) -> dict:
             "endpoint_url": endpoint_url,
             "specialties": specialties,
             "open_now": open_now,
+            "last_open_change": last_open_change,
             "source": source,
             "network_memberships": network_memberships,
             "logo": logo,

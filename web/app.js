@@ -757,11 +757,12 @@
       return `🔴 ${errorMsg} · last successful fetch: ${timeAgo(s.last_fetched)}.`;
     }
     if (s.status === 'unlinked' || s.status === 'stale') return 'Not linked to a network — present but independent.';
-    if (s.status === 'aging') return `Going quiet · last fetched ${timeAgo(s.last_fetched)} ago.`;
-    if (s.status === 'zombie') return `Unreachable · last seen ${timeAgo(s.last_fetched)} ago.`;
-    if (s.status === 'dead') return 'Permanently closed.';
-    if (s.open_now) return `Open right now · last fetched ${timeAgo(s.last_fetched)} ago.`;
-    return `Confirmed · last fetched ${timeAgo(s.last_fetched)} ago.`;
+    if (s.status === 'aging') return `Going quiet · last content update ${timeAgo(s.last_updated)} ago.`;
+    if (s.status === 'zombie') return `Unreachable · last content update ${timeAgo(s.last_updated)} ago.`;
+    if (s.status === 'dead') return `Long inactive · last content update ${timeAgo(s.last_updated)} ago.`;
+    if (s.status === 'broken') return `Endpoint unreachable · last successful fetch ${timeAgo(s.last_fetched)} ago.`;
+    if (s.open_now) return `Open right now · last content update ${timeAgo(s.last_updated)} ago.`;
+    return `Confirmed · last content update ${timeAgo(s.last_updated)} ago.`;
   }
 
   function timeAgo(iso) {

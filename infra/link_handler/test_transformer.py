@@ -100,50 +100,64 @@ def test_resolve_activities_multiple_tags(activity_map_file, tmp_config):
     assert "https://nicolasdb.github.io/mapsofmaking_ontology/ns#ThreeDPrinting" in result
 
 
-# ---- AC3: classify_operational_state ----
+# ---- AC1: classify_endpoint_health ----
 
-def test_classify_confirmed(tmp_config):
-    state, reason = transformer.classify_operational_state(200, age_days=5, consecutive_failures=0, prior_state="seeded")
+def test_classify_endpoint_health_healthy_200(tmp_config):
+    state, reason = transformer.classify_endpoint_health(200, minutes_since_last_good=0, consecutive_failures=0)
+    assert state == "healthy"
+
+
+def test_classify_endpoint_health_healthy_304(tmp_config):
+    state, reason = transformer.classify_endpoint_health(304, minutes_since_last_good=0, consecutive_failures=0)
+    assert state == "healthy"
+
+
+def test_classify_endpoint_health_unresponsive(tmp_config):
+    state, reason = transformer.classify_endpoint_health(None, minutes_since_last_good=15, consecutive_failures=1)
+    assert state == "unresponsive"
+    assert "15" in reason
+
+
+def test_classify_endpoint_health_warning(tmp_config):
+    state, reason = transformer.classify_endpoint_health(503, minutes_since_last_good=35, consecutive_failures=2)
+    assert state == "warning"
+
+
+def test_classify_endpoint_health_broken(tmp_config):
+    state, reason = transformer.classify_endpoint_health(None, minutes_since_last_good=70, consecutive_failures=5)
+    assert state == "broken"
+    assert "70" in reason
+
+
+# ---- AC1: classify_lifecycle ----
+
+def test_classify_lifecycle_confirmed(tmp_config):
+    state, reason = transformer.classify_lifecycle(5)
     assert state == "confirmed"
-    assert reason
 
 
-def test_classify_aging(tmp_config):
-    state, reason = transformer.classify_operational_state(200, age_days=45, consecutive_failures=0, prior_state="confirmed")
+def test_classify_lifecycle_aging(tmp_config):
+    state, reason = transformer.classify_lifecycle(45)
     assert state == "aging"
     assert "45" in reason
 
 
-def test_classify_zombie_by_age(tmp_config):
-    state, reason = transformer.classify_operational_state(200, age_days=95, consecutive_failures=0, prior_state="confirmed")
+def test_classify_lifecycle_zombie(tmp_config):
+    state, reason = transformer.classify_lifecycle(100)
     assert state == "zombie"
 
 
-def test_classify_zombie_by_failures(tmp_config):
-    state, reason = transformer.classify_operational_state(200, age_days=10, consecutive_failures=6, prior_state="confirmed")
-    assert state == "zombie"
-
-
-def test_classify_dead_on_404(tmp_config):
-    state, reason = transformer.classify_operational_state(404, age_days=0, consecutive_failures=0, prior_state="confirmed")
-    assert state == "dead"
-    assert "404" in reason
-
-
-def test_classify_dead_on_410(tmp_config):
-    state, reason = transformer.classify_operational_state(410, age_days=0, consecutive_failures=0, prior_state="confirmed")
+def test_classify_lifecycle_dead(tmp_config):
+    state, reason = transformer.classify_lifecycle(200)
     assert state == "dead"
 
 
-def test_classify_error_no_http(tmp_config):
-    state, reason = transformer.classify_operational_state(None, age_days=0, consecutive_failures=0, prior_state=None)
-    assert state == "error"
-
-
-def test_classify_error_5xx(tmp_config):
-    state, reason = transformer.classify_operational_state(503, age_days=0, consecutive_failures=0, prior_state="confirmed")
-    assert state == "error"
-    assert "503" in reason
+def test_classify_lifecycle_negative_clamp(tmp_config, caplog):
+    import logging
+    with caplog.at_level(logging.WARNING):
+        state, reason = transformer.classify_lifecycle(-5)
+    assert state == "confirmed"
+    assert "WARNING_CLOCK_SKEW" in caplog.text
 
 
 # ---- AC4: categorize_error (via errors.py) ----
@@ -322,3 +336,149 @@ def test_transform_to_sparql_geolocation_fidelity(tmp_config):
     sparql, _ = transformer.transform_to_sparql(schema, {})
     assert "exact" in sparql
     assert "GPS verified" in sparql
+
+
+# ---- AC2: _extract_open_now ----
+
+def test_extract_open_now_v15_true():
+    assert transformer._extract_open_now({"open": True, "lastchange": 1715000000}) is True
+
+
+def test_extract_open_now_v15_false():
+    assert transformer._extract_open_now({"open": False}) is False
+
+
+def test_extract_open_now_legacy_open():
+    assert transformer._extract_open_now("open") is True
+
+
+def test_extract_open_now_legacy_closed():
+    assert transformer._extract_open_now("closed") is False
+
+
+def test_extract_open_now_legacy_unknown():
+    assert transformer._extract_open_now("unknown") is None
+
+
+def test_extract_open_now_missing():
+    assert transformer._extract_open_now(None) is None
+
+
+def test_extract_open_now_malformed_dict():
+    assert transformer._extract_open_now({"status": "open"}) is None
+
+
+def test_extract_last_open_change_v15():
+    result = transformer._extract_last_open_change({"open": True, "lastchange": 1715000000})
+    assert result is not None
+    assert "2024" in result  # epoch 1715000000 is in 2024
+
+
+def test_extract_last_open_change_missing():
+    assert transformer._extract_last_open_change({"open": True}) is None
+
+
+def test_extract_last_open_change_non_positive():
+    assert transformer._extract_last_open_change({"open": True, "lastchange": 0}) is None
+
+
+# ---- AC2: transform_to_sparql emits openNow triples ----
+
+def test_transform_to_sparql_emits_open_now_true(tmp_config):
+    schema = _make_schema(**{"state": {"open": True, "lastchange": 1715000000}})
+    sparql, _ = transformer.transform_to_sparql(schema, {"endpoint_url": "https://example.com"})
+    assert 'openNow' in sparql
+    assert '"true"' in sparql
+    assert 'lastOpenChange' in sparql
+
+
+def test_transform_to_sparql_emits_open_now_false(tmp_config):
+    schema = _make_schema(**{"state": {"open": False}})
+    sparql, _ = transformer.transform_to_sparql(schema, {"endpoint_url": "https://example.com"})
+    assert 'openNow' in sparql
+    assert '"false"' in sparql
+    assert 'lastOpenChange' not in sparql
+
+
+def test_transform_to_sparql_no_open_now_when_missing(tmp_config):
+    schema = _make_schema()
+    sparql, _ = transformer.transform_to_sparql(schema, {"endpoint_url": "https://example.com"})
+    assert 'mom:openNow' not in sparql
+
+
+def test_transform_to_sparql_content_changed_false_no_last_updated(tmp_config):
+    schema = _make_schema()
+    sparql, _ = transformer.transform_to_sparql(schema, {"endpoint_url": "https://example.com"},
+                                                  content_changed=False)
+    assert 'lastUpdated' not in sparql
+
+
+def test_transform_to_sparql_content_changed_true_writes_last_updated(tmp_config):
+    schema = _make_schema()
+    sparql, _ = transformer.transform_to_sparql(schema, {"endpoint_url": "https://example.com"},
+                                                  content_changed=True)
+    assert 'lastUpdated' in sparql
+
+
+# ---- AC4: detect_diff ignores sensors/extensions, counts state ----
+
+def test_detect_diff_ignores_sensors():
+    old = {"schema:name": "FabLab", "sensors": {"temperature": [{"value": 20}]}}
+    new = {"schema:name": "FabLab", "sensors": {"temperature": [{"value": 25}]}}
+    assert transformer.detect_diff(old, new) is None
+
+
+def test_detect_diff_ignores_extensions():
+    old = {"schema:name": "FabLab", "extensions": {"sensors": {"humidity": 50}}}
+    new = {"schema:name": "FabLab", "extensions": {"sensors": {"humidity": 60}}}
+    assert transformer.detect_diff(old, new) is None
+
+
+def test_detect_diff_counts_state_open_flip():
+    old = {"schema:name": "FabLab", "state": {"open": True}}
+    new = {"schema:name": "FabLab", "state": {"open": False}}
+    result = transformer.detect_diff(old, new)
+    assert result is not None
+    assert any(c["field"] == "state" for c in result["changed"])
+
+
+def test_detect_diff_counts_address_change():
+    old = {"schema:name": "FabLab", "location": {"address": "Old St 1"}}
+    new = {"schema:name": "FabLab", "location": {"address": "New St 2"}}
+    result = transformer.detect_diff(old, new)
+    assert result is not None
+
+
+# ---- AC5: effective_marker conflict resolution ----
+
+def test_effective_marker_dead_wins_over_broken():
+    assert transformer.effective_marker("broken", "dead", True) == "dead"
+
+
+def test_effective_marker_zombie_wins_over_broken():
+    assert transformer.effective_marker("broken", "zombie", True) == "zombie"
+
+
+def test_effective_marker_aging_wins_over_broken():
+    assert transformer.effective_marker("broken", "aging", False) == "aging"
+
+
+def test_effective_marker_broken_when_confirmed_and_unhealthy():
+    assert transformer.effective_marker("broken", "confirmed", False) == "broken"
+
+
+def test_effective_marker_open_when_healthy_confirmed():
+    assert transformer.effective_marker("healthy", "confirmed", True) == "open"
+
+
+def test_effective_marker_confirmed_when_closed():
+    assert transformer.effective_marker("healthy", "confirmed", False) == "confirmed"
+
+
+def test_effective_marker_broken_not_shown_when_dead():
+    assert transformer.effective_marker("broken", "dead", False) == "dead"
+
+
+def test_effective_marker_broken_shown_only_when_confirmed():
+    for lifecycle in ("aging", "zombie", "dead"):
+        assert transformer.effective_marker("broken", lifecycle, False) == lifecycle

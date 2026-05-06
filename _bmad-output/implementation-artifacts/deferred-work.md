@@ -1,5 +1,40 @@
 # Deferred Work
 
+## Deferred from: Story 3.2 lore session (2026-05-06) — Mother Sands / Unit M canary space
+
+### Concept
+A live canary makerspace used as operational proof-of-life for the full MOM backend. Appears on the public map as a real space — because it *is* real in all the ways that matter to the system. Two registers:
+
+- **Mother Sands** — public display name. The mythical eighth Maunsell sea fort that was never built. Pinned to a historically plausible gap in the Thames estuary arc between the Army group (Red Sands / Shivering Sands / Nore) and the Navy group further east.
+- **Unit M** — operator callsign used in heartbeat logs, admin dashboard, and sprint docs. The "secret eighth fort" framing. Also the identity used for lifecycle-relocation: on each death/rebirth cycle, Unit M migrates to the next fort in the U2–U7 rotation (U1 / Roughs Tower is excluded — that's Sealand's platform; not our property to claim).
+
+### Lore
+The Maunsell sea forts (1942–1945) were the first line of defence for the Thames estuary — anti-aircraft and naval gun platforms in international waters. In the 1960s they became pirate radio stations (Radio Caroline, Radio City, Radio Sutch): unauthorized signals of truth broadcast outside any official channel's permission. Mother Sands inherits both lineages. MOM's mission — an unofficial signal about what makerspaces *actually* are, outside any network's approved narrative — maps cleanly onto the pirate-radio metaphor. The "ask Mom" oracle feature extends it further: the fort is the thing you radio when you need an honest answer.
+
+The space's declared specialties: AI systems, linked open data, geography/cartography, offshore engineering, pirate-radio history. Spirit: anarchist-creative, open-source, international-waters freedom-of-information. Vibe: second-hand offshore platform, solar-powered, satellite uplink, dry-erase ontology diagrams on the bulkhead walls.
+
+### Technical implementation (deferred to Epic 4 / canary story)
+- SpaceAPI JSON endpoint hosted at `mom.mapsofmaking.org` (proposed subdomain — also candidate for the MOM wiki/explainer site).
+- `mom:simulatedAge` annotation on the space record: `classify_lifecycle` respects this override when present, allowing Phase 2 lifecycle-cycle demo without waiting 30–180 real days. `classify_lifecycle` already accepts a `days_since_last_update` parameter — add a seam to read override from the space's named graph if present.
+- **Phase 1 (endpoint health cycle):** Script flips `state.open` true→false→true on a 15-min cycle; then drops the endpoint (HTTP 503) to exercise `broken` health. Fully live, no fakery.
+- **Phase 2 (lifecycle cycle):** Script sets `mom:simulatedAge` to 0 → 95 → 200 → 0 on the same 15-min cadence, walking the map marker through confirmed → aging → zombie → dead → confirmed. Visible on the public map as real state changes.
+- **Relocation on death:** On each `dead` → `confirmed` rebirth, the script updates `schema:geo` coordinates to the next fort in the U2–U7 array:
+  - U2 Sunk Head: 51.7347° N, 1.2369° E
+  - U3 Tongue Sands: 51.4964° N, 1.2344° E
+  - U4 Knock John: 51.5039° N, 0.9928° E
+  - U5 Nore: 51.4431° N, 0.7441° E
+  - U6 Red Sands: 51.4656° N, 0.9725° E
+  - U7 Shivering Sands: 51.5261° N, 1.0814° E
+  - (Mother Sands fixed home: approx. 51.60° N, 1.15° E — the gap in the arc)
+- The `mom.mapsofmaking.org` subdomain can host the MOM explainer wiki alongside the SpaceAPI JSON endpoint. The space's website field points there; the wiki explains what MOM is and why the canary exists. → Coordinate with nginx/subdomain setup in Epic 4.
+
+### Dependencies
+- `mom:simulatedAge` seam in `classify_lifecycle` (1-line change)
+- `mom.mapsofmaking.org` subdomain configured in hetzner-gateway nginx (reuse existing pattern from `admin.mapsofmaking.com`)
+- A small Python script (or GitHub Action) running the cycle: reads current state from the SpaceAPI JSON, increments index, writes next state, commits
+
+
+
 ## Deferred from: code review of 3-1-heartbeat-scheduler (2026-05-05)
 
 - **Circular import (transformer ← main)** — `process_one_space` uses `from main import SpaceAPISchema, classify_subset, _build_sparql_update` at call time. Works at runtime; breaks test isolation. Extract shared types to `schemas.py` in a future refactor story.
@@ -118,6 +153,7 @@ Generating a real openfab.jsonld against the `space-jsonld-generator` skill expo
 ## Deferred from: code review of 3-0-ingestion-transformation-layer-spaceapi-json-to-mom-json-ld (2026-05-01)
 
 - **SQLite concurrency risk in fetch_endpoint_conditional** — `transformer.py:fetch_endpoint_conditional` — synchronous SQLite calls in async context; concurrent heartbeats for same space_id can race. Single-worker deployment safe; becomes real when Story 3.1 heartbeat scheduler introduces concurrent fetches. Fix: use `BEGIN EXCLUSIVE` transaction or aiosqlite. → Story 3.1
+- **Lifecycle clock resets to "confirmed" on DB wipe / container rebuild** — `process_one_space` computes `days_since_last_update` from `heartbeat_log.last_content_updated` (SQLite). If the DB is wiped (container rebuild, volume removal), all spaces lose their content-update history and lifecycle resets to `confirmed` regardless of actual age. Low risk in prod (volume persists); real friction in dev where container rebuilds are frequent. Fix: on startup, backfill `last_content_updated` from `mom:lastUpdated` in Oxigraph for any space_id missing from the DB. → Story 3.3 or early Epic 4 ops hardening.
 - **Module-level _config/_activity_map singletons never reload** — `transformer.py:19-20` — config and activity map cached forever at module load; container restart is intentional refresh mechanism. If live config reload is ever needed, add a TTL or reload endpoint. → Future ops story
 - **_sparql_str missing null byte escape** — `utils.py:12` — null bytes (`\x00`) in names/descriptions would produce invalid SPARQL literals; extremely rare in real SpaceAPI payloads. → Future hardening
 - **detect_diff json.dumps silent fallback for non-serializable values** — `transformer.py:152` — sort key raises TypeError on datetime/set values, silently falls back to unsorted list (no diff reported for those elements). Current callers produce only string values from SPARQL results. → Future if detect_diff is reused in other contexts

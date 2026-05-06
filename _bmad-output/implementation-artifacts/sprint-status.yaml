@@ -102,7 +102,7 @@ development_status:
   3-0-A-space-profile-card-ux-refinement: done
   3-0-B-space-profile-v2-ui: done
   3-1-heartbeat-scheduler-periodic-10min-fetch-cycle-manual-trigger: done
-  3-2-freshness-lifecycle-aging-zombie-dead-transitions: ready-for-dev
+  3-2-freshness-lifecycle-aging-zombie-dead-transitions: done
   3-2-b-mak-closed-pii-strip: backlog
   3-3-magic-link-generation-link-handler-validation: backlog
   3-4-coordinator-email-notification-with-pre-filled-recovery-link: backlog

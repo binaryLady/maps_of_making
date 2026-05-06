@@ -1101,7 +1101,7 @@ So that I can force an immediate update after editing my JSON without waiting fo
 ### Story 3.2: Endpoint Health + Space Lifecycle + Open-Now (unified)
 
 > **Rescoped 2026-05-06.** Original AC list (PII strip on closed) split to Story 3.2b. Open-now signal pulled in from the deferred Epic 7 entry — heartbeat already polls so it's read-side, not push-side. Epic 7 now parked indefinitely.
-> Full ACs live in the story file: `_bmad-output/implementation-artifacts/3-2-freshness-lifecycle-aging-zombie-dead-transitions.md`.
+> **Completed 2026-05-06.** 71 unit tests + 4 live network tests (`pytest -m network`). Full ACs and dev notes live in the story file: `_bmad-output/implementation-artifacts/3-2-freshness-lifecycle-aging-zombie-dead-transitions.md`.
 
 As MOM, I want the heartbeat to interpret each fetch into three independent truth signals — endpoint health, space lifecycle, and dynamic open/closed — and resolve them into one honest pin, so that visitors see what's actually happening and coordinators get the right freshness incentive.
 

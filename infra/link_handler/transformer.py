@@ -97,42 +97,72 @@ def resolve_activities(raw_tags: list, activity_map_path: Optional[str] = None) 
     return result
 
 
-def classify_operational_state(
+def classify_endpoint_health(
     http_status: Optional[int],
-    age_days: float,
+    minutes_since_last_good: float,
     consecutive_failures: int,
-    prior_state: Optional[str],
 ) -> tuple[str, str]:
-    """Classify an endpoint into an operational state.
+    """Classify endpoint reachability into a health rung.
 
-    Returns (state, reason). States: confirmed | aging | zombie | dead | error.
-    Thresholds are read from config.yaml (operational_state section).
+    Returns (health, reason). Rungs: healthy | unresponsive | warning | broken.
+    Thresholds read from config.yaml endpoint_health section.
     """
+    cfg = get_config().get("endpoint_health", {})
+    unresponsive_min = cfg.get("unresponsive_minutes_threshold", 10)
+    warning_min = cfg.get("warning_minutes_threshold", 30)
+    broken_min = cfg.get("broken_minutes_threshold", 60)
+
+    if http_status in (200, 304):
+        return "healthy", "Endpoint responded successfully"
+
+    if minutes_since_last_good >= broken_min:
+        return "broken", f"No successful fetch in {minutes_since_last_good:.0f} minutes"
+    if minutes_since_last_good >= warning_min:
+        return "warning", f"No successful fetch in {minutes_since_last_good:.0f} minutes"
+    if minutes_since_last_good >= unresponsive_min:
+        return "unresponsive", f"No successful fetch in {minutes_since_last_good:.0f} minutes"
+    return "healthy", "Recent successful fetch"
+
+
+def classify_lifecycle(days_since_last_update: float) -> tuple[str, str]:
+    """Classify space content freshness into a lifecycle state.
+
+    Returns (state, reason). States: confirmed | aging | zombie | dead.
+    Negative values (clock-skew) are clamped to 0. Thresholds from config.yaml.
+    """
+    if days_since_last_update < 0:
+        logger.warning(
+            "WARNING_CLOCK_SKEW: days_since_last_update=%s is negative — clamping to 0",
+            days_since_last_update,
+        )
+        days_since_last_update = 0
+
     cfg = get_config().get("operational_state", {})
     aging_days = cfg.get("aging_days_threshold", 30)
     zombie_days = cfg.get("zombie_days_threshold", 90)
-    zombie_failures = cfg.get("zombie_failures_threshold", 3)
-    dead_failures = cfg.get("dead_failures_threshold", 5)
+    dead_days = cfg.get("dead_days_threshold", 180)
 
-    if http_status is None:
-        return "error", "No HTTP response received"
+    if days_since_last_update >= dead_days:
+        return "dead", f"No content update in {days_since_last_update:.0f} days"
+    if days_since_last_update >= zombie_days:
+        return "zombie", f"No content update in {days_since_last_update:.0f} days"
+    if days_since_last_update >= aging_days:
+        return "aging", f"No content update in {days_since_last_update:.0f} days"
+    return "confirmed", "Content recently updated"
 
-    if http_status == 200:
-        if age_days > zombie_days or consecutive_failures >= zombie_failures:
-            return "zombie", f"No update in {age_days:.0f} days and {consecutive_failures} consecutive failures"
-        if age_days > aging_days and consecutive_failures < zombie_failures:
-            return "aging", f"No update in {age_days:.0f} days"
-        return "confirmed", "Endpoint verified"
 
-    if consecutive_failures >= dead_failures or http_status in (404, 410):
-        return "dead", f"Endpoint unreachable: HTTP {http_status}"
+def effective_marker(endpoint_health: str, lifecycle_state: str, open_now: bool) -> str:
+    """Resolve three signals into a single public map marker status.
 
-    if http_status >= 500:
-        return "error", f"Server error (HTTP {http_status})"
-    if http_status >= 400:
-        return "error", f"Client error (HTTP {http_status})"
-
-    return "error", f"Unexpected HTTP {http_status}"
+    Lifecycle supersedes endpoint health — a dead space whose hosting silently
+    disappears should not masquerade as merely broken.
+    """
+    if lifecycle_state == "dead":   return "dead"
+    if lifecycle_state == "zombie": return "zombie"
+    if lifecycle_state == "aging":  return "aging"
+    if endpoint_health == "broken": return "broken"
+    if open_now:                    return "open"
+    return "confirmed"
 
 
 def detect_diff(old_snap: dict, new_snap: dict) -> dict | None:
@@ -141,7 +171,10 @@ def detect_diff(old_snap: dict, new_snap: dict) -> dict | None:
     Ignores: mom:lastFetched, mom:snapshotDate, whitespace-only changes,
     and array order differences. Returns None if no material change.
     """
-    _IGNORED = {"mom:lastFetched", "mom:snapshotDate", "lastFetched", "snapshotDate"}
+    # sensors/extensions ignored — they flap for physical reasons.
+    # state is intentionally NOT ignored — state.open flips are the designed freshness signal.
+    _IGNORED = {"mom:lastFetched", "mom:snapshotDate", "lastFetched", "snapshotDate",
+                "sensors", "extensions"}
 
     def _normalize(obj):
         if isinstance(obj, dict):
@@ -180,9 +213,67 @@ def detect_diff(old_snap: dict, new_snap: dict) -> dict | None:
     }
 
 
+def _extract_open_now(state) -> Optional[bool]:
+    """Extract open/closed boolean from SpaceAPI state field.
+
+    Handles v15 object {open: bool}, v0.13 string "open"/"closed", and returns
+    None for missing, unknown, or malformed values (downstream defaults to false).
+    """
+    if state is None:
+        return None
+    if isinstance(state, dict):
+        val = state.get("open")
+        if isinstance(val, bool):
+            return val
+        return None
+    if isinstance(state, str):
+        s = state.strip().lower()
+        if s == "open":
+            return True
+        if s == "closed":
+            return False
+        return None
+    return None
+
+
+def _extract_last_open_change(state) -> Optional[str]:
+    """Extract lastchange epoch from v15 state object, return ISO datetime or None."""
+    if not isinstance(state, dict):
+        return None
+    ts = state.get("lastchange")
+    if isinstance(ts, (int, float)) and ts > 0:
+        try:
+            return datetime.fromtimestamp(ts, tz=timezone.utc).isoformat()
+        except (OSError, OverflowError, ValueError):
+            logger.warning("WARNING_INVALID_LASTCHANGE: cannot convert %s to datetime", ts)
+    return None
+
+
+def build_state_only_update(space_uri: str, endpoint_health: str, lifecycle_state: str) -> str:
+    """Build a surgical SPARQL UPDATE that replaces only endpointHealth and operationalState.
+
+    Used for 304 and failure paths — must NOT touch mom:lastUpdated or mom:openNow.
+
+    Uses three-statement pattern (DELETE WHERE + INSERT DATA) instead of DELETE/INSERT/WHERE
+    so the INSERT fires even when the named graph has no prior health/state triples, or
+    doesn't exist yet.
+    """
+    graph_uri = space_uri  # named graph URI == space URI (one graph per space)
+    return f"""PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
+DELETE WHERE {{ GRAPH <{graph_uri}> {{ <{space_uri}> mom:endpointHealth ?h }} }} ;
+DELETE WHERE {{ GRAPH <{graph_uri}> {{ <{space_uri}> mom:operationalState ?s }} }} ;
+INSERT DATA {{
+  GRAPH <{graph_uri}> {{
+    <{space_uri}> mom:endpointHealth "{endpoint_health}" .
+    <{space_uri}> mom:operationalState "{lifecycle_state}" .
+  }}
+}}"""
+
+
 def transform_to_sparql(
     validated_data: "SpaceAPISchema",
     metadata: dict,
+    content_changed: bool = True,
 ) -> tuple[str, str]:
     """Build idempotent SPARQL UPDATE for a space.
 
@@ -191,6 +282,10 @@ def transform_to_sparql(
       - space_id (str, optional): override slug; derived from name if absent
       - http_status (int, optional): HTTP status of the fetch
       - snapshot_summary (str, optional): human-readable summary for snapshot
+      - endpoint_health (str, optional): from classify_endpoint_health; defaults to "healthy"
+      - lifecycle_state (str, optional): from classify_lifecycle; defaults to "confirmed"
+
+    content_changed: when False, mom:lastUpdated is NOT rewritten (304 / no-diff path).
 
     Returns (sparql_update_str, snapshot_graph_uri).
     """
@@ -215,11 +310,15 @@ def transform_to_sparql(
     raw_tags = validated_data.resolved_tags
     activity_iris = resolve_activities(raw_tags) if raw_tags else []
 
+    endpoint_health = metadata.get("endpoint_health", "healthy")
+    lifecycle_state = metadata.get("lifecycle_state", "confirmed")
+
     triples = [
         f"  <{space_uri}> a <{MOM}Space> .",
         f'  <{space_uri}> <{SCHEMA}name> "{_sparql_str(name)}" .',
         f"  <{space_uri}> <{SCHEMA}geo> [ <{SCHEMA}latitude> {lat} ; <{SCHEMA}longitude> {lon} ] .",
-        f'  <{space_uri}> <{MOM}operationalState> "confirmed" .',
+        f'  <{space_uri}> <{MOM}operationalState> "{lifecycle_state}" .',
+        f'  <{space_uri}> <{MOM}endpointHealth> "{endpoint_health}" .',
         f'  <{space_uri}> <{MOM}lastFetched> "{now}"^^<http://www.w3.org/2001/XMLSchema#dateTime> .',
         f'  <{space_uri}> <{MOM}source> "self-registered" .',
     ]
@@ -261,7 +360,20 @@ def transform_to_sparql(
         contact_json = json.dumps(validated_data.contact, separators=(',', ':'))
         triples.append(f'  <{space_uri}> <{SCHEMA}contactJson> "{_sparql_str(contact_json)}"^^<http://www.w3.org/2001/XMLSchema#string> .')
 
-    triples.append(f'  <{space_uri}> <{MOM}lastUpdated> "{now}"^^<http://www.w3.org/2001/XMLSchema#dateTime> .')
+    if content_changed:
+        triples.append(f'  <{space_uri}> <{MOM}lastUpdated> "{now}"^^<http://www.w3.org/2001/XMLSchema#dateTime> .')
+
+    # open/closed state from SpaceAPI state field
+    open_now = _extract_open_now(validated_data.state)
+    if open_now is not None:
+        triples.append(
+            f'  <{space_uri}> <{MOM}openNow> "{str(open_now).lower()}"^^<http://www.w3.org/2001/XMLSchema#boolean> .'
+        )
+    last_open_change = _extract_last_open_change(validated_data.state)
+    if last_open_change is not None:
+        triples.append(
+            f'  <{space_uri}> <{MOM}lastOpenChange> "{last_open_change}"^^<http://www.w3.org/2001/XMLSchema#dateTime> .'
+        )
 
     for activity in activity_iris:
         if activity.startswith("http"):
@@ -321,7 +433,7 @@ INSERT DATA {{
 
 
 def _init_heartbeat_db(db_path: str) -> None:
-    """Create heartbeat_log table if absent."""
+    """Create heartbeat_log table if absent, migrate schema if needed."""
     Path(db_path).parent.mkdir(parents=True, exist_ok=True)
     con = sqlite3.connect(db_path)
     con.execute("""
@@ -330,9 +442,49 @@ def _init_heartbeat_db(db_path: str) -> None:
             etag TEXT,
             last_modified TEXT,
             last_fetched TEXT,
-            consecutive_failures INTEGER DEFAULT 0
+            consecutive_failures INTEGER DEFAULT 0,
+            last_content_updated TEXT
         )
     """)
+    # Migrate existing tables that lack last_content_updated column
+    cols = {r[1] for r in con.execute("PRAGMA table_info(heartbeat_log)").fetchall()}
+    if "last_content_updated" not in cols:
+        con.execute("ALTER TABLE heartbeat_log ADD COLUMN last_content_updated TEXT")
+    con.commit()
+    con.close()
+
+
+def _read_heartbeat_row(space_id: str, resolved_db: str) -> dict:
+    """Read heartbeat_log row for a space. Returns dict with defaults if absent."""
+    con = sqlite3.connect(resolved_db)
+    row = con.execute(
+        "SELECT etag, last_modified, last_fetched, consecutive_failures, last_content_updated "
+        "FROM heartbeat_log WHERE space_id=?", (space_id,)
+    ).fetchone()
+    con.close()
+    if row:
+        return {
+            "etag": row[0],
+            "last_modified": row[1],
+            "last_fetched": row[2],
+            "consecutive_failures": row[3] or 0,
+            "last_content_updated": row[4],
+        }
+    return {"etag": None, "last_modified": None, "last_fetched": None,
+            "consecutive_failures": 0, "last_content_updated": None}
+
+
+def update_last_content_updated(space_id: str, db_path: Optional[str] = None) -> None:
+    """Record that content changed for a space, resetting the lifecycle clock."""
+    cfg = get_config()
+    resolved_db = db_path or os.getenv("HEARTBEAT_DB_PATH") or cfg.get("bandwidth", {}).get(
+        "heartbeat_log_path", "/app/tasks/heartbeat_log.db"
+    )
+    now = datetime.now(timezone.utc).isoformat()
+    con = sqlite3.connect(resolved_db)
+    con.execute(
+        "UPDATE heartbeat_log SET last_content_updated=? WHERE space_id=?", (now, space_id)
+    )
     con.commit()
     con.close()
 
@@ -344,9 +496,10 @@ async def fetch_endpoint_conditional(
 ) -> tuple:
     """Fetch an endpoint with ETag/Last-Modified conditional GET support.
 
-    Returns (response_or_none, response_headers_dict, was_304).
+    Returns (response_or_none, response_headers_dict, was_304, db_row).
     On 304: response_or_none is None, was_304 is True.
     On 200: response is the httpx.Response object, was_304 is False.
+    db_row contains pre-fetch DB state: consecutive_failures, last_content_updated, etc.
     """
     cfg = get_config()
     resolved_db = db_path or os.getenv("HEARTBEAT_DB_PATH") or cfg.get("bandwidth", {}).get(
@@ -354,18 +507,13 @@ async def fetch_endpoint_conditional(
     )
     _init_heartbeat_db(resolved_db)
 
-    con = sqlite3.connect(resolved_db)
-    row = con.execute(
-        "SELECT etag, last_modified FROM heartbeat_log WHERE space_id=?", (space_id,)
-    ).fetchone()
-    con.close()
+    db_row = _read_heartbeat_row(space_id, resolved_db)
 
     req_headers = {}
-    if row:
-        if row[0]:
-            req_headers["If-None-Match"] = row[0]
-        if row[1]:
-            req_headers["If-Modified-Since"] = row[1]
+    if db_row["etag"]:
+        req_headers["If-None-Match"] = db_row["etag"]
+    if db_row["last_modified"]:
+        req_headers["If-Modified-Since"] = db_row["last_modified"]
 
     fetch_timeout = cfg.get("bandwidth", {}).get("heartbeat_timeout_seconds", 60.0)
     async with httpx.AsyncClient(timeout=fetch_timeout, follow_redirects=True) as client:
@@ -409,8 +557,8 @@ async def fetch_endpoint_conditional(
 
     if was_304:
         logger.info("304 Not Modified for %s — bandwidth saved", space_id)
-        return None, response_headers, True
-    return resp, response_headers, False
+        return None, response_headers, True, db_row
+    return resp, response_headers, False, db_row
 
 
 _SPARQL_ACTIVE_SPACES = """PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
@@ -446,42 +594,133 @@ async def query_active_spaces(oxigraph_endpoint: str) -> list[dict]:
     ]
 
 
+def _days_since(iso_ts: Optional[str]) -> float:
+    """Return fractional days since an ISO datetime string, or a large sentinel if absent."""
+    if not iso_ts:
+        return 0.0  # no record → treat as just-confirmed
+    try:
+        ts = datetime.fromisoformat(iso_ts.replace("Z", "+00:00"))
+        delta = datetime.now(timezone.utc) - ts
+        return delta.total_seconds() / 86400
+    except (ValueError, TypeError):
+        return 0.0
+
+
+def _minutes_since(iso_ts: Optional[str]) -> float:
+    """Return fractional minutes since an ISO datetime string, or 0 if absent/invalid."""
+    if not iso_ts:
+        return 0.0
+    try:
+        ts = datetime.fromisoformat(iso_ts.replace("Z", "+00:00"))
+        delta = datetime.now(timezone.utc) - ts
+        return delta.total_seconds() / 60
+    except (ValueError, TypeError):
+        return 0.0
+
+
 async def process_one_space(
     space_uri: str,
     endpoint_url: str,
     oxigraph_endpoint: str,
-) -> str:
-    """Fetch, validate, transform and write one space. Returns 'refreshed' or 'not_modified'."""
+) -> tuple[str, bool]:
+    """Fetch, validate, transform and write one space.
+
+    Returns (outcome, state_changed) where state_changed indicates whether any
+    triple was written (drives the rematerialize-skip optimization in AC6).
+    """
     from main import SpaceAPISchema, classify_subset, _build_sparql_update
 
     space_id = space_uri.split("/")[-1] if "/" in space_uri else space_uri
 
-    resp, _headers, was_304 = await fetch_endpoint_conditional(endpoint_url, space_id)
+    resp, _headers, was_304, db_row = await fetch_endpoint_conditional(endpoint_url, space_id)
+
+    consecutive_failures = db_row.get("consecutive_failures", 0)
+    last_fetched_ts = db_row.get("last_fetched")
+    last_content_updated_ts = db_row.get("last_content_updated")
+
+    days_since_update = _days_since(last_content_updated_ts)
+    lifecycle_state, _lc_reason = classify_lifecycle(days_since_update)
+
     if was_304:
-        return "not_modified"
+        minutes_ok = _minutes_since(last_fetched_ts)
+        endpoint_health, _ = classify_endpoint_health(304, minutes_ok, consecutive_failures)
+        state_update = build_state_only_update(space_uri, endpoint_health, lifecycle_state)
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            upd = await client.post(
+                f"{oxigraph_endpoint}/update",
+                content=state_update,
+                headers={"Content-Type": "application/sparql-update"},
+            )
+            upd.raise_for_status()
+        logger.info("heartbeat 304 state-only write for %s (%s/%s)", space_id, endpoint_health, lifecycle_state)
+        return "not_modified", True
 
     if resp is None or resp.status_code != 200:
-        logger.warning("heartbeat fetch failed for %s: status=%s", space_id,
-                       resp.status_code if resp else "no response")
-        return "error"
+        status_code = resp.status_code if resp else None
+        logger.warning("heartbeat fetch failed for %s: status=%s", space_id, status_code)
+        # On failure, minutes_since_last_good based on last successful last_fetched
+        minutes_since_good = _minutes_since(last_fetched_ts)
+        endpoint_health, _ = classify_endpoint_health(status_code, minutes_since_good, consecutive_failures + 1)
+        state_update = build_state_only_update(space_uri, endpoint_health, lifecycle_state)
+        try:
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                upd = await client.post(
+                    f"{oxigraph_endpoint}/update",
+                    content=state_update,
+                    headers={"Content-Type": "application/sparql-update"},
+                )
+                upd.raise_for_status()
+        except Exception as e:
+            logger.error("state-only write failed for %s: %s", space_id, e)
+        return "error", True
 
     try:
         data = resp.json()
     except Exception:
         logger.warning("heartbeat JSON parse failed for %s", space_id)
-        return "error"
+        return "error", False
+
+    endpoint_health, _ = classify_endpoint_health(200, 0, 0)
 
     cls: dict = {}
+    old_snap: Optional[dict] = None
+
+    # Load previous snapshot for diff detection
+    cfg = get_config()
+    resolved_db = os.getenv("HEARTBEAT_DB_PATH") or cfg.get("bandwidth", {}).get(
+        "heartbeat_log_path", "/app/tasks/heartbeat_log.db"
+    )
+
     try:
         schema_obj = SpaceAPISchema.model_validate(data)
         cls = classify_subset(schema_obj)
+
+        # Detect content diff from previous snapshot if available
+        content_changed = True
+        if last_content_updated_ts is not None:
+            # Try to get old snapshot for diff (best-effort)
+            try:
+                old_snap = await _fetch_last_snapshot(space_id, oxigraph_endpoint)
+            except Exception:
+                old_snap = None
+            if old_snap is not None:
+                diff = detect_diff(old_snap, data)
+                content_changed = diff is not None
+                if not content_changed:
+                    logger.info("heartbeat no content diff for %s", space_id)
+
+        if content_changed:
+            lifecycle_state, _ = classify_lifecycle(0)  # just updated → confirmed
+
         sparql_update, _ = transform_to_sparql(schema_obj, {
             "endpoint_url": endpoint_url,
             "space_id": space_id,
             "subset": cls.get("subset", ""),
             "next_unlock": cls.get("next_unlock"),
             "raw_content": resp.text,
-        })
+            "endpoint_health": endpoint_health,
+            "lifecycle_state": lifecycle_state,
+        }, content_changed=content_changed)
     except Exception as e:
         logger.exception("transform_to_sparql failed for %s, using legacy builder: %s", space_id, e)
         sparql_update = _build_sparql_update(
@@ -489,6 +728,7 @@ async def process_one_space(
             data.get("space", space_id), None, None, endpoint_url, data,
             subset=cls.get("subset", ""), next_unlock=cls.get("next_unlock"),
         )
+        content_changed = True
 
     async with httpx.AsyncClient(timeout=15.0) as client:
         upd = await client.post(
@@ -498,12 +738,45 @@ async def process_one_space(
         )
         upd.raise_for_status()
 
-    logger.info("heartbeat refreshed %s", space_id)
-    return "refreshed"
+    if content_changed:
+        update_last_content_updated(space_id, resolved_db)
+
+    outcome = "refreshed" if content_changed else "not_modified_content"
+    logger.info("heartbeat %s %s (%s/%s)", outcome, space_id, endpoint_health, lifecycle_state)
+    return outcome, True
+
+
+async def _fetch_last_snapshot(space_id: str, oxigraph_endpoint: str) -> Optional[dict]:
+    """Fetch the latest raw snapshot JSON for a space from Oxigraph. Returns None if absent."""
+    sparql = f"""PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
+SELECT ?rawContent WHERE {{
+  GRAPH ?g {{
+    <urn:mak:space/{space_id}> mom:rawContent ?rawContent .
+  }}
+  FILTER (STRSTARTS(STR(?g), "urn:mak:space/{space_id}/"))
+}}
+ORDER BY DESC(?g)
+LIMIT 1"""
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.post(
+            f"{oxigraph_endpoint}/query",
+            content=sparql,
+            headers={"Content-Type": "application/sparql-query",
+                     "Accept": "application/sparql-results+json"},
+        )
+        resp.raise_for_status()
+    bindings = resp.json().get("results", {}).get("bindings", [])
+    if not bindings:
+        return None
+    raw = bindings[0].get("rawContent", {}).get("value", "")
+    try:
+        return json.loads(raw)
+    except (json.JSONDecodeError, TypeError):
+        return None
 
 
 async def run_heartbeat_cycle(oxigraph_endpoint: str, rematerialize_fn) -> None:
-    """Fetch all active spaces sequentially, then rematerialize GeoJSON once."""
+    """Fetch all active spaces sequentially, then rematerialize GeoJSON if anything changed."""
     try:
         spaces = await query_active_spaces(oxigraph_endpoint)
     except Exception as e:
@@ -511,11 +784,21 @@ async def run_heartbeat_cycle(oxigraph_endpoint: str, rematerialize_fn) -> None:
         return
 
     logger.info("heartbeat cycle: %d spaces to check", len(spaces))
+    any_change = False
     for entry in spaces:
         try:
-            await process_one_space(entry["space_uri"], entry["endpoint_url"], oxigraph_endpoint)
+            _outcome, state_changed = await process_one_space(
+                entry["space_uri"], entry["endpoint_url"], oxigraph_endpoint
+            )
+            if state_changed:
+                any_change = True
         except Exception as e:
             logger.error("heartbeat cycle: error processing %s: %s", entry["space_uri"], e)
+            any_change = True  # assume a change on error to be safe
+
+    if not any_change:
+        logger.info("heartbeat cycle: no changes; skipping rematerialize")
+        return
 
     try:
         await rematerialize_fn()

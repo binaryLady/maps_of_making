@@ -1,8 +1,12 @@
+endpoint_health:
+  unresponsive_minutes_threshold: 10
+  warning_minutes_threshold: 30
+  broken_minutes_threshold: 60
+
 operational_state:
   aging_days_threshold: 30
   zombie_days_threshold: 90
-  zombie_failures_threshold: 3
-  dead_failures_threshold: 5
+  dead_days_threshold: 180
 
 bandwidth:
   heartbeat_interval_seconds: 600

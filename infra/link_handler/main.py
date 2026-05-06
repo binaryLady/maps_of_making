@@ -13,7 +13,8 @@ from apscheduler.triggers.interval import IntervalTrigger
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, ConfigDict
 
-from transformer import get_config, query_active_spaces, process_one_space, run_heartbeat_cycle
+from transformer import (get_config, query_active_spaces, process_one_space, run_heartbeat_cycle,
+                         effective_marker)
 from utils import MOM, SCHEMA, _ALLOWED_SCHEMES, _sparql_str, _sparql_iri, _slug
 
 logging.basicConfig(level=logging.INFO)
@@ -64,9 +65,11 @@ _SPARQL_SELECT = """PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontolo
 PREFIX schema: <https://schema.org/>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
-SELECT ?spaceUri ?name ?latitude ?longitude ?status ?geolocationFidelity ?geolocationNote
-       ?street ?postcode ?city ?country ?address ?website ?profileUrl ?openNow ?source
-       ?openingHours ?description ?logo ?contactJson ?lastUpdated ?subset ?nextUnlock
+SELECT ?spaceUri ?name ?latitude ?longitude ?operationalState ?endpointHealth
+       ?geolocationFidelity ?geolocationNote
+       ?street ?postcode ?city ?country ?address ?website ?profileUrl ?openNow ?lastOpenChange
+       ?source ?openingHours ?description ?logo ?contactJson ?lastUpdated ?lastFetched
+       ?subset ?nextUnlock
        (GROUP_CONCAT(DISTINCT ?specialty; separator="|") AS ?specialties)
 WHERE {
   {
@@ -77,7 +80,8 @@ WHERE {
           schema:latitude ?latitude ;
           schema:longitude ?longitude
         ] .
-      OPTIONAL { ?spaceUri mom:operationalState ?status }
+      OPTIONAL { ?spaceUri mom:operationalState ?operationalState }
+      OPTIONAL { ?spaceUri mom:endpointHealth ?endpointHealth }
       OPTIONAL { ?spaceUri mom:geolocationFidelity ?geolocationFidelity }
       OPTIONAL { ?spaceUri mom:geolocationNote ?geolocationNote }
       OPTIONAL { ?spaceUri schema:streetAddress ?street }
@@ -94,6 +98,9 @@ WHERE {
       OPTIONAL { ?spaceUri schema:logo ?logo }
       OPTIONAL { ?spaceUri schema:contactJson ?contactJson }
       OPTIONAL { ?spaceUri mom:lastUpdated ?lastUpdated }
+      OPTIONAL { ?spaceUri mom:lastFetched ?lastFetched }
+      OPTIONAL { ?spaceUri mom:openNow ?openNow }
+      OPTIONAL { ?spaceUri mom:lastOpenChange ?lastOpenChange }
       OPTIONAL { ?spaceUri mom:subset ?subset }
       OPTIONAL { ?spaceUri mom:nextUnlock ?nextUnlock }
     }
@@ -108,7 +115,8 @@ WHERE {
           schema:latitude ?latitude ;
           schema:longitude ?longitude
         ] .
-      OPTIONAL { ?spaceUri mom:operationalState ?status }
+      OPTIONAL { ?spaceUri mom:operationalState ?operationalState }
+      OPTIONAL { ?spaceUri mom:endpointHealth ?endpointHealth }
       OPTIONAL { ?spaceUri mom:geolocationFidelity ?geolocationFidelity }
       OPTIONAL { ?spaceUri mom:geolocationNote ?geolocationNote }
       OPTIONAL { ?spaceUri schema:streetAddress ?street }
@@ -125,19 +133,19 @@ WHERE {
       OPTIONAL { ?spaceUri schema:logo ?logo }
       OPTIONAL { ?spaceUri schema:contactJson ?contactJson }
       OPTIONAL { ?spaceUri mom:lastUpdated ?lastUpdated }
+      OPTIONAL { ?spaceUri mom:lastFetched ?lastFetched }
+      OPTIONAL { ?spaceUri mom:openNow ?openNow }
+      OPTIONAL { ?spaceUri mom:lastOpenChange ?lastOpenChange }
       OPTIONAL { ?spaceUri mom:subset ?subset }
       OPTIONAL { ?spaceUri mom:nextUnlock ?nextUnlock }
     }
   }
-  OPTIONAL {
-    GRAPH <urn:mak:presence> {
-      ?spaceUri mom:openNow ?openNow .
-    }
-  }
 }
-GROUP BY ?spaceUri ?name ?latitude ?longitude ?status ?geolocationFidelity ?geolocationNote
-         ?street ?postcode ?city ?country ?address ?website ?profileUrl ?openNow ?source
-         ?openingHours ?description ?logo ?contactJson ?lastUpdated ?subset ?nextUnlock
+GROUP BY ?spaceUri ?name ?latitude ?longitude ?operationalState ?endpointHealth
+         ?geolocationFidelity ?geolocationNote
+         ?street ?postcode ?city ?country ?address ?website ?profileUrl ?openNow ?lastOpenChange
+         ?source ?openingHours ?description ?logo ?contactJson ?lastUpdated ?lastFetched
+         ?subset ?nextUnlock
 ORDER BY ?spaceUri"""
 
 # Only flag fields that are unambiguously personal data (not business contact info).
@@ -534,7 +542,8 @@ def _binding_to_feature(b: dict) -> Optional[dict]:
     except (TypeError, ValueError):
         return None
 
-    status = b.get("status", {}).get("value", "seeded")
+    operational_state = b.get("operationalState", {}).get("value", "seeded")
+    endpoint_health_raw = b.get("endpointHealth", {}).get("value", "healthy")
     raw_specialties = b.get("specialties", {}).get("value", "")
     specialties = [s for s in raw_specialties.split("|") if s] if raw_specialties else []
     open_now_raw = b.get("openNow", {}).get("value")
@@ -549,6 +558,8 @@ def _binding_to_feature(b: dict) -> Optional[dict]:
         address_parts = [p for p in [street, f"{postcode} {city}".strip()] if p]
         address = ", ".join(address_parts)
 
+    resolved_status = effective_marker(endpoint_health_raw, operational_state, open_now)
+
     return {
         "type": "Feature",
         "geometry": {"type": "Point", "coordinates": [lon, lat]},
@@ -556,7 +567,9 @@ def _binding_to_feature(b: dict) -> Optional[dict]:
             "id": space_id,
             "uri": space_uri,
             "name": name,
-            "status": status,
+            "status": resolved_status,
+            "endpoint_health": endpoint_health_raw,
+            "operational_state": operational_state,
             "geolocationFidelity": b.get("geolocationFidelity", {}).get("value", ""),
             "geolocationNote": b.get("geolocationNote", {}).get("value", ""),
             "address": address,
@@ -566,19 +579,20 @@ def _binding_to_feature(b: dict) -> Optional[dict]:
             "endpoint_url": b.get("profileUrl", {}).get("value", ""),
             "specialties": specialties,
             "open_now": open_now,
+            "last_open_change": b.get("lastOpenChange", {}).get("value", ""),
             "source": b.get("source", {}).get("value"),
             "opening_hours": b.get("openingHours", {}).get("value", ""),
             "description": b.get("description", {}).get("value", ""),
             "logo": b.get("logo", {}).get("value", ""),
             "contact": _parse_contact_json(b.get("contactJson", {}).get("value")),
             "last_updated": b.get("lastUpdated", {}).get("value", ""),
+            "last_fetched": b.get("lastFetched", {}).get("value", ""),
             "subset": b.get("subset", {}).get("value", ""),
             "next_unlock": b.get("nextUnlock", {}).get("value", ""),
             "founded": "",
             "capacity": 0,
             "network_memberships": [],
             "open_for_hosting": False,
-            "last_fetched": "",
         },
     }
 
@@ -657,8 +671,11 @@ SELECT ?endpointUrl WHERE {{
     endpoint_url = bindings[0]["endpointUrl"]["value"]
     _manual_refresh_cooldowns[space_id] = now
 
-    outcome = await process_one_space(space_uri, endpoint_url, OXIGRAPH_ENDPOINT)
-    await _rematerialize_geojson()
+    outcome, state_changed = await process_one_space(space_uri, endpoint_url, OXIGRAPH_ENDPOINT)
+    if state_changed:
+        await _rematerialize_geojson()
+    else:
+        logger.info("manual refresh %s: no changes; skipping rematerialize", space_id)
     return {"status": "ok", "space_id": space_id, "outcome": outcome}
 
 
