@@ -8,7 +8,7 @@
 - **APScheduler startup failure has no `/health` signal** — Spec requires catch+log (not fail-fast). Add scheduler health status to `/health` in Epic 4 observability.
 - **SVG innerHTML duplicated 3× in click handler** — Extract to `_REFRESH_SVG` const in future UI pass.
 - **New `httpx.AsyncClient` per space per heartbeat cycle** — Harmless at 6 spaces; pass shared client when scaling to larger fleet.
-- **`_rematerialize_geojson` called unconditionally even on "not_modified"** — Skip rematerialize when outcome is `"not_modified"` in manual endpoint; minor I/O waste.
+- ~~**`_rematerialize_geojson` called unconditionally even on "not_modified"** — Skip rematerialize when outcome is `"not_modified"` in manual endpoint; minor I/O waste.~~ → **resolved 2026-05-06 in Story 3.2 AC6**
 - **Cooldown UX refinement (pilot)** — Current: 60s cooldown starts on any non-rate-limited attempt, including 404 (no endpoint). Pilot improvement: only engage cooldown after a successful or not-modified fetch; 404 (space has no endpoint) should not lock out the user. → post-demo pilot story.
 
 ## Deferred from: code review of 3-0-A-space-profile-card-ux-refinement (2026-05-05)
@@ -18,7 +18,7 @@
 
 ## Deferred from: code review of 2-7-card-zones-pydantic-schema-foundation (2026-04-28)
 
-- **W1 — "last fetch never ago" timestamp display bug** — `timeAgo()` receives a date-only `YYYY-MM-DD` string; needs a full ISO datetime. Pre-existing; visible now because a real coordinator space was registered. → Epic 5 / Story 4.2 fetch history polish.
+- ~~**W1 — "last fetch never ago" timestamp display bug** — `timeAgo()` receives a date-only `YYYY-MM-DD` string; needs a full ISO datetime. Pre-existing; visible now because a real coordinator space was registered. → Epic 5 / Story 4.2 fetch history polish.~~ → **resolved 2026-05-06 in Story 3.2 AC7 (`last_updated` now full ISO datetime; lifecycle copy reads `last_updated`, endpoint copy reads `last_fetched`)**
 - **W2 — No fetch timeout on Zone 3 /raw fetch** — indefinite loading state on slow server. Pre-existing pattern across app fetches. → Epic 5 UI polish.
 - **W3 — Zone 3 error state: 500 vs network timeout collapse to same "Source unavailable."** — minor UX gap; spec allows this. → monitor.
 - **D2 — SpaceAPI schemaErrors[] not surfaced in validation drawer** — `POST /api/validate-url` does not call SpaceAPI validator or return field-level errors. "→ See schema guide" link is the current help. Full error surfacing deferred. → Epic 5 coordinator-feedback polish.
@@ -122,13 +122,13 @@ Generating a real openfab.jsonld against the `space-jsonld-generator` skill expo
 - **_sparql_str missing null byte escape** — `utils.py:12` — null bytes (`\x00`) in names/descriptions would produce invalid SPARQL literals; extremely rare in real SpaceAPI payloads. → Future hardening
 - **detect_diff json.dumps silent fallback for non-serializable values** — `transformer.py:152` — sort key raises TypeError on datetime/set values, silently falls back to unsorted list (no diff reported for those elements). Current callers produce only string values from SPARQL results. → Future if detect_diff is reused in other contexts
 - **test_transform_idempotent snapshot URI fragile at UTC midnight** — `test_transformer.py:279` — `snap1 == snap2` assertion fails if test runs across date boundary. Use freezegun or inject fixed date. → Test polish
-- **Negative age_days from future-dated Last-Modified always returns "confirmed"** — `transformer.py:classify_operational_state` — clock skew on remote server produces negative age_days; all thresholds missed, silently returns "confirmed". Undocumented but acceptable. → Future monitoring story
+- ~~**Negative age_days from future-dated Last-Modified always returns "confirmed"** — `transformer.py:classify_operational_state` — clock skew on remote server produces negative age_days; all thresholds missed, silently returns "confirmed". Undocumented but acceptable. → Future monitoring story~~ → **resolved 2026-05-06 in Story 3.2 AC1 (clamp to 0 + WARNING log)**
 
 ## Deferred from: UX design session for 3-0-A-space-profile-card-ux-refinement (2026-05-04)
 
 - **Manual fetch button wired (disabled stub in 3.0-A)** — ✅ DONE in Story 3.1.
 - **True change-detection for "last updated"** — `mom:lastUpdated` written at every successful 200 fetch; does not diff content. "fetched:" timestamp in Zone 3 = last 200 response; field-level change history is nice-to-have for trust/transparency story but not critical for demo. `detect_diff()` exists in transformer.py but is not called. → Epic 7 / future history story. Note: 304 conditional GET already prevents redundant writes when server honours ETags.
-- **`state` open/closed dynamic signal → green marker** — SpaceAPI `state` object (dynamic open/closed + lastchange) detected but not yet acted on. If present, could enable green marker and freshness sensing for demo. → Epic 7.
+- ~~**`state` open/closed dynamic signal → green marker** — SpaceAPI `state` object (dynamic open/closed + lastchange) detected but not yet acted on. If present, could enable green marker and freshness sensing for demo. → Epic 7.~~ → **resolved 2026-05-06 in Story 3.2 AC2/AC5; Epic 7 reframed as parked indefinitely (heartbeat covers it)**
 - **Space name collision / duplicate space resolution** — Two unrelated spaces sharing the same name (e.g. OpenFab Brussels vs OpenFab Istanbul) are currently disambiguated only by endpoint URL. No UI for collision detection or coordinator disambiguation. → Pilot phase.
 - **Endpoint URL swap / trust attack** — A bad actor could register an existing seeded space's slug with a different endpoint URL, replacing legitimate data. No auth or ownership verification at registration time. → Pilot phase security hardening.
 - **Rate limiting persistence across restarts** — Manual fetch cooldown (60s per space) stored in-memory dict; resets on container restart. → Epic 5 polish.

@@ -391,8 +391,8 @@ Arjun types a natural-language question in Discord. The bot defers, translates N
 
 ---
 
-### Epic 7: 🟢 "Open Now" Presence Layer *(deferred — schema slot reserved at Epic 1)*
-A space's 🟢 badge fires when a webhook/door-sensor/channel-activity ping hits the presence endpoint within a TTL window. Named graph already allocated; nginx webhook route already commented-in from Epic 1. Activation cost: one handler + one Nanobot task + uncomment route.
+### Epic 7: 🟢 "Open Now" Presence Layer *(parked indefinitely 2026-05-06 — heartbeat + SpaceAPI `state.open` cover it)*
+Originally a webhook-driven presence layer. As of Story 3.2, the heartbeat polls every 10 min and honors SpaceAPI `state.open` as a lifecycle-resetting signal — coordinators with automated endpoints stay `confirmed` indefinitely without any push channel. Section retained as a design trail; do not create stories without fresh justification.
 
 **FRs:** FR3 (🟢 state)
 **ARs:** AR-DATA3 (ADR-007 presence graph — activate from slot)
@@ -1098,27 +1098,21 @@ So that I can force an immediate update after editing my JSON without waiting fo
 
 ---
 
-### Story 3.2: Freshness Lifecycle — Aging / Zombie / Dead Transitions
+### Story 3.2: Endpoint Health + Space Lifecycle + Open-Now (unified)
 
-As a maker browsing the map,
-I want pin states to reflect the true freshness of each space's endpoint over time,
-So that a pin I see as 🔵 confirmed is genuinely reachable — and aging/zombie/dead pins are visibly distinct before I rely on their data.
+> **Rescoped 2026-05-06.** Original AC list (PII strip on closed) split to Story 3.2b. Open-now signal pulled in from the deferred Epic 7 entry — heartbeat already polls so it's read-side, not push-side. Epic 7 now parked indefinitely.
+> Full ACs live in the story file: `_bmad-output/implementation-artifacts/3-2-freshness-lifecycle-aging-zombie-dead-transitions.md`.
 
-**Acceptance Criteria:**
+As MOM, I want the heartbeat to interpret each fetch into three independent truth signals — endpoint health, space lifecycle, and dynamic open/closed — and resolve them into one honest pin, so that visitors see what's actually happening and coordinators get the right freshness incentive.
 
-**Given** the heartbeat scheduler is running (Story 3.1) and a space's endpoint goes unreachable or its data stops updating
-**When** the scheduler job runs after each cycle
-**Then** it writes updated status triples to `<urn:mak:status>` based on time since last successful fetch, read from `config.yaml`:
-- `time_since_update > aging_threshold` (default 30d) → `mak:operationalState mak:aging` (dashed pin, amber in health map)
-- `time_since_update > zombie_threshold` (default 90d) → `mak:operationalState mak:zombie` (dashed pin, orange)
-- `time_since_update > dead_threshold` (default 180d) → `mak:operationalState mak:dead` (removed from default map view, retained in Oxigraph for admin query)
-- `consecutiveFailures >= broken_threshold` → `mak:operationalState mak:broken`, `mak:visibility "public"` (🔴 pin) — distinct from time-based aging
-- Space JSON self-reports `status: closed` OR N consecutive fetch failures → `mak:operationalState mak:closed`, PII contact fields removed from Oxigraph, `mak:closedAt {timestamp}` written, pin retained as historical record (FR25b, NFR-C1)
-**And** when a previously aging/broken space returns a successful fetch with changed data, the timer resets and status returns to `mak:confirmed` immediately
-**And** all threshold values are read from `config.yaml` with documented defaults — never hardcoded (NFR-R3)
-**And** every status write is idempotent — uses `ASK` before `INSERT`, never blind overwrites (AR-CONV4)
-**And** `materialize_geojson.py` is called after status updates so the map reflects the new state within minutes
-**And** Epic 7 note: when a webhook ping arrives for a space, the `time_since_update` timer resets — this is the mechanism that removes the need to edit the JSON file monthly just to stay "confirmed". Schema slot reserved; implementation deferred to Epic 7.
+**Truth model (summary):**
+
+- **Endpoint health** (clock: minutes since last 200/304) → `healthy` < 10m, `unresponsive` 10–30m, `warning` 30–60m, `broken` ≥ 60m. Map shows red ✕ only for `broken`; Epic 4 surfaces the rest.
+- **Space lifecycle** (clock: days since `mom:lastUpdated`, only resets on real content diff) → `confirmed` < 30d, `aging` 30–90d, `zombie` 90–180d, `dead` ≥ 180d. **MOM never rewrites `mom:lastUpdated` from a state-only graph write.**
+- **Dynamic open/closed** — `state.open` (v15 object) or `"open"`/`"closed"` (v0.13 string) → `mom:openNow` boolean + optional `mom:lastOpenChange`. **`state.open` flips count as material content changes** — they reset the lifecycle clock. `sensors.*` flips do not. This is the designed freshness incentive.
+- **Conflict resolution:** lifecycle supersedes endpoint. A dead space with vanished hosting still shows as dead, not merely broken. Resolved server-side in `transformer.effective_marker(...)`; GeoJSON exposes a single resolved `status` plus the raw signals for Epic 4.
+
+**Story 3.2b** carries the original `mak:closed` + PII-strip flow (closed for N cycles → strip contact fields, write `mak:closedAt`, revive on next material diff). Different blast radius (triple deletion) — separate review.
 
 ---
 
@@ -1305,7 +1299,9 @@ So that the federated map is a tool used where our community already lives — n
 
 ---
 
-## Epic 7: 🟢 "Open Now" Presence Layer *(deferred — post-demo side quest)*
+## Epic 7: 🟢 "Open Now" Presence Layer *(parked indefinitely — 2026-05-06)*
+
+> **Reframed 2026-05-06.** Heartbeat (Story 3.1) + honored SpaceAPI `state.open` (Story 3.2) cover the demo's open-now needs from the read side. The push/webhook approach this epic was designed for has no remaining demo value. Section retained as a design-conversation trail — DO NOT create stories under this epic without first re-justifying why heartbeat polling + `state.open` interpretation is insufficient.
 
 A space's 🟢 badge fires when a webhook ping hits the presence endpoint within a TTL window. The schema slot and nginx route were reserved at Epic 1 — activation cost is one handler, one task, and one nginx uncomment.
 

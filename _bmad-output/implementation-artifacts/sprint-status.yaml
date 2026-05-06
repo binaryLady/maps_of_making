@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-01
-last_updated: 2026-05-05 (Story 3.1 done: Heartbeat scheduler + manual refresh wired — 3 review patches applied)
+last_updated: 2026-05-06 (sprint-planning sync: Epic 4 stories realigned to current epics.md; 4-0 draft orphaned → flagged)
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
@@ -102,20 +102,20 @@ development_status:
   3-0-A-space-profile-card-ux-refinement: done
   3-0-B-space-profile-v2-ui: done
   3-1-heartbeat-scheduler-periodic-10min-fetch-cycle-manual-trigger: done
-  3-2-freshness-lifecycle-aging-zombie-dead-transitions: backlog
+  3-2-freshness-lifecycle-aging-zombie-dead-transitions: ready-for-dev
+  3-2-b-mak-closed-pii-strip: backlog
   3-3-magic-link-generation-link-handler-validation: backlog
   3-4-coordinator-email-notification-with-pre-filled-recovery-link: backlog
   epic-3-retrospective: optional
 
   # Epic 4: Operator Observability Dashboard
   # Depends on Epic 3's snapshot output and status graph
+  # NOTE: 4-0-admin-foundation-subdomain-auth-space-comparison.md is an orphaned draft — no corresponding story in epics.md; review before Epic 4 kickoff
   epic-4: backlog
-  4-0-admin-foundation-subdomain-auth-space-comparison: draft
-  4-1-fleet-health-overview-status-counts-sparkline: backlog
-  4-2-per-space-drill-down-fetch-history-error-log-manual-re-fetch: backlog
-  4-3-coordinator-nudge-dispatch: backlog
-  4-4-demo-data-toggle-include-exclude-rff-mockup-graph: backlog
-  4-5-export-registry-audit-log: backlog
+  4-1-system-health-strip-three-status-pills: backlog
+  4-2-space-registry-table: backlog
+  4-3-per-space-inspection-panel-raw-ingested-displayed: backlog
+  4-4-export-registry-operator-action-log: backlog
   epic-4-retrospective: optional
 
   # Epic 4b: Magic Link Coordinator Recovery (parallel non-blocking)
