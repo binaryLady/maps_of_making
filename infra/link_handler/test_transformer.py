@@ -549,8 +549,9 @@ def _make_db_with_row(db_path: str, space_id: str, **kwargs) -> None:
     con.execute(
         "INSERT OR REPLACE INTO heartbeat_log "
         "(space_id, etag, last_modified, last_fetched, consecutive_failures, "
-        "last_content_updated, consecutive_closed_cycles, is_closed) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        "last_content_updated, consecutive_closed_cycles, is_closed, "
+        "last_endpoint_health, last_lifecycle_state) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             space_id,
             kwargs.get("etag"),
@@ -560,6 +561,8 @@ def _make_db_with_row(db_path: str, space_id: str, **kwargs) -> None:
             kwargs.get("last_content_updated"),
             kwargs.get("consecutive_closed_cycles", 0),
             kwargs.get("is_closed", 0),
+            kwargs.get("last_endpoint_health", "healthy"),
+            kwargs.get("last_lifecycle_state", "confirmed"),
         ),
     )
     con.commit()
@@ -623,3 +626,134 @@ def test_pii_strip_sparql_triggers_when_threshold_met():
     cfg_threshold = 6
     should_strip = consecutive_closed_cycles >= cfg_threshold and not is_closed
     assert should_strip is True
+
+
+# ---------------------------------------------------------------------------
+# Behavioral tests for process_one_space counter mechanics (AC7 — Story 3.2b)
+# These drive process_one_space with mocked HTTP/Oxigraph to verify that the
+# consecutive_closed_cycles counter and is_closed flag are persisted correctly.
+# ---------------------------------------------------------------------------
+
+import asyncio
+import sqlite3
+from unittest.mock import AsyncMock, MagicMock, patch
+
+_SPACE_URI = "urn:mak:space/testspace"
+_SPACE_ID = "testspace"
+_ENDPOINT_URL = "https://example.com/spaceapi.json"
+_OXIGRAPH = "http://localhost:7878"
+
+_OPEN_PAYLOAD = {"api_compatibility": ["14"], "space": "Test", "url": "https://example.com",
+                 "logo": "https://example.com/logo.png", "location": {"lat": 0.0, "lon": 0.0},
+                 "state": {"open": True}}
+_CLOSED_PAYLOAD = {**_OPEN_PAYLOAD, "state": {"open": False}}
+_LEGACY_CLOSED_PAYLOAD = {**_OPEN_PAYLOAD, "state": "closed"}
+
+
+def _mock_response(payload, status=200):
+    resp = MagicMock()
+    resp.status_code = status
+    resp.json.return_value = payload
+    resp.text = str(payload)
+    resp.headers = {}
+    return resp
+
+
+def _mock_sparql_post():
+    """Return an AsyncMock that records SPARQL update calls."""
+    post_mock = AsyncMock()
+    post_mock.return_value.raise_for_status = MagicMock()
+    return post_mock
+
+
+def _run_process(db_path, payload, status=200):
+    """Run process_one_space with mocked I/O against a real tmp SQLite DB."""
+    resp = _mock_response(payload, status)
+    db_row = transformer._read_heartbeat_row(_SPACE_ID, db_path)
+
+    def _getenv_side_effect(key, default=None):
+        if key == "HEARTBEAT_DB_PATH":
+            return db_path
+        return os.environ.get(key, default)
+
+    with patch("transformer.fetch_endpoint_conditional",
+               new=AsyncMock(return_value=(resp, {}, False, db_row))), \
+         patch("transformer._fetch_last_snapshot", new=AsyncMock(return_value=None)), \
+         patch("transformer.os.getenv", side_effect=_getenv_side_effect), \
+         patch("httpx.AsyncClient") as mock_client_cls:
+
+        mock_client = AsyncMock()
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=False)
+        mock_client.post = _mock_sparql_post()
+        mock_client_cls.return_value = mock_client
+
+        outcome, state_changed = asyncio.run(
+            transformer.process_one_space(_SPACE_URI, _ENDPOINT_URL, _OXIGRAPH)
+        )
+    return outcome, state_changed, transformer._read_heartbeat_row(_SPACE_ID, db_path)
+
+
+def test_counter_increments_on_200_closed(tmp_path):
+    db = str(tmp_path / "hb.db")
+    _make_db_with_row(db, _SPACE_ID, last_fetched="2026-01-01T00:00:00+00:00",
+                      last_content_updated="2026-01-01T00:00:00+00:00")
+    _run_process(db, _CLOSED_PAYLOAD)
+    row = transformer._read_heartbeat_row(_SPACE_ID, db)
+    assert row["consecutive_closed_cycles"] == 1
+
+
+def test_counter_increments_on_legacy_closed_string(tmp_path):
+    db = str(tmp_path / "hb.db")
+    _make_db_with_row(db, _SPACE_ID, last_fetched="2026-01-01T00:00:00+00:00",
+                      last_content_updated="2026-01-01T00:00:00+00:00",
+                      consecutive_closed_cycles=2)
+    _run_process(db, _LEGACY_CLOSED_PAYLOAD)
+    row = transformer._read_heartbeat_row(_SPACE_ID, db)
+    assert row["consecutive_closed_cycles"] == 3
+
+
+def test_counter_resets_on_200_open(tmp_path):
+    db = str(tmp_path / "hb.db")
+    _make_db_with_row(db, _SPACE_ID, last_fetched="2026-01-01T00:00:00+00:00",
+                      last_content_updated="2026-01-01T00:00:00+00:00",
+                      consecutive_closed_cycles=4)
+    _run_process(db, _OPEN_PAYLOAD)
+    row = transformer._read_heartbeat_row(_SPACE_ID, db)
+    assert row["consecutive_closed_cycles"] == 0
+
+
+def test_revival_resets_is_closed_and_counter(tmp_path):
+    """Material content diff on a closed space revives it (AC4)."""
+    db = str(tmp_path / "hb.db")
+    _make_db_with_row(db, _SPACE_ID, last_fetched="2026-01-01T00:00:00+00:00",
+                      last_content_updated="2026-01-01T00:00:00+00:00",
+                      consecutive_closed_cycles=8, is_closed=1)
+    # Simulate material diff: new payload differs from old snapshot
+    old_snap = {**_CLOSED_PAYLOAD, "location": {"lat": 1.0, "lon": 2.0}}
+    new_payload = {**_OPEN_PAYLOAD, "location": {"lat": 3.0, "lon": 4.0}}
+    resp = _mock_response(new_payload)
+    db_row = transformer._read_heartbeat_row(_SPACE_ID, db)
+
+    def _getenv2(key, default=None):
+        if key == "HEARTBEAT_DB_PATH":
+            return db
+        return os.environ.get(key, default)
+
+    with patch("transformer.fetch_endpoint_conditional",
+               new=AsyncMock(return_value=(resp, {}, False, db_row))), \
+         patch("transformer._fetch_last_snapshot", new=AsyncMock(return_value=old_snap)), \
+         patch("transformer.os.getenv", side_effect=_getenv2), \
+         patch("httpx.AsyncClient") as mock_client_cls:
+
+        mock_client = AsyncMock()
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=False)
+        mock_client.post = _mock_sparql_post()
+        mock_client_cls.return_value = mock_client
+
+        asyncio.run(transformer.process_one_space(_SPACE_URI, _ENDPOINT_URL, _OXIGRAPH))
+
+    row = transformer._read_heartbeat_row(_SPACE_ID, db)
+    assert row["is_closed"] == 0
+    assert row["consecutive_closed_cycles"] == 0

@@ -13,6 +13,7 @@ services:
       - "8080:80"
     volumes:
       - ../web:/var/www/mapsofmaking:ro,z
+      - ../web/data:/var/www/mapsofmaking/data:z
       - ./nginx/conf.d:/etc/nginx/conf.d:ro,z
       - ../data/logs/nginx:/var/log/nginx:z
       - ./nginx/.htpasswd:/etc/nginx/.htpasswd:ro,z
@@ -21,6 +22,7 @@ services:
     volumes:
       - ../web/data:/app/web_data:z
       - ../scripts/activity_map.yaml:/app/scripts/activity_map.yaml:ro,z
+      - ../data/tasks:/app/tasks:z  # persist heartbeat_log.db; :z for Fedora SELinux
 
   oxigraph:
     ports:

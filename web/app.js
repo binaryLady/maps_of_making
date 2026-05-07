@@ -17,11 +17,11 @@
     search: '',
     selectedId: null,
     openDrawer: null,          // 'filters' | 'search' | 'preset' | 'addurl' | 'detail' | 'bot' | 'tweaks' | null
+    showUnhealthy: false,
     tweaks: {
       mapStyle: 'dim',
       density: 'roomy',
       pulse: 'on',
-      showHealthMap: false,
     },
     embed: { centerId: null },
     markers: new Map(),        // id -> maplibre.Marker
@@ -219,6 +219,11 @@
     const size = state.tweaks.density === 'compact' ? 14 : 22;
     const pulseOff = state.tweaks.pulse === 'off';
     for (const s of visible) {
+      const lat = s.coordinates?.lat, lon = s.coordinates?.lon;
+      if (typeof lat !== 'number' || typeof lon !== 'number' || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+        console.warn('[renderMarkers] skipping space with invalid coords:', s.id, lat, lon);
+        continue;
+      }
       const kind = markerKind(s);
       const svg = createMarkerSVG(kind, size, pulseOff);
       svg.setAttribute('aria-label', `${s.name}, ${s.city}, ${s.country}, status ${kind}`);
@@ -232,7 +237,7 @@
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectSpace(s.id, { fly: false }); }
       });
       const marker = new maplibregl.Marker({ element: svg, anchor: 'center' })
-        .setLngLat([s.coordinates.lon, s.coordinates.lat])
+        .setLngLat([lon, lat])
         .addTo(map);
       state.markers.set(s.id, marker);
     }
@@ -278,7 +283,7 @@
     const q = state.search.trim().toLowerCase();
     const HEALTH_STATUSES = new Set(['aging', 'zombie', 'dead']);
     return state.spaces.filter((s) => {
-      if (!state.tweaks.showHealthMap && HEALTH_STATUSES.has(s.status)) return false;
+      if (!state.showUnhealthy && HEALTH_STATUSES.has(s.status)) return false;
       if (f.networks.size && !(s.network_memberships || []).some((n) => f.networks.has(n))) return false;
       if (f.countries.size && !f.countries.has(s.country)) return false;
       if (f.statuses.size) {
@@ -964,7 +969,12 @@
         return;
       }
 
-      // Refresh map state
+      // Refresh map state — clear filters first so the new space is always visible
+      state.filters.networks.clear();
+      state.filters.countries.clear();
+      state.filters.statuses.clear();
+      state.filters.specialties.clear();
+      state.showUnhealthy = false;
       try {
         const geoResp = await fetch(`/data/spaces.geojson?t=${Date.now()}`);
         const geoJson = await geoResp.json();
@@ -972,10 +982,10 @@
           ...f.properties,
           coordinates: { lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0] },
         }));
-        // Validate selectedId still exists in refreshed data
         if (state.selectedId && !state.spaces.find((s) => s.id === state.selectedId)) {
           state.selectedId = null;
         }
+        buildFilterChips();
         renderMarkers();
       } catch (_) { /* non-fatal */ }
 
@@ -1048,7 +1058,7 @@
     // Update preset code if opening preset
     if (name === 'preset') renderPresetPreview();
     // Reset addurl form when re-opening (clears post-confirmation screen)
-    if (name === 'addurl') _resetAddUrlForm();
+    if (name === 'addurl') { _resetAddUrlForm(); setTimeout(() => { const inp = $('#url-input'); if (inp) inp.focus(); }, 50); }
   }
   function closeDrawer(name) {
     const id = ({
@@ -1160,11 +1170,19 @@
     });
 
     // Reset filters
+    $('#btn-show-unhealthy').addEventListener('click', () => {
+      state.showUnhealthy = !state.showUnhealthy;
+      $('#btn-show-unhealthy').setAttribute('aria-pressed', state.showUnhealthy ? 'true' : 'false');
+      renderMarkers();
+    });
+
     $('#btn-reset-filters').addEventListener('click', () => {
       state.filters.networks.clear();
       state.filters.countries.clear();
       state.filters.statuses.clear();
       state.filters.specialties.clear();
+      state.showUnhealthy = false;
+      $('#btn-show-unhealthy').setAttribute('aria-pressed', 'false');
       state.search = '';
       const searchInput = $('#search-input');
       searchInput.value = '';
@@ -1314,6 +1332,32 @@
       updateCounts();
       // Initial tweaks apply
       applyTweaks();
+
+      // Auto-refresh: poll heartbeat last-run timestamp every 60s.
+      // When a new cycle completes, soft-reload GeoJSON without touching map pan/zoom.
+      let _lastKnownRun = null;
+      setInterval(async () => {
+        try {
+          const r = await fetch('/api/heartbeat/last-run');
+          if (!r.ok) return;
+          const { last_run } = await r.json();
+          if (!last_run) return;
+          if (_lastKnownRun === null) { _lastKnownRun = last_run; return; }
+          if (last_run === _lastKnownRun) return;
+          _lastKnownRun = last_run;
+          const geo = await fetch(`/data/spaces.geojson?t=${Date.now()}`);
+          if (!geo.ok) return;
+          const geoJson = await geo.json();
+          state.spaces = (geoJson.features || []).map((f) => ({
+            ...f.properties,
+            coordinates: { lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0] },
+          }));
+          buildFilterChips();
+          renderMarkers();
+          renderDetail();
+          updateCounts();
+        } catch (_) {}
+      }, 60_000);
     } catch (e) {
       console.error(e);
       $('#loader').innerHTML = `<div class="hand" style="color: var(--accent)">Couldn't load seed data.</div><div class="mono">${e.message}</div>`;

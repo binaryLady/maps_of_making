@@ -21,23 +21,11 @@ OXIGRAPH_URL = os.getenv("OXIGRAPH_URL", "http://localhost:7878").rstrip("/")
 if not OXIGRAPH_URL.endswith("/query"):
     OXIGRAPH_URL = OXIGRAPH_URL + "/query"
 
+sys.path.insert(0, str(REPO_ROOT / "infra" / "link_handler"))
+from transformer import effective_marker  # noqa: E402
+
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger(__name__)
-
-
-def effective_marker(endpoint_health: str, lifecycle_state: str, open_now: bool) -> str:
-    """Resolve three signals into a single public map marker status.
-
-    Duplicated from infra/link_handler/transformer.py — keep in sync.
-    Lifecycle supersedes endpoint health.
-    """
-    if lifecycle_state == "closed": return "closed"
-    if lifecycle_state == "dead":   return "dead"
-    if lifecycle_state == "zombie": return "zombie"
-    if lifecycle_state == "aging":  return "aging"
-    if endpoint_health == "broken": return "broken"
-    if open_now:                    return "open"
-    return "confirmed"
 
 
 SPARQL_QUERY = """PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
@@ -195,7 +183,7 @@ def binding_to_space(binding: dict) -> dict:
     longitude = float(lon_raw)
 
     operational_state = binding.get("operationalState", {}).get("value", "seeded")
-    endpoint_health_raw = binding.get("endpointHealth", {}).get("value", "healthy")
+    endpoint_health_raw = binding.get("endpointHealth", {}).get("value", "unknown")
     fidelity = binding.get("geolocationFidelity", {}).get("value", "")
     geo_note = binding.get("geolocationNote", {}).get("value", "")
     street = binding.get("street", {}).get("value", "")

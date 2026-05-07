@@ -89,6 +89,18 @@ The space's declared specialties: AI systems, linked open data, geography/cartog
 - **distrobox fallback silent failure when container not running** — `scripts/load_ontology.sh`: if `maps-oxigraph` is not running, `podman inspect` fails silently, `CONTAINER_IP` is empty, script proceeds with the original unreachable URL without a clear diagnostic error message.
 - **No `--max-time` on curl PUTs in load_ontology.sh** — load script can hang indefinitely on slow VPS or stalled container; health check has `-m 1` but actual PUT calls don't.
 
+## Deferred from: Story 3.2 lore session — SpaceAPI federation seeding (2026-05-07)
+
+- **SpaceAPI directory has out-of-range coordinates** — ~5% of endpoints report lat/lon outside valid ranges (e.g., Unix timestamps as coordinates). The seed script now validates `-90 ≤ lat ≤ 90` and `-180 ≤ lon ≤ 180` before writing. **Lesson:** external directories require validation; silently dropping bad records is better than crashing the map renderer mid-loop.
+
+- **SpaceAPI directory is global, map is bounded to Europe** — The directory has 244+ spaces worldwide; the demo map is bounded to Europe ([-25, 34], [45, 72]). The seed script now filters to bounding box at seed time, reducing GeoJSON bloat and preventing out-of-map spaces from draining resources. **Pilot story:** generalize to configurable geographic scope when federation expands.
+
+- **Network membership preservation through heartbeat required dual fixes** — (1) SPARQL GROUP_CONCAT with STR() wrapper (resolved in prior session); (2) `_sparql_iri` scheme validation now accepts `urn:` URIs (resolved this session). Without both, heartbeat would silently strip `mom:memberOf` triples during space updates. **Pattern:** external identifier scheme support must reach from seed → heartbeat → materialization.
+
+- **Filter clearing after registration is essential UX** — When a user registers a new space with no network membership, active network filter chips would hide the dot. Now: registration flow clears all filters before rendering, ensuring the newly registered space is visible. **Lesson:** registration/creation flows should reset filter state to show the new item.
+
+- **Coordinate validation prevents renderMarkers() cascade failure** — When `renderMarkers()` encounters a space with invalid lat/lon, MapLibre throws. Previously, error silently bubbled, aborting the loop before later spaces (including openfab) got markers. Now: skip invalid spaces with a console warning, continue rendering. **Pattern:** per-item error handling in render loops beats fail-on-first.
+
 ## Deferred from: Story 2.0 — UI Dataset Toggle and User Preferences (2026-04-25)
 
 - **Legend does not show health map states** — `web/maps-of-making.html`: legend only lists seeded/confirmed/open/unlinked/broken. When health map is ON, aging ⚠️ / zombie 🧟 / dead 🪦 markers appear with no legend entry. Add a conditional legend section that shows when health map is active. → Epic 5 UI polish.
@@ -172,3 +184,23 @@ Generating a real openfab.jsonld against the `space-jsonld-generator` skill expo
 ## Deferred from: Space Profile v2 UI implementation (2026-05-05)
 
 - **SVG contact channel icon collection** — Space Profile v2 includes inline SVG icons for email, twitter, mastodon, facebook. All other channels (phone, irc, matrix, foursquare, website, ml, unknown keys) render text abbreviations (`[ph]`, `[#]`, `[mx]`, `[fs]`, `↗`). A full collection of platform SVGs (at minimum the 15 most common SpaceAPI contact keys) is needed before public launch. → Epic 5 / UI polish
+
+## Deferred from: Live demo testing on 2026-05-07
+
+- **Newly registered URL shows no dot on map** — Registration succeeds (profile opens, GeoJSON updated) but the marker doesn't appear on map. Likely race condition or filter state issue. Browser console should be checked for errors during registration flow. → Epic 5 or Pilot debugging.
+- **SpaceAPI directory — missing country codes** — seed_spaceapi.py has no source for country/locality; all 197 spaces appear as "197 unknown country" in filter. Only solution is extract from endpoint URL or endpoint's location object (v15 feature, not v14). Lower priority for demo. → Epic 5.
+- **SpaceAPI directory — global scope wastes resources** — Fetches all 244 endpoints (~197 reachable); could filter by lat/lon bbox to fit demo's Europe focus. Requires spatial filtering during directory fetch. → Pilot phase.
+
+## Deferred from: SpaceAPI + demo map review (2026-05-07)
+
+- **Spaces with missing or invalid geolocation** — Some seeded SpaceAPI spaces trigger a browser warning because their `schema:geo` coordinates are null or fall outside valid ranges. These are currently included in the GeoJSON with bad coords. Epic 4 mission control is the right place to surface these: health pill + inspection panel showing "no valid coordinates" as a data-quality signal. Ideal showcase for the operator tool use case. → Epic 4.
+
+## Deferred from: SpaceAPI seed + heartbeat integration (2026-05-07)
+
+- **Heartbeat sequential write bottleneck** — `run_heartbeat_cycle` fetches endpoints concurrently (seed_spaceapi.py uses concurrency=20) but writes to Oxigraph one SPARQL UPDATE per space, sequentially. With 197 SpaceAPI endpoints this runs visibly slow on manual trigger. Two complementary fixes: (1) batch Oxigraph writes into a single UPDATE per cycle, (2) process endpoint fetches concurrently using the same asyncio pattern already in `seed_spaceapi.py`. Meaningful refactor of `process_one_space` — worth its own story once pilot traffic justifies it. → Epic 5 / Pilot phase.
+
+## Deferred from: code review of 3-2-b-mak-closed-pii-strip (2026-05-07)
+
+- **SPARQL injection via space_uri**: `space_uri` is f-string interpolated into SPARQL strings (`_build_pii_strip_sparql`, `build_state_only_update`, etc.) without using the `_sparql_iri` sanitization helper from `utils.py`. Pre-existing pattern throughout `transformer.py`. → Epic 5 hardening.
+- **SQLite concurrency on `consecutive_closed_cycles`**: read-modify-write on the counter is not atomic — two concurrent manual refreshes for the same space could lose a counter increment. Pre-existing pattern for `consecutive_failures`. → Epic 5 hardening.
+- **Snapshot ORDER BY lexicographic**: `_fetch_last_snapshot` orders by snapshot graph URI string; relies on ISO datetime lexicographic sort being stable across timezone formats. Pre-existing. → investigate if mixed TZ formats ever appear.

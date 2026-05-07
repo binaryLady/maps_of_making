@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 MOM = "https://nicolasdb.github.io/mapsofmaking_ontology/ns#"
 SCHEMA = "https://schema.org/"
 
-_ALLOWED_SCHEMES = {"http", "https"}
+_ALLOWED_SCHEMES = {"http", "https", "urn"}
 
 
 def _sparql_str(s: str) -> str:

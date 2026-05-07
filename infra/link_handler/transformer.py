@@ -360,6 +360,7 @@ def transform_to_sparql(
     endpoint_health = metadata.get("endpoint_health", "healthy")
     lifecycle_state = metadata.get("lifecycle_state", "confirmed")
 
+    source = metadata.get("source", "self-registered")
     triples = [
         f"  <{space_uri}> a <{MOM}Space> .",
         f'  <{space_uri}> <{SCHEMA}name> "{_sparql_str(name)}" .',
@@ -367,8 +368,12 @@ def transform_to_sparql(
         f'  <{space_uri}> <{MOM}operationalState> "{lifecycle_state}" .',
         f'  <{space_uri}> <{MOM}endpointHealth> "{endpoint_health}" .',
         f'  <{space_uri}> <{MOM}lastFetched> "{now}"^^<http://www.w3.org/2001/XMLSchema#dateTime> .',
-        f'  <{space_uri}> <{MOM}source> "self-registered" .',
+        f'  <{space_uri}> <{MOM}source> "{_sparql_str(source)}" .',
     ]
+    for member_uri in metadata.get("member_of", []):
+        safe = _sparql_iri(member_uri)
+        if safe:
+            triples.append(f"  <{space_uri}> <{MOM}memberOf> <{safe}> .")
 
     if endpoint_url:
         safe_ep = _sparql_iri(endpoint_url)
@@ -493,7 +498,9 @@ def _init_heartbeat_db(db_path: str) -> None:
             consecutive_failures INTEGER DEFAULT 0,
             last_content_updated TEXT,
             consecutive_closed_cycles INTEGER DEFAULT 0,
-            is_closed INTEGER DEFAULT 0
+            is_closed INTEGER DEFAULT 0,
+            last_endpoint_health TEXT DEFAULT 'unknown',
+            last_lifecycle_state TEXT DEFAULT 'unknown'
         )
     """)
     # Migrate existing tables that lack newer columns
@@ -504,6 +511,10 @@ def _init_heartbeat_db(db_path: str) -> None:
         con.execute("ALTER TABLE heartbeat_log ADD COLUMN consecutive_closed_cycles INTEGER DEFAULT 0")
     if "is_closed" not in cols:
         con.execute("ALTER TABLE heartbeat_log ADD COLUMN is_closed INTEGER DEFAULT 0")
+    if "last_endpoint_health" not in cols:
+        con.execute("ALTER TABLE heartbeat_log ADD COLUMN last_endpoint_health TEXT DEFAULT 'unknown'")
+    if "last_lifecycle_state" not in cols:
+        con.execute("ALTER TABLE heartbeat_log ADD COLUMN last_lifecycle_state TEXT DEFAULT 'unknown'")
     con.commit()
     con.close()
 
@@ -513,7 +524,7 @@ def _read_heartbeat_row(space_id: str, resolved_db: str) -> dict:
     con = sqlite3.connect(resolved_db)
     row = con.execute(
         "SELECT etag, last_modified, last_fetched, consecutive_failures, last_content_updated, "
-        "consecutive_closed_cycles, is_closed "
+        "consecutive_closed_cycles, is_closed, last_endpoint_health, last_lifecycle_state "
         "FROM heartbeat_log WHERE space_id=?", (space_id,)
     ).fetchone()
     con.close()
@@ -526,10 +537,13 @@ def _read_heartbeat_row(space_id: str, resolved_db: str) -> dict:
             "last_content_updated": row[4],
             "consecutive_closed_cycles": row[5] or 0,
             "is_closed": row[6] or 0,
+            "last_endpoint_health": row[7] or "unknown",
+            "last_lifecycle_state": row[8] or "unknown",
         }
     return {"etag": None, "last_modified": None, "last_fetched": None,
             "consecutive_failures": 0, "last_content_updated": None,
-            "consecutive_closed_cycles": 0, "is_closed": 0}
+            "consecutive_closed_cycles": 0, "is_closed": 0,
+            "last_endpoint_health": "unknown", "last_lifecycle_state": "unknown"}
 
 
 def update_last_content_updated(space_id: str, db_path: Optional[str] = None) -> None:
@@ -690,6 +704,11 @@ async def process_one_space(
 
     space_id = space_uri.split("/")[-1] if "/" in space_uri else space_uri
 
+    _cfg_early = get_config()
+    resolved_db = os.getenv("HEARTBEAT_DB_PATH") or _cfg_early.get("bandwidth", {}).get(
+        "heartbeat_log_path", "/app/tasks/heartbeat_log.db"
+    )
+
     resp, _headers, was_304, db_row = await fetch_endpoint_conditional(endpoint_url, space_id)
 
     consecutive_failures = db_row.get("consecutive_failures", 0)
@@ -706,23 +725,38 @@ async def process_one_space(
     if was_304:
         minutes_ok = _minutes_since(last_fetched_ts)
         endpoint_health, _ = classify_endpoint_health(304, minutes_ok, consecutive_failures)
-        state_update = build_state_only_update(space_uri, endpoint_health, lifecycle_state)
-        async with httpx.AsyncClient(timeout=15.0) as client:
-            upd = await client.post(
-                f"{oxigraph_endpoint}/update",
-                content=state_update,
-                headers={"Content-Type": "application/sparql-update"},
+        prior_health = db_row.get("last_endpoint_health", "unknown")
+        prior_lifecycle = db_row.get("last_lifecycle_state", "unknown")
+        state_changed = (endpoint_health != prior_health or lifecycle_state != prior_lifecycle)
+        if state_changed:
+            state_update = build_state_only_update(space_uri, endpoint_health, lifecycle_state)
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                upd = await client.post(
+                    f"{oxigraph_endpoint}/update",
+                    content=state_update,
+                    headers={"Content-Type": "application/sparql-update"},
+                )
+                upd.raise_for_status()
+            con = sqlite3.connect(resolved_db)
+            con.execute(
+                "UPDATE heartbeat_log SET last_endpoint_health=?, last_lifecycle_state=? WHERE space_id=?",
+                (endpoint_health, lifecycle_state, space_id),
             )
-            upd.raise_for_status()
-        logger.info("heartbeat 304 state-only write for %s (%s/%s)", space_id, endpoint_health, lifecycle_state)
-        return "not_modified", True
+            con.commit()
+            con.close()
+        logger.info("heartbeat 304 for %s (%s/%s)%s", space_id, endpoint_health, lifecycle_state,
+                    " — state written" if state_changed else " — no state change, skipping write")
+        return "not_modified", state_changed
 
     if resp is None or resp.status_code != 200:
         status_code = resp.status_code if resp else None
         logger.warning("heartbeat fetch failed for %s: status=%s", space_id, status_code)
-        # On failure, minutes_since_last_good based on last successful last_fetched
-        minutes_since_good = _minutes_since(last_fetched_ts)
+        # minutes_since_last_good: use large sentinel if never fetched, so health degrades correctly
+        minutes_since_good = _minutes_since(last_fetched_ts) if last_fetched_ts else float("inf")
         endpoint_health, _ = classify_endpoint_health(status_code, minutes_since_good, consecutive_failures + 1)
+        prior_health = db_row.get("last_endpoint_health", "unknown")
+        prior_lifecycle = db_row.get("last_lifecycle_state", "unknown")
+        state_changed = (endpoint_health != prior_health or lifecycle_state != prior_lifecycle)
         state_update = build_state_only_update(space_uri, endpoint_health, lifecycle_state)
         try:
             async with httpx.AsyncClient(timeout=15.0) as client:
@@ -732,9 +766,17 @@ async def process_one_space(
                     headers={"Content-Type": "application/sparql-update"},
                 )
                 upd.raise_for_status()
+            if state_changed:
+                con = sqlite3.connect(resolved_db)
+                con.execute(
+                    "UPDATE heartbeat_log SET last_endpoint_health=?, last_lifecycle_state=? WHERE space_id=?",
+                    (endpoint_health, lifecycle_state, space_id),
+                )
+                con.commit()
+                con.close()
         except Exception as e:
             logger.error("state-only write failed for %s: %s", space_id, e)
-        return "error", True
+        return "error", state_changed
 
     try:
         data = resp.json()
@@ -749,9 +791,6 @@ async def process_one_space(
 
     # Load previous snapshot for diff detection
     cfg = get_config()
-    resolved_db = os.getenv("HEARTBEAT_DB_PATH") or cfg.get("bandwidth", {}).get(
-        "heartbeat_log_path", "/app/tasks/heartbeat_log.db"
-    )
 
     try:
         schema_obj = SpaceAPISchema.model_validate(data)
@@ -790,6 +829,7 @@ async def process_one_space(
         if content_changed and not is_closed:
             lifecycle_state, _ = classify_lifecycle(0)  # just updated → confirmed
 
+        preserved = await _read_space_metadata(space_uri, oxigraph_endpoint)
         sparql_update, _ = transform_to_sparql(schema_obj, {
             "endpoint_url": endpoint_url,
             "space_id": space_id,
@@ -798,6 +838,8 @@ async def process_one_space(
             "raw_content": resp.text,
             "endpoint_health": endpoint_health,
             "lifecycle_state": lifecycle_state,
+            "source": preserved["source"],
+            "member_of": preserved["member_of"],
         }, content_changed=content_changed)
 
         if revival_sparql:
@@ -835,14 +877,20 @@ async def process_one_space(
         is_closed = 1
         logger.warning("closed_pii_strip space_id=%s consecutive_closed=%d", space_id, consecutive_closed_cycles)
 
-    # Persist updated closed-cycle counter and is_closed flag
-    con = sqlite3.connect(resolved_db)
-    con.execute(
-        "UPDATE heartbeat_log SET consecutive_closed_cycles=?, is_closed=? WHERE space_id=?",
-        (consecutive_closed_cycles, is_closed, space_id),
-    )
-    con.commit()
-    con.close()
+    # Persist updated closed-cycle counter, is_closed flag, and current health/lifecycle.
+    # Wrapped in try/except: a DB failure here must not corrupt Oxigraph state already written.
+    try:
+        con = sqlite3.connect(resolved_db)
+        con.execute(
+            "UPDATE heartbeat_log SET consecutive_closed_cycles=?, is_closed=?, "
+            "last_endpoint_health=?, last_lifecycle_state=? WHERE space_id=?",
+            (consecutive_closed_cycles, is_closed, endpoint_health, lifecycle_state, space_id),
+        )
+        con.commit()
+        con.close()
+    except Exception as db_err:
+        logger.error("WARNING_DB_WRITE_FAILED space_id=%s: %s — Oxigraph already updated, "
+                     "DB state may be stale until next cycle", space_id, db_err)
 
     if content_changed:
         update_last_content_updated(space_id, resolved_db)
@@ -881,8 +929,33 @@ LIMIT 1"""
         return None
 
 
+async def _read_space_metadata(space_uri: str, oxigraph_endpoint: str) -> dict:
+    """Read source and memberOf from existing space graph — used to preserve them across heartbeat updates."""
+    query = f"""PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
+SELECT ?source ?memberOf WHERE {{
+  GRAPH <{space_uri}> {{
+    OPTIONAL {{ <{space_uri}> mom:source ?source }}
+    OPTIONAL {{ <{space_uri}> mom:memberOf ?memberOf }}
+  }}
+}}"""
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(
+                f"{oxigraph_endpoint}/query",
+                content=query,
+                headers={"Content-Type": "application/sparql-query", "Accept": "application/sparql-results+json"},
+            )
+            resp.raise_for_status()
+        bindings = resp.json().get("results", {}).get("bindings", [])
+        source = bindings[0].get("source", {}).get("value", "self-registered") if bindings else "self-registered"
+        member_of = list({b["memberOf"]["value"] for b in bindings if "memberOf" in b})
+        return {"source": source, "member_of": member_of}
+    except Exception:
+        return {"source": "self-registered", "member_of": []}
+
+
 async def run_heartbeat_cycle(oxigraph_endpoint: str, rematerialize_fn) -> None:
-    """Fetch all active spaces sequentially, then rematerialize GeoJSON if anything changed."""
+    """Fetch all active spaces sequentially, then always rematerialize GeoJSON."""
     try:
         spaces = await query_active_spaces(oxigraph_endpoint)
     except Exception as e:
@@ -902,12 +975,11 @@ async def run_heartbeat_cycle(oxigraph_endpoint: str, rematerialize_fn) -> None:
             logger.error("heartbeat cycle: error processing %s: %s", entry["space_uri"], e)
             any_change = True  # assume a change on error to be safe
 
-    if not any_change:
-        logger.info("heartbeat cycle: no changes; skipping rematerialize")
-        return
-
     try:
         await rematerialize_fn()
-        logger.info("heartbeat cycle: rematerialization complete")
+        if any_change:
+            logger.info("heartbeat cycle: found changes, rematerialization complete")
+        else:
+            logger.debug("heartbeat cycle: no endpoint changes, rematerialization complete")
     except Exception as e:
         logger.error("heartbeat cycle: rematerialization failed: %s", e)

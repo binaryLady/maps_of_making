@@ -1,6 +1,6 @@
-# Data Lifecycle: Seed → Registration → Storage → Display
+# Data Lifecycle: Seed → Registration → Heartbeat → Storage → Display
 
-*Design artifact — produced 2026-04-26. Informs Story 2.2 scope and admin dashboard design.*
+*Design artifact — produced 2026-04-26. Last refreshed 2026-05-07 (added Heartbeat phase, Persistence & Reset section, Network-as-Directory pattern).*
 
 ---
 
@@ -33,8 +33,20 @@ sequenceDiagram
         Note over handler,ox: * address written as mom:address string,<br/>not schema:streetAddress — gap, see table below
     end
 
+    rect rgba(80, 70, 40, 0.2)
+        Note over coord,ox: Phase 2.5 — Heartbeat (Epic 3, done — Stories 3.0/3.1/3.2/3.2b)
+        loop every 10 min (APScheduler in link-handler) or on POST /api/heartbeat/run
+            handler->>coord: GET endpointUrl (conditional: ETag / If-Modified-Since)
+            coord-->>handler: 200 + JSON-LD / SpaceAPI  •or•  304 Not Modified  •or•  error
+            handler->>handler: transform SpaceAPI→JSON-LD (Story 3.0), diff vs prior snapshot,<br/>compute endpoint_health (mins), lifecycle_state (days), open_now,<br/>resolve effective_marker, strip PII on closed (Story 3.2b)
+            handler->>ox: SPARQL UPDATE — operationalState, lastFetched,<br/>endpoint_health, lifecycle_state, raw source JSON snapshot
+            handler->>geojson: rematerialize spaces.geojson when state changed
+        end
+        Note over handler: heartbeat state (ETag, failure counter, last health/lifecycle)<br/>persisted in /app/tasks/heartbeat_log.db (SQLite, bind-mounted since 2026-05-07)
+    end
+
     rect rgba(70, 50, 50, 0.2)
-        Note over ox,geojson: Phase 3 — Materialization (manual / future scheduler)
+        Note over ox,geojson: Phase 3 — Materialization (heartbeat-driven; manual via make heartbeat)
         mat->>ox: SPARQL SELECT (both UNION branches)
         ox-->>mat: bindings (see gap table)
         mat->>geojson: binding_to_space() → GeoJSON features<br/>⚠ opening_hours, contact, description,<br/>endpointUrl, lastFetched hardcoded "" (Story 2.2 fixes some)
@@ -98,6 +110,72 @@ Register-url writes `mom:address` as a flat string; materialize reads `schema:st
 
 **Everything else (opening hours, specialties from coordinator, contact, etc.):**
 Requires Epic 3's periodic fetch-and-update cycle, where the scheduler re-fetches the coordinator endpoint and writes a full set of triples — not just the registration minimum.
+
+---
+
+## Persistence & Reset
+
+### Storage map — where each piece of data physically lives
+
+| Data | Location | Container that writes it | Survives restart? | Wiped by |
+|---|---|---|---|---|
+| Triplestore (named graphs — all spaces, snapshots, ontology) | `data/oxigraph/` (host bind mount) | maps-oxigraph | ✅ yes (bind mount) | `rm -rf data/oxigraph/*`; SPARQL `CLEAR/DROP` |
+| Heartbeat state (ETag, Last-Modified, consecutive_failures, last endpoint_health, last lifecycle_state, prior snapshot for diffing) | `data/tasks/heartbeat_log.db` (host bind mount, since 2026-05-07) | maps-link-handler | ✅ yes (bind mount) | `rm -f data/tasks/heartbeat_log.db` |
+| Materialized GeoJSON (what the browser reads) | `web/data/spaces.geojson` (host bind mount) | maps-link-handler regenerates on heartbeat | ✅ yes; regenerated on every materialize | next heartbeat overwrites it |
+| Static seed JSON (VOW + RFF) | `web/data/moms_seed.json`, `web/data/rff_mockup.json` | host-only, mounted read-only | ✅ yes | git operations only |
+| Container images / build cache | podman/docker storage | n/a | ✅ yes | `make rebuild` rebuilds; `podman system prune` clears |
+
+`podman compose down` / `up` stops and starts containers. **It does not touch any of the bind-mounted state above.** Only explicit `rm` (or SPARQL `DROP`) wipes data.
+
+### `make seed --force` semantics
+
+- Walks each VOW entry: writes `urn:mak:space/{slug}` only if the graph does not yet exist (idempotent — VOW data is never overwritten).
+- For RFF: if the shared `urn:mak:mock/rff-health` graph already exists, `--force` does `CLEAR GRAPH` then re-inserts. Without `--force`, RFF is skipped.
+- **Coordinator-registered spaces are never cleared by seed** — they live in `urn:mak:space/{slug}` graphs with `mom:source = "self-registered"`, and seed only writes graphs whose source is `scraped-vow` or `mock-rff`.
+- The same protection applies to `seed_spaceapi.py`: it skips graphs whose `mom:source` is `self-registered`, even with `--force`.
+
+### Reset procedure (local) — `make reset`
+
+`make reset` is the only supported way to fully wipe local state. It:
+
+1. Prompts for typed confirmation (`reset`).
+2. Stops the compose stack.
+3. `rm -rf data/oxigraph/*` and `rm -f data/tasks/heartbeat_log.db`.
+4. Runs `make devdeploy` (rebuild + seed + heartbeat).
+
+**This loses all coordinator-registered spaces.** Acceptable for demo prep. If you need to preserve them, manually `cp -r data/oxigraph data/oxigraph.bak` first.
+
+### Reset procedure (VPS) — intentionally manual
+
+There is **no `make reset` equivalent for the VPS**. Production safety: any wipe must be deliberate, on-host, and witnessed. Procedure:
+
+```bash
+ssh hetzner
+cd ~/maps_of_making
+docker compose -f infra/docker-compose.yml down
+sudo rm -rf data/oxigraph/* data/tasks/heartbeat_log.db
+docker compose -f infra/docker-compose.yml up -d --build
+# from local:
+make vps-seed         # reseed VOW+RFF + trigger heartbeat
+```
+
+Pilot-time: this needs a backup story before we onboard real coordinators.
+
+---
+
+## Network-as-Directory pattern
+
+SpaceAPI exposes its membership via a single URL (`https://directory.spaceapi.io/`) listing all member endpoints. MoM ingests that URL once and gets ~244 verified spaces (`scripts/seed_spaceapi.py`, tagged `mom:memberOf <urn:mak:network/spaceapi>` → "SPACEAPI" filter chip).
+
+This is a battle-tested federation pattern and fits the MoM model directly:
+
+- **The network is the gatekeeper of its members.** They control add/remove. We get verified, maintained membership for free.
+- **Open and reciprocal.** Any network can publish such a directory; any aggregator can consume it.
+- **Acceleration vs single-URL onboarding.** One URL → N spaces, instead of N coordinator-by-coordinator registrations.
+
+VOW, RFF, FabLabs.io, and other federations could each expose an equivalent directory. The current single-URL coordinator flow (Story 2.1) and the directory flow (`seed_spaceapi.py`) are both valid registration modes. **Pilot decision:** whether to formalize "network-directory coordinator" as a first-class registration mode in the link-handler (alongside the single-URL flow), or keep it as a seed-time-only pattern.
+
+Status: demonstrated in the demo. Hardening (auth, signed directories, conflict resolution when two networks claim the same endpoint) deferred to Pilot.
 
 ---
 

@@ -583,6 +583,9 @@
     <div class="filter-group" id="fg-status">
       <h3>Status</h3>
       <div class="chips" id="chips-status"></div>
+      <div class="chips" style="margin-top:6px;">
+        <button class="chip" id="btn-show-unhealthy" aria-pressed="false" type="button">show aging · zombie · dead</button>
+      </div>
     </div>
     <div class="filter-group" id="fg-spec">
       <h3>Specialties</h3>
@@ -737,13 +740,6 @@
       <div class="opts" data-tweak="pulse">
         <button data-val="on" aria-pressed="true">on</button>
         <button data-val="off" aria-pressed="false">off</button>
-      </div>
-    </div>
-    <div class="tweak-row">
-      <label>Health map</label>
-      <div class="opts" data-tweak="showHealthMap">
-        <button data-val="true" aria-pressed="false">show</button>
-        <button data-val="false" aria-pressed="true">hide</button>
       </div>
     </div>
   </div>

@@ -23,6 +23,8 @@ logger = logging.getLogger(__name__)
 _manual_refresh_cooldowns: dict[str, datetime] = {}
 COOLDOWN_SECONDS = 60
 
+_last_heartbeat_completed: Optional[datetime] = None
+
 OXIGRAPH_ENDPOINT = os.getenv("OXIGRAPH_ENDPOINT", "http://oxigraph:7878")
 GEOJSON_OUTPUT = os.getenv("GEOJSON_OUTPUT", "/app/web_data/spaces.geojson")
 
@@ -32,7 +34,9 @@ _scheduler = AsyncIOScheduler()
 
 
 async def _heartbeat_job():
+    global _last_heartbeat_completed
     await run_heartbeat_cycle(OXIGRAPH_ENDPOINT, _rematerialize_geojson)
+    _last_heartbeat_completed = datetime.now(timezone.utc)
 
 
 @asynccontextmanager
@@ -71,6 +75,7 @@ SELECT ?spaceUri ?name ?latitude ?longitude ?operationalState ?endpointHealth
        ?source ?openingHours ?description ?logo ?contactJson ?lastUpdated ?lastFetched
        ?subset ?nextUnlock
        (GROUP_CONCAT(DISTINCT ?specialty; separator="|") AS ?specialties)
+       (GROUP_CONCAT(DISTINCT STR(?memberOf); separator="|") AS ?networkMemberships)
 WHERE {
   {
     GRAPH ?spaceGraph {
@@ -92,6 +97,7 @@ WHERE {
       OPTIONAL { ?spaceUri schema:url ?website }
       OPTIONAL { ?spaceUri mom:profileUrl ?profileUrl }
       OPTIONAL { ?spaceUri schema:knowsAbout ?specialty }
+      OPTIONAL { ?spaceUri mom:memberOf ?memberOf }
       OPTIONAL { ?spaceUri mom:source ?source }
       OPTIONAL { ?spaceUri schema:openingHours ?openingHours }
       OPTIONAL { ?spaceUri schema:description ?description }
@@ -127,6 +133,7 @@ WHERE {
       OPTIONAL { ?spaceUri schema:url ?website }
       OPTIONAL { ?spaceUri mom:profileUrl ?profileUrl }
       OPTIONAL { ?spaceUri schema:knowsAbout ?specialty }
+      OPTIONAL { ?spaceUri mom:memberOf ?memberOf }
       OPTIONAL { ?spaceUri mom:source ?source }
       OPTIONAL { ?spaceUri schema:openingHours ?openingHours }
       OPTIONAL { ?spaceUri schema:description ?description }
@@ -543,7 +550,7 @@ def _binding_to_feature(b: dict) -> Optional[dict]:
         return None
 
     operational_state = b.get("operationalState", {}).get("value", "seeded")
-    endpoint_health_raw = b.get("endpointHealth", {}).get("value", "healthy")
+    endpoint_health_raw = b.get("endpointHealth", {}).get("value", "unknown")
     raw_specialties = b.get("specialties", {}).get("value", "")
     specialties = [s for s in raw_specialties.split("|") if s] if raw_specialties else []
     open_now_raw = b.get("openNow", {}).get("value")
@@ -591,7 +598,7 @@ def _binding_to_feature(b: dict) -> Optional[dict]:
             "next_unlock": b.get("nextUnlock", {}).get("value", ""),
             "founded": "",
             "capacity": 0,
-            "network_memberships": [],
+            "network_memberships": [m for m in b.get("networkMemberships", {}).get("value", "").split("|") if m],
             "open_for_hosting": False,
         },
     }
@@ -633,8 +640,20 @@ async def health():
 @app.post("/api/heartbeat/run")
 async def heartbeat_run():
     """Trigger an immediate full heartbeat cycle. Used by make publish after deploy."""
+    global _last_heartbeat_completed
     await run_heartbeat_cycle(OXIGRAPH_ENDPOINT, _rematerialize_geojson)
+    _last_heartbeat_completed = datetime.now(timezone.utc)
     return {"status": "ok"}
+
+
+@app.get("/api/heartbeat/last-run")
+async def heartbeat_last_run():
+    """Return timestamp of the last completed heartbeat cycle (UTC ISO-8601).
+
+    Used by the browser to detect when new data is available and soft-refresh the map
+    without a full page reload. Returns null on first boot before any cycle completes.
+    """
+    return {"last_run": _last_heartbeat_completed.isoformat() if _last_heartbeat_completed else None}
 
 
 @app.post("/api/heartbeat-space/{space_id}")

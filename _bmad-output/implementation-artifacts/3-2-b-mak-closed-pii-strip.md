@@ -1,6 +1,6 @@
 # Story 3.2b: mak:closed + PII Strip on Persistent Closure
 
-Status: review
+Status: done
 
 ## Story
 
@@ -326,3 +326,22 @@ claude-sonnet-4-6
 ### Change Log
 
 - 2026-05-06: Implemented Story 3.2b — `mak:closed` + PII strip on persistent closure, closed-cycle counter, revival logic, `effective_marker` update, DB migration, config, 24 new tests.
+
+## Review Findings
+
+### Story 3.2 findings
+
+- [x] [Review][Decision] AC6 — 304 path always returns `state_changed=True` → FIXED: 304 and failure paths now only set `state_changed=True` when health/lifecycle value actually changed; prior values tracked in `last_endpoint_health`/`last_lifecycle_state` DB columns
+
+- [x] [Review][Patch] `_minutes_since(None)` returns 0.0 → first-ever fetch failure classified as `endpoint_health="healthy"` → FIXED: failure path now uses `float("inf")` when `last_fetched_ts` is None [`transformer.py`]
+- [x] [Review][Patch] `effective_marker` duplicated verbatim in `materialize_geojson.py` instead of imported — AC5 violation → FIXED: now imported via `sys.path.insert` [`scripts/materialize_geojson.py`]
+- [x] [Review][Patch] `endpoint_health` defaults to `"healthy"` for spaces with no stored triple → FIXED: default changed to `"unknown"` [`main.py`, `scripts/materialize_geojson.py`]
+
+### Story 3.2b findings
+
+- [x] [Review][Patch] Revival DB desync: `is_closed=0` in-memory before SPARQL post — FIXED: end-of-function DB write now wrapped in try/except with WARNING_DB_WRITE_FAILED named counter [`transformer.py`]
+- [x] [Review][Patch] AC7: counter mechanics untested behaviorally → FIXED: 4 new behavioral tests added driving `process_one_space` with mocked I/O [`infra/link_handler/test_transformer.py`]
+
+- [x] [Review][Defer] SPARQL injection: `space_uri` f-string interpolated into SPARQL strings without `_sparql_iri` sanitization [`transformer.py` — `_build_pii_strip_sparql`, `build_state_only_update`] — deferred, pre-existing pattern
+- [x] [Review][Defer] SQLite read-modify-write on `consecutive_closed_cycles` is not atomic — concurrent manual refreshes could lose counter updates [`transformer.py`] — deferred, pre-existing pattern
+- [x] [Review][Defer] `_fetch_last_snapshot` ORDER BY on string snapshot graph URIs relies on lexicographic sort of ISO datetimes — deferred, pre-existing
