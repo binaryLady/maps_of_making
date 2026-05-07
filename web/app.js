@@ -488,7 +488,7 @@
           el('span', {}, [phrase]),
         ]),
         el('div', { class: 'sp-status-right' }, [
-          'updated ' + (s.last_updated ? timeAgo(s.last_updated) : 'unknown')
+          'updated ' + (s.last_updated ? timeAgo(s.last_updated) + ' ago' : 'unknown')
         ]),
       ]));
     }
@@ -678,7 +678,7 @@
             rawEl.appendChild(trustLine);
             if (rawEl.parentElement) {
               rawEl.parentElement.querySelector('.sp-refresh-btn')?.remove();
-              rawEl.parentElement.appendChild(_makeRefreshBtn(result.snapshot_date));
+              rawEl.parentElement.appendChild(_makeRefreshBtn(s.last_fetched));
             }
           })
           .catch(() => {
@@ -697,7 +697,7 @@
         btn.className = 'sp-refresh-btn';
         btn.title = 'Refresh data from endpoint';
         btn.innerHTML = '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M12.5 2v3.5h-3.5"/><path d="M12.3 5.3A5.5 5.5 0 1 1 10.1 2.5"/></svg> Refresh from endpoint'
-          + (lastFetched ? `<span class="sp-refresh-meta">fetched: ${timeAgo(lastFetched)}</span>` : '');
+          + (lastFetched ? `<span class="sp-refresh-meta">fetched ${timeAgo(lastFetched)} ago</span>` : '');
         btn.addEventListener('click', () => {
           btn.disabled = true;
           btn.innerHTML = '… Refreshing';
@@ -716,7 +716,18 @@
                 btn.after(msg);
                 setTimeout(() => msg.remove(), 3000);
               } else if (ok) {
-                _loadZone3();
+                fetch(`/data/spaces.geojson?t=${Date.now()}`)
+                  .then(r => r.json())
+                  .then(geoJson => {
+                    state.spaces = (geoJson.features || []).map(f => ({
+                      ...f.properties,
+                      coordinates: { lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0] },
+                    }));
+                    renderMarkers();
+                    renderDetail();
+                  })
+                  .catch(() => {})
+                  .finally(() => _loadZone3());
               } else {
                 const msg = document.createElement('span');
                 msg.className = 'sp-refresh-msg sp-refresh-msg--error';

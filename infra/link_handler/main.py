@@ -630,6 +630,13 @@ async def health():
     return {"status": "ok"}
 
 
+@app.post("/api/heartbeat/run")
+async def heartbeat_run():
+    """Trigger an immediate full heartbeat cycle. Used by make publish after deploy."""
+    await run_heartbeat_cycle(OXIGRAPH_ENDPOINT, _rematerialize_geojson)
+    return {"status": "ok"}
+
+
 @app.post("/api/heartbeat-space/{space_id}")
 async def heartbeat_space(space_id: str):
     if not _SPACE_ID_RE.match(space_id):

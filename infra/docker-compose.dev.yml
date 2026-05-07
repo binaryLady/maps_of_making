@@ -20,6 +20,7 @@ services:
   mak-link-handler:
     volumes:
       - ../web/data:/app/web_data:z
+      - ../scripts/activity_map.yaml:/app/scripts/activity_map.yaml:ro,z
 
   oxigraph:
     ports:

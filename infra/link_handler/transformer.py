@@ -160,6 +160,7 @@ def effective_marker(endpoint_health: str, lifecycle_state: str, open_now: bool)
     Lifecycle supersedes endpoint health — a dead space whose hosting silently
     disappears should not masquerade as merely broken.
     """
+    if lifecycle_state == "seeded": return "seeded"
     if lifecycle_state == "closed": return "closed"
     if lifecycle_state == "dead":   return "dead"
     if lifecycle_state == "zombie": return "zombie"
@@ -470,6 +471,7 @@ INSERT DATA {{
 {triples_str}
   }}
 }} ;
+DROP SILENT GRAPH <{snapshot_graph_uri}> ;
 INSERT DATA {{
   GRAPH <{snapshot_graph_uri}> {{
 {snapshot_triples_str}

@@ -24,7 +24,7 @@ RSYNC_EXCLUDE := \
 
 help:
 	@echo "make startdev      — start local dev stack (Podman, detached)"
-	@echo "make publish       — full deploy: sync + reseed Oxigraph + regen GeoJSON on VPS"
+	@echo "make publish       — full deploy: sync + rebuild link-handler + reseed + heartbeat"
 	@echo "make sync          — sync everything (app + gateway confs)"
 	@echo "make sync-app      — sync project root (excl. dev artifacts) to VPS"
 	@echo "make sync-gateway  — sync gateway nginx confs (manual reload needed)"
@@ -33,18 +33,19 @@ help:
 startdev:
 	podman compose -f infra/docker-compose.yml -f infra/docker-compose.dev.yml up -d
 
-## Full deploy: sync code then rebuild data on VPS
+## Full deploy: sync code → rebuild link-handler → reseed → immediate heartbeat cycle
 ## data/ (oxigraph DB, logs) is excluded from rsync — VPS runtime state is never overwritten.
-## Oxigraph is restarted so it picks up any infra/docker-compose.yml changes cleanly.
-## seed --force reloads the RFF graph (VOW skipped if graph already exists);
-## coordinator-registered spaces (urn:mak:space/* graphs) are never cleared.
+## coordinator-registered spaces (urn:mak:space/* graphs) are never cleared by seed --force.
+## Heartbeat is triggered immediately after startup so the map is live without waiting 10min.
 publish: sync-app
-	@echo "→ restarting Oxigraph on VPS..."
-	ssh $(REMOTE) 'cd $(REMOTE_APP) && docker compose -f infra/docker-compose.yml restart oxigraph'
+	@echo "→ full stack restart + rebuild on VPS..."
+	ssh $(REMOTE) 'cd $(REMOTE_APP) && docker compose -f infra/docker-compose.yml down && docker compose -f infra/docker-compose.yml up -d --build'
+	@echo "→ waiting for link-handler to be healthy..."
+	ssh $(REMOTE) 'timeout 90 sh -c "until docker exec maps-link-handler python3 -c \"import urllib.request; urllib.request.urlopen('"'"'http://localhost:8000/health'"'"')\" 2>/dev/null; do sleep 3; done" && echo ok'
 	@echo "→ reseeding Oxigraph on VPS..."
 	ssh $(REMOTE) 'cd $(REMOTE_APP) && source venv/bin/activate && python scripts/seed_import.py --force'
-	@echo "→ materializing GeoJSON on VPS..."
-	ssh $(REMOTE) 'cd $(REMOTE_APP) && source venv/bin/activate && python scripts/materialize_geojson.py'
+	@echo "→ triggering immediate heartbeat cycle (updates all spaces + rematerializes GeoJSON)..."
+	ssh $(REMOTE) 'docker exec maps-link-handler python3 -c "import httpx; r = httpx.post(\"http://localhost:8000/api/heartbeat/run\", timeout=180); print(\"heartbeat:\", r.status_code)"'
 	@echo "✓ published — map live"
 
 ## Push everything (app + gateway confs)
