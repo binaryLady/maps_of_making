@@ -16,7 +16,7 @@ async def complete(prompt: str) -> tuple[str, str, int]:
         api_key=api_key,
         base_url="https://openrouter.ai/api/v1",
         default_headers={
-            "HTTP-Referer": "https://mapofmaking.debarquin.eu",
+            "HTTP-Referer": "https://mapsofmaking.org",
             "X-Title": "maps-of-making spike",
         },
     )

@@ -820,6 +820,31 @@
   }
 
   // ───────────────────────────── preset & embed
+  function applyUrlParams() {
+    const p = new URLSearchParams(window.location.search);
+    if (p.has('networks')) p.get('networks').split(',').filter(Boolean).forEach((n) => state.filters.networks.add(n));
+    if (p.has('country'))  p.get('country').split(',').filter(Boolean).forEach((c) => state.filters.countries.add(c));
+    if (p.has('status'))   p.get('status').split(',').filter(Boolean).forEach((s) => state.filters.statuses.add(s));
+    if (p.has('specialty')) p.get('specialty').split(',').filter(Boolean).forEach((s) => state.filters.specialties.add(s));
+    if (p.has('q')) state.search = p.get('q');
+    // viewport applied after map loads so fitBounds overrides the default center/zoom
+    const bbox = p.get('bbox');
+    const center = p.get('center');
+    if (bbox || center) {
+      map.once('load', () => {
+        if (bbox) {
+          const [west, south, east, north] = bbox.split(',').map(Number);
+          if ([west, south, east, north].every((n) => !isNaN(n))) {
+            map.fitBounds([[west, south], [east, north]], { animate: false });
+          }
+        } else if (center) {
+          const [lat, lon] = center.split(',').map(Number);
+          if (!isNaN(lat) && !isNaN(lon)) map.jumpTo({ center: [lon, lat], zoom: 13 });
+        }
+      });
+    }
+  }
+
   function renderPresetPreview() {
     const visible = filteredSpaces();
     $('#pp-count').textContent = String(visible.length);
@@ -847,7 +872,7 @@
     }
     const shareUrl = `${base}?${paramParts.filter(Boolean).join('&')}`;
 
-    const iframe = `<figure style="margin:0">\n  <iframe src="${shareUrl}"\n          width="100%" height="520"\n          style="border:1.5px solid #1a1a1a;display:block"\n          title="${name}"\n          loading="lazy"></iframe>\n  <figcaption>Source: <a href="https://mapofmaking.debarquin.eu">Maps of Making</a> · Apache 2.0</figcaption>\n</figure>`;
+    const iframe = `<figure style="margin:0">\n  <iframe src="${shareUrl}"\n          width="100%" height="520"\n          style="border:1.5px solid #1a1a1a;display:block"\n          title="${name}"\n          loading="lazy"></iframe>\n  <figcaption>Source: <a href="https://mapsofmaking.org">Maps of Making</a> · Apache 2.0</figcaption>\n</figure>`;
 
     $('#code-iframe-text').textContent = iframe;
     $('#code-url-text').textContent = shareUrl;
@@ -1325,6 +1350,7 @@
       }
       loadPreferences();
       initMap();
+      applyUrlParams();
       buildFilterChips();
       initAddUrl();
       wireUI();
