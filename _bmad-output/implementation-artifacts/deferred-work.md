@@ -199,6 +199,15 @@ Generating a real openfab.jsonld against the `space-jsonld-generator` skill expo
 
 - **Heartbeat sequential write bottleneck** — `run_heartbeat_cycle` fetches endpoints concurrently (seed_spaceapi.py uses concurrency=20) but writes to Oxigraph one SPARQL UPDATE per space, sequentially. With 197 SpaceAPI endpoints this runs visibly slow on manual trigger. Two complementary fixes: (1) batch Oxigraph writes into a single UPDATE per cycle, (2) process endpoint fetches concurrently using the same asyncio pattern already in `seed_spaceapi.py`. Meaningful refactor of `process_one_space` — worth its own story once pilot traffic justifies it. → Epic 5 / Pilot phase.
 
+## Deferred from: code review of 3-3-mother-sands-diagnostic-canary (2026-05-16)
+
+- **`If-Modified-Since` header unused in canary endpoint** — `data/canary/mother-sands-endpoint.py`: clients without `If-None-Match` always get 200. Diagnostic tool only; ETag path covers production use.
+- **TOCTOU race on `SERVED_FILE.read_bytes()`** — `data/canary/mother-sands-endpoint.py`: `FileNotFoundError` if file deleted between exists-check and read. Low-probability in operator context.
+- **ETag mtime-only: sub-second collision** — `data/canary/mother-sands-endpoint.py`: two writes within same mtime tick produce colliding ETag. Operator workflow is slow manual steps; acceptable risk.
+- **`MODE=timeout` TCP connection FD leak** — `data/canary/mother-sands-endpoint.py`: 120-second hold without explicit close leaks FD in tight loops. Acceptable for diagnostic use.
+- **Isolation test uses string assertion, not live ASK query** — `tests/test_canary_scenarios.py`: spec says "ASK query pattern"; hermetic CI has no live Oxigraph. ASK path covered by live coherence report layer.
+- **`CANARY_SPACE_ID="mother-sands"` hardcoded in coherence report** — mismatch risk if DB slug derivation differs. Verify during live operator poke before Epic 4.
+
 ## Deferred from: code review of 3-2-b-mak-closed-pii-strip (2026-05-07)
 
 - **SPARQL injection via space_uri**: `space_uri` is f-string interpolated into SPARQL strings (`_build_pii_strip_sparql`, `build_state_only_update`, etc.) without using the `_sparql_iri` sanitization helper from `utils.py`. Pre-existing pattern throughout `transformer.py`. → Epic 5 hardening.

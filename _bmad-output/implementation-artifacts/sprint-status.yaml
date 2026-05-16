@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-01
-last_updated: "2026-05-16 (story 3.3 created — ready-for-dev)"
+last_updated: "2026-05-16 (story 3.3 done — code review patches applied)"
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
@@ -105,7 +105,7 @@ development_status:
   3-2-freshness-lifecycle-aging-zombie-dead-transitions: done  # epics.md retitled "Endpoint Health + Space Lifecycle + Open-Now"; key kept to match story file on disk
   3-2-b-mak-closed-pii-strip: done
   3-2-c-lifecycle-vocabulary-drift-fix: done
-  3-3-mother-sands-diagnostic-canary: ready-for-dev
+  3-3-mother-sands-diagnostic-canary: done
   3-4-stuck-seeded-root-cause-regression-test: backlog
   3-5-core-ttl-crosswalk-csv-operationalize-the-three-layer-schema: backlog
   # Note: original Story 3.3 (magic link) and 3.4 (coordinator email) moved to Epic 4b.

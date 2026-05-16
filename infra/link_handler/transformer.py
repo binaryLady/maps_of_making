@@ -263,6 +263,16 @@ def detect_diff(old_snap: dict, new_snap: dict) -> dict | None:
     }
 
 
+def has_meaningful_change(old_snap: dict, new_snap: dict) -> bool:
+    """Return True if the diff between two SpaceAPI snapshots should reset the lifecycle clock.
+
+    Sensors and extensions are excluded (physical flapping). State.open flips ARE
+    included — an open/close change is a material update. One definition; callers are
+    transformer heartbeat path and canary scenario assertions.
+    """
+    return detect_diff(old_snap, new_snap) is not None
+
+
 def _extract_open_now(state) -> Optional[bool]:
     """Extract open/closed boolean from SpaceAPI state field.
 
@@ -299,7 +309,8 @@ def _extract_last_open_change(state) -> Optional[str]:
     return None
 
 
-def build_state_only_update(space_uri: str, endpoint_health: str, lifecycle_state: str) -> str:
+def build_state_only_update(space_uri: str, endpoint_health: str, lifecycle_state: str,
+                            graph_uri: Optional[str] = None) -> str:
     """Build a surgical SPARQL UPDATE that replaces only endpointHealth and operationalState.
 
     Used for 304 and failure paths — must NOT touch mom:lastUpdated or mom:openNow.
@@ -308,7 +319,8 @@ def build_state_only_update(space_uri: str, endpoint_health: str, lifecycle_stat
     so the INSERT fires even when the named graph has no prior health/state triples, or
     doesn't exist yet.
     """
-    graph_uri = space_uri  # named graph URI == space URI (one graph per space)
+    if graph_uri is None:
+        graph_uri = space_uri  # named graph URI == space URI (one graph per space)
     return f"""PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
 DELETE WHERE {{ GRAPH <{graph_uri}> {{ <{space_uri}> mom:endpointHealth ?h }} }} ;
 DELETE WHERE {{ GRAPH <{graph_uri}> {{ <{space_uri}> mom:operationalState ?s }} }} ;
@@ -349,12 +361,14 @@ def transform_to_sparql(
         raise ValueError("validated_data must have resolved coordinates")
 
     slug = metadata.get("space_id") or _slug(name)
-    graph_uri = f"urn:mak:space/{slug}"
-    space_uri = f"urn:mak:space/{slug}"
+    # Canary space writes to its own isolated named graph, never into production space graphs.
+    is_canary = slug == "mother-sands"
+    graph_uri = "urn:mak:canary" if is_canary else f"urn:mak:space/{slug}"
+    space_uri = f"urn:mak:canary/{slug}" if is_canary else f"urn:mak:space/{slug}"
     endpoint_url = metadata.get("endpoint_url", "")
     now = datetime.now(timezone.utc).isoformat()
     snapshot_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    snapshot_graph_uri = f"urn:mak:space/{slug}/{snapshot_date}"
+    snapshot_graph_uri = f"urn:mak:canary/{snapshot_date}" if is_canary else f"urn:mak:space/{slug}/{snapshot_date}"
 
     # Resolve activity tags to ontology IRIs
     raw_tags = validated_data.resolved_tags
@@ -503,7 +517,9 @@ def _init_heartbeat_db(db_path: str) -> None:
             consecutive_closed_cycles INTEGER DEFAULT 0,
             is_closed INTEGER DEFAULT 0,
             last_endpoint_health TEXT DEFAULT 'unknown',
-            last_lifecycle_state TEXT DEFAULT 'unknown'
+            last_lifecycle_state TEXT DEFAULT 'unknown',
+            last_open_now INTEGER DEFAULT NULL,
+            last_effective_marker TEXT DEFAULT 'unknown'
         )
     """)
     # Migrate existing tables that lack newer columns
@@ -518,6 +534,10 @@ def _init_heartbeat_db(db_path: str) -> None:
         con.execute("ALTER TABLE heartbeat_log ADD COLUMN last_endpoint_health TEXT DEFAULT 'unknown'")
     if "last_lifecycle_state" not in cols:
         con.execute("ALTER TABLE heartbeat_log ADD COLUMN last_lifecycle_state TEXT DEFAULT 'unknown'")
+    if "last_open_now" not in cols:
+        con.execute("ALTER TABLE heartbeat_log ADD COLUMN last_open_now INTEGER DEFAULT NULL")
+    if "last_effective_marker" not in cols:
+        con.execute("ALTER TABLE heartbeat_log ADD COLUMN last_effective_marker TEXT DEFAULT 'unknown'")
     con.commit()
     con.close()
 
@@ -527,7 +547,8 @@ def _read_heartbeat_row(space_id: str, resolved_db: str) -> dict:
     con = sqlite3.connect(resolved_db)
     row = con.execute(
         "SELECT etag, last_modified, last_fetched, consecutive_failures, last_content_updated, "
-        "consecutive_closed_cycles, is_closed, last_endpoint_health, last_lifecycle_state "
+        "consecutive_closed_cycles, is_closed, last_endpoint_health, last_lifecycle_state, "
+        "last_open_now, last_effective_marker "
         "FROM heartbeat_log WHERE space_id=?", (space_id,)
     ).fetchone()
     con.close()
@@ -542,11 +563,14 @@ def _read_heartbeat_row(space_id: str, resolved_db: str) -> dict:
             "is_closed": row[6] or 0,
             "last_endpoint_health": row[7] or "unknown",
             "last_lifecycle_state": row[8] or "unknown",
+            "last_open_now": row[9],
+            "last_effective_marker": row[10] or "unknown",
         }
     return {"etag": None, "last_modified": None, "last_fetched": None,
             "consecutive_failures": 0, "last_content_updated": None,
             "consecutive_closed_cycles": 0, "is_closed": 0,
-            "last_endpoint_health": "unknown", "last_lifecycle_state": "unknown"}
+            "last_endpoint_health": "unknown", "last_lifecycle_state": "unknown",
+            "last_open_now": None, "last_effective_marker": "unknown"}
 
 
 def update_last_content_updated(space_id: str, db_path: Optional[str] = None) -> None:
@@ -706,6 +730,9 @@ async def process_one_space(
     from main import SpaceAPISchema, classify_subset, _build_sparql_update
 
     space_id = space_uri.split("/")[-1] if "/" in space_uri else space_uri
+    # Canary space uses its own isolated named graph and subject URI.
+    _is_canary = space_id == "mother-sands"
+    _effective_space_uri = f"urn:mak:canary/{space_id}" if _is_canary else space_uri
 
     _cfg_early = get_config()
     resolved_db = os.getenv("HEARTBEAT_DB_PATH") or _cfg_early.get("bandwidth", {}).get(
@@ -732,7 +759,8 @@ async def process_one_space(
         prior_lifecycle = db_row.get("last_lifecycle_state", "unknown")
         state_changed = (endpoint_health != prior_health or lifecycle_state != prior_lifecycle)
         if state_changed:
-            state_update = build_state_only_update(space_uri, endpoint_health, lifecycle_state)
+            _graph = "urn:mak:canary" if _is_canary else None
+            state_update = build_state_only_update(_effective_space_uri, endpoint_health, lifecycle_state, _graph)
             async with httpx.AsyncClient(timeout=15.0) as client:
                 upd = await client.post(
                     f"{oxigraph_endpoint}/update",
@@ -740,10 +768,14 @@ async def process_one_space(
                     headers={"Content-Type": "application/sparql-update"},
                 )
                 upd.raise_for_status()
+            prior_open_now = db_row.get("last_open_now")
+            _open_304 = bool(prior_open_now) if prior_open_now is not None else False
+            _marker_304 = effective_marker(endpoint_health, lifecycle_state, _open_304)
             con = sqlite3.connect(resolved_db)
             con.execute(
-                "UPDATE heartbeat_log SET last_endpoint_health=?, last_lifecycle_state=? WHERE space_id=?",
-                (endpoint_health, lifecycle_state, space_id),
+                "UPDATE heartbeat_log SET last_endpoint_health=?, last_lifecycle_state=?, "
+                "last_effective_marker=? WHERE space_id=?",
+                (endpoint_health, lifecycle_state, _marker_304, space_id),
             )
             con.commit()
             con.close()
@@ -770,10 +802,12 @@ async def process_one_space(
                 )
                 upd.raise_for_status()
             if state_changed:
+                _marker_err = effective_marker(endpoint_health, lifecycle_state, False)
                 con = sqlite3.connect(resolved_db)
                 con.execute(
-                    "UPDATE heartbeat_log SET last_endpoint_health=?, last_lifecycle_state=? WHERE space_id=?",
-                    (endpoint_health, lifecycle_state, space_id),
+                    "UPDATE heartbeat_log SET last_endpoint_health=?, last_lifecycle_state=?, "
+                    "last_effective_marker=? WHERE space_id=?",
+                    (endpoint_health, lifecycle_state, _marker_err, space_id),
                 )
                 con.commit()
                 con.close()
@@ -791,6 +825,7 @@ async def process_one_space(
 
     cls: dict = {}
     old_snap: Optional[dict] = None
+    open_signal: Optional[bool] = None
 
     # Load previous snapshot for diff detection
     cfg = get_config()
@@ -850,8 +885,10 @@ async def process_one_space(
 
     except Exception as e:
         logger.exception("transform_to_sparql failed for %s, using legacy builder: %s", space_id, e)
+        _g = "urn:mak:canary" if space_id == "mother-sands" else f"urn:mak:space/{space_id}"
+        _s = f"urn:mak:canary/{space_id}" if space_id == "mother-sands" else f"urn:mak:space/{space_id}"
         sparql_update = _build_sparql_update(
-            f"urn:mak:space/{space_id}", f"urn:mak:space/{space_id}",
+            _g, _s,
             data.get("space", space_id), None, None, endpoint_url, data,
             subset=cls.get("subset", ""), next_unlock=cls.get("next_unlock"),
         )
@@ -880,14 +917,18 @@ async def process_one_space(
         is_closed = 1
         logger.warning("closed_pii_strip space_id=%s consecutive_closed=%d", space_id, consecutive_closed_cycles)
 
-    # Persist updated closed-cycle counter, is_closed flag, and current health/lifecycle.
+    # Persist updated closed-cycle counter, is_closed flag, health/lifecycle, and coherence columns.
     # Wrapped in try/except: a DB failure here must not corrupt Oxigraph state already written.
     try:
+        _open_now_int = (1 if open_signal else 0) if open_signal is not None else None
+        _marker = effective_marker(endpoint_health, lifecycle_state, bool(open_signal))
         con = sqlite3.connect(resolved_db)
         con.execute(
             "UPDATE heartbeat_log SET consecutive_closed_cycles=?, is_closed=?, "
-            "last_endpoint_health=?, last_lifecycle_state=? WHERE space_id=?",
-            (consecutive_closed_cycles, is_closed, endpoint_health, lifecycle_state, space_id),
+            "last_endpoint_health=?, last_lifecycle_state=?, "
+            "last_open_now=?, last_effective_marker=? WHERE space_id=?",
+            (consecutive_closed_cycles, is_closed, endpoint_health, lifecycle_state,
+             _open_now_int, _marker, space_id),
         )
         con.commit()
         con.close()

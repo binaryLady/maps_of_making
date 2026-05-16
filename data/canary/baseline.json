@@ -1,0 +1,27 @@
+{
+  "api": "0.13",
+  "api_compatibility": ["14", "15"],
+  "space": "Mother Sands",
+  "logo": "https://mapsofmaking.org/img/mother-sands-logo.svg",
+  "url": "https://mothersands.example.org",
+  "location": {
+    "lat": 51.65,
+    "lon": 1.7,
+    "address": "North Sea, 51.65°N 1.70°E"
+  },
+  "contact": {
+    "email": "bernard@mothersands.example.org",
+    "irc": "#mothersands",
+    "twitter": "@mothersands"
+  },
+  "state": {
+    "open": true,
+    "lastchange": 1715000000,
+    "message": "Canary nominal — all systems operational"
+  },
+  "issue_report_channels": ["email"],
+  "ext_mom": {
+    "simulatedAge": null,
+    "canary": true
+  }
+}

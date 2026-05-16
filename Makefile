@@ -21,6 +21,14 @@ RSYNC_EXCLUDE := \
 	--exclude='data/'
 
 .PHONY: sync sync-app sync-gateway publish startdev rebuild seed seed-spaceapi heartbeat devdeploy reset vps-rebuild vps-seed help
+.PHONY: canary-reset canary-report canary-demo-cycle
+.PHONY: canary-a-reachable canary-a-timeout canary-a-dns-fail canary-a-http-error canary-axis-a
+.PHONY: canary-b-seeded canary-b-confirmed canary-b-aging canary-b-zombie canary-b-closed canary-axis-b
+.PHONY: canary-c-openclose-open canary-c-openclose-shut canary-axis-c canary-all
+
+CANARY_DB ?= data/tasks/heartbeat_log.db
+CANARY_SERVED := data/canary/served.json
+CANARY_SCENARIO := source venv/bin/activate && python3 scripts/canary_scenarios.py
 
 help:
 	@echo "── LOCAL ────────────────────────────────────────────────────────────"
@@ -38,6 +46,15 @@ help:
 	@echo "make sync-gateway  — sync gateway nginx confs (manual reload needed)"
 	@echo "make vps-rebuild   — rebuild containers on VPS (no sync — code must be current)"
 	@echo "make vps-seed      — sync + reseed + heartbeat on VPS (no container rebuild)"
+	@echo "── CANARY ───────────────────────────────────────────────────────────"
+	@echo "make canary-reset          — restore served.json from baseline"
+	@echo "make canary-a-{scenario}   — Axis A: reachable/timeout/dns-fail/http-error"
+	@echo "make canary-b-{scenario}   — Axis B: seeded/confirmed/aging/zombie/closed"
+	@echo "make canary-c-{scenario}   — Axis C: openclose-open/openclose-shut"
+	@echo "make canary-axis-{a,b,c}   — run all scenarios for an axis"
+	@echo "make canary-all            — run all scenarios across all axes"
+	@echo "make canary-report         — per-layer coherence-diff report"
+	@echo "make canary-demo-cycle     — seed→confirmed→aging→zombie→closed lifecycle chain"
 
 ## Start local dev stack (rootless Podman, dev port overrides, from host OS)
 startdev:
@@ -123,6 +140,90 @@ vps-seed: sync-app
 	@echo "→ triggering heartbeat cycle..."
 	ssh $(REMOTE) 'docker exec maps-link-handler python3 -c "import httpx; r = httpx.post(\"http://localhost:8000/api/heartbeat/run\", timeout=180); print(\"heartbeat:\", r.status_code)"'
 	@echo "✓ VPS reseeded"
+
+## ── CANARY ───────────────────────────────────────────────────────────────────
+## Mother Sands diagnostic canary — three-axis fault attribution tool.
+## Start the endpoint first: python3 data/canary/mother-sands-endpoint.py &
+## See docs/canary-setup.md and docs/canary-operator-runbook.md for full guide.
+
+## Restore served.json from committed baseline (healthy + confirmed + open)
+canary-reset:
+	cp data/canary/baseline.json $(CANARY_SERVED)
+	@echo "✓ canary reset to baseline"
+
+## ── Axis A — Reachability ────────────────────────────────────────────────────
+
+canary-a-reachable:
+	$(CANARY_SCENARIO) a-reachable
+
+canary-a-timeout:
+	$(CANARY_SCENARIO) a-timeout
+	@echo "  → restart the endpoint with MODE=timeout for this to take effect"
+
+canary-a-dns-fail:
+	@echo "  → point the heartbeat at an unresolvable URL to test DNS failure"
+	@echo "  → see docs/canary-operator-runbook.md#axis-a-dns-fail"
+
+canary-a-http-error:
+	$(CANARY_SCENARIO) a-http-error
+	@echo "  → restart the endpoint with MODE=503 for this to take effect"
+
+## Run all Axis A scenarios in sequence
+canary-axis-a: canary-a-reachable canary-a-timeout canary-a-dns-fail canary-a-http-error
+	@echo "✓ Axis A scenarios complete"
+
+## ── Axis B — Lifecycle Freshness ─────────────────────────────────────────────
+
+canary-b-seeded:
+	$(CANARY_SCENARIO) b-seeded
+
+canary-b-confirmed:
+	$(CANARY_SCENARIO) b-confirmed
+
+canary-b-aging:
+	$(CANARY_SCENARIO) b-aging
+
+canary-b-zombie:
+	$(CANARY_SCENARIO) b-zombie
+
+canary-b-closed:
+	$(CANARY_SCENARIO) b-closed
+
+## Run all Axis B scenarios in sequence
+canary-axis-b: canary-b-seeded canary-b-confirmed canary-b-aging canary-b-zombie canary-b-closed
+	@echo "✓ Axis B scenarios complete"
+
+## ── Axis C — Open/Close Boolean ──────────────────────────────────────────────
+## Note: false branch is "shut" (not "close") — guards against collision with
+## Axis B lifecycle "closed" naming.
+
+canary-c-openclose-open:
+	$(CANARY_SCENARIO) c-openclose-open
+
+canary-c-openclose-shut:
+	$(CANARY_SCENARIO) c-openclose-shut
+
+## Run all Axis C scenarios in sequence
+canary-axis-c: canary-c-openclose-open canary-c-openclose-shut
+	@echo "✓ Axis C scenarios complete"
+
+## ── Group runners ────────────────────────────────────────────────────────────
+
+## Run ALL canary scenarios across all three axes
+canary-all: canary-axis-a canary-axis-b canary-axis-c
+	@echo "✓ All canary scenarios complete"
+
+## ── Coherence report ─────────────────────────────────────────────────────────
+
+## Query all four layers (endpoint file, heartbeat_log, Oxigraph, GeoJSON) and report divergences
+canary-report:
+	source venv/bin/activate && python3 scripts/canary_coherence_report.py
+
+## ── Demo cycle ───────────────────────────────────────────────────────────────
+
+## Thin lifecycle chain for federated PoC demo: seed → confirmed → aging → zombie → closed/dead
+canary-demo-cycle: canary-reset canary-b-seeded canary-b-confirmed canary-b-aging canary-b-zombie canary-b-closed
+	@echo "✓ demo cycle complete — Mother Sands walked through full lifecycle"
 
 ## Push gateway nginx confs only (triggers manual nginx reload on VPS)
 sync-gateway:
