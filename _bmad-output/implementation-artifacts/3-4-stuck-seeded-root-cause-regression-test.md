@@ -257,6 +257,160 @@ Should show all four columns. If missing, Story 3.3 may not have completed fully
 
 ---
 
+## Dev Agent Record
+
+### Session 2 (2026-05-16): Real root causes — found via live integration, not mocks
+
+The earlier "Task 3" diagnosis below (detect_diff first-fetch) was **not** the
+operative bug. Live tracing through the real heartbeat pipeline against
+production data found three concrete code defects plus two infrastructure gaps.
+All fixed and verified live.
+
+**Bug 1 — revival SPARQL concatenation missing `;` separator.**
+When a closed space received a content change, `process_one_space` prepended a
+revival `DELETE/WHERE` block to the main `DROP ... INSERT` update with no
+separator. Oxigraph parsed the trailing `DROP` as part of the revival `WHERE`
+and rejected the **entire** request with HTTP 400 (`expected OPTIONAL`). Every
+write for that space failed — `lastUpdated`, `operationalState`, `lastFetched`
+all frozen. Fix: `transformer.py` joins the two operations with ` ;\n`.
+
+**Bug 2 — `mom:lastUpdated` wiped by `DROP` on no-diff cycles.**
+`transform_to_sparql` emits `DROP SILENT GRAPH` + `INSERT DATA`. On a
+`content_changed=False` cycle the INSERT omitted `lastUpdated`, so the DROP
+erased the prior value permanently → space went "updated unknown". Fix: prior
+value is passed via `metadata['preserved_last_updated']` (sourced from
+heartbeat_log as authoritative record) and re-inserted across the DROP.
+
+**Bug 3 — `mom:lastFetched` never refreshed on HTTP 304.**
+The 304 path called `build_state_only_update` (health/state only) and only when
+state changed. `mom:lastFetched` — which drives the map's "fetched N ago"
+caption — was never updated, so a space returning 304 showed a frozen
+timestamp from its last 200 response. Fix: `build_state_only_update` takes an
+optional `last_fetched`; the 304 path now always writes it.
+
+**Perf — heartbeat parallelized.** `run_heartbeat_cycle` fetched 787 spaces
+sequentially; the cycle is network-bound. Now fans out via `asyncio.gather`
+under a bounded semaphore (`heartbeat_concurrency: 8`, new config knob).
+
+**Infra — canary unreachable / invisible.**
+- The canary endpoint (`localhost:9191`) was unreachable from inside the
+  link-handler container. Added a `canary-endpoint` dev compose service so it
+  resolves in-network as `http://canary-endpoint:9191/`.
+- The map's materialization query in `main.py` had drifted from
+  `scripts/materialize_geojson.py` — the latter already read `GRAPH
+  <urn:mak:canary>`, `main.py` did not. Added the canary UNION to `main.py`.
+- `urn:mak:space/mother-sands` stripped to a single `mom:endpointUrl` triple:
+  keeps the canary discoverable by `query_active_spaces` (periodic cycle) while
+  removing `a mom:Space` so the map's `urn:mak:space/` UNION ignores it (no
+  duplicate marker). Canary data + display live in `urn:mak:canary`.
+
+**Verified live:** revival writes return 204; VoidWarranties recovered to
+confirmed; Zeus WPI recovered via heartbeat_log fallback; 304 spaces show fresh
+`lastFetched`; Mother Sands materializes to `spaces.geojson` with
+`confirmed/healthy` and live timestamps. 158 tests pass.
+
+**STILL OPEN (resume next session):** valid SpaceAPI spaces still showing as
+`seeded` despite successful fetches. The three bugs above did not fully close
+the stuck-seeded symptom — a coherence gap remains between fetch success and
+lifecycle classification. Needs deeper tracing of the `seeded → confirmed`
+transition for non-canary spaces.
+
+**Tech debt noted:** `main.py:_SPARQL_SELECT` and `scripts/materialize_geojson.py`
+SPARQL query are duplicated and have already drifted once — should share one
+source.
+
+---
+
+### Task 3: Diagnosed Root Cause ✅ 
+
+**Date:** 2026-05-16
+
+**Root Cause Identified: hypothesis (c) - Diff Detection Bug**
+
+The `detect_diff()` function in `transformer.py` line 218 does NOT handle the first-fetch case where `old_snap` is None. This causes a `TypeError` when trying to convert None to a set.
+
+**Bug Details:**
+```python
+# Current code (BUGGY):
+old_n = _normalize(old_snap)  # Returns None when old_snap is None
+new_n = _normalize(new_snap)
+all_keys = set(old_n) | set(new_n)  # ← TypeError: 'NoneType' object is not iterable
+```
+
+**Impact:**
+- First fetch attempts crash and fall back to exception handling
+- Exception handler uses legacy builder instead of transform_to_sparql
+- mom:lastUpdated might not be written correctly
+- Space remains stuck in seeded state
+
+**Fix Applied:**
+Added guard clause at start of detect_diff():
+```python
+if old_snap is None:
+    return {"added": list(new_snap.keys()) if isinstance(new_snap, dict) else [], "changed": [], "removed": []}
+```
+
+First fetch (no previous snapshot) is treated as a material change, correctly triggering content_changed=True.
+
+### Task 2: Created Regression Test ✅ (Updated)
+
+**Test File:** `tests/test_regression_stuck_seeded.py`
+
+**Test Results After Fix:**
+- ✅ test_regression_diff_detection_first_fetch_is_material (NOW PASSES)
+- ✅ test_regression_diff_detection_sensor_exclusion
+- ✅ test_regression_diff_detection_state_open_included  
+- ✅ test_transform_to_sparql_writes_lastupdated_when_content_changed
+- ✅ test_transform_to_sparql_skips_lastupdated_when_no_content_change
+- ✅ test_heartbeat_log_has_required_columns
+- ✅ test_canary_payload_has_simulatedage
+- ⚠️ test_regression_stuck_seeded_space_graph_missing_lastupdated (FAILS - data issue, not code)
+
+**Existing Tests:** All 83 tests in test_transformer.py PASS (no regressions)
+
+### Task 1: Reproduced the Bug ✅
+
+**Date:** 2026-05-16
+
+**Findings:**
+1. ✅ Ran `make canary-reset` and `make canary-b-confirmed` to inject simulatedAge=0 scenario
+2. ✅ Triggered heartbeat via `/api/heartbeat/run` endpoint
+3. ✅ Ran `make canary-report` — showed Oxigraph has operationalState:confirmed
+4. **CONFIRMED BUG:** Mother Sands in Oxigraph is **missing `mom:lastUpdated`**
+   - Endpoint file: ✅ (correct JSON)
+   - Heartbeat log: ⚠️ No entry for mother-sands (never fetched by heartbeat)
+   - Oxigraph: ❌ Has operationalState=confirmed but NO lastUpdated
+   - GeoJSON: ⚠️ Not materialized
+
+**Root Cause Leading Hypothesis:**
+- Mother Sands was seeded into Oxigraph during Story 3.3 WITHOUT `mom:lastUpdated`
+- The heartbeat never processes Mother Sands (no proper endpoint URL + discovery)
+- Manual testing needed to determine if `content_changed` logic is the issue
+
+### Task 2: Created Regression Test ✅
+
+**Date:** 2026-05-16
+
+**Test File:** `tests/test_regression_stuck_seeded.py`
+
+**Test Status:** FAILED (confirming bug)
+- `test_regression_stuck_seeded_missing_lastupdated` — **FAILS** (mom:lastUpdated is absent)
+- Other unit tests ready for when fix is applied
+
+**Tests Validate:**
+1. Direct Oxigraph query showing lastUpdated is missing
+2. Unit tests for diff detection (first-fetch, sensor exclusion, state.open inclusion)
+3. Unit tests for transform_to_sparql SPARQL generation
+4. Heartbeat_log schema completeness
+
+### Debug Log
+
+**Current Status:**
+- Regression test written and failing ✅
+- Mother Sands endpoint running locally on port 9191 ✅
+- Oxigraph accessible (confirmed with multiple queries) ✅
+- Need to: Trace why heartbeat doesn't fetch Mother Sands OR manually process through transformer
+
 ## Dev Notes
 
 ### Previous Story Intelligence (Story 3.3)

@@ -23,12 +23,33 @@ services:
       - ../web/data:/app/web_data:z
       - ../scripts/activity_map.yaml:/app/scripts/activity_map.yaml:ro,z
       - ../data/tasks:/app/tasks:z  # persist heartbeat_log.db; :z for Fedora SELinux
+      - ../data/canary:/app/data/canary:ro,z  # for Mother Sands canary diagnostic endpoint
 
   oxigraph:
     ports:
       - "7878:7878"
     volumes:
       - ../data/oxigraph:/data:z
+
+  # Mother Sands diagnostic canary endpoint — dev-only.
+  # Runs the stdlib HTTP server inside the compose network so the link-handler
+  # can reach it as http://canary-endpoint:9191/ (host `localhost:9191` is not
+  # reachable from inside the container). `make canary-*` mutates served.json on
+  # the host; the bind mount makes those changes visible here immediately.
+  canary-endpoint:
+    image: python:3.12-slim
+    container_name: maps-canary-endpoint
+    restart: unless-stopped
+    networks:
+      - internal
+    expose:
+      - "9191"
+    # No host port mapping: the link-handler reaches it in-network as
+    # canary-endpoint:9191. Stop any host-side mother-sands-endpoint.py first
+    # (it would otherwise hold port 9191 and is now redundant).
+    volumes:
+      - ../data/canary:/canary:z
+    command: python /canary/mother-sands-endpoint.py
 
 networks:
   gateway:

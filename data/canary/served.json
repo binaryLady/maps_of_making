@@ -26,7 +26,7 @@
     "email"
   ],
   "ext_mom": {
-    "simulatedAge": 45,
+    "simulatedAge": 0,
     "canary": true
   }
 }

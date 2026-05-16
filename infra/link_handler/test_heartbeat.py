@@ -87,30 +87,67 @@ async def test_query_active_spaces_empty():
 # process_one_space: 304 path
 # ---------------------------------------------------------------------------
 
+def _empty_db_row():
+    """Minimal heartbeat_log row as fetch_endpoint_conditional would return it."""
+    return {
+        "consecutive_failures": 0,
+        "last_fetched": None,
+        "last_content_updated": None,
+        "consecutive_closed_cycles": 0,
+        "is_closed": 0,
+        "last_endpoint_health": "unknown",
+        "last_lifecycle_state": "unknown",
+        "last_open_now": None,
+        "etag": None,
+        "last_modified": None,
+    }
+
+
+def _mock_oxigraph_client():
+    """AsyncClient mock whose .post() succeeds (raise_for_status is a no-op)."""
+    resp = MagicMock()
+    resp.raise_for_status = MagicMock()
+    client = AsyncMock()
+    client.__aenter__ = AsyncMock(return_value=client)
+    client.__aexit__ = AsyncMock(return_value=False)
+    client.post = AsyncMock(return_value=resp)
+    return client
+
+
 @pytest.mark.asyncio
-async def test_process_one_space_304_returns_not_modified():
-    with patch("transformer.fetch_endpoint_conditional", new_callable=AsyncMock) as mock_fetch:
-        mock_fetch.return_value = (None, {}, True)  # was_304=True
-        result = await process_one_space(
+async def test_process_one_space_304_returns_not_modified(tmp_path, monkeypatch):
+    db = tmp_path / "heartbeat_log.db"
+    transformer._init_heartbeat_db(str(db))
+    monkeypatch.setenv("HEARTBEAT_DB_PATH", str(db))
+    with patch("transformer.fetch_endpoint_conditional", new_callable=AsyncMock) as mock_fetch, \
+         patch("transformer.httpx.AsyncClient", return_value=_mock_oxigraph_client()):
+        mock_fetch.return_value = (None, {}, True, _empty_db_row())  # was_304=True
+        outcome, state_changed = await process_one_space(
             "urn:mak:space/openfab",
             "https://openfab.be/openfab.jsonld",
             "http://oxigraph:7878",
         )
-    assert result == "not_modified"
+    assert outcome == "not_modified"
+    # 304 always refreshes mom:lastFetched, so a write happened.
+    assert state_changed is True
 
 
 @pytest.mark.asyncio
-async def test_process_one_space_http_error_returns_error():
+async def test_process_one_space_http_error_returns_error(tmp_path, monkeypatch):
+    db = tmp_path / "heartbeat_log.db"
+    transformer._init_heartbeat_db(str(db))
+    monkeypatch.setenv("HEARTBEAT_DB_PATH", str(db))
     mock_resp = MagicMock()
     mock_resp.status_code = 500
-    with patch("transformer.fetch_endpoint_conditional", new_callable=AsyncMock) as mock_fetch:
-        mock_fetch.return_value = (mock_resp, {}, False)
-        result = await process_one_space(
+    with patch("transformer.fetch_endpoint_conditional", new_callable=AsyncMock) as mock_fetch, \
+         patch("transformer.httpx.AsyncClient", return_value=_mock_oxigraph_client()):
+        mock_fetch.return_value = (mock_resp, {}, False, _empty_db_row())
+        outcome, _state_changed = await process_one_space(
             "urn:mak:space/openfab",
             "https://openfab.be/openfab.jsonld",
             "http://oxigraph:7878",
         )
-    assert result == "error"
+    assert outcome == "error"
 
 
 # ---------------------------------------------------------------------------
@@ -148,7 +185,7 @@ async def test_run_heartbeat_cycle_one_space_error_continues():
         if space_uri.endswith("/a"):
             raise RuntimeError("space A error")
         processed.append(space_uri)
-        return "refreshed"
+        return ("refreshed", True)
 
     rematerialized = []
 

@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import os
@@ -220,7 +221,17 @@ def detect_diff(old_snap: dict, new_snap: dict) -> dict | None:
 
     Ignores: mom:lastFetched, mom:snapshotDate, whitespace-only changes,
     and array order differences. Returns None if no material change.
+
+    First-fetch case: if old_snap is None, returns a diff (not None) to signal
+    that the initial fetch is always treated as a material change.
     """
+    # First fetch: no previous snapshot to compare against
+    if old_snap is None:
+        return {"added": list(new_snap.keys()) if isinstance(new_snap, dict) else [], "changed": [], "removed": []}
+
+    if new_snap is None:
+        return None
+
     # sensors/extensions ignored — they flap for physical reasons.
     # state is intentionally NOT ignored — state.open flips are the designed freshness signal.
     _IGNORED = {"mom:lastFetched", "mom:snapshotDate", "lastFetched", "snapshotDate",
@@ -310,10 +321,16 @@ def _extract_last_open_change(state) -> Optional[str]:
 
 
 def build_state_only_update(space_uri: str, endpoint_health: str, lifecycle_state: str,
-                            graph_uri: Optional[str] = None) -> str:
-    """Build a surgical SPARQL UPDATE that replaces only endpointHealth and operationalState.
+                            graph_uri: Optional[str] = None,
+                            last_fetched: Optional[str] = None) -> str:
+    """Build a surgical SPARQL UPDATE that replaces endpointHealth, operationalState
+    and (optionally) lastFetched.
 
     Used for 304 and failure paths — must NOT touch mom:lastUpdated or mom:openNow.
+
+    When last_fetched is provided, mom:lastFetched is also refreshed. The 304 path
+    passes it so the map's "fetched N ago" caption stays current even when the
+    endpoint returns Not Modified and no content write happens (Story 3.4).
 
     Uses three-statement pattern (DELETE WHERE + INSERT DATA) instead of DELETE/INSERT/WHERE
     so the INSERT fires even when the named graph has no prior health/state triples, or
@@ -321,13 +338,29 @@ def build_state_only_update(space_uri: str, endpoint_health: str, lifecycle_stat
     """
     if graph_uri is None:
         graph_uri = space_uri  # named graph URI == space URI (one graph per space)
+    deletes = [
+        f"DELETE WHERE {{ GRAPH <{graph_uri}> {{ <{space_uri}> mom:endpointHealth ?h }} }}",
+        f"DELETE WHERE {{ GRAPH <{graph_uri}> {{ <{space_uri}> mom:operationalState ?s }} }}",
+    ]
+    inserts = [
+        f'    <{space_uri}> mom:endpointHealth "{endpoint_health}" .',
+        f'    <{space_uri}> mom:operationalState "{lifecycle_state}" .',
+    ]
+    if last_fetched:
+        deletes.append(
+            f"DELETE WHERE {{ GRAPH <{graph_uri}> {{ <{space_uri}> mom:lastFetched ?f }} }}"
+        )
+        inserts.append(
+            f'    <{space_uri}> mom:lastFetched '
+            f'"{last_fetched}"^^<http://www.w3.org/2001/XMLSchema#dateTime> .'
+        )
+    delete_block = " ;\n".join(deletes)
+    insert_block = "\n".join(inserts)
     return f"""PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
-DELETE WHERE {{ GRAPH <{graph_uri}> {{ <{space_uri}> mom:endpointHealth ?h }} }} ;
-DELETE WHERE {{ GRAPH <{graph_uri}> {{ <{space_uri}> mom:operationalState ?s }} }} ;
+{delete_block} ;
 INSERT DATA {{
   GRAPH <{graph_uri}> {{
-    <{space_uri}> mom:endpointHealth "{endpoint_health}" .
-    <{space_uri}> mom:operationalState "{lifecycle_state}" .
+{insert_block}
   }}
 }}"""
 
@@ -429,8 +462,17 @@ def transform_to_sparql(
         contact_json = json.dumps(validated_data.contact, separators=(',', ':'))
         triples.append(f'  <{space_uri}> <{SCHEMA}contactJson> "{_sparql_str(contact_json)}"^^<http://www.w3.org/2001/XMLSchema#string> .')
 
+    # mom:lastUpdated: written fresh on a content change. On a no-diff cycle we
+    # must RE-INSERT the prior value — the enclosing DROP SILENT GRAPH would
+    # otherwise wipe it, leaving the space 'updated unknown' / stuck-seeded.
     if content_changed:
         triples.append(f'  <{space_uri}> <{MOM}lastUpdated> "{now}"^^<http://www.w3.org/2001/XMLSchema#dateTime> .')
+    else:
+        preserved_last_updated = metadata.get("preserved_last_updated")
+        if preserved_last_updated:
+            triples.append(
+                f'  <{space_uri}> <{MOM}lastUpdated> "{preserved_last_updated}"^^<http://www.w3.org/2001/XMLSchema#dateTime> .'
+            )
 
     # open/closed state from SpaceAPI state field
     open_now = _extract_open_now(validated_data.state)
@@ -758,16 +800,22 @@ async def process_one_space(
         prior_health = db_row.get("last_endpoint_health", "unknown")
         prior_lifecycle = db_row.get("last_lifecycle_state", "unknown")
         state_changed = (endpoint_health != prior_health or lifecycle_state != prior_lifecycle)
+        # Always write on 304 to refresh mom:lastFetched — otherwise the map's
+        # "fetched N ago" caption freezes at the last 200 response (Story 3.4).
+        _now_304 = datetime.now(timezone.utc).isoformat()
+        _graph = "urn:mak:canary" if _is_canary else None
+        state_update = build_state_only_update(
+            _effective_space_uri, endpoint_health, lifecycle_state, _graph,
+            last_fetched=_now_304,
+        )
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            upd = await client.post(
+                f"{oxigraph_endpoint}/update",
+                content=state_update,
+                headers={"Content-Type": "application/sparql-update"},
+            )
+            upd.raise_for_status()
         if state_changed:
-            _graph = "urn:mak:canary" if _is_canary else None
-            state_update = build_state_only_update(_effective_space_uri, endpoint_health, lifecycle_state, _graph)
-            async with httpx.AsyncClient(timeout=15.0) as client:
-                upd = await client.post(
-                    f"{oxigraph_endpoint}/update",
-                    content=state_update,
-                    headers={"Content-Type": "application/sparql-update"},
-                )
-                upd.raise_for_status()
             prior_open_now = db_row.get("last_open_now")
             _open_304 = bool(prior_open_now) if prior_open_now is not None else False
             _marker_304 = effective_marker(endpoint_health, lifecycle_state, _open_304)
@@ -779,9 +827,10 @@ async def process_one_space(
             )
             con.commit()
             con.close()
-        logger.info("heartbeat 304 for %s (%s/%s)%s", space_id, endpoint_health, lifecycle_state,
-                    " — state written" if state_changed else " — no state change, skipping write")
-        return "not_modified", state_changed
+        logger.info("heartbeat 304 for %s (%s/%s) — lastFetched refreshed%s", space_id,
+                    endpoint_health, lifecycle_state,
+                    ", state written" if state_changed else "")
+        return "not_modified", True
 
     if resp is None or resp.status_code != 200:
         status_code = resp.status_code if resp else None
@@ -888,10 +937,20 @@ async def process_one_space(
             "lifecycle_state": lifecycle_state,
             "source": preserved["source"],
             "member_of": preserved["member_of"],
+            # Preserve mom:lastUpdated across the DROP on a no-diff cycle. The
+            # heartbeat_log's last_content_updated is the authoritative record of
+            # when content last changed, so it both preserves the value AND
+            # recovers spaces whose triple was already wiped by the old bug.
+            # Fall back to the Oxigraph-side value if the DB has no record.
+            "preserved_last_updated": last_content_updated_ts or preserved["last_updated"],
         }, content_changed=content_changed)
 
         if revival_sparql:
-            sparql_update = revival_sparql + sparql_update
+            # SPARQL UPDATE operations must be ';'-separated. The revival block is a
+            # DELETE/WHERE op; sparql_update starts with DROP. Without the separator
+            # Oxigraph parses DROP as part of the WHERE clause and rejects the whole
+            # request with 400 — freezing every triple, including mom:lastUpdated.
+            sparql_update = revival_sparql.rstrip() + " ;\n" + sparql_update
 
     except Exception as e:
         logger.exception("transform_to_sparql failed for %s, using legacy builder: %s", space_id, e)
@@ -984,12 +1043,20 @@ LIMIT 1"""
 
 
 async def _read_space_metadata(space_uri: str, oxigraph_endpoint: str) -> dict:
-    """Read source and memberOf from existing space graph — used to preserve them across heartbeat updates."""
+    """Read source, memberOf and lastUpdated from existing space graph.
+
+    transform_to_sparql does DROP SILENT GRAPH + INSERT DATA. Any triple not
+    re-inserted is lost. mom:lastUpdated is only re-inserted when content_changed
+    is True — so on a no-diff (content_changed=False) cycle the DROP would wipe
+    it permanently, leaving the space 'updated unknown' / stuck-seeded. We read
+    the prior value here so the caller can preserve it across the DROP.
+    """
     query = f"""PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
-SELECT ?source ?memberOf WHERE {{
+SELECT ?source ?memberOf ?lastUpdated WHERE {{
   GRAPH <{space_uri}> {{
     OPTIONAL {{ <{space_uri}> mom:source ?source }}
     OPTIONAL {{ <{space_uri}> mom:memberOf ?memberOf }}
+    OPTIONAL {{ <{space_uri}> mom:lastUpdated ?lastUpdated }}
   }}
 }}"""
     try:
@@ -1003,31 +1070,47 @@ SELECT ?source ?memberOf WHERE {{
         bindings = resp.json().get("results", {}).get("bindings", [])
         source = bindings[0].get("source", {}).get("value", "self-registered") if bindings else "self-registered"
         member_of = list({b["memberOf"]["value"] for b in bindings if "memberOf" in b})
-        return {"source": source, "member_of": member_of}
+        last_updated = bindings[0].get("lastUpdated", {}).get("value") if bindings else None
+        return {"source": source, "member_of": member_of, "last_updated": last_updated}
     except Exception:
-        return {"source": "self-registered", "member_of": []}
+        return {"source": "self-registered", "member_of": [], "last_updated": None}
 
 
 async def run_heartbeat_cycle(oxigraph_endpoint: str, rematerialize_fn) -> None:
-    """Fetch all active spaces sequentially, then always rematerialize GeoJSON."""
+    """Fetch all active spaces concurrently, then always rematerialize GeoJSON.
+
+    Spaces are processed in parallel under a bounded semaphore: the slow part is
+    network I/O waiting on each endpoint, so sequential processing wastes most of
+    the cycle idle. The bound keeps us from opening hundreds of sockets or
+    overwhelming Oxigraph / the heartbeat sqlite file at once.
+    """
     try:
         spaces = await query_active_spaces(oxigraph_endpoint)
     except Exception as e:
         logger.error("heartbeat cycle: failed to query active spaces: %s", e)
         return
 
-    logger.info("heartbeat cycle: %d spaces to check", len(spaces))
+    cfg = get_config()
+    concurrency = int(cfg.get("bandwidth", {}).get("heartbeat_concurrency", 8))
+    logger.info("heartbeat cycle: %d spaces to check (concurrency=%d)", len(spaces), concurrency)
     any_change = False
-    for entry in spaces:
-        try:
-            _outcome, state_changed = await process_one_space(
+    sem = asyncio.Semaphore(max(1, concurrency))
+
+    async def _guarded(entry: dict):
+        async with sem:
+            return await process_one_space(
                 entry["space_uri"], entry["endpoint_url"], oxigraph_endpoint
             )
+
+    results = await asyncio.gather(*(_guarded(e) for e in spaces), return_exceptions=True)
+    for entry, result in zip(spaces, results):
+        if isinstance(result, Exception):
+            logger.error("heartbeat cycle: error processing %s: %s", entry["space_uri"], result)
+            any_change = True  # assume a change on error to be safe
+        else:
+            _outcome, state_changed = result
             if state_changed:
                 any_change = True
-        except Exception as e:
-            logger.error("heartbeat cycle: error processing %s: %s", entry["space_uri"], e)
-            any_change = True  # assume a change on error to be safe
 
     try:
         await rematerialize_fn()
