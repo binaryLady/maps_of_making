@@ -1,6 +1,8 @@
 # Data Lifecycle: Seed → Registration → Heartbeat → Storage → Display
 
-*Design artifact — produced 2026-04-26. Last refreshed 2026-05-07 (added Heartbeat phase, Persistence & Reset section, Network-as-Directory pattern).*
+*Design artifact — produced 2026-04-26. Last refreshed 2026-05-16.*
+
+> **2026-05-16 update (Story 3.3 planning roundtable — see `mom_handoff_2026-05-16.md`).** The heartbeat phase resolves three orthogonal axes — endpoint reachability, lifecycle freshness, open/close — into one pin via `transformer.effective_marker()`. Lifecycle has **two terminal states**: `closed` (operator-declared) and `dead` (auto-inferred). Two named graphs are added: `<urn:mak:canary>` (the Story 3.3 "Mother Sands" diagnostic canary, isolated from real-space graphs) and `<urn:mak:public_ledger>` (append-only immutable life-event ledger). The freshness clock resets only on field-scoped meaningful changes — `sensors.*` churn does not reset it.
 
 ---
 
@@ -68,32 +70,37 @@ sequenceDiagram
 
 ## Field Mapping Table
 
-*Columns: what field, where it comes from in JSON-LD, what predicate lands in Oxigraph, whether materialize reads it, what GeoJSON property it becomes, what the card shows, and the gap.*
+*Columns: what field, the official SpaceAPI v15 source field (`15.json`), where it comes from in the MOM JSON-LD format, what predicate lands in Oxigraph, whether materialize reads it, what GeoJSON property it becomes, what the card shows, and the gap.*
 
-| Field | Coordinator JSON-LD key | mom/schema predicate in Oxigraph | materialize reads? | GeoJSON property | Card label | Gap / Story |
-|---|---|---|---|---|---|---|
-| **Name** | `schema:name` | `schema:name` | ✅ | `name` | Header | — |
-| **Latitude / Longitude** | `schema:geo.schema:latitude` / `longitude` | `schema:geo [schema:latitude ; schema:longitude]` | ✅ | `coordinates` | Pin position | — |
-| **Street address** | `schema:address.schema:streetAddress` | `schema:streetAddress` (seed only) | ✅ (seed) | `address` | Address line | ⚠ register-url writes `mom:address` string, materialize reads `schema:streetAddress` → **confirmed spaces lose address** |
-| **City / Country** | `schema:address.schema:addressLocality/Country` | `schema:addressLocality` / `schema:addressCountry` | ✅ (seed) | `city`, `country` | Address / filter | Same gap as above |
-| **Website** | `schema:url` | `schema:url` | ✅ | `website` | not shown directly | — |
-| **VOW profile link** | *(from VOW scrape)* | `mom:profileUrl` | ✅ → used as `endpoint_url` fallback | `endpoint_url` | Provenance URL (2.2) | — |
-| **Endpoint URL** | *(req.url, not JSON-LD field)* | `mom:endpointUrl` | ❌ not yet | `endpoint_url=""` | Provenance URL empty | **Story 2.2 Task 3** |
-| **Last fetched** | *(generated at write time)* | `mom:lastFetched` | ❌ not yet | `last_fetched=""` | Freshness line blank | **Story 2.2 Task 3** |
-| **Error type** | *(future: set by scheduler)* | `mom:errorType` | ❌ not yet | `error_type=""` | Error banner | **Story 2.2 Task 3** (field added; value populated by Epic 3 scheduler) |
-| **Operational state** | *(set by handler)* | `mom:operationalState` | ✅ | `status` | Pin colour, freshness | — |
-| **Source** | *(set by handler)* | `mom:source` | ✅ | `source` | Provenance label (2.2) | — |
-| **Specialties (seed)** | *(from VOW tags)* | `schema:knowsAbout` | ✅ | `specialties` | Chips | — |
-| **Specialties (coordinator)** | `schema:knowsAbout` | ❌ register-url does not write | — | `specialties=[]` | Chips empty | **Epic 3** (full ingestion) |
-| **Description** | `schema:description` | `schema:description` | ❌ not read | — | (not shown) | **Story 2.2 deferred note → Epic 3** |
-| **Opening hours** | `schema:openingHours` | `schema:openingHours` | ❌ not read | `opening_hours=""` | Hours row blank | **Epic 3** |
-| **Founded** | *(not in current spec)* | ❌ not written | — | `founded=""` | Founded row blank | **Epic 3** |
-| **Capacity** | *(not in current spec)* | ❌ not written | — | `capacity=0` | Capacity row blank | **Epic 3** |
-| **Contact** | *(not in current spec)* | ❌ not written | — | `contact=""` | Contact row blank | **Epic 3** |
-| **Network memberships** | *(not in current spec)* | ❌ not written | — | `network_memberships=[]` | Badges blank | **Epic 3** |
-| **Open for hosting** | *(not in current spec)* | ❌ not written | — | `open_for_hosting=false` | Badge blank | **Epic 3** |
-| **Snapshot history** | *(generated at write time)* | `mom:snapshotDate` / `snapshotSummary` / `lastHttpStatus` | via API not GeoJSON | — | History section (2.2 AC4) | **Story 2.2 Task 1+2** |
-| **Geolocation fidelity** | *(geocoder output)* | `mom:geolocationFidelity` | ✅ | `geolocationFidelity` | (internal) | — |
+> **ℹ️ Three-layer schema attribution (verified 2026-05-16 against `github.com/SpaceApi/schema/blob/master/15.json`; see `mom-schema-architecture-handoff.md`).** SpaceAPI v15 is **one accepted input format**, not the MOM schema. MOM uses a three-layer model: **Layer 1** = SpaceAPI v15 (upstream, flat JSON — required fields `api_compatibility`, `space`, `logo`, `url`, `contact`; MOM never extends it inline); **Layer 2** = `core:` base vocabulary (MOM-maintained, every field maps here at ingestion per ADR-015); **Layer 3** = community extension namespaces (`fab:`, `omt:`, `edu:`). Fields below marked "not in v15" (`opening_hours`, `description`, `knowsAbout`/specialties, `networks`) are **not conformance gaps** — they are Layer 2/3 fields that were never meant to live in v15. The "Official SpaceAPI v15 source" column shows only where a v15 *input* exists; absence there is expected and correct. `SpaceAPISchema` labels the flat shape as "v14"; it is also the v15 shape (cosmetic mislabel, not a bug). The `core.ttl` + `crosswalk.csv` deliverables that operationalize Layers 2–3 are scheduled as **Story 3.5**.
+
+| Field | Official SpaceAPI v15 source | Coordinator JSON-LD key (MOM format) | mom/schema predicate in Oxigraph | materialize reads? | GeoJSON property | Card label | Gap / Story |
+|---|---|---|---|---|---|---|---|
+| **Name** | `space` | `schema:name` | `schema:name` | ✅ | `name` | Header | — |
+| **Latitude / Longitude** | `location.lat` / `location.lon` | `schema:geo.schema:latitude` / `longitude` | `schema:geo [schema:latitude ; schema:longitude]` | ✅ | `coordinates` | Pin position | — |
+| **Street address** | `location.address` (single free-text string) | `schema:address.schema:streetAddress` | `schema:streetAddress` (seed only) | ✅ (seed) | `address` | Address line | ⚠ register-url writes `mom:address` string, materialize reads `schema:streetAddress` → **confirmed spaces lose address** |
+| **City / Country** | `location.country_code` only (no city/locality field in v15) | `schema:address.schema:addressLocality/Country` | `schema:addressLocality` / `schema:addressCountry` | ✅ (seed) | `city`, `country` | Address / filter | Same gap as above |
+| **Website** | `url` *(required in v15)* | `schema:url` | `schema:url` | ✅ | `website` | not shown directly | — |
+| **Logo** | `logo` *(required in v15)* | `logo` | `schema:logo` | (via card pipeline) | — | Zone 1 logo | — |
+| **VOW profile link** | *(n/a — VOW scrape)* | *(from VOW scrape)* | `mom:profileUrl` | ✅ → used as `endpoint_url` fallback | `endpoint_url` | Provenance URL (2.2) | — |
+| **Endpoint URL** | *(n/a — the fetch URL itself)* | *(req.url, not JSON-LD field)* | `mom:endpointUrl` | ❌ not yet | `endpoint_url=""` | Provenance URL empty | **Story 2.2 Task 3** |
+| **Last fetched** | *(n/a — MOM-generated)* | *(generated at write time)* | `mom:lastFetched` | ❌ not yet | `last_fetched=""` | Freshness line blank | **Story 2.2 Task 3** |
+| **Error type** | *(n/a — MOM scheduler)* | *(future: set by scheduler)* | `mom:errorType` | ❌ not yet | `error_type=""` | Error banner | **Story 2.2 Task 3** (field added; value populated by Epic 3 scheduler) |
+| **Operational state** | *(n/a — MOM-derived)* | *(set by handler)* | `mom:operationalState` | ✅ | `status` | Pin colour, freshness | — |
+| **Open / closed** | `state.open` + `state.lastchange` (epoch) | `state` (string or object) | `mom:openNow` / `mom:lastOpenChange` | (via card pipeline) | — | Open/close pill | — |
+| **Source** | *(n/a — MOM-derived)* | *(set by handler)* | `mom:source` | ✅ | `source` | Provenance label (2.2) | — |
+| **Specialties (seed)** | ⚠ not in v15 (closest: `projects`) | *(from VOW tags)* | `schema:knowsAbout` | ✅ | `specialties` | Chips | — |
+| **Specialties (coordinator)** | ⚠ not in v15 (closest: `projects` array of strings) | `schema:knowsAbout` | ❌ register-url does not write | — | `specialties=[]` | Chips empty | **Epic 3** (full ingestion) |
+| **Description** | ⚠ not in v15 — MOM extension | `schema:description` | `schema:description` | ❌ not read | — | (not shown) | **Story 2.2 deferred note → Epic 3** |
+| **Opening hours** | ⚠ not in v15 — MOM extension (v15 has no opening-hours concept) | `schema:openingHours` | `schema:openingHours` | ❌ not read | `opening_hours=""` | Hours row blank | **Epic 3** |
+| **Founded** | ⚠ not in v15 | *(not in current spec)* | ❌ not written | — | `founded=""` | Founded row blank | **Epic 3** |
+| **Capacity** | ⚠ not in v15 | *(not in current spec)* | ❌ not written | — | `capacity=0` | Capacity row blank | **Epic 3** |
+| **Contact** | `contact` (object — **required** in v15) | *(not in current spec)* | `schema:contactJson` (stored as opaque JSON) | — | — | Contact row blank | **Epic 3** |
+| **Network memberships** | `spacefed` / `linked_spaces` (v15) — MOM ingests custom `networks` | *(not in current spec)* | ❌ not written | — | `network_memberships=[]` | Badges blank | **Epic 3** |
+| **Open for hosting** | ⚠ not in v15 | *(not in current spec)* | ❌ not written | — | `open_for_hosting=false` | Badge blank | **Epic 3** |
+| **api_compatibility** | `api_compatibility` (array — must contain `"15"`) | `api_compatibility` | `mom:apiCompatibility` | — | — | (internal) | ⚠ MOM does not validate the array contains `"15"` |
+| **Snapshot history** | *(n/a — MOM-generated)* | *(generated at write time)* | `mom:snapshotDate` / `snapshotSummary` / `lastHttpStatus` | via API not GeoJSON | — | History section (2.2 AC4) | **Story 2.2 Task 1+2** |
+| **Geolocation fidelity** | *(n/a — geocoder output)* | *(geocoder output)* | `mom:geolocationFidelity` | ✅ | `geolocationFidelity` | (internal) | — |
 
 ---
 

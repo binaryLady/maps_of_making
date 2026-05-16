@@ -1,7 +1,7 @@
 ---
 stepsCompleted: ['step-01-validate-prerequisites', 'step-02-design-epics', 'step-03-create-stories', 'edit-2026-04-29']
-lastEdited: '2026-04-29'
-editSummary: 'Epic 3 reframed as ingestion pipeline prerequisite (added Story 3.0: ADR-015 transformation layer, aging/zombie/dead lifecycle in Story 3.2); Epic 4 replaced — operator observability dashboard (health pills, registry table, raw/ingested/displayed inspection panel); Epic 4b added as parallel non-blocking magic-link recovery (Stories 3.3-3.4 migrated); critical path updated: Epic 1 → 0 → 2 → 3 → 4'
+lastEdited: '2026-05-16'
+editSummary: '2026-05-16 reconciliation from the Story 3.3 planning roundtable (mom_handoff_2026-05-16.md): Story 3.3 reframed as the three-axis Mother Sands diagnostic canary; Story 3.2c added (pre-3.3 lifecycle vocabulary drift fix); Story 3.4 added (stuck-seeded root cause + regression test); ghost duplicate 3.3-original/3.4 entries removed from Epic 3 (real copies live in Epic 4b); Epic 8 stub added (Mother Sands broadcast rig); Story 3.5 added (core.ttl + crosswalk.csv, three-layer schema operationalization, per mom-schema-architecture-handoff.md). Prior: Epic 3 reframed as ingestion pipeline prerequisite; Epic 4 = operator observability dashboard; Epic 4b = parallel non-blocking magic-link recovery; critical path Epic 1 → 0 → 2 → 3 → 4'
 inputDocuments:
   - _bmad-output/planning-artifacts/prd.md
   - _bmad-output/planning-artifacts/architecture.md
@@ -399,13 +399,18 @@ Originally a webhook-driven presence layer. As of Story 3.2, the heartbeat polls
 
 ---
 
+### Epic 8: MOM as a Living Space — Mother Sands Broadcast Rig *(parallel, non-blocking; post-demo)*
+Mother Sands stops being only a diagnostic canary (Story 3.3) and becomes MOM's self-representation on its own map: a public website at `mom.mapsofmaking.org`, a wiki/lore page, Bernard the hermit-crab admin persona, a curated changelog/feature "broadcast", and relocation/fort-rotation as ambient narrative. Parallel to Epic 5 polish; not on the demo critical path. Stub only — stories created post-demo. Design seeds: `mom_handoff_2026-05-16.md`, `mom_handoff_2026-05-15.md` (Bernard character bible, lore skeleton).
+
+---
+
 **Testing discipline (baked into all Epic 2–4 ACs):**
 - RFF mockup dataset = dev/test sandbox for onboarding flow (safe to flip, break, reset)
 - VOW real data = read-only, no onboarding tests against it
 - Openfab Brussels (Nicolas) = live acceptance test — real URL, real pin flip, embed on openfab.be validates end-to-end delay
 
 **Demo critical path:** Epic 1 → Epic 0 → Epic 2 → Epic 3 → Epic 4 (+ Epic 5 as rolling polish)
-**Parallel non-blocking:** Epic 4b (magic link) // Epic 6 (NL bot) — neither blocks demo
+**Parallel non-blocking:** Epic 4b (magic link) // Epic 6 (NL bot) // Epic 8 (Mother Sands broadcast rig) — none block demo
 **Reserved post-demo side quest:** Epic 7 (🟢 open-now presence layer)
 
 **Key dependency:** Epic 4 (operator dashboard) requires Epic 3's raw snapshot files (`/data/snapshots/{id}/latest.json`) and status graph (`<urn:mak:status>`). Story sequencing within Epic 3 must deliver these before Epic 4 stories begin.
@@ -1116,110 +1121,130 @@ As MOM, I want the heartbeat to interpret each fetch into three independent trut
 
 ---
 
-### Story 3.3: Mother Sands Canary Space — Virtual Space Seed + Lifecycle Demo
+### Story 3.2c: Lifecycle Vocabulary Drift Fix *(pre-3.3 cleanup)*
 
-> **Sourced from deferred-work lore session 2026-05-06.** Addresses the gap between Epic 3's pipeline and a live, observable proof-of-life before Epic 4 dashboard work begins.
+> **Added 2026-05-16** from the Story 3.3 planning roundtable. Small cleanup story; must land **before Story 3.3** so the canary validates one coherent model rather than papering over a drift. Design record: `mom_handoff_2026-05-16.md`.
 
-As MOM, I want a virtual makerspace ("Mother Sands / Unit M") that is a fully real entry in the system — seeded, heartbeat-scheduled, and publicly visible on the map — so that the ingestion pipeline has an always-on canary exercising all lifecycle states without waiting for real coordinator data to age.
+As MOM, I want the lifecycle vocabulary consistent across the ontology, the transformer code, and the planning docs, so that Story 3.3's canary tests a coherent model.
+
+**Acceptance Criteria:**
+
+**Given** `ontology/mom.ttl` defines `mom:operationalState`
+**Then** its `rdfs:comment` enumerates exactly the lifecycle values `seeded`, `confirmed`, `aging`, `zombie`, `closed`, `dead` plus out-of-lifecycle `error`, `unlinked`
+**And** the comment states the two terminal states explicitly: `closed` = operator/coordinator-declared retirement (authoritative); `dead` = auto-inferred after N failed heartbeat cycles (inferred)
+**And** the comment notes the real-time open/closed boolean belongs to `mom:dynamicState`, NOT `mom:operationalState`
+
+**Given** `transformer.effective_marker()`
+**Then** it has no branch referencing a lifecycle value the ontology does not define; the stale `closed` branch is removed or remapped to the declared/inferred terminals
+
+**Drift flagged for this story to resolve or escalate to Nicolas:**
+- The `mak:` vs `mom:` predicate prefix inconsistency across `epics.md` / `architecture.md` / `mom.ttl` (e.g. `mak:operationalState` vs `mom:operationalState`).
+- Story 3.2b's `mak:closed` (auto-applied after N closed-state cycles + PII strip) vs the roundtable's `closed` = operator-declared retirement — these are different events and must not share one token.
+
+**Dependencies:** none (pure cleanup). **Blocks Story 3.3.**
+
+---
+
+### Story 3.3: Mother Sands Diagnostic Canary
+
+> **Reframed 2026-05-16** by the Story 3.3 planning roundtable. Supersedes the prior "Canary Space — Virtual Space Seed + Lifecycle Demo" scope (continuous time-bubble, fort-rotation automation — moved to Epic 8 lore / a future ledger epic). Full design record: `mom_handoff_2026-05-16.md`.
+
+As MOM (operator), I want a programmatic way to drive a MOM-owned synthetic endpoint ("Mother Sands") through controlled states on each of the three signal axes, so that when the public map shows something incoherent I can attribute the fault to a specific layer — MOM's pipeline vs the space's own endpoint — instead of guessing.
+
+**Single job:** a diagnostic instrument. This story is **not** "reproduce the stuck-`seeded` bug" — that bug is the motivation; pinning and fixing it is **Story 3.4**.
 
 **Concept:**
-- **Mother Sands** — public display name. The mythical eighth Maunsell sea fort that was never built. Pinned to a historically plausible gap in the Thames estuary arc (approx. 51.60° N, 1.15° E) between the Army group and the Navy group further east.
-- **Unit M** — operator callsign used in heartbeat logs, admin dashboard, and sprint docs. On each `dead` → `confirmed` rebirth cycle, the script migrates coordinates to the next fort in the U2–U7 rotation (U1 / Roughs Tower excluded — Sealand's platform).
+- **Mother Sands** — the eighth Maunsell sea fort that was never built; a synthetic space MOM owns. Its drawer carries an honest "synthetic reference space" label (one-line truthfulness requirement). Lore, persona (Bernard), and the "broadcast rig" content are **Epic 8** — not this story.
+- It is a **true canary**: a **programmable HTTP endpoint** the real heartbeat fetches — not a static file, not a direct store write. Axis-A faults (404/503/timeout) require the endpoint to actually misbehave.
 
-**Endpoint architecture:**
-- The `mom.mapsofmaking.org` subdomain is the **space's website** — the MOM explainer wiki and lore page visitors see.
-- The **SpaceAPI JSON endpoint** is a file served at a distinct path on the same subdomain: `mom.mapsofmaking.org/mom_v15status.json` (or `/spaceapi.json`). These are two different things on the same host — the website root ≠ the machine-readable endpoint.
-- The space's `schema:url` field → `https://mom.mapsofmaking.org` (human site). The heartbeat polls `https://mom.mapsofmaking.org/mom_v15status.json` (machine endpoint).
+**The three axes** (the canary perturbs exactly **one at a time** — see Story 3.2's truth model):
+- **Axis A — Reachability** (`endpoint_health`). Faults → endpoint fault → MOM emits a coordinator CTA (out of MOM's hands). Insight: time-since-last-successful-fetch is itself a health signal — `n > heartbeat period` is a warning.
+- **Axis B — Lifecycle freshness** (`operationalState`: seeded/confirmed/aging/zombie + terminals closed/dead). Faults → MOM's responsibility to fix. The freshness clock resets only on a **field-scoped meaningful change**; `sensors.*` churn must not reset it.
+- **Axis C — open/close boolean** (`openNow`). 3.3 proves propagation when present and graceful handling of **absence** (no `open` field → "no live signal", not a false closed). Opt-out UX is **Epic 5**.
 
-**Acceptance Criteria:**
+**Acceptance Criteria** — operator-framed (inject state → observe outcome), bug-independent:
 
-**Given** a seed JSON-LD file for Mother Sands exists in `data/seed/` with all required mom:required fields, valid coordinates, and `schema:url` pointing to `https://mom.mapsofmaking.org`
+**Given** the canary scenario library (Option A — code-defined pure functions, each with a 4-section docstring: INJECT / STATE / EXPECT MARKER / EXPECT CARD)
+**When** the operator runs an axis-prefixed `make` target
+**Then** the canary endpoint is mutated via a safe write protocol (temp file → fsync → atomic rename → ETag/Last-Modified invalidation in `heartbeat_log.db`) and the real heartbeat observes the injected state
 
-**When** `make publish` runs
-**Then** Mother Sands appears on the public map as a `confirmed` space with the correct pin
+**Axis A** — `canary-a-reachable | -a-timeout | -a-dns-fail | -a-http-error`: each resolves `endpoint_health` to the expected rung; a fetch older than the configured `heartbeat_period × multiplier` resolves to `warning` regardless of body validity (current gap: "fetched 5h ago" wrongly classifies healthy)
 
-**Given** a Python script (`scripts/canary_cycle.py`) and a served `mom_v15status.json` on `mom.mapsofmaking.org`
-**When** the heartbeat scheduler polls the endpoint on its regular cycle
-**Then** Phase 1 (endpoint health cycle): the script flips `state.open` true→false→true on a 15-min cadence; dropping the endpoint to HTTP 503 exercises the `broken` health path — no fakery, fully live
+**Axis B** — `canary-b-seeded | -b-confirmed | -b-aging | -b-zombie | -b-closed`: each resolves `operationalState` to the expected state; a fetch whose only delta is `sensors.*` does NOT advance the lifecycle last-update timestamp, while an `openNow` flip does
 
-**Given** `mom:simulatedAge` annotation is present on the Mother Sands named graph
-**When** `classify_lifecycle` reads the space
-**Then** it respects the override (add a one-line seam: read `mom:simulatedAge` from the named graph if present, use as `days_since_last_update`)
-**And** Phase 2 (lifecycle cycle): the canary script sets `mom:simulatedAge` to 0 → 95 → 200 → 0, walking the marker through `confirmed` → `aging` → `zombie` → `dead` → `confirmed`
+**Axis C** — `canary-c-openclose-open | -c-openclose-shut`: the boolean propagates end-to-end; a payload with no `open` field does not break the pipeline and yields no false open/closed
 
-**Given** the space reaches `dead` state
-**When** the canary script triggers the rebirth
-**Then** `schema:geo` coordinates update to the next fort in the U2–U7 array (cyclic), and the map marker relocates on next heartbeat
+**Given** a known injected `(endpoint_health, lifecycle, openNow)` triple
+**Then** the resolved public marker equals `effective_marker(...)`, and the canary emits a **per-layer coherence-diff report** (endpoint file → heartbeat record → Oxigraph → rendered card) — not a boolean; an internally inconsistent map is a FAIL even if no single probe is red
 
-**Fort rotation array (U2–U7):**
-- U2 Sunk Head: 51.7347° N, 1.2369° E
-- U3 Tongue Sands: 51.4964° N, 1.2344° E
-- U4 Knock John: 51.5039° N, 0.9928° E
-- U5 Nore: 51.4431° N, 0.7441° E
-- U6 Red Sands: 51.4656° N, 0.9725° E
-- U7 Shivering Sands: 51.5261° N, 1.0814° E
+**Given** the canary data
+**Then** it lives in named graph `<urn:mak:canary>`, isolated from real-space graphs; a SPARQL `ASK` isolation test proves no canary triples leak into production queries
+**And** `make canary-reset` restores the canary from the committed baseline `data/canary/baseline.json`
+**And** `make canary-demo-cycle` chains scenario targets across a lifecycle (seed → … → closed/dead) for the federated PoC demo
+
+**Given** the third Oxigraph named graph (previously conceived as a "tombstone" graph)
+**Then** it is named **`public_ledger`** — an append-only, immutable, IPFS/IPLD-anchored event ledger; the name and append-only principle are locked here. (Event schema, IPFS pinning, minting authority, and relocation modelling are a **dedicated future epic** — not this story.)
+
+**Two test surfaces:** hermetic `pytest` (mocked fetch, deterministic, CI — incl. the `<urn:mak:canary>` isolation test) **and** a live operator-poke loop (`docs/canary-operator-runbook.md`).
 
 **Dependencies:**
-- `mom.mapsofmaking.org` subdomain configured in hetzner-gateway nginx (reuse pattern from `admin.mapsofmaking.com`)
-- `mom:simulatedAge` seam in `classify_lifecycle` (1-line change; does not affect real spaces)
-- Story 3.2 complete (lifecycle classification in place)
+- **Story 3.2c** (lifecycle vocabulary fix) — blocks this story
+- Story 3.2 complete (three-axis truth model in place)
+- `mom.mapsofmaking.org` subdomain configured in hetzner-gateway nginx
+- `simulatedAge` lifecycle-injection seam overrides the classifier **input** (synthetic last-update), never an `if canary:` branch inside the classifier
 
-**Deferred to Epic 4 / post-demo:**
-- Phase 2 live cycle script (Phase 1 endpoint health flip is the demo deliverable)
-- Fort relocation automation (can be done manually for demo)
-
----
-
-> **Stories 3.3 (original) and 3.4 (magic link generation + coordinator email) are moved to Epic 4b** — parallel non-blocking epic. See Epic 4b below.
+**Deferred:**
+- Relocation modelling / fort rotation U2–U7 → Epic 8 lore + the future `public_ledger` epic
+- Mother Sands broadcast/comms content, Bernard activation → Epic 8
+- Persisted/replayable scenario library (Option B) → Epic 4+, only if needed
 
 ---
 
-### Story 3.3 (original) → Epic 4b: Magic Link Generation + Link-Handler Validation
+### Story 3.4: Stuck-`seeded` Root Cause + Regression Test
 
-As a coordinator receiving a nudge email,
-I want a single-click link that either confirms my space is still active or gracefully closes it,
-So that recovery requires no login, no form, and no context-switching — just one honest click.
+> **Added 2026-05-16.** Sequenced **after Story 3.3** — the canary's diagnostic tooling pins down (and likely resolves) the root cause. Design record: `mom_handoff_2026-05-16.md`.
+>
+> *(The magic-link generation and coordinator-email stories formerly numbered 3.3/3.4 live in **Epic 4b** — parallel, non-blocking. They are not part of Epic 3.)*
+
+As MOM, I want the root cause of directory-imported spaces stuck on `seeded` despite a successful fetch identified and locked by a regression test, so the recurring Epic 3 fetch/update-timer bug cannot silently return.
+
+**Context:** some SpaceAPI-directory-imported spaces show `last-fetched ~5h ago` yet remain `seeded` with `lastUpdated unknown`, even though their JSON validates, ingests, and geolocates. Three hypotheses (see handoff brief): (a) ingestion fetched 200 but never wrote `mom:lastUpdated`; (b) it wrote it but `classify_lifecycle` misreads it during materialization; (c) first-fetch diff compares against an empty baseline and skips the write.
 
 **Acceptance Criteria:**
 
-**Given** `tasks/magic_link.py` exists and `LINK_SECRET` is set in `.env`
-**When** a magic link is generated for a space
-**Then** the token is `base64url(HMAC-SHA256(uuid + expiry + space_uri, LINK_SECRET))` — stored as hash only in Oxigraph, never in plaintext (AR-MLNK2)
-**And** the token has a 72h TTL written as `mak:expiresAt` triple
-**And** `GET /claim/{token}?action=yes` on `mak-link-handler`:
-- Validates token exists in Oxigraph (`ASK` query)
-- Validates token not expired
-- Validates token not already consumed
-- On valid: writes `mak:consumed true`, resets `consecutiveFailures` to 0, sets status `mak:confirmed`, returns a confirmation HTML page ("Your space is live again 🔵") in the map's zine aesthetic (UX-DR16)
-**And** `GET /claim/{token}?action=no`:
-- Same validation steps
-- On valid: marks space `mak:closed`, removes PII contact fields, writes `mak:closedAt`, returns a graceful closure page ("We've marked your space as closed on {date}. Thank you for keeping the map honest.") (UX-DR16)
-**And** a second click on any consumed token returns: "This link has already been used." — no silent failure, no server error
-**And** an expired token returns: "This link expired {N} hours ago — contact your network admin for a new one."
+**Given** the stuck-`seeded` behaviour
+**Then** a failing regression test under `tests/` pins it **before** the fix — asserting the exact wrong state — and survives whoever fixes it
+
+**Given** the Story 3.3 canary
+**Then** it is used to reproduce the stuck-`seeded` state and discriminate between the three hypotheses; the confirmed root cause is documented
+
+**Given** the fix
+**Then** a freshly-fetched space transitions `seeded → confirmed` correctly and the regression test passes
+
+**Dependencies:** Story 3.3 (diagnostic tooling).
 
 ---
 
-### Story 3.4: Coordinator Email Notification with Pre-filled Recovery Link
+### Story 3.5: `core.ttl` + `crosswalk.csv` — Operationalize the Three-Layer Schema
 
-As a coordinator whose space endpoint has gone stale,
-I want to receive an email that tells me exactly what's wrong and gives me a one-click path to fix it,
-So that I can recover my pin without needing to remember what a JSON endpoint is or where to go.
+> **Added 2026-05-16** from the schema-architecture handoff (`mom-schema-architecture-handoff.md`). Belongs to the ingestion pipeline (it formalizes what ingestion maps *to*), so it closes Epic 3 rather than opening Epic 4. Sequenced last in Epic 3; no hard dependency on 3.3/3.4.
+
+As MOM, I want the three-layer schema model (SpaceAPI v15 input → `core:` base → community extension namespaces) operationalized as concrete, dereferenceable artifacts, so that the SpaceAPI→`core:` mapping ingestion already performs is documented, validatable, and ready for a second community.
+
+**Context:** ingestion already maps SpaceAPI v15 fields to MOM predicates (ADR-015), but the `core:` base vocabulary and the cross-namespace overlap rules exist only as prose in the handoff. The handoff names two missing deliverables — `core.ttl` (Layer 2 base schema) and `crosswalk.csv` (overlap-resolution table) — both needed before Article 2 publication. Canonical namespace stays the existing `https://nicolasdb.github.io/mapsofmaking_ontology/ns#` (the handoff's `w3id.org/maps-of-making/` strings are illustrative — the Claude chat that produced the handoff had an incomplete picture).
 
 **Acceptance Criteria:**
 
-**Given** a space transitions to `mak:stale` or `mak:broken` (Story 3.2) and has a space-level contact address in Oxigraph
-**When** the dispatch worker reads `<urn:mak:notifications>` queue
-**Then** it generates a magic link token (Story 3.3), fills the notification template, and dispatches an email containing:
-- Plain-language subject: "Your space [Name] on Maps of Making needs attention"
-- Error summary: what happened and when (last successful fetch date, error category)
-- YES link: "My space is still active — refresh my pin" → `/claim/{token}?action=yes`
-- NO link: "My space has closed — remove it from the map" → `/claim/{token}?action=no`
-- Link expiry notice: "These links expire in 72 hours"
-- Footer: link to the space's public map pin and the network admin contact
-**And** delivery failure retries 3× with progressive backoff (1h, 6h, 24h); after 3 failures, a `mak:escalated` triple is written and the space appears flagged in the admin dashboard (AR-MLNK3)
-**And** if the space has no contact address, the notification is skipped and an admin alert is written instead: "Space {name} is stale but has no contact — manual outreach needed"
-**And** the dispatch action is written to the admin audit log: `{ action: "notification_dispatched", space_uri, reason, timestamp }`
-**And** the `mak:dispatched` triple timestamp prevents re-dispatch within 24h for the same space (prevents flood on repeated failures)
+**Given** the Layer 2 field list in the handoff
+**Then** `core.ttl` exists with at minimum the identity, MOM-operational, and `core:relationships` properties, dereferenceable under the canonical namespace
+
+**Given** the SpaceAPI v15 → MOM mapping ingestion performs
+**Then** `crosswalk.csv` documents each row (SpaceAPI field, `core:` field, `fab:` field, mapping type) with `omt:`/`edu:` rows present but marked `status: draft`
+
+**Given** the permissive-ingestion rule
+**Then** the pipeline is verified to log unrecognised fields as `mom:OntologyGap` triples — never reject — and `validate_crosswalk.py` confirms no extension field redefines a `core:` field
+
+**Dependencies:** none hard. **Not demo-blocking.** `omt:`/`edu:` namespace design is explicitly out of scope (needs community input).
 
 ---
 
@@ -1378,3 +1403,23 @@ So that I can identify spaces that are live right now — not just confirmed at 
 **And** the map renders a 🟢 pulse badge on the confirmed pin (existing `.marker-pulse` CSS animation already in phase-1 stylesheet — activate by adding `open` class)
 **And** the presence handler is a separate thin FastAPI route added to `mak-link-handler` (no new container needed)
 **And** the public map never shows presence for seeded/stale/broken pins — only confirmed spaces can signal open-now
+
+---
+
+## Epic 8: MOM as a Living Space — Mother Sands Broadcast Rig *(parallel, non-blocking; post-demo)*
+
+> **Added 2026-05-16** from the Story 3.3 planning roundtable. **Stub only** — no stories created yet. Design seeds live in `mom_handoff_2026-05-16.md` and `mom_handoff_2026-05-15.md` (Bernard character bible, Mother Sands lore, hermit-crab lifecycle map, `mom_lore.md` skeleton).
+
+Story 3.3 builds Mother Sands as a **diagnostic canary**. This epic gives it its **second identity**: MOM's self-representation on its own map — a meta "broadcast rig" that carries real, purposeful information (MOM's current state, new features, key changelog events, recent real-space activity) wrapped in deliberate sea-fort/pirate-radio lore.
+
+**Scope sketch (post-demo, not on critical path):**
+- Public website at `mom.mapsofmaking.org` (MOM explainer, wiki) — distinct from the SpaceAPI endpoint `mom.mapsofmaking.org/mom_v15status.json`.
+- `mom_lore.md` (repo-as-source, website-as-rendered) — Bernard character bible, Mother Sands concept, hermit-crab lifecycle → MOM mechanics map.
+- Bernard — the hermit-crab lead-admin persona (they/them; "Ron Swanson on a North Sea fort, with notes of *Dredge*"); voice activated gradually via curated changelog entries.
+- Curated changelog / feature "broadcast" in Bernard's voice.
+- Relocation / fort-rotation U2–U7 as ambient narrative (the slow lifecycle demo; the 30–60s `canary-demo-cycle` is the Story 3.3 artifact).
+- Logo-click-to-drawer interaction (zoom to Mother Sands profile rather than open a page) — prototype before enshrining.
+
+**Open product concerns carried here:** disclosed "synthetic reference space" framing (a clean one-liner ships in Story 3.3; fine-tuning is this epic); community contribution governance for Bernard's narration; possible salvage-art monetisation (Phase 3+).
+
+**Depends on:** Story 3.3 (the canary it dresses). Parallel to Epic 5. Not demo-blocking.

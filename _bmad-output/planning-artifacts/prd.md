@@ -381,9 +381,13 @@ Multi-network beyond RFF/VOW; Matrix + Discord bot; 🟢 live-now tier via webho
 - **FR23** No edit UI — coordinators update their data by editing their JSON at the URL
 
 ### Endpoint Health & Ingestion (Phase 2)
-- **FR24** Heartbeat fetch of all registered endpoints (6-hour cadence, configurable). Raw payload stored to disk with timestamp before transformation. If payload unchanged (normalized compare): update timestamp only, skip re-ingestion. If changed: store new snapshot + ingest update into Oxigraph.
-- **FR25** Endpoint freshness lifecycle driven by time since last successful fetch: **confirmed** (recently updated) → **aging** (>1 month, configurable) → **zombie** (>3 months) → **dead** (>6 months). Pin visual states map to this lifecycle. Epic 7 (future): webhook/device ping resets the timer without requiring a file update.
-- **FR25b** Closure logic: JSON self-reports closed OR N consecutive fetch failures → PII removed, space marked closed-at-date, pin retained for historical record
+- **FR24** Heartbeat fetch of all registered endpoints (10-minute cadence, configurable). Raw payload stored to disk with timestamp before transformation. If payload unchanged (normalized compare): update timestamp only, skip re-ingestion. If changed: store new snapshot + ingest update into Oxigraph.
+- **FR25** A space resolves **three orthogonal signal axes** into one public pin (via `transformer.effective_marker()`):
+  - **Endpoint reachability** — driven by HTTP behaviour (status, timeouts, time since last *successful* fetch): `healthy → unresponsive → warning → broken`. A fetch older than `heartbeat_period × multiplier` is itself a warning signal.
+  - **Lifecycle freshness** — driven by time since last *meaningful content change* (not fetch time; `sensors.*` churn does not count): `seeded → confirmed → aging → zombie`, with **two terminal states** — `closed` (operator-declared retirement) and `dead` (auto-inferred after N failed cycles). Both render as a tombstone marker but preserve declared-vs-inferred provenance.
+  - **Open/close** — the real-time `openNow` boolean (`mom:dynamicState`); presentational only.
+  > *Reframed 2026-05-16 (`mom_handoff_2026-05-16.md`). Supersedes the prior flat "freshness lifecycle driven by time since last successful fetch". Epic 7 (parked): webhook/device ping presence layer.*
+- **FR25b** Closure logic: JSON self-reports closed OR N consecutive fetch failures → PII removed, space marked closed-at-date, pin retained for historical record. *(Note: the `closed` token here vs. operator-declared retirement is a vocabulary drift flagged for Story 3.2c.)*
 - **FR26** Diff detection between snapshots flags meaningful changes (normalize before compare — strip ephemeral timestamps, sort arrays to avoid false positives)
 - **FR27** Ingestion failures logged with reason (timeout, 4xx, 5xx, schema invalid); every fetch decision logged (including "no change detected") for pipeline auditability
 - **FR27b** Append-only versioned snapshots — ingested data never overwritten, each fetch stored with timestamp

@@ -168,13 +168,16 @@ find /var/backups/oxigraph -name "*.nq" -mtime +7 -delete
 
 **Pin shape:** Circles only. No shape-based type differentiation for PoC or pilot. Type disambiguation handled by filter panel and bot queries (LOD approach). Shape grammar revisited post-pilot if needed.
 
-**Freshness lifecycle (unclaimed seeds only):**
+**Freshness lifecycle:**
 
 ```
-⚪ seeded → [30d no claim] → aging → [90d] → zombie → [180d] → 💀 dead
+⚪ seeded → confirmed → [aging] → [zombie] → 💀 dead  /  🪦 closed
 ```
 
-Dead seeds: removed from default map view, retained in Oxigraph for admin query and historical record.
+> ⚠ **Superseded — see Story 3.2's three-axis truth model (`epics.md`) and `mom_handoff_2026-05-16.md`.**
+> Lifecycle is no longer "unclaimed seeds only" — the heartbeat drives it for confirmed spaces too. The current model has **three orthogonal axes** resolved into one pin by `transformer.effective_marker()`: endpoint reachability (`healthy/unresponsive/warning/broken`), lifecycle freshness (`seeded/confirmed/aging/zombie` + two terminals), and the open/close boolean. Two terminal lifecycle states: **`closed`** (operator-declared retirement) and **`dead`** (auto-inferred after N failed cycles) — both render as a tombstone marker but preserve provenance.
+
+Dead/closed spaces: removed from default map view, retained in Oxigraph for admin query; significant life-events recorded in the append-only `<urn:mak:public_ledger>` graph.
 
 **Rationale:** Keeps the first-look map clean and trustworthy. Admin layer serves network coordinators who want to identify spaces needing outreach. Shape complexity deferred — filters and bot search solve type disambiguation more elegantly at scale.
 
@@ -200,6 +203,8 @@ Dead seeds: removed from default map view, retained in Oxigraph for admin query 
 ---
 
 ### ADR-006: Freshness Status Model in Oxigraph
+
+> ⚠ **Partially superseded (2026-05-16).** The materialized-not-query-time decision still holds. The flat single-axis lifecycle below is superseded by Story 3.2's **three-axis truth model** (endpoint health / lifecycle freshness / open-close), the `mom:` predicate namespace (not `mak:` — drift flagged for Story 3.2c), and **two terminal states** `closed` (declared) + `dead` (inferred). Heartbeat cadence is 10 min, not 6 h. Authoritative model: `epics.md` Story 3.2 + `mom_handoff_2026-05-16.md`.
 
 **Decision:** Materialized status triples written by a scheduled job. Not computed at query time.
 
@@ -551,6 +556,8 @@ find /var/backups/oxigraph -name "*.nq" -mtime +7 -delete
 | `<urn:mak:status>` | Scheduler job | Materialized status triples |
 | `<urn:mak:presence>` | Webhook handler | Ephemeral open-now signals |
 | `<urn:mak:notifications>` | Heartbeat agent | Pending notification queue |
+| `<urn:mak:canary>` | Canary scenario tools (Story 3.3) | Synthetic "Mother Sands" space — isolated from real-space graphs |
+| `<urn:mak:public_ledger>` | Ledger writer (future epic) | Append-only, immutable, IPFS/IPLD-anchored space life-events (registration, relocation, schema upgrade, `closed`, `dead`). Name + append-only principle locked 2026-05-16; event schema deferred. |
 | `<urn:mak:ontology/iop>` | Init script | IoP ontology (read-only) |
 | `<urn:mak:ontology/mom>` | Init script | MOM vocabulary (read-only) |
 
