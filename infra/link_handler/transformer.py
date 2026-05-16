@@ -821,6 +821,16 @@ async def process_one_space(
         logger.warning("heartbeat JSON parse failed for %s", space_id)
         return "error", False
 
+    # simulatedAge seam: canary payload may override the lifecycle clock for diagnostic testing.
+    # Read from ext_mom.simulatedAge (caller-level injection, classifier stays pure).
+    simulated_age = data.get("ext_mom", {}).get("simulatedAge")
+    if simulated_age is not None:
+        days_since_update = float(simulated_age)
+        lifecycle_state, _lc_reason = classify_lifecycle(days_since_update)
+        if is_closed:
+            lifecycle_state = "closed"
+        logger.info("canary simulatedAge=%s for %s → lifecycle=%s", simulated_age, space_id, lifecycle_state)
+
     endpoint_health, _ = classify_endpoint_health(200, 0, 0)
 
     cls: dict = {}

@@ -114,6 +114,30 @@ WHERE {
       OPTIONAL { ?spaceUri mom:nextUnlock ?nextUnlock }
     }
   }
+  UNION
+  {
+    # Canary space (diagnostic instrument — isolated named graph)
+    GRAPH <urn:mak:canary> {
+      ?spaceUri a mom:Space ;
+        schema:name ?name ;
+        schema:geo [
+          schema:latitude ?latitude ;
+          schema:longitude ?longitude
+        ] .
+      OPTIONAL { ?spaceUri mom:operationalState ?operationalState }
+      OPTIONAL { ?spaceUri mom:endpointHealth ?endpointHealth }
+      OPTIONAL { ?spaceUri schema:url ?website }
+      OPTIONAL { ?spaceUri schema:logo ?logo }
+      OPTIONAL { ?spaceUri mom:endpointUrl ?endpointUrl }
+      OPTIONAL { ?spaceUri mom:lastFetched ?lastFetched }
+      OPTIONAL { ?spaceUri mom:lastUpdated ?lastUpdated }
+      OPTIONAL { ?spaceUri mom:openNow ?openNow }
+      OPTIONAL { ?spaceUri mom:lastOpenChange ?lastOpenChange }
+      OPTIONAL { ?spaceUri mom:source ?source }
+      OPTIONAL { ?spaceUri schema:contactJson ?contactJson }
+      OPTIONAL { ?spaceUri mom:memberOf ?network }
+    }
+  }
 }
 GROUP BY ?spaceUri ?name ?latitude ?longitude ?operationalState ?endpointHealth
          ?geolocationFidelity ?geolocationNote

@@ -15,6 +15,7 @@ The function lives in infra/link_handler/transformer.py to keep one definition.
 """
 import copy
 import json
+import os
 from pathlib import Path
 
 BASELINE_FILE = Path(__file__).parent.parent / "data" / "canary" / "baseline.json"
