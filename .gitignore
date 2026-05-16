@@ -37,3 +37,4 @@ scraped/whatsapp-vulca/WhatsApp Chat with Hi👋VULCA.FRIENDS🚐.txt
 .env copy
 archive.tar.gz
 data/tasks/heartbeat_log.db
+data/tasks/gap_log.txt

@@ -1,6 +1,6 @@
 # Story 3.2c: Lifecycle Vocabulary Drift Fix
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -30,24 +30,24 @@ so that Story 3.3's diagnostic canary tests one coherent model rather than paper
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Fix `mom:operationalState` definition in the ontology (AC: #1, #2, #3)
-  - [ ] Edit `ontology/mom.ttl` `mom:operationalState` `rdfs:comment` (line ~56): enumerate `seeded → confirmed → aging → zombie` plus terminals `closed` / `dead`, plus out-of-lifecycle `error` / `unlinked`
-  - [ ] State in the comment: `closed` = operator/coordinator-declared retirement (authoritative); `dead` = auto-inferred after N failed heartbeat cycles (inferred)
-  - [ ] Add the explicit cross-reference: the real-time open/closed boolean lives on `mom:dynamicState`, not here
-  - [ ] Verify the `mom:dynamicState` comment (line ~49) still reads coherently alongside the new `operationalState` text
-- [ ] Task 2: Align code docstrings/comments (AC: #4, #5)
-  - [ ] Update `classify_lifecycle()` docstring (`transformer.py:133`) — enumerate `seeded | confirmed | aging | zombie | closed | dead`; note `classify_lifecycle` itself only *returns* `confirmed/aging/zombie/dead` (seeded is set at import, closed by the 3.2b closure path) — make that explicit so the docstring is accurate, not just complete
-  - [ ] Scan `transformer.py` for any other lifecycle-state enumeration in comments/docstrings and align it
-  - [ ] Confirm `effective_marker()` (`transformer.py:157`) branches only reference `seeded/closed/dead/zombie/aging` + endpoint `broken` — no value absent from AC#1
-- [ ] Task 3: Audit the `mak:` vs `mom:` prefix drift (AC: #6)
-  - [ ] `grep -rn "mak:operationalState\|mak:dynamicState\|mak:endpointHealth\|mak:lastUpdated" _bmad-output/planning-artifacts/ ontology/ infra/ scripts/`
-  - [ ] Fix clear doc typos to canonical `mom:`; record anything ambiguous as an escalation paragraph in Completion Notes
-- [ ] Task 4: Reconcile the `closed` token (AC: #7)
-  - [ ] Re-read Story 3.2b's `_build_pii_strip_sparql` / `is_closed` path (`transformer.py:173`, ~717–878) against the roundtable's `closed` definition
-  - [ ] Confirm both paths legitimately resolve to `operationalState = "closed"`; flag a genuine fork for Nicolas if found
-- [ ] Task 5: Verify no regression (AC: #8)
-  - [ ] `source venv/bin/activate && pytest infra/link_handler/test_transformer.py` — all pass
-  - [ ] If `mom.ttl` is reloaded into Oxigraph as part of any local check, confirm it parses (Turtle syntax intact)
+- [x] Task 1: Fix `mom:operationalState` definition in the ontology (AC: #1, #2, #3)
+  - [x] Edit `ontology/mom.ttl` `mom:operationalState` `rdfs:comment` (line ~56): enumerate `seeded → confirmed → aging → zombie` plus terminals `closed` / `dead`, plus out-of-lifecycle `error` / `unlinked`
+  - [x] State in the comment: `closed` = operator/coordinator-declared retirement (authoritative); `dead` = auto-inferred after N failed heartbeat cycles (inferred)
+  - [x] Add the explicit cross-reference: the real-time open/closed boolean lives on `mom:dynamicState`, not here
+  - [x] Verify the `mom:dynamicState` comment (line ~49) still reads coherently alongside the new `operationalState` text
+- [x] Task 2: Align code docstrings/comments (AC: #4, #5)
+  - [x] Update `classify_lifecycle()` docstring (`transformer.py:133`) — enumerate `seeded | confirmed | aging | zombie | closed | dead`; note `classify_lifecycle` itself only *returns* `confirmed/aging/zombie/dead` (seeded is set at import, closed by the 3.2b closure path) — make that explicit so the docstring is accurate, not just complete
+  - [x] Scan `transformer.py` for any other lifecycle-state enumeration in comments/docstrings and align it
+  - [x] Confirm `effective_marker()` (`transformer.py:157`) branches only reference `seeded/closed/dead/zombie/aging` + endpoint `broken` — no value absent from AC#1
+- [x] Task 3: Audit the `mak:` vs `mom:` prefix drift (AC: #6)
+  - [x] `grep -rn "mak:operationalState\|mak:dynamicState\|mak:endpointHealth\|mak:lastUpdated" _bmad-output/planning-artifacts/ ontology/ infra/ scripts/`
+  - [x] Fix clear doc typos to canonical `mom:`; record anything ambiguous as an escalation paragraph in Completion Notes
+- [x] Task 4: Reconcile the `closed` token (AC: #7)
+  - [x] Re-read Story 3.2b's `_build_pii_strip_sparql` / `is_closed` path (`transformer.py:173`, ~717–878) against the roundtable's `closed` definition
+  - [x] Confirm both paths legitimately resolve to `operationalState = "closed"`; flag a genuine fork for Nicolas if found
+- [x] Task 5: Verify no regression (AC: #8)
+  - [x] `source venv/bin/activate && pytest infra/link_handler/test_transformer.py` — all pass
+  - [x] If `mom.ttl` is reloaded into Oxigraph as part of any local check, confirm it parses (Turtle syntax intact)
 
 ## Dev Notes
 
@@ -107,9 +107,59 @@ Lifecycle (Axis B / `mom:operationalState`): `seeded` → `confirmed` → `aging
 ## Dev Agent Record
 
 ### Agent Model Used
+Claude Haiku 4.5
 
 ### Debug Log References
+- Transformer test suite: 83 tests all pass (100% success rate)
+- Turtle syntax validation: 167 triples loaded successfully from mom.ttl
+- grep audit for mak:/mom: prefixes: fixed 5 instances in architecture.md and epics.md
 
-### Completion Notes List
+### Completion Notes
+
+**Summary:** All 8 acceptance criteria satisfied. Vocabulary now consistent across ontology, code, and planning docs.
+
+**AC #1-3 (Ontology):** `mom:operationalState` comment now enumerates all 8 values: seeded → confirmed → aging → zombie, with two terminals (closed = operator-declared; dead = auto-inferred), plus out-of-lifecycle (error, unlinked). Explicit cross-reference to `mom:dynamicState` added to distinguish the real-time boolean axis.
+
+**AC #4-5 (Code docstrings):** `classify_lifecycle()` docstring updated to clarify what it returns vs. full vocabulary. `effective_marker()` verified — all 5 lifecycle branches (seeded, closed, dead, zombie, aging) now ontology-defined. No stale branches remain.
+
+**AC #6 (Prefix audit):** Fixed 5 clear doc typos:
+- `architecture.md`: `mak:operationalState`, `mak:visibility`, `mak:lastChecked`, `mak:consecutiveFailures` → `mom:` equivalents
+- `epics.md`: `mak:operationalState` in AR-DATA2 → `mom:operationalState`
+- Remaining `mak:seeded`, `mak:confirmed` etc. in planning docs flagged as ambiguous design question (see escalation below)
+
+**AC #7 (Closed token):** Verified both paths write `mom:operationalState = "closed"`:
+1. Story 3.2b auto-close: after N consecutive closed cycles (threshold=6, configurable)
+2. Operator-declared: via `_build_pii_strip_sparql()` called manually or by policy
+
+Both paths are valid and intentional. **Semantic note for Nicolas:** The two paths represent different causation (system-inferred vs. operator-declared), but share the same token. This is pragmatically sound but worth considering whether a sub-distinction would aid future debugging (e.g., tracking closed-auto vs. closed-manual in logs).
+
+**AC #8 (Regression):** All 83 transformer tests pass. Turtle syntax valid (167 triples).
+
+**Ontology sync pending:** The changes to `ontology/mom.ttl` require manual sync to the separate `github.com/nicolasdb/mapsofmaking_ontology` repo. This story modifies the working copy only.
+
+**AC #6 ambiguity — resolved (2026-05-16):** The `mak:seeded`, `mak:confirmed` etc. IRI-style values seen in earlier planning docs were a deferred **5-star LOD** design intent: state values as dereferenceable `skos:Concept` resources linkable to external vocabularies. The current implementation deliberately uses `xsd:string` literals (`"confirmed"`, `"seeded"`, etc.) — a pragmatic **4-star LOD** choice suited to the demo scope. Both planning artifacts now carry a LOD design note explaining this decision and guarding against reintroduction. The upgrade path (mint state IRIs as SKOS concepts in `mom.ttl`) remains valid when cross-vocabulary alignment becomes a goal.
 
 ### File List
+
+| File | Change |
+|---|---|
+| `ontology/mom.ttl` | Updated `mom:operationalState` rdfs:comment (line 53–58): added `closed` terminal state, terminal-state semantics, cross-reference to `mom:dynamicState` |
+| `infra/link_handler/transformer.py` | Updated `classify_lifecycle()` docstring (line 130–139): clarified return values vs. full vocabulary, cross-reference to ontology |
+| `_bmad-output/planning-artifacts/architecture.md` | Fixed 5 instances: `mak:operationalState`, `mak:visibility`, `mak:lastChecked`, `mak:consecutiveFailures` → `mom:` equivalents; updated status lifecycle table to use string values ("confirmed" instead of `mak:confirmed`) |
+| `_bmad-output/planning-artifacts/epics.md` | Fixed AR-DATA2: `mak:visibility`, `mak:operationalState` → `mom:` equivalents |
+| `_bmad-output/implementation-artifacts/sprint-status.yaml` | Updated story status: ready-for-dev → in-progress → review |
+
+### Review Findings
+
+- [x] [Review][Patch] `epics.md:1142` contradicts AC#7 — old note says `mak:closed` paths "must not share one token"; AC#7 resolved the opposite (both paths legitimately use `"closed"`). Updated line to reflect the canonical decision. [`_bmad-output/planning-artifacts/epics.md:1142`]
+- [x] [Review][Patch] `mom:consumed "true"` — undefined predicate introduced by overzealous mak: → mom: conversion [`_bmad-output/planning-artifacts/epics.md:898`] — reverted to TBD note with AC#6 escalation flagged → Story 4b.1.
+
+## Change Log
+
+| Date | Change | Severity |
+|---|---|---|
+| 2026-05-16 | Story implementation complete: vocabulary aligned across ontology, code, planning docs | Major |
+| 2026-05-16 | Added `closed` terminal state to `mom:operationalState` enumeration | Major |
+| 2026-05-16 | Fixed 5 `mak:` → `mom:` prefix typos in planning artifacts | Medium |
+| 2026-05-16 | Clarified lifecycle semantics: `closed` (operator-declared) vs `dead` (auto-inferred) | Minor |
+| 2026-05-16 | Resolved LOD ambiguity: string literals confirmed as deliberate 4-star choice; LOD design note added to both planning artifacts | Medium |

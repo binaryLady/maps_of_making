@@ -53,7 +53,7 @@ mom:dynamicState
 mom:operationalState
   a owl:DatatypeProperty ;
   rdfs:label "Operational State" ;
-  rdfs:comment "Lifecycle or participation state of a space. Lifecycle (in order): 'seeded' (imported, never verified ⚪) → 'confirmed' (heartbeat responded 🔵) → 'aging' (going quiet ⚠️) → 'zombie' (unreachable 🧟) → 'dead' (permanently closed 🪦). Out-of-lifecycle: 'error' (endpoint URL broken — red ×, independent of freshness cycle); 'unlinked' (space exists but not connected to any network — present but independent, shown as dashed circle). From ADR-006." ;
+  rdfs:comment "Lifecycle or participation state of a space. Main lifecycle (in order): 'seeded' (imported, never verified ⚪) → 'confirmed' (heartbeat responded 🔵) → 'aging' (going quiet ⚠️) → 'zombie' (unreachable 🧟). Terminal states: 'closed' (operator/coordinator-declared retirement, authoritative 🪦) and 'dead' (auto-inferred after N failed heartbeat cycles, inferred 🪦). Out-of-lifecycle: 'error' (endpoint URL broken — red ×, independent of freshness cycle); 'unlinked' (space exists but not connected to any network — present but independent, shown as dashed circle). Real-time open/closed boolean belongs to mom:dynamicState, not this property — they are distinct axes. From ADR-006." ;
   rdfs:domain mom:Space ;
   rdfs:range xsd:string .
 

@@ -85,7 +85,7 @@ core:description   a owl:DatatypeProperty ; rdfs:range xsd:string .
 
 # MOM operational fields (not in SpaceAPI)
 core:endpointUrl      a owl:DatatypeProperty ; rdfs:range xsd:anyURI .
-core:freshnessStatus  a owl:ObjectProperty .   # mak:confirmed | mak:aging | mak:zombie | mak:dead
+core:freshnessStatus  a owl:ObjectProperty .   # SUPERSEDED — 5-star LOD design (IRI values); current impl uses mom:operationalState as xsd:string ("confirmed"|"aging"|"zombie"|"dead"|"closed"|"seeded"). See ADR-006 note in architecture.md.
 core:lastFetched      a owl:DatatypeProperty ; rdfs:range xsd:dateTime .
 core:sourceLabel      a owl:DatatypeProperty ; rdfs:range xsd:string .   # "VOW network", "self-registered"
 core:communities      a owl:ObjectProperty .   # links to community namespace IRIs this node participates in

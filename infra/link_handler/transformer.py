@@ -130,8 +130,11 @@ def classify_endpoint_health(
 def classify_lifecycle(days_since_last_update: float) -> tuple[str, str]:
     """Classify space content freshness into a lifecycle state.
 
-    Returns (state, reason). States: confirmed | aging | zombie | dead.
-    Negative values (clock-skew) are clamped to 0. Thresholds from config.yaml.
+    Returns (state, reason) where state is one of: confirmed | aging | zombie | dead.
+    Full lifecycle vocabulary: seeded (set at import) → confirmed | aging | zombie →
+    closed (via Story 3.2b closure path) or dead (auto-inferred). See mom:operationalState
+    for complete enumeration. Negative values (clock-skew) are clamped to 0.
+    Thresholds from config.yaml.
     """
     if days_since_last_update < 0:
         logger.warning(

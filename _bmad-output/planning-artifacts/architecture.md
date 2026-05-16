@@ -204,17 +204,19 @@ Dead/closed spaces: removed from default map view, retained in Oxigraph for admi
 
 ### ADR-006: Freshness Status Model in Oxigraph
 
-> ⚠ **Partially superseded (2026-05-16).** The materialized-not-query-time decision still holds. The flat single-axis lifecycle below is superseded by Story 3.2's **three-axis truth model** (endpoint health / lifecycle freshness / open-close), the `mom:` predicate namespace (not `mak:` — drift flagged for Story 3.2c), and **two terminal states** `closed` (declared) + `dead` (inferred). Heartbeat cadence is 10 min, not 6 h. Authoritative model: `epics.md` Story 3.2 + `mom_handoff_2026-05-16.md`.
+> ⚠ **Partially superseded (2026-05-16).** The materialized-not-query-time decision still holds. The flat single-axis lifecycle below is superseded by Story 3.2's **three-axis truth model** (endpoint health / lifecycle freshness / open-close), the `mom:` predicate namespace (not `mak:` — drift fixed in Story 3.2c), and **two terminal states** `closed` (declared) + `dead` (inferred). Heartbeat cadence is 10 min, not 6 h. Authoritative model: `epics.md` Story 3.2 + `mom_handoff_2026-05-16.md`.
+>
+> **LOD design note (Story 3.2c, 2026-05-16):** Lifecycle state values are `xsd:string` literals (`"confirmed"`, `"seeded"`, etc.) — a deliberate 4-star LOD choice for current scope. Earlier drafts used `mak:confirmed`, `mak:seeded` etc. as apparent RDF IRIs; this reflected a deferred 5-star LOD upgrade path (state values as dereferenceable `skos:Concept` resources). That upgrade is out of scope for the demo. Do not reintroduce IRI-style state values without first minting those concepts in `mom.ttl`.
 
 **Decision:** Materialized status triples written by a scheduled job. Not computed at query time.
 
 **Status graph structure:**
 ```turtle
-<seed:xyz> mak:healthStatus [
-  mak:visibility "public" ;          # ⚪🔵🟢🔴 — always rendered
-  mak:operationalState "aging" ;     # admin toggle layer
-  mak:lastChecked "2026-04-22T..."^^xsd:dateTime ;
-  mak:consecutiveFailures 3 ;
+<seed:xyz> mom:healthStatus [
+  mom:visibility "public" ;          # ⚪🔵🟢🔴 — always rendered
+  mom:operationalState "aging" ;     # admin toggle layer
+  mom:lastChecked "2026-04-22T..."^^xsd:dateTime ;
+  mom:consecutiveFailures 3 ;
 ] .
 ```
 
@@ -222,18 +224,18 @@ Dead/closed spaces: removed from default map view, retained in Oxigraph for admi
 
 | Status | Written by | Trigger |
 |---|---|---|
-| `mak:seeded` | Seed ingest | moms_seed.json import |
-| `mak:confirmed` | Heartbeat agent | First successful JSON-LD fetch |
-| `mak:aging` | Scheduler | 30d no fetch |
-| `mak:zombie` | Scheduler | 90d no fetch |
-| `mak:dead` | Scheduler | 180d no fetch |
-| `mak:error` | Heartbeat agent | HTTP error / timeout |
+| `"seeded"` | Seed ingest | moms_seed.json import |
+| `"confirmed"` | Heartbeat agent | First successful JSON-LD fetch |
+| `"aging"` | Scheduler | 30d no fetch |
+| `"zombie"` | Scheduler | 90d no fetch |
+| `"dead"` | Scheduler | 180d no fetch |
+| `"error"` | Heartbeat agent | HTTP error / timeout |
 
-**Map queries:** Base query filters on `mak:visibility = "public"`. Admin toggle fires a second SPARQL query overlaying `mak:operationalState` for aging/zombie/dead — no page reload, no separate endpoint.
+**Map queries:** Base query filters on `mom:visibility = "public"`. Admin toggle fires a second SPARQL query overlaying `mom:operationalState` for aging/zombie/dead — no page reload, no separate endpoint.
 
 **Scheduler:** Single cron job every 6h, Python script against Oxigraph SPARQL update endpoint. Idempotent — only writes on status change. No new infrastructure.
 
-**Seed→claim transition:** On first successful fetch of a self-hosted JSON-LD, heartbeat agent overwrites seed triples in the space's named graph, sets `mak:confirmed`. Seed triples tagged `mak:source mak:seed` — preserved one cycle as diff baseline, then dropped.
+**Seed→claim transition:** On first successful fetch of a self-hosted JSON-LD, heartbeat agent overwrites seed triples in the space's named graph, sets `mom:operationalState` to "confirmed". Seed triples tagged `mom:source` as "seed" — preserved one cycle as diff baseline, then dropped.
 
 ---
 
@@ -936,7 +938,7 @@ tasks/ingest.py — STAGE 2: TRANSFORM  (ADR-015)
 tasks/heartbeat.py — STAGE 3: INGEST
   → SPARQL UPDATE → <urn:mak:space/{id}> (current triples)
   → SPARQL UPDATE → <urn:mak:space/{id}/{date}> (append-only snapshot)
-  → SPARQL UPDATE → <urn:mak:status> (mak:confirmed + mak:lastChecked)
+  → SPARQL UPDATE → <urn:mak:status> (mom:operationalState = "confirmed" + mom:confirmedAt)
   → log decision: "ingested" with diff summary
 
   ↓ (if stale/error threshold crossed)
@@ -947,7 +949,7 @@ tasks/notify_dispatch.py
   ↓ (on magic link YES click)
 link_handler/main.py
   → validate token (single-use, 72h TTL)
-  → SPARQL UPDATE reset timer → mak:confirmed
+  → SPARQL UPDATE reset timer → mom:operationalState "confirmed"
 
 User query in Discord channel
   ↓
@@ -972,6 +974,6 @@ admin.js → FastAPI /admin/api/status
 Network coordinator opens public map
   ↓
 web/app.js → Tweaks panel health map toggle
-  → SELECT on mak:operationalState aging/zombie/dead (overlay layer)
+  → SELECT on mom:operationalState aging/zombie/dead (overlay layer)
   → pin colour reflects freshness lifecycle — no auth, no admin access
 ```

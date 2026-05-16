@@ -166,7 +166,7 @@ Phase 1 (map SPA, deployed at mapofmaking.debarquin.eu) is shipped. The epic/sto
 
 **Data Architecture (ADR-006, ADR-007, core decisions):**
 - AR-DATA1: Oxigraph named graph topology — `<urn:mak:space/{id}>` (current), `<urn:mak:space/{id}/{date}>` (snapshots, append-only), `<urn:mak:status>` (materialized freshness), `<urn:mak:presence>` (webhook open-now), `<urn:mak:notifications>` (queue), `<urn:mak:ontology/iop>`, `<urn:mak:ontology/mom>`.
-- AR-DATA2: Freshness materialization — scheduler writes status triples (confirmed/aging/zombie/dead/error) on change; map queries filter `mak:visibility`; admin toggle overlays `mak:operationalState`. Lifecycle 30d/90d/180d configurable.
+- AR-DATA2: Freshness materialization — scheduler writes status triples (confirmed/aging/zombie/dead/error) on change; map queries filter `mom:visibility`; admin toggle overlays `mom:operationalState`. Lifecycle 30d/90d/180d configurable. **LOD note:** state values are `xsd:string` literals (`"confirmed"`, `"seeded"`, etc.) — deliberate 4-star LOD choice. Earlier drafts used `mak:confirmed` etc. as RDF IRIs (5-star upgrade path, deferred). Do not reintroduce IRI-style values without first defining them as `skos:Concept` entries in `mom.ttl`.
 - AR-DATA3: Presence graph reserved now for "open-now" webhook; handler implemented late Phase 2.
 - AR-DATA4: MOM ontology align-and-extend — Schema.org base + IoP `skos:closeMatch` + `mom:` extensions. Canonical IRI `https://w3id.org/maps-of-making/` → GitHub Pages.
 - AR-DATA5: IoP ontology loaded at harness startup into dedicated named graph; ~15–20% subset extracted via CONSTRUCT, cached in memory, injected into every NL→SPARQL prompt. `RELOAD_ONTOLOGY=1` forces reload.
@@ -443,8 +443,8 @@ So that the pilot map has credible density in Germany and coordinators can recog
 - `schema:url` ← `website`
 - `mom:profileUrl` ← `profileUrl` (provenance back to VOW directory)
 - `schema:knowsAbout` ← categories translated via `scripts/category_map.yaml` (e.g. `Holz` → `wood`, `Elektronik` → `electronics`, `3D-Druck` → `3d-printing`)
-- `mom:source: mak:scraped-vow`
-- `mom:freshnessStatus: mak:seeded`
+- `mom:source: "scraped-vow"`
+- `mom:operationalState: "seeded"`
 **And** `scripts/category_map.yaml` exists mapping all unique German category strings in the source to canonical English tags; unmapped categories are logged as warnings and included verbatim (never silently dropped)
 **And** entries that fail geocoding (address not found, Nominatim returns no result) are written to `web/data/moms_seed_geocode_failures.json` for manual review — not silently dropped from the output
 **And** the script is idempotent: re-running it overwrites `moms_seed.json` cleanly
@@ -482,8 +482,8 @@ So that the map shows ⚪ pins for 500+ German spaces and the admin dashboard sh
 
 **Given** Oxigraph is running (Story 1.3), ontologies are loaded (Story 1.4), and both `moms_seed.json` + `rff_mockup.json` exist
 **When** `python scripts/seed_import.py` is run
-**Then** it converts each entry in `moms_seed.json` to RDF triples and inserts them into `<urn:mak:space/{id}>` named graphs with `mom:source mak:scraped-vow` and `mom:freshnessStatus mak:seeded`
-**And** it converts each entry in `rff_mockup.json` to RDF triples and inserts them into `<urn:mak:mock/rff-health>` named graph with `mom:source mak:mock-rff` and the appropriate health state triples
+**Then** it converts each entry in `moms_seed.json` to RDF triples and inserts them into `<urn:mak:space/{id}>` named graphs with `mom:source "scraped-vow"` and `mom:operationalState "seeded"`
+**And** it converts each entry in `rff_mockup.json` to RDF triples and inserts them into `<urn:mak:mock/rff-health>` named graph with `mom:source "mock-rff"` and the appropriate health state triples
 **And** the status scheduler job (`<urn:mak:status>`) is updated with materialized status triples for all imported spaces
 **And** after import, running `python scripts/materialize_geojson.py` (Story 1.5) produces a `spaces.geojson` that includes all VOW spaces as ⚪ seeded pins visible on the map
 **And** the script logs a summary on completion: `{n} VOW spaces loaded`, `{n} RFF mockup spaces loaded`, `{n} geocode failures skipped`
@@ -895,7 +895,7 @@ So that recovery requires no login, no form, and no context-switching — just o
 - Validates token exists in Oxigraph (`ASK` query)
 - Validates token not expired
 - Validates token not already consumed
-- On valid: writes `mak:consumed true`, resets timer, sets status `mak:confirmed`, returns a confirmation HTML page ("Your space is live again 🔵")
+- On valid: writes token-consumed flag (predicate TBD — `mak:consumed` vs `mom:consumed` flagged as AC#6 ambiguity → Story 4b.1 to resolve), resets timer, sets `mom:operationalState "confirmed"`, returns a confirmation HTML page ("Your space is live again 🔵")
 **And** `GET /claim/{token}?action=no`:
 - Same validation steps
 - On valid: marks space `mak:closed`, removes PII contact fields, writes `mak:closedAt`, returns a graceful closure page
@@ -914,7 +914,7 @@ So that I can recover my pin without needing to remember what a JSON endpoint is
 
 **Acceptance Criteria:**
 
-**Given** a space transitions to `mak:aging` or `mak:broken` (Story 3.2) and has a space-level contact address in Oxigraph
+**Given** a space transitions to `mom:operationalState "aging"` or `mom:endpointHealth "broken"` (Story 3.2) and has a space-level contact address in Oxigraph
 **When** the dispatch worker reads `<urn:mak:notifications>` queue
 **Then** it generates a magic link token (Story 4b.1), fills the notification template, and dispatches an email containing:
 - Plain-language subject: "Your space [Name] on Maps of Making needs attention"
@@ -1059,7 +1059,7 @@ So that the boundary between "what the space published" and "what we store" is a
 
 **Acceptance Criteria:**
 
-**Given** a registered endpoint URL exists in Oxigraph with `mak:confirmed` or `mak:seeded` status
+**Given** a registered endpoint URL exists in Oxigraph with `mom:operationalState` of `"confirmed"` or `"seeded"`
 **When** `tasks/heartbeat.py` fetches the endpoint
 **Then** the raw JSON response is written to `/data/snapshots/{space_id}/latest.json` immediately on receipt, before any parsing or transformation (this is the Zone 3 source and Epic 4 inspection panel source)
 **And** a fetch timestamp is written alongside: `/data/snapshots/{space_id}/meta.json` with `{ fetched_at, http_status, etag, endpoint_url }`
@@ -1091,7 +1091,7 @@ So that I can force an immediate update after editing my JSON without waiting fo
 
 **Acceptance Criteria:**
 
-**Given** Oxigraph contains at least one space with a registered endpoint URL and `mak:confirmed` status
+**Given** Oxigraph contains at least one space with a registered endpoint URL and `mom:operationalState "confirmed"`
 **When** the heartbeat scheduler fires (Nanobot CronService every 6h, configurable via `config.yaml`)
 **Then** `tasks/heartbeat.py` is invoked for each confirmed space URI in sequence
 **And** each fetch uses `If-None-Match` (ETag) and `If-Modified-Since` headers if the previous response provided them — only pulls full payload on actual change (NFR-R1)
@@ -1139,7 +1139,7 @@ As MOM, I want the lifecycle vocabulary consistent across the ontology, the tran
 
 **Drift flagged for this story to resolve or escalate to Nicolas:**
 - The `mak:` vs `mom:` predicate prefix inconsistency across `epics.md` / `architecture.md` / `mom.ttl` (e.g. `mak:operationalState` vs `mom:operationalState`).
-- Story 3.2b's `mak:closed` (auto-applied after N closed-state cycles + PII strip) vs the roundtable's `closed` = operator-declared retirement — these are different events and must not share one token.
+- Story 3.2b's `mak:closed` (auto-applied after N closed-state cycles + PII strip) vs the roundtable's `closed` = operator-declared retirement — **resolved in Story 3.2c (AC#7):** both paths legitimately write `mom:operationalState "closed"`; they differ in causation (system-inferred vs. operator-declared) but share the token intentionally. If sub-distinction is needed in future, track via logs rather than a new state value.
 
 **Dependencies:** none (pure cleanup). **Blocks Story 3.3.**
 
