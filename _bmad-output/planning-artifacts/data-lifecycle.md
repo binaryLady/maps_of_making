@@ -23,7 +23,7 @@ flowchart TD
     end
 
     served -->|make endpoint · rsync| vps_endpoint
-    served -->|python scripts/load_canary.py| ox_canary
+    served -->|python scripts/load_canary.py\nmanual bootstrap only| ox_canary
 
     subgraph registration ["Coordinator registration (Story 2.1)"]
         reg_url["POST /api/register-url\nSpaceAPI or JSON-LD URL"]
@@ -31,24 +31,27 @@ flowchart TD
         reg_url --> pydantic
     end
 
-    subgraph heartbeat_loop ["Heartbeat loop (Epic 3)"]
+    subgraph heartbeat_loop ["Heartbeat loop (Epic 3 · routing: Story 3.5)"]
         scheduler["APScheduler 10 min\nPOST /api/heartbeat/run"]
         fetch["fetch endpointUrl\nconditional GET ETag"]
-        transformer["transformer.py\nSpaceAPI → RDF triples"]
-        scheduler --> fetch --> transformer
+        router{"ext_mom.canary\ntrue / false·missing"}
+        scheduler --> fetch --> router
     end
 
-    fetch -.->|reads endpointUrl\nfrom urn:mak:space| ox_space
+    fetch -.->|reads endpointUrl\nfrom Oxigraph| ox_space
+    fetch -.->|reads endpointUrl\nfrom Oxigraph - Story 3.5| ox_canary
+
+    router -->|true → Story 3.5\nbuild_canary_sparql| ox_canary
+    router -->|false · missing\ntransformer.py| ox_space
 
     subgraph oxigraph ["Oxigraph named graphs"]
         ox_onto["urn:mak:ontology/mom\nurn:mak:ontology/iop\nload_ontology.sh"]
-        ox_canary["urn:mak:canary\nMother Sands diagnostic\nload_canary.py · DROP+INSERT"]
+        ox_canary["urn:mak:canary\nMother Sands diagnostic\nDROP+INSERT"]
         ox_space["urn:mak:space/{slug}\nregistered spaces\nheartbeat · DROP+INSERT"]
         ox_ledger["urn:mak:public_ledger\nreserved · TBD IPFS-IPLD\nappend-only · never DROP"]
     end
 
     pydantic -->|INSERT| ox_space
-    transformer -->|DROP+INSERT| ox_space
 
     subgraph materialization ["Materialization"]
         sparql_select["SPARQL SELECT\nUNION both branches\nmain.py · materialize_geojson.py"]
@@ -87,7 +90,9 @@ python scripts/load_canary.py   →  syncs urn:mak:canary from served file
 make c-report           →  coherence check: endpoint · heartbeat_log · Oxigraph · GeoJSON
 ```
 
-> **Note:** The heartbeat loop processes `urn:mak:space/*` only. The canary graph (`urn:mak:canary`) is updated exclusively via `load_canary.py`. This is intentional — the canary is a controlled diagnostic instrument, not a live-fetched endpoint.
+> **Current state (3.4b):** The heartbeat loop processes `urn:mak:space/*` only. `urn:mak:canary` is updated manually via `load_canary.py` (bootstrap / scenario sync). Axis B and C are exercised. Axis A (endpoint reachability) is not yet live.
+>
+> **Intended state (Story 3.5):** The heartbeat also holds `mom:endpointUrl` for `urn:mak:canary`. On fetch, if the returned JSON contains `ext_mom.canary: true`, the heartbeat routes to `build_canary_sparql()` → `urn:mak:canary`. If false or missing, it routes to `transformer.py` → `urn:mak:space/{slug}`. This makes Axis A live and closes the coherence loop. The same routing pattern is reserved for `urn:mak:public_ledger` (different write contract — append-only, never DROP).
 
 ---
 
@@ -95,8 +100,10 @@ make c-report           →  coherence check: endpoint · heartbeat_log · Oxigr
 
 | Item | Target |
 |---|---|
+| Heartbeat routing on `ext_mom.canary` → `urn:mak:canary` (Axis A live) | Story 3.5 |
 | Three-layer schema formalization (SpaceAPI core / mom: extended / community) | Story 3.5 |
 | Heartbeat transformer rewrite on clean schema | Story 3.5 |
 | EU-spaces reintroduction (20 filtered from SpaceAPI directory) | Story 3.5+ |
+| Heartbeat routing on `ext_mom.public_ledger` → append-only write | Post-3.5 |
 | `urn:mak:public_ledger` minting (IPFS-IPLD dag-json) | Epic 4+ |
 | Full SpaceAPI directory (~244 spaces) | Post-pilot |
