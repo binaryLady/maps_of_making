@@ -5,7 +5,7 @@ import re
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Optional, List
+from typing import Any, Optional, List, Union
 
 import httpx
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -222,7 +222,7 @@ class SpaceAPISchema(BaseModel):
     plain_opening_hours: Optional[str] = Field(None, alias="opening_hours")  # SpaceAPI v14 flat key
     description: Optional[str] = Field(None, alias="schema:description")
     logo: Optional[str] = None
-    api_compatibility: Optional[List[str]] = None
+    api_compatibility: Optional[Union[List[str], str]] = None
     contact: Optional[dict] = None
     # Full SpaceAPI v14 tier
     state: Optional[Any] = None  # SpaceAPI v14 `state` may be a string ("open"/"closed"/"unknown") or an object {open: bool, lastchange: int, message: str, ...}. Accept either; classify_subset only checks truthiness.

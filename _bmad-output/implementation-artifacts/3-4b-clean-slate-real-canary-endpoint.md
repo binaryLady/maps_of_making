@@ -82,16 +82,20 @@ The 3.x bug hunt (Stories 3.2b, 3.2c, 3.3, 3.4) identified and fixed three real 
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1: Wipe Oxigraph and verify clean state**
-  - [ ] Run `make reset`
-  - [ ] Query Oxigraph: confirm only ontology + canary graphs remain
-  - [ ] Re-load ontology if `make reset` wipes it (check what reset does)
+- [x] **Task 1: Wipe Oxigraph and verify clean state**
+  - [x] Run `make reset` (manual podman compose down, data wipe)
+  - [x] Query Oxigraph: confirm only ontology + canary graphs remain (3 graphs, 184 triples, no bulk space/*)
+  - [x] Load ontology (scripts/load_ontology.sh: mom + iop graphs)
+  - [x] Load Mother Sands canary via new clean skeleton loader (load_canary.py)
+  - [x] AC 1 satisfied: `urn:mak:canary` + `urn:mak:ontology/{mom,iop}`
 
-- [ ] **Task 2: Archive bulk seed data**
-  - [ ] Create `data/archive/` directory
-  - [ ] Move `data/moms_seed.json`, `data/rff_mockup.json`, and any other bulk seed files
-  - [ ] Add deprecation header to `infra/link_handler/seed_import.py`
-  - [ ] Update `.gitignore` if needed
+- [x] **Task 2: Archive bulk seed data**
+  - [x] Created `data/archive/` directory
+  - [x] Moved `web/data/moms_seed.json`, `rff_mockup.json` → `data/archive/`
+  - [x] Added deprecation header to `scripts/seed_import.py` + archive location note
+  - [x] Removed `seed` from `make devdeploy` (Story 3.4b: no re-seeding on reset)
+  - [x] Marked `make seed` as deprecated with helpful error + archive pointer
+  - [x] Reorganized test suite: archived deprecated tests, marked heartbeat/transformer as @pytest.mark.legacy
 
 - [ ] **Task 3: Publish canary JSON to VPS (`make endpoint`)**
   - [ ] Add bind-mount in `docker-compose.dev.yml`: `web/canary/` → `/var/www/mapsofmaking/canary/`

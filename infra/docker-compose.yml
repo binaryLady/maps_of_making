@@ -16,6 +16,7 @@ services:
     volumes:
       - ../web:/var/www/mapsofmaking:ro
       - ../web/data:/var/www/mapsofmaking/data
+      - ../web/canary:/var/www/mapsofmaking/canary
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ../data/logs/nginx:/var/log/nginx
       - ./nginx/.htpasswd:/etc/nginx/.htpasswd:ro

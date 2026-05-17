@@ -28,7 +28,7 @@ from pathlib import Path
 PORT = int(os.environ.get("PORT", "9191"))
 MODE = os.environ.get("MODE", "ok")
 
-SERVED_FILE = Path(__file__).parent / "served.json"
+SERVED_FILE = Path(__file__).parent.parent.parent / "web" / "canary" / "mother-sands.json"
 BASELINE_FILE = Path(__file__).parent / "baseline.json"
 
 

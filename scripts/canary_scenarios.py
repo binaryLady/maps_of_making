@@ -245,6 +245,7 @@ def apply_scenario(name: str, served_path: Path, db_path: str | None = None) -> 
         os.fsync(tmp.fileno())
         tmp_path = tmp.name
 
+    os.chmod(tmp_path, 0o644)   # NamedTemporaryFile defaults to 600; nginx needs world-read
     os.rename(tmp_path, served_path)
 
     # Invalidate ETag/Last-Modified in heartbeat_log.db so next fetch is not served a stale 304
@@ -276,7 +277,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     name = sys.argv[1]
-    served = Path(__file__).parent.parent / "data" / "canary" / "served.json"
+    served = Path(__file__).parent.parent / "web" / "canary" / "mother-sands.json"
     default_db = str(Path(__file__).parent.parent / "data" / "tasks" / "heartbeat_log.db")
     db = os.environ.get("HEARTBEAT_DB_PATH", default_db)
     apply_scenario(name, served, db_path=db if Path(db).exists() else None)

@@ -8,7 +8,7 @@ formalize into the three-layer schema (SpaceAPI v15 core / mom: extended /
 community add-ons).
 
 What it does:
-  1. Read data/canary/served.json (SpaceAPI document).
+  1. Read web/canary/mother-sands.json (SpaceAPI document).
   2. Map it to exactly the triples the map's materialization query reads
      (see _SPARQL_SELECT, urn:mak:canary UNION block in main.py).
   3. DROP + INSERT the urn:mak:canary named graph in Oxigraph.
@@ -49,7 +49,7 @@ import httpx
 logger = logging.getLogger("canary.loader")  # component TAG — Epic 4 monitor consumes this
 
 REPO_ROOT = Path(__file__).parent.parent
-CANARY_FILE = REPO_ROOT / "data" / "canary" / "served.json"
+CANARY_FILE = REPO_ROOT / "web" / "canary" / "mother-sands.json"
 OXIGRAPH_URL = os.environ.get("OXIGRAPH_URL", "http://localhost:7878").rstrip("/")
 
 MOM = "https://nicolasdb.github.io/mapsofmaking_ontology/ns#"

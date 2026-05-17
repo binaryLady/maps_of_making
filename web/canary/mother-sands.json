@@ -1,6 +1,6 @@
 {
   "api": "0.13",
-  "api_compatibility": ["14", "15"],
+  "api_compatibility": "15",
   "space": "Mother Sands",
   "logo": "https://mapsofmaking.org/mother-sands-logo.png",
   "url": "https://mothersands.example.org",
