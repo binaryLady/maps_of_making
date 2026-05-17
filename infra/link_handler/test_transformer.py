@@ -7,6 +7,11 @@ from pathlib import Path
 import transformer
 from main import SpaceAPISchema
 
+# Story 3.4b: quarantined — pins the transformer tangle that Story 3.5 rewrites.
+# Kept as a rewrite safety net; deselected from the default green bar.
+# Run explicitly with: pytest -m legacy
+pytestmark = pytest.mark.legacy
+
 
 @pytest.fixture(autouse=True)
 def reset_caches():

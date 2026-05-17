@@ -68,12 +68,12 @@ rebuild:
 	@echo "→ waiting for link-handler to be healthy..."
 	@timeout 60 sh -c 'until podman exec maps-link-handler python3 -c "import urllib.request; urllib.request.urlopen(\"http://localhost:8000/health\")" 2>/dev/null; do sleep 3; done' && echo ok || echo "warning: health check timed out"
 
-## Import seed datasets into local Oxigraph (:7878)
-## coordinator-registered spaces are never cleared by --force.
+## DEPRECATED (Story 3.4b) — bulk seed data archived; use coordinator URL onboarding or fresh canary.
 seed:
-	@echo "→ waiting for Oxigraph to be ready..."
-	@timeout 30 sh -c 'until curl -sf http://localhost:7878/health >/dev/null 2>&1 || curl -sf http://localhost:7878/ >/dev/null 2>&1; do sleep 1; done' || true
-	source venv/bin/activate && python scripts/seed_import.py --force
+	@echo "❌ make seed is deprecated (Story 3.4b clean slate)"
+	@echo "   Bulk seed files archived to data/archive/"
+	@echo "   Use: make canary-reset, or register spaces via coordinator URL onboarding"
+	@exit 1
 
 ## Trigger an immediate heartbeat cycle locally — populates Zone 3, rematerializes GeoJSON
 heartbeat:
@@ -86,8 +86,9 @@ seed-spaceapi:
 	source venv/bin/activate && python scripts/seed_spaceapi.py --force
 	$(MAKE) heartbeat
 
-## Full local pipeline: rebuild + seed + heartbeat (mirrors make publish for local dev)
-devdeploy: rebuild seed heartbeat
+## Full local pipeline: rebuild + heartbeat (no bulk seed — Story 3.4b clean slate)
+## Pre-seeded spaces load via coordinator URL onboarding or fresh canary injection.
+devdeploy: rebuild heartbeat
 	@echo "✓ local dev stack live — map at http://localhost:8080"
 
 ## DESTRUCTIVE: wipe Oxigraph triplestore + heartbeat DB, then full reseed via devdeploy.

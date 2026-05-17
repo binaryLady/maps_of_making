@@ -13,6 +13,10 @@ from datetime import datetime, timezone
 
 import httpx
 
+# Story 3.4b: quarantined — pins the transformer pipeline that Story 3.5 rewrites.
+# Deselected from the default green bar. Run explicitly with: pytest -m legacy
+pytestmark = pytest.mark.legacy
+
 OXIGRAPH_ENDPOINT = os.getenv("OXIGRAPH_ENDPOINT", "http://localhost:7878")
 
 

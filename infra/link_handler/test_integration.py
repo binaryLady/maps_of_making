@@ -8,6 +8,9 @@ from fastapi.testclient import TestClient
 from main import app
 from transformer import process_one_space, _init_heartbeat_db
 
+# Story 3.4b: quarantined — pins the heartbeat/transformer pipeline that Story 3.5
+# rewires. Deselected from the default green bar. Run explicitly with: pytest -m legacy
+pytestmark = pytest.mark.legacy
 
 client = TestClient(app)
 

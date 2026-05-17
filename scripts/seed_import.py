@@ -1,5 +1,16 @@
 #!/usr/bin/env python3
 
+# ⚠️  DEPRECATED — Story 3.4b Clean Slate (2026-05-17)
+# This script is NO LONGER USED. Bulk seed data (moms_seed.json, rff_mockup.json)
+# has been archived to data/archive/ as part of the clean-slate pivot.
+#
+# The heartbeat pipeline (infra/link_handler/) now handles single federated
+# endpoints directly. VOW/RFF/SpaceAPI directory reintroduction (targeted for
+# 3.5) will use a dedicated importer, not this bulk-seed path.
+#
+# Files referenced below are archived and will trigger FileNotFoundError if run.
+# Safe to delete after 3.5 completion (once new importer is in place).
+
 from pathlib import Path
 import argparse
 import hashlib

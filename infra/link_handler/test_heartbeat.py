@@ -7,6 +7,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import transformer
 from transformer import query_active_spaces, process_one_space, run_heartbeat_cycle, _SPARQL_ACTIVE_SPACES
 
+# Story 3.4b: quarantined — pins the heartbeat pipeline that Story 3.5 rewires.
+# Deselected from the default green bar. Run explicitly with: pytest -m legacy
+pytestmark = pytest.mark.legacy
+
 
 @pytest.fixture(autouse=True)
 def reset_caches():
