@@ -106,8 +106,8 @@ development_status:
   3-2-b-mak-closed-pii-strip: done
   3-2-c-lifecycle-vocabulary-drift-fix: done
   3-3-mother-sands-diagnostic-canary: done
-  3-4-stuck-seeded-root-cause-regression-test: review
-  3-4b-clean-slate-real-canary-endpoint: in-progress  # mom-demo branch; wipe bulk seeds, real canary URL
+  3-4-stuck-seeded-root-cause-regression-test: done
+  3-4b-clean-slate-real-canary-endpoint: done  # mom-demo branch; clean slate + real canary endpoint live
   3-5-core-ttl-crosswalk-csv-operationalize-the-three-layer-schema: backlog
   # Note: original Story 3.3 (magic link) and 3.4 (coordinator email) moved to Epic 4b.
   # Epic 3 tail re-sequenced 2026-05-16; 3.2c blocks 3.3; 3.5 closes Epic 3.

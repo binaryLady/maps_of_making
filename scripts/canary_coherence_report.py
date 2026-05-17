@@ -28,7 +28,7 @@ import httpx
 from transformer import classify_endpoint_health, classify_lifecycle, effective_marker
 
 REPO_ROOT = Path(__file__).parent.parent
-SERVED_FILE = REPO_ROOT / "data" / "canary" / "served.json"
+SERVED_FILE = REPO_ROOT / "web" / "canary" / "mother-sands.json"
 BASELINE_FILE = REPO_ROOT / "data" / "canary" / "baseline.json"
 GEOJSON_FILE = REPO_ROOT / "web" / "data" / "spaces.geojson"
 
@@ -175,7 +175,7 @@ def check_isolation() -> tuple[bool, str]:
 SELECT (COUNT(?s) AS ?count) WHERE {
   GRAPH ?g {
     ?s ?p ?o .
-    FILTER(CONTAINS(STR(?s), "canary"))
+    FILTER(STRSTARTS(STR(?s), "urn:mak:canary/"))
   }
   FILTER(STRSTARTS(STR(?g), "urn:mak:space/"))
 }
