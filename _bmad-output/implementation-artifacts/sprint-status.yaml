@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-01
-last_updated: "2026-05-17 (story 3.4 → review; 3.4b created — clean-slate pivot, mom-demo branch)"
+last_updated: "2026-05-17 (story 3.4b → in-progress; starting clean-slate implementation)"
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
@@ -107,7 +107,7 @@ development_status:
   3-2-c-lifecycle-vocabulary-drift-fix: done
   3-3-mother-sands-diagnostic-canary: done
   3-4-stuck-seeded-root-cause-regression-test: review
-  3-4b-clean-slate-real-canary-endpoint: ready-for-dev  # mom-demo branch; wipe bulk seeds, real canary URL
+  3-4b-clean-slate-real-canary-endpoint: in-progress  # mom-demo branch; wipe bulk seeds, real canary URL
   3-5-core-ttl-crosswalk-csv-operationalize-the-three-layer-schema: backlog
   # Note: original Story 3.3 (magic link) and 3.4 (coordinator email) moved to Epic 4b.
   # Epic 3 tail re-sequenced 2026-05-16; 3.2c blocks 3.3; 3.5 closes Epic 3.
