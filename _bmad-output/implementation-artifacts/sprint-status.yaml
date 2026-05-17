@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-01
-last_updated: "2026-05-16 (story 3.4 ready-for-dev — comprehensive context created)"
+last_updated: "2026-05-17 (story 3.4 → review; 3.4b created — clean-slate pivot, mom-demo branch)"
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
@@ -49,7 +49,7 @@ story_location: _bmad-output/implementation-artifacts
 
 cross_epic_handoffs:
   active_constraints:
-    oxigraph_live_data: "607 named graphs (566 VOW + 40 RFF mock + 1 ontology) at localhost:7878 (prod) / port 7878 exposed in docker-compose.dev.yml"
+    oxigraph_live_data: "CLEAN SLATE (story 3.4b): bulk VOW/RFF seeds wiped; only ontology + canary graphs remain. Canary: urn:mak:canary/mother-sands at https://mapsofmaking.org/canary/mother-sands.json"
     local_dev_cmd: "distrobox-host-exec podman compose -f infra/docker-compose.yml -f infra/docker-compose.dev.yml up"
     venv: "Managed externally — never create harness/venv or scripts/venv. Always `source venv/bin/activate`."
     platform_volumes: "`:z` SELinux flag on Fedora/local only (docker-compose.dev.yml). Never add `:z` to docker-compose.yml (breaks Ubuntu VPS)."
@@ -106,10 +106,12 @@ development_status:
   3-2-b-mak-closed-pii-strip: done
   3-2-c-lifecycle-vocabulary-drift-fix: done
   3-3-mother-sands-diagnostic-canary: done
-  3-4-stuck-seeded-root-cause-regression-test: ready-for-dev
+  3-4-stuck-seeded-root-cause-regression-test: review
+  3-4b-clean-slate-real-canary-endpoint: ready-for-dev  # mom-demo branch; wipe bulk seeds, real canary URL
   3-5-core-ttl-crosswalk-csv-operationalize-the-three-layer-schema: backlog
   # Note: original Story 3.3 (magic link) and 3.4 (coordinator email) moved to Epic 4b.
   # Epic 3 tail re-sequenced 2026-05-16; 3.2c blocks 3.3; 3.5 closes Epic 3.
+  # 3.4b added 2026-05-17: clean-slate pivot after 3.x bug hunt; branches on mom-demo.
 
   epic-3-retrospective: optional
 
