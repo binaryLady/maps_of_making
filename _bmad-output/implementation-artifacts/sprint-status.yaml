@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-01
-last_updated: "2026-05-17 (story 3.4b → in-progress; starting clean-slate implementation)"
+last_updated: "2026-05-17 (story 3.5 → ready-for-dev; core.ttl + crosswalk.csv)"
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
@@ -108,7 +108,7 @@ development_status:
   3-3-mother-sands-diagnostic-canary: done
   3-4-stuck-seeded-root-cause-regression-test: done
   3-4b-clean-slate-real-canary-endpoint: done  # mom-demo branch; clean slate + real canary endpoint live
-  3-5-core-ttl-crosswalk-csv-operationalize-the-three-layer-schema: backlog
+  3-5-core-ttl-crosswalk-csv-operationalize-the-three-layer-schema: ready-for-dev
   # Note: original Story 3.3 (magic link) and 3.4 (coordinator email) moved to Epic 4b.
   # Epic 3 tail re-sequenced 2026-05-16; 3.2c blocks 3.3; 3.5 closes Epic 3.
   # 3.4b added 2026-05-17: clean-slate pivot after 3.x bug hunt; branches on mom-demo.
@@ -158,3 +158,7 @@ development_status:
   # Epic 8: MOM as a Living Space — Mother Sands Broadcast Rig (stub — no stories yet)
   epic-8: backlog
   epic-8-retrospective: optional
+
+  # Epic 9: Multi-Network Schema — Bundles, Concept Commons & Emergent Ontologies (stub — no stories yet)
+  epic-9: backlog
+  epic-9-retrospective: optional

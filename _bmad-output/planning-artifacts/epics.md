@@ -740,6 +740,42 @@ So that I can trust what the map shows me and know exactly what to improve in my
 
 ---
 
+## Epic 3: Ingestion Pipeline + Endpoint Health + Stale Detection
+
+*(Prerequisite for Epic 4 — must ship before operator dashboard stories begin)*
+
+The full ingestion pipeline becomes real: SpaceAPI JSON fetched from space endpoints, raw snapshot written to disk before any transformation, then transformed to MOM JSON-LD via the explicit ontology mapping layer (ADR-015), and ingested into Oxigraph. Heartbeat scheduler runs the full 6h cycle producing the status graph Epic 4 reads from. Magic-link coordinator recovery is a separate parallel epic (4b).
+
+---
+
+### Story 3.0: Ingestion Transformation Layer — SpaceAPI JSON → MOM JSON-LD
+
+As the MOM pipeline,
+I want an explicit transformation step that maps SpaceAPI JSON fields to MOM JSON-LD before anything is written to Oxigraph,
+So that the boundary between "what the space published" and "what we store" is a named, auditable step — and the raw source is preserved on disk as a trust receipt.
+
+**Acceptance Criteria:**
+
+**Given** a registered endpoint URL exists in Oxigraph with `mom:operationalState` of `"confirmed"` or `"seeded"`
+**When** `tasks/heartbeat.py` fetches the endpoint
+**Then** the raw JSON response is written to `/data/snapshots/{space_id}/latest.json` immediately on receipt, before any parsing or transformation (this is the Zone 3 source and Epic 4 inspection panel source)
+**And** a fetch timestamp is written alongside: `/data/snapshots/{space_id}/meta.json` with `{ fetched_at, http_status, etag, endpoint_url }`
+**And** the payload is normalized before comparison: ephemeral fields (e.g. `lastchange` unix timestamps that tick every request) are stripped, arrays are sorted — this prevents false-positive "changed" detections
+**And** if the normalized payload matches the stored snapshot hash: only the `fetched_at` timestamp is updated; Oxigraph is NOT touched; outcome logged as `"no_change"`
+**And** if the normalized payload differs: `tasks/ingest.py` is called with the raw JSON
+
+**Given** `tasks/ingest.py` is called with raw SpaceAPI JSON
+**When** the transformation runs
+**Then** each SpaceAPI field is mapped to its MOM JSON-LD equivalent using the explicit field mapping from ADR-015 (implemented as a mapping table in `tasks/ingest.py`, not ad-hoc logic)
+**And** `mom:required` fields (`space`, `url`, `location.lat/lon`) that are missing cause a hard reject with outcome `"schema_invalid"` logged — no partial ingestion
+**And** `mom:card` fields that are missing are ingested with a structured warning logged: `"card_field_missing: {field}"` — never silently dropped
+**And** `mom:extended` fields present in the JSON are mapped to their MOM predicates; absent fields are silently skipped (they're optional)
+**And** the resulting MOM JSON-LD is written to `<urn:mak:space/{id}>` (current) and `<urn:mak:space/{id}/{date}>` (append-only snapshot) via SPARQL UPDATE
+**And** every fetch decision is logged to `heartbeat_log`: `space_uri`, `checked_at`, `outcome` (`ok` / `changed` / `no_change` / `schema_invalid` / `error` / `timeout`) — never silently dropped
+**And** the snapshot path convention is exactly `/data/snapshots/{space_id}/latest.json` — this path is pinned here and referenced in Epic 4 stories
+
+---
+
 ### Story 3.0-A: Space Profile Card — UX Refinement
 
 *Added: 2026-05-04. Post-3.0 UX polish pass: profile naming, freshness signals, contact pictos, logo, share CTA, manual fetch stub, and timing fix. Implementation file: `_bmad-output/implementation-artifacts/3-0-A-space-profile-card-ux-refinement.md` (authoritative).*
@@ -760,6 +796,175 @@ So that the card earns trust without adding friction.
 
 **Depends on:** Story 2.7 (zones, `/raw` endpoint, Pydantic subsets)
 **Deferred to Story 3.1:** `POST /api/heartbeat-space/{id}` endpoint + manual fetch button activation
+
+---
+
+### Story 3.1: Heartbeat Scheduler — Periodic Fetch Cycle + Manual Trigger
+
+As the system,
+I want a scheduled job that fetches all registered endpoint URLs every 10 minutes using conditional GET,
+So that the federated dataset stays fresh without any manual intervention and without hammering space servers unnecessarily.
+
+As Luca (coordinator),
+I want a "Refresh from endpoint" button on the space profile,
+So that I can force an immediate update after editing my JSON without waiting for the next cycle.
+
+**Acceptance Criteria:**
+
+**Given** Oxigraph contains at least one space with a registered endpoint URL and `mom:operationalState "confirmed"`
+**When** the heartbeat scheduler fires (Nanobot CronService every 6h, configurable via `config.yaml`)
+**Then** `tasks/heartbeat.py` is invoked for each confirmed space URI in sequence
+**And** each fetch uses `If-None-Match` (ETag) and `If-Modified-Since` headers if the previous response provided them — only pulls full payload on actual change (NFR-R1)
+**And** fetch timeout is 60s per endpoint with incremental backoff on failure: 1× immediate retry, then defer to next cycle (NFR-R2)
+**And** each fetch outcome is written to `heartbeat_log` SQLite table: `space_uri`, `checked_at`, `http_status`, `latency_ms`, `outcome` (ok / changed / error / timeout) (AR-METR1)
+**And** after all fetches complete, `scripts/materialize_geojson.py` is called once to refresh `spaces.geojson`
+**And** fetch cadence, timeout, and retry policy are all read from `config.yaml` — never hardcoded (NFR-R3)
+**And** a scheduler crash never takes down the public map — Nanobot's supervisor restarts the scheduler independently of the Discord adapter (NFR-R6)
+
+---
+
+### Story 3.2: Endpoint Health + Space Lifecycle + Open-Now (unified)
+
+> **Rescoped 2026-05-06.** Original AC list (PII strip on closed) split to Story 3.2b. Open-now signal pulled in from the deferred Epic 7 entry — heartbeat already polls so it's read-side, not push-side. Epic 7 now parked indefinitely.
+> **Completed 2026-05-06.** 71 unit tests + 4 live network tests (`pytest -m network`). Full ACs and dev notes live in the story file: `_bmad-output/implementation-artifacts/3-2-freshness-lifecycle-aging-zombie-dead-transitions.md`.
+
+As MOM, I want the heartbeat to interpret each fetch into three independent truth signals — endpoint health, space lifecycle, and dynamic open/closed — and resolve them into one honest pin, so that visitors see what's actually happening and coordinators get the right freshness incentive.
+
+**Truth model (summary):**
+
+- **Endpoint health** (clock: minutes since last 200/304) → `healthy` < 10m, `unresponsive` 10–30m, `warning` 30–60m, `broken` ≥ 60m. Map shows red ✕ only for `broken`; Epic 4 surfaces the rest.
+- **Space lifecycle** (clock: days since `mom:lastUpdated`, only resets on real content diff) → `confirmed` < 30d, `aging` 30–90d, `zombie` 90–180d, `dead` ≥ 180d. **MOM never rewrites `mom:lastUpdated` from a state-only graph write.**
+- **Dynamic open/closed** — `state.open` (v15 object) or `"open"`/`"closed"` (v0.13 string) → `mom:openNow` boolean + optional `mom:lastOpenChange`. **`state.open` flips count as material content changes** — they reset the lifecycle clock. `sensors.*` flips do not. This is the designed freshness incentive.
+- **Conflict resolution:** lifecycle supersedes endpoint. A dead space with vanished hosting still shows as dead, not merely broken. Resolved server-side in `transformer.effective_marker(...)`; GeoJSON exposes a single resolved `status` plus the raw signals for Epic 4.
+
+**Story 3.2b** carries the original `mak:closed` + PII-strip flow (closed for N cycles → strip contact fields, write `mak:closedAt`, revive on next material diff). Different blast radius (triple deletion) — separate review. ✅ **Completed 2026-05-06.**
+
+---
+
+### Story 3.2c: Lifecycle Vocabulary Drift Fix *(pre-3.3 cleanup)*
+
+> **Added 2026-05-16** from the Story 3.3 planning roundtable. Small cleanup story; must land **before Story 3.3** so the canary validates one coherent model rather than papering over a drift. Design record: `mom_handoff_2026-05-16.md`.
+
+As MOM, I want the lifecycle vocabulary consistent across the ontology, the transformer code, and the planning docs, so that Story 3.3's canary tests a coherent model.
+
+**Acceptance Criteria:**
+
+**Given** `ontology/mom.ttl` defines `mom:operationalState`
+**Then** its `rdfs:comment` enumerates exactly the lifecycle values `seeded`, `confirmed`, `aging`, `zombie`, `closed`, `dead` plus out-of-lifecycle `error`, `unlinked`
+**And** the comment states the two terminal states explicitly: `closed` = operator/coordinator-declared retirement (authoritative); `dead` = auto-inferred after N failed heartbeat cycles (inferred)
+**And** the comment notes the real-time open/closed boolean belongs to `mom:dynamicState`, NOT `mom:operationalState`
+
+**Given** `transformer.effective_marker()`
+**Then** it has no branch referencing a lifecycle value the ontology does not define; the stale `closed` branch is removed or remapped to the declared/inferred terminals
+
+**Drift flagged for this story to resolve or escalate to Nicolas:**
+- The `mak:` vs `mom:` predicate prefix inconsistency across `epics.md` / `architecture.md` / `mom.ttl` (e.g. `mak:operationalState` vs `mom:operationalState`).
+- Story 3.2b's `mak:closed` (auto-applied after N closed-state cycles + PII strip) vs the roundtable's `closed` = operator-declared retirement — **resolved in Story 3.2c (AC#7):** both paths legitimately write `mom:operationalState "closed"`; they differ in causation (system-inferred vs. operator-declared) but share the token intentionally. If sub-distinction is needed in future, track via logs rather than a new state value.
+
+**Dependencies:** none (pure cleanup). **Blocks Story 3.3.**
+
+---
+
+### Story 3.3: Mother Sands Diagnostic Canary
+
+> **Reframed 2026-05-16** by the Story 3.3 planning roundtable. Supersedes the prior "Canary Space — Virtual Space Seed + Lifecycle Demo" scope (continuous time-bubble, fort-rotation automation — moved to Epic 8 lore / a future ledger epic). Full design record: `mom_handoff_2026-05-16.md`.
+
+As MOM (operator), I want a programmatic way to drive a MOM-owned synthetic endpoint ("Mother Sands") through controlled states on each of the three signal axes, so that when the public map shows something incoherent I can attribute the fault to a specific layer — MOM's pipeline vs the space's own endpoint — instead of guessing.
+
+**Single job:** a diagnostic instrument. This story is **not** "reproduce the stuck-`seeded` bug" — that bug is the motivation; pinning and fixing it is **Story 3.4**.
+
+**Concept:**
+- **Mother Sands** — the eighth Maunsell sea fort that was never built; a synthetic space MOM owns. Its drawer carries an honest "synthetic reference space" label (one-line truthfulness requirement). Lore, persona (Bernard), and the "broadcast rig" content are **Epic 8** — not this story.
+- It is a **true canary**: a **programmable HTTP endpoint** the real heartbeat fetches — not a static file, not a direct store write. Axis-A faults (404/503/timeout) require the endpoint to actually misbehave.
+
+**The three axes** (the canary perturbs exactly **one at a time** — see Story 3.2's truth model):
+- **Axis A — Reachability** (`endpoint_health`). Faults → endpoint fault → MOM emits a coordinator CTA (out of MOM's hands). Insight: time-since-last-successful-fetch is itself a health signal — `n > heartbeat period` is a warning.
+- **Axis B — Lifecycle freshness** (`operationalState`: seeded/confirmed/aging/zombie + terminals closed/dead). Faults → MOM's responsibility to fix. The freshness clock resets only on a **field-scoped meaningful change**; `sensors.*` churn must not reset it.
+- **Axis C — open/close boolean** (`openNow`). 3.3 proves propagation when present and graceful handling of **absence** (no `open` field → "no live signal", not a false closed). Opt-out UX is **Epic 5**.
+
+**Acceptance Criteria** — operator-framed (inject state → observe outcome), bug-independent:
+
+**Given** the canary scenario library (Option A — code-defined pure functions, each with a 4-section docstring: INJECT / STATE / EXPECT MARKER / EXPECT CARD)
+**When** the operator runs an axis-prefixed `make` target
+**Then** the canary endpoint is mutated via a safe write protocol (temp file → fsync → atomic rename → ETag/Last-Modified invalidation in `heartbeat_log.db`) and the real heartbeat observes the injected state
+
+**Axis A** — `canary-a-reachable | -a-timeout | -a-dns-fail | -a-http-error`: each resolves `endpoint_health` to the expected rung; a fetch older than the configured `heartbeat_period × multiplier` resolves to `warning` regardless of body validity (current gap: "fetched 5h ago" wrongly classifies healthy)
+
+**Axis B** — `canary-b-seeded | -b-confirmed | -b-aging | -b-zombie | -b-closed`: each resolves `operationalState` to the expected state; a fetch whose only delta is `sensors.*` does NOT advance the lifecycle last-update timestamp, while an `openNow` flip does
+
+**Axis C** — `canary-c-openclose-open | -c-openclose-shut`: the boolean propagates end-to-end; a payload with no `open` field does not break the pipeline and yields no false open/closed
+
+**Given** a known injected `(endpoint_health, lifecycle, openNow)` triple
+**Then** the resolved public marker equals `effective_marker(...)`, and the canary emits a **per-layer coherence-diff report** (endpoint file → heartbeat record → Oxigraph → rendered card) — not a boolean; an internally inconsistent map is a FAIL even if no single probe is red
+
+**Given** the canary data
+**Then** it lives in named graph `<urn:mak:canary>`, isolated from real-space graphs; a SPARQL `ASK` isolation test proves no canary triples leak into production queries
+**And** `make canary-reset` restores the canary from the committed baseline `data/canary/baseline.json`
+**And** `make canary-demo-cycle` chains scenario targets across a lifecycle (seed → … → closed/dead) for the federated PoC demo
+
+**Given** the third Oxigraph named graph (previously conceived as a "tombstone" graph)
+**Then** it is named **`public_ledger`** — an append-only, immutable, IPFS/IPLD-anchored event ledger; the name and append-only principle are locked here. (Event schema, IPFS pinning, minting authority, and relocation modelling are a **dedicated future epic** — not this story.)
+
+**Two test surfaces:** hermetic `pytest` (mocked fetch, deterministic, CI — incl. the `<urn:mak:canary>` isolation test) **and** a live operator-poke loop (`docs/canary-operator-runbook.md`).
+
+**Dependencies:**
+- **Story 3.2c** (lifecycle vocabulary fix) — blocks this story
+- Story 3.2 complete (three-axis truth model in place)
+- `mom.mapsofmaking.org` subdomain configured in hetzner-gateway nginx
+- `simulatedAge` lifecycle-injection seam overrides the classifier **input** (synthetic last-update), never an `if canary:` branch inside the classifier
+
+**Deferred:**
+- Relocation modelling / fort rotation U2–U7 → Epic 8 lore + the future `public_ledger` epic
+- Mother Sands broadcast/comms content, Bernard activation → Epic 8
+- Persisted/replayable scenario library (Option B) → Epic 4+, only if needed
+
+---
+
+### Story 3.4: Stuck-`seeded` Root Cause + Regression Test
+
+> **Added 2026-05-16.** Sequenced **after Story 3.3** — the canary's diagnostic tooling pins down (and likely resolves) the root cause. Design record: `mom_handoff_2026-05-16.md`.
+>
+> *(The magic-link generation and coordinator-email stories formerly numbered 3.3/3.4 live in **Epic 4b** — parallel, non-blocking. They are not part of Epic 3.)*
+
+As MOM, I want the root cause of directory-imported spaces stuck on `seeded` despite a successful fetch identified and locked by a regression test, so the recurring Epic 3 fetch/update-timer bug cannot silently return.
+
+**Context:** some SpaceAPI-directory-imported spaces show `last-fetched ~5h ago` yet remain `seeded` with `lastUpdated unknown`, even though their JSON validates, ingests, and geolocates. Three hypotheses (see handoff brief): (a) ingestion fetched 200 but never wrote `mom:lastUpdated`; (b) it wrote it but `classify_lifecycle` misreads it during materialization; (c) first-fetch diff compares against an empty baseline and skips the write.
+
+**Acceptance Criteria:**
+
+**Given** the stuck-`seeded` behaviour
+**Then** a failing regression test under `tests/` pins it **before** the fix — asserting the exact wrong state — and survives whoever fixes it
+
+**Given** the Story 3.3 canary
+**Then** it is used to reproduce the stuck-`seeded` state and discriminate between the three hypotheses; the confirmed root cause is documented
+
+**Given** the fix
+**Then** a freshly-fetched space transitions `seeded → confirmed` correctly and the regression test passes
+
+**Dependencies:** Story 3.3 (diagnostic tooling).
+
+---
+
+### Story 3.5: `core.ttl` + `crosswalk.csv` — Operationalize the Three-Layer Schema
+
+> **Added 2026-05-16** from the schema-architecture handoff (`mom-schema-architecture-handoff.md`). Belongs to the ingestion pipeline (it formalizes what ingestion maps *to*), so it closes Epic 3 rather than opening Epic 4. Sequenced last in Epic 3; no hard dependency on 3.3/3.4.
+
+As MOM, I want the three-layer schema model (SpaceAPI v15 input → `core:` base → community extension namespaces) operationalized as concrete, dereferenceable artifacts, so that the SpaceAPI→`core:` mapping ingestion already performs is documented, validatable, and ready for a second community.
+
+**Context:** ingestion already maps SpaceAPI v15 fields to MOM predicates (ADR-015), but the `core:` base vocabulary and the cross-namespace overlap rules exist only as prose in the handoff. The handoff names two missing deliverables — `core.ttl` (Layer 2 base schema) and `crosswalk.csv` (overlap-resolution table) — both needed before Article 2 publication. Canonical namespace stays the existing `https://nicolasdb.github.io/mapsofmaking_ontology/ns#` (the handoff's `w3id.org/maps-of-making/` strings are illustrative — the Claude chat that produced the handoff had an incomplete picture).
+
+**Acceptance Criteria:**
+
+**Given** the Layer 2 field list in the handoff
+**Then** `core.ttl` exists with at minimum the identity, MOM-operational, and `core:relationships` properties, dereferenceable under the canonical namespace
+
+**Given** the SpaceAPI v15 → MOM mapping ingestion performs
+**Then** `crosswalk.csv` documents each row (SpaceAPI field, `core:` field, `fab:` field, mapping type) with `omt:`/`edu:` rows present but marked `status: draft`
+
+**Given** the permissive-ingestion rule
+**Then** the pipeline is verified to log unrecognised fields as `mom:OntologyGap` triples — never reject — and `validate_crosswalk.py` confirms no extension field redefines a `core:` field
+
+**Dependencies:** none hard. **Not demo-blocking.** `omt:`/`edu:` namespace design is explicitly out of scope (needs community input).
 
 ---
 
@@ -1043,211 +1248,6 @@ So that the demo map carries only UI that earns its cognitive load — nothing i
 
 ---
 
-## Epic 3: Ingestion Pipeline + Endpoint Health + Stale Detection
-
-*(Prerequisite for Epic 4 — must ship before operator dashboard stories begin)*
-
-The full ingestion pipeline becomes real: SpaceAPI JSON fetched from space endpoints, raw snapshot written to disk before any transformation, then transformed to MOM JSON-LD via the explicit ontology mapping layer (ADR-015), and ingested into Oxigraph. Heartbeat scheduler runs the full 6h cycle producing the status graph Epic 4 reads from. Magic-link coordinator recovery is a separate parallel epic (4b).
-
----
-
-### Story 3.0: Ingestion Transformation Layer — SpaceAPI JSON → MOM JSON-LD
-
-As the MOM pipeline,
-I want an explicit transformation step that maps SpaceAPI JSON fields to MOM JSON-LD before anything is written to Oxigraph,
-So that the boundary between "what the space published" and "what we store" is a named, auditable step — and the raw source is preserved on disk as a trust receipt.
-
-**Acceptance Criteria:**
-
-**Given** a registered endpoint URL exists in Oxigraph with `mom:operationalState` of `"confirmed"` or `"seeded"`
-**When** `tasks/heartbeat.py` fetches the endpoint
-**Then** the raw JSON response is written to `/data/snapshots/{space_id}/latest.json` immediately on receipt, before any parsing or transformation (this is the Zone 3 source and Epic 4 inspection panel source)
-**And** a fetch timestamp is written alongside: `/data/snapshots/{space_id}/meta.json` with `{ fetched_at, http_status, etag, endpoint_url }`
-**And** the payload is normalized before comparison: ephemeral fields (e.g. `lastchange` unix timestamps that tick every request) are stripped, arrays are sorted — this prevents false-positive "changed" detections
-**And** if the normalized payload matches the stored snapshot hash: only the `fetched_at` timestamp is updated; Oxigraph is NOT touched; outcome logged as `"no_change"`
-**And** if the normalized payload differs: `tasks/ingest.py` is called with the raw JSON
-
-**Given** `tasks/ingest.py` is called with raw SpaceAPI JSON
-**When** the transformation runs
-**Then** each SpaceAPI field is mapped to its MOM JSON-LD equivalent using the explicit field mapping from ADR-015 (implemented as a mapping table in `tasks/ingest.py`, not ad-hoc logic)
-**And** `mom:required` fields (`space`, `url`, `location.lat/lon`) that are missing cause a hard reject with outcome `"schema_invalid"` logged — no partial ingestion
-**And** `mom:card` fields that are missing are ingested with a structured warning logged: `"card_field_missing: {field}"` — never silently dropped
-**And** `mom:extended` fields present in the JSON are mapped to their MOM predicates; absent fields are silently skipped (they're optional)
-**And** the resulting MOM JSON-LD is written to `<urn:mak:space/{id}>` (current) and `<urn:mak:space/{id}/{date}>` (append-only snapshot) via SPARQL UPDATE
-**And** every fetch decision is logged to `heartbeat_log`: `space_uri`, `checked_at`, `outcome` (`ok` / `changed` / `no_change` / `schema_invalid` / `error` / `timeout`) — never silently dropped
-**And** the snapshot path convention is exactly `/data/snapshots/{space_id}/latest.json` — this path is pinned here and referenced in Epic 4 stories
-
----
-
-### Story 3.1: Heartbeat Scheduler — Periodic Fetch Cycle + Manual Trigger
-
-As the system,
-I want a scheduled job that fetches all registered endpoint URLs every 10 minutes using conditional GET,
-So that the federated dataset stays fresh without any manual intervention and without hammering space servers unnecessarily.
-
-As Luca (coordinator),
-I want a "Refresh from endpoint" button on the space profile,
-So that I can force an immediate update after editing my JSON without waiting for the next cycle.
-
-**Acceptance Criteria:**
-
-**Given** Oxigraph contains at least one space with a registered endpoint URL and `mom:operationalState "confirmed"`
-**When** the heartbeat scheduler fires (Nanobot CronService every 6h, configurable via `config.yaml`)
-**Then** `tasks/heartbeat.py` is invoked for each confirmed space URI in sequence
-**And** each fetch uses `If-None-Match` (ETag) and `If-Modified-Since` headers if the previous response provided them — only pulls full payload on actual change (NFR-R1)
-**And** fetch timeout is 60s per endpoint with incremental backoff on failure: 1× immediate retry, then defer to next cycle (NFR-R2)
-**And** each fetch outcome is written to `heartbeat_log` SQLite table: `space_uri`, `checked_at`, `http_status`, `latency_ms`, `outcome` (ok / changed / error / timeout) (AR-METR1)
-**And** after all fetches complete, `scripts/materialize_geojson.py` is called once to refresh `spaces.geojson`
-**And** fetch cadence, timeout, and retry policy are all read from `config.yaml` — never hardcoded (NFR-R3)
-**And** a scheduler crash never takes down the public map — Nanobot's supervisor restarts the scheduler independently of the Discord adapter (NFR-R6)
-
----
-
-### Story 3.2: Endpoint Health + Space Lifecycle + Open-Now (unified)
-
-> **Rescoped 2026-05-06.** Original AC list (PII strip on closed) split to Story 3.2b. Open-now signal pulled in from the deferred Epic 7 entry — heartbeat already polls so it's read-side, not push-side. Epic 7 now parked indefinitely.
-> **Completed 2026-05-06.** 71 unit tests + 4 live network tests (`pytest -m network`). Full ACs and dev notes live in the story file: `_bmad-output/implementation-artifacts/3-2-freshness-lifecycle-aging-zombie-dead-transitions.md`.
-
-As MOM, I want the heartbeat to interpret each fetch into three independent truth signals — endpoint health, space lifecycle, and dynamic open/closed — and resolve them into one honest pin, so that visitors see what's actually happening and coordinators get the right freshness incentive.
-
-**Truth model (summary):**
-
-- **Endpoint health** (clock: minutes since last 200/304) → `healthy` < 10m, `unresponsive` 10–30m, `warning` 30–60m, `broken` ≥ 60m. Map shows red ✕ only for `broken`; Epic 4 surfaces the rest.
-- **Space lifecycle** (clock: days since `mom:lastUpdated`, only resets on real content diff) → `confirmed` < 30d, `aging` 30–90d, `zombie` 90–180d, `dead` ≥ 180d. **MOM never rewrites `mom:lastUpdated` from a state-only graph write.**
-- **Dynamic open/closed** — `state.open` (v15 object) or `"open"`/`"closed"` (v0.13 string) → `mom:openNow` boolean + optional `mom:lastOpenChange`. **`state.open` flips count as material content changes** — they reset the lifecycle clock. `sensors.*` flips do not. This is the designed freshness incentive.
-- **Conflict resolution:** lifecycle supersedes endpoint. A dead space with vanished hosting still shows as dead, not merely broken. Resolved server-side in `transformer.effective_marker(...)`; GeoJSON exposes a single resolved `status` plus the raw signals for Epic 4.
-
-**Story 3.2b** carries the original `mak:closed` + PII-strip flow (closed for N cycles → strip contact fields, write `mak:closedAt`, revive on next material diff). Different blast radius (triple deletion) — separate review. ✅ **Completed 2026-05-06.**
-
----
-
-### Story 3.2c: Lifecycle Vocabulary Drift Fix *(pre-3.3 cleanup)*
-
-> **Added 2026-05-16** from the Story 3.3 planning roundtable. Small cleanup story; must land **before Story 3.3** so the canary validates one coherent model rather than papering over a drift. Design record: `mom_handoff_2026-05-16.md`.
-
-As MOM, I want the lifecycle vocabulary consistent across the ontology, the transformer code, and the planning docs, so that Story 3.3's canary tests a coherent model.
-
-**Acceptance Criteria:**
-
-**Given** `ontology/mom.ttl` defines `mom:operationalState`
-**Then** its `rdfs:comment` enumerates exactly the lifecycle values `seeded`, `confirmed`, `aging`, `zombie`, `closed`, `dead` plus out-of-lifecycle `error`, `unlinked`
-**And** the comment states the two terminal states explicitly: `closed` = operator/coordinator-declared retirement (authoritative); `dead` = auto-inferred after N failed heartbeat cycles (inferred)
-**And** the comment notes the real-time open/closed boolean belongs to `mom:dynamicState`, NOT `mom:operationalState`
-
-**Given** `transformer.effective_marker()`
-**Then** it has no branch referencing a lifecycle value the ontology does not define; the stale `closed` branch is removed or remapped to the declared/inferred terminals
-
-**Drift flagged for this story to resolve or escalate to Nicolas:**
-- The `mak:` vs `mom:` predicate prefix inconsistency across `epics.md` / `architecture.md` / `mom.ttl` (e.g. `mak:operationalState` vs `mom:operationalState`).
-- Story 3.2b's `mak:closed` (auto-applied after N closed-state cycles + PII strip) vs the roundtable's `closed` = operator-declared retirement — **resolved in Story 3.2c (AC#7):** both paths legitimately write `mom:operationalState "closed"`; they differ in causation (system-inferred vs. operator-declared) but share the token intentionally. If sub-distinction is needed in future, track via logs rather than a new state value.
-
-**Dependencies:** none (pure cleanup). **Blocks Story 3.3.**
-
----
-
-### Story 3.3: Mother Sands Diagnostic Canary
-
-> **Reframed 2026-05-16** by the Story 3.3 planning roundtable. Supersedes the prior "Canary Space — Virtual Space Seed + Lifecycle Demo" scope (continuous time-bubble, fort-rotation automation — moved to Epic 8 lore / a future ledger epic). Full design record: `mom_handoff_2026-05-16.md`.
-
-As MOM (operator), I want a programmatic way to drive a MOM-owned synthetic endpoint ("Mother Sands") through controlled states on each of the three signal axes, so that when the public map shows something incoherent I can attribute the fault to a specific layer — MOM's pipeline vs the space's own endpoint — instead of guessing.
-
-**Single job:** a diagnostic instrument. This story is **not** "reproduce the stuck-`seeded` bug" — that bug is the motivation; pinning and fixing it is **Story 3.4**.
-
-**Concept:**
-- **Mother Sands** — the eighth Maunsell sea fort that was never built; a synthetic space MOM owns. Its drawer carries an honest "synthetic reference space" label (one-line truthfulness requirement). Lore, persona (Bernard), and the "broadcast rig" content are **Epic 8** — not this story.
-- It is a **true canary**: a **programmable HTTP endpoint** the real heartbeat fetches — not a static file, not a direct store write. Axis-A faults (404/503/timeout) require the endpoint to actually misbehave.
-
-**The three axes** (the canary perturbs exactly **one at a time** — see Story 3.2's truth model):
-- **Axis A — Reachability** (`endpoint_health`). Faults → endpoint fault → MOM emits a coordinator CTA (out of MOM's hands). Insight: time-since-last-successful-fetch is itself a health signal — `n > heartbeat period` is a warning.
-- **Axis B — Lifecycle freshness** (`operationalState`: seeded/confirmed/aging/zombie + terminals closed/dead). Faults → MOM's responsibility to fix. The freshness clock resets only on a **field-scoped meaningful change**; `sensors.*` churn must not reset it.
-- **Axis C — open/close boolean** (`openNow`). 3.3 proves propagation when present and graceful handling of **absence** (no `open` field → "no live signal", not a false closed). Opt-out UX is **Epic 5**.
-
-**Acceptance Criteria** — operator-framed (inject state → observe outcome), bug-independent:
-
-**Given** the canary scenario library (Option A — code-defined pure functions, each with a 4-section docstring: INJECT / STATE / EXPECT MARKER / EXPECT CARD)
-**When** the operator runs an axis-prefixed `make` target
-**Then** the canary endpoint is mutated via a safe write protocol (temp file → fsync → atomic rename → ETag/Last-Modified invalidation in `heartbeat_log.db`) and the real heartbeat observes the injected state
-
-**Axis A** — `canary-a-reachable | -a-timeout | -a-dns-fail | -a-http-error`: each resolves `endpoint_health` to the expected rung; a fetch older than the configured `heartbeat_period × multiplier` resolves to `warning` regardless of body validity (current gap: "fetched 5h ago" wrongly classifies healthy)
-
-**Axis B** — `canary-b-seeded | -b-confirmed | -b-aging | -b-zombie | -b-closed`: each resolves `operationalState` to the expected state; a fetch whose only delta is `sensors.*` does NOT advance the lifecycle last-update timestamp, while an `openNow` flip does
-
-**Axis C** — `canary-c-openclose-open | -c-openclose-shut`: the boolean propagates end-to-end; a payload with no `open` field does not break the pipeline and yields no false open/closed
-
-**Given** a known injected `(endpoint_health, lifecycle, openNow)` triple
-**Then** the resolved public marker equals `effective_marker(...)`, and the canary emits a **per-layer coherence-diff report** (endpoint file → heartbeat record → Oxigraph → rendered card) — not a boolean; an internally inconsistent map is a FAIL even if no single probe is red
-
-**Given** the canary data
-**Then** it lives in named graph `<urn:mak:canary>`, isolated from real-space graphs; a SPARQL `ASK` isolation test proves no canary triples leak into production queries
-**And** `make canary-reset` restores the canary from the committed baseline `data/canary/baseline.json`
-**And** `make canary-demo-cycle` chains scenario targets across a lifecycle (seed → … → closed/dead) for the federated PoC demo
-
-**Given** the third Oxigraph named graph (previously conceived as a "tombstone" graph)
-**Then** it is named **`public_ledger`** — an append-only, immutable, IPFS/IPLD-anchored event ledger; the name and append-only principle are locked here. (Event schema, IPFS pinning, minting authority, and relocation modelling are a **dedicated future epic** — not this story.)
-
-**Two test surfaces:** hermetic `pytest` (mocked fetch, deterministic, CI — incl. the `<urn:mak:canary>` isolation test) **and** a live operator-poke loop (`docs/canary-operator-runbook.md`).
-
-**Dependencies:**
-- **Story 3.2c** (lifecycle vocabulary fix) — blocks this story
-- Story 3.2 complete (three-axis truth model in place)
-- `mom.mapsofmaking.org` subdomain configured in hetzner-gateway nginx
-- `simulatedAge` lifecycle-injection seam overrides the classifier **input** (synthetic last-update), never an `if canary:` branch inside the classifier
-
-**Deferred:**
-- Relocation modelling / fort rotation U2–U7 → Epic 8 lore + the future `public_ledger` epic
-- Mother Sands broadcast/comms content, Bernard activation → Epic 8
-- Persisted/replayable scenario library (Option B) → Epic 4+, only if needed
-
----
-
-### Story 3.4: Stuck-`seeded` Root Cause + Regression Test
-
-> **Added 2026-05-16.** Sequenced **after Story 3.3** — the canary's diagnostic tooling pins down (and likely resolves) the root cause. Design record: `mom_handoff_2026-05-16.md`.
->
-> *(The magic-link generation and coordinator-email stories formerly numbered 3.3/3.4 live in **Epic 4b** — parallel, non-blocking. They are not part of Epic 3.)*
-
-As MOM, I want the root cause of directory-imported spaces stuck on `seeded` despite a successful fetch identified and locked by a regression test, so the recurring Epic 3 fetch/update-timer bug cannot silently return.
-
-**Context:** some SpaceAPI-directory-imported spaces show `last-fetched ~5h ago` yet remain `seeded` with `lastUpdated unknown`, even though their JSON validates, ingests, and geolocates. Three hypotheses (see handoff brief): (a) ingestion fetched 200 but never wrote `mom:lastUpdated`; (b) it wrote it but `classify_lifecycle` misreads it during materialization; (c) first-fetch diff compares against an empty baseline and skips the write.
-
-**Acceptance Criteria:**
-
-**Given** the stuck-`seeded` behaviour
-**Then** a failing regression test under `tests/` pins it **before** the fix — asserting the exact wrong state — and survives whoever fixes it
-
-**Given** the Story 3.3 canary
-**Then** it is used to reproduce the stuck-`seeded` state and discriminate between the three hypotheses; the confirmed root cause is documented
-
-**Given** the fix
-**Then** a freshly-fetched space transitions `seeded → confirmed` correctly and the regression test passes
-
-**Dependencies:** Story 3.3 (diagnostic tooling).
-
----
-
-### Story 3.5: `core.ttl` + `crosswalk.csv` — Operationalize the Three-Layer Schema
-
-> **Added 2026-05-16** from the schema-architecture handoff (`mom-schema-architecture-handoff.md`). Belongs to the ingestion pipeline (it formalizes what ingestion maps *to*), so it closes Epic 3 rather than opening Epic 4. Sequenced last in Epic 3; no hard dependency on 3.3/3.4.
-
-As MOM, I want the three-layer schema model (SpaceAPI v15 input → `core:` base → community extension namespaces) operationalized as concrete, dereferenceable artifacts, so that the SpaceAPI→`core:` mapping ingestion already performs is documented, validatable, and ready for a second community.
-
-**Context:** ingestion already maps SpaceAPI v15 fields to MOM predicates (ADR-015), but the `core:` base vocabulary and the cross-namespace overlap rules exist only as prose in the handoff. The handoff names two missing deliverables — `core.ttl` (Layer 2 base schema) and `crosswalk.csv` (overlap-resolution table) — both needed before Article 2 publication. Canonical namespace stays the existing `https://nicolasdb.github.io/mapsofmaking_ontology/ns#` (the handoff's `w3id.org/maps-of-making/` strings are illustrative — the Claude chat that produced the handoff had an incomplete picture).
-
-**Acceptance Criteria:**
-
-**Given** the Layer 2 field list in the handoff
-**Then** `core.ttl` exists with at minimum the identity, MOM-operational, and `core:relationships` properties, dereferenceable under the canonical namespace
-
-**Given** the SpaceAPI v15 → MOM mapping ingestion performs
-**Then** `crosswalk.csv` documents each row (SpaceAPI field, `core:` field, `fab:` field, mapping type) with `omt:`/`edu:` rows present but marked `status: draft`
-
-**Given** the permissive-ingestion rule
-**Then** the pipeline is verified to log unrecognised fields as `mom:OntologyGap` triples — never reject — and `validate_crosswalk.py` confirms no extension field redefines a `core:` field
-
-**Dependencies:** none hard. **Not demo-blocking.** `omt:`/`edu:` namespace design is explicitly out of scope (needs community input).
-
----
-
 ## Epic 6: "Ask the Map" — NL Bot
 
 *(Parallel with Epic 3; non-blocker for demo)*
@@ -1423,3 +1423,22 @@ Story 3.3 builds Mother Sands as a **diagnostic canary**. This epic gives it its
 **Open product concerns carried here:** disclosed "synthetic reference space" framing (a clean one-liner ships in Story 3.3; fine-tuning is this epic); community contribution governance for Bernard's narration; possible salvage-art monetisation (Phase 3+).
 
 **Depends on:** Story 3.3 (the canary it dresses). Parallel to Epic 5. Not demo-blocking.
+
+---
+
+## Epic 9: Multi-Network Schema — Bundles, Concept Commons & Emergent Ontologies *(stub — no stories yet; post-demo)*
+
+> **Added 2026-05-18** from the schema role-play design dialogue around Story 3.5. **Stub only.** Design seeds: `schema-roleplay-personas.md`, `mom-schema-architecture-handoff.md`, ADR-016 (written in Story 3.5).
+
+Story 3.5 ships `core.ttl` + `crosswalk.csv` — the static foundation of the three/four-layer schema. This epic *operationalizes the multi-network vision*: MOM serving health, agri, education, culture and other communities from one federated graph, where cross-silo discovery emerges without coordination.
+
+**Scope sketch (post-demo, not on critical path):**
+- **`fab.ttl` extraction** — refactor makerspace-specific vocabulary out of the impure `mom.ttl` into the `fab:` community namespace. Care required: code emits `mom:` predicates today.
+- **Concept commons** — promote the activity/skill SKOS scheme into its own always-loaded namespace; anchor concepts to Wikidata and OpenKnowHow (OKH / IoP Alliance — *Internet of Production*, distinct from the repo's `iop:` *Internet of Places*).
+- **Bundle-loading via `config.yaml`** — deploy a new branded map ("Maps of Healing", "Maps of Growing") by selecting ontology layers + CSS, analogous to `docker-compose`. Bundles are view config; the graph stays universal.
+- **The wormhole** — cross-namespace query/traversal UX surfacing `skos:closeMatch` bridges on demand (overlaps Epic 6 "Ask the Map").
+- **Emergent community ontologies** — the `gap_log` → curation → concept minting → bridge discovery pipeline. The "private joke" layer: communities grow their own vocabulary; `crosswalk.csv` becomes a living bridge registry.
+
+**Open product concerns carried here:** managed hosting *and* managed-ontology as monetization lanes (Phase 3+ product brief); Solid-pod direction for node sovereignty; governance of concept promotion (local → commons).
+
+**Depends on:** Story 3.5 (`core.ttl`, `crosswalk.csv`, ADR-016). Parallel to Epics 5–8. Not demo-blocking.
