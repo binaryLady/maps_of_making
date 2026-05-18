@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-01
-last_updated: "2026-05-18 (story 3.5 → done; code review patches applied)"
+last_updated: "2026-05-18 (Story 3.6 created — Epic 3.5 started)"
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
@@ -113,7 +113,20 @@ development_status:
   # Epic 3 tail re-sequenced 2026-05-16; 3.2c blocks 3.3; 3.5 closes Epic 3.
   # 3.4b added 2026-05-17: clean-slate pivot after 3.x bug hunt; branches on mom-demo.
 
-  epic-3-retrospective: optional
+  epic-3-retrospective: done
+
+  # Epic 3.5: Freshness Propagation Contract (pre-Epic-4 — built standalone first)
+  # Created 2026-05-18 from Epic 3 retro + party-mode roundtable. Closes the
+  # "pytest passes / live pipeline breaks" bug class via the observed_at token.
+  # Restructured 2026-05-18: walking skeleton (3.6) first, then 3.7-3.10 harden each
+  # seam. Each story gated by a real-seam test + operator visual confirmation. Blocks Epic 4.
+  epic-3.5: in-progress
+  3-6-walking-skeleton-observed-at-end-to-end: ready-for-dev
+  3-7-heartbeat-log-observed-at-fetch-status: backlog
+  3-8-transformer-emits-mom-observedat: backlog
+  3-9-materializer-propagates-observed-at-to-geojson: backlog
+  3-10-browser-lifecycle-buckets-canary-e2e: backlog
+  epic-3.5-retrospective: optional
 
   # Epic 4: Operator Observability Dashboard
   # Depends on Epic 3's snapshot output and status graph

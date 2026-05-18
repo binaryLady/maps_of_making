@@ -1,5 +1,19 @@
 # Deferred Work
 
+## Deferred from: Epic 3 retro party-mode roundtable (2026-05-18)
+
+- **`spaces.geojson` payload-slimming** — `web/data/spaces.geojson` currently force-feeds every
+  space's *full* data (all card fields) into browser memory. The map marker only needs a small
+  "render set": stable `UID`, `geolocation`, `observed_at` (lifecycle colour), and whatever the
+  filters key on. Card-detail fields could be fetched on demand instead of held in memory for
+  every space. Optimization: trim per-feature `properties` to the render set; serve card data
+  via a `GET /space/{uid}` read API in `mak-link-handler` reading from SQLite (NOT browsers
+  running SPARQL — that puts Oxigraph on the request hot path). **Constraint:** `observed_at`
+  MUST stay in the render set — it is lifecycle-critical and the marker can never fetch it
+  lazily. This is a performance/architecture change, explicitly NOT a freshness fix — kept out
+  of Epic 3.5 scope. → Epic 5+ (revisit when the GeoJSON is too big to ship whole, or card data
+  genuinely needs second-fresh accuracy).
+
 ## Deferred from: code review of 3-5-core-ttl-crosswalk-csv (2026-05-18)
 
 - `core:Place rdfs:subClassOf mom:Space` cross-layer dependency — both layers always load together per ADR-016; revisit at Epic 9 fab.ttl extraction (`ontology/core.ttl`)
