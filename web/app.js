@@ -483,7 +483,7 @@
 
     // ── Synthetic canary label (Mother Sands only) ──
     if (s.id === 'mother-sands') {
-      body.appendChild(el('div', { class: 'sp-canary-label', style: { padding: '8px 16px', background: 'var(--rule)', borderRadius: '2px', margin: '8px 0', fontSize: '0.82em', color: 'var(--muted)', lineHeight: '1.4' } }, [
+      body.appendChild(el('div', { class: 'sp-canary-label', style: { padding: '8px 16px', background: 'var(--rule)', borderRadius: '2px', margin: '8px 0', fontSize: '0.82em', color: 'var(--paper)', lineHeight: '1.4' } }, [
         el('strong', {}, ['Synthetic reference space']),
         ' — Mother Sands is MOM\'s diagnostic canary — a reference space we control to test our own data pipeline.',
       ]));
@@ -1058,7 +1058,7 @@
         setTimeout(() => {
           closeDrawer('addurl');
           selectSpace(spaceId, { fly: true });
-        }, unlockMsg ? 8000 : 2000);
+        }, unlockMsg ? 4000 : 2000);
       }
     });
   }

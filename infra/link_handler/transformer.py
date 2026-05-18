@@ -651,10 +651,13 @@ async def fetch_endpoint_conditional(
     db_row = _read_heartbeat_row(space_id, resolved_db)
 
     req_headers = {}
-    if db_row["etag"]:
-        req_headers["If-None-Match"] = db_row["etag"]
-    if db_row["last_modified"]:
-        req_headers["If-Modified-Since"] = db_row["last_modified"]
+    # Canary endpoint must never 304 — simulatedAge injection requires a full 200 response
+    # so the lifecycle override is always evaluated. Skip conditional GET for canary.
+    if space_id != "mother-sands":
+        if db_row["etag"]:
+            req_headers["If-None-Match"] = db_row["etag"]
+        if db_row["last_modified"]:
+            req_headers["If-Modified-Since"] = db_row["last_modified"]
 
     fetch_timeout = cfg.get("bandwidth", {}).get("heartbeat_timeout_seconds", 60.0)
     async with httpx.AsyncClient(timeout=fetch_timeout, follow_redirects=True) as client:
@@ -709,7 +712,7 @@ SELECT ?spaceUri ?endpointUrl WHERE {
     OPTIONAL { ?spaceUri mom:operationalState ?state }
     FILTER (!BOUND(?state) || ?state != "dead")
   }
-  FILTER (STRSTARTS(STR(?g), "urn:mak:space/"))
+  FILTER (STRSTARTS(STR(?g), "urn:mak:space/") || ?g = <urn:mak:canary>)
 }"""
 
 
@@ -872,10 +875,13 @@ async def process_one_space(
 
     # simulatedAge seam: canary payload may override the lifecycle clock for diagnostic testing.
     # Read from ext_mom.simulatedAge (caller-level injection, classifier stays pure).
+    # _simulated_age_active flag prevents the content_changed reset (line ~930) from clobbering it.
     simulated_age = data.get("ext_mom", {}).get("simulatedAge")
+    _simulated_age_active = False
     if simulated_age is not None:
         days_since_update = float(simulated_age)
         lifecycle_state, _lc_reason = classify_lifecycle(days_since_update)
+        _simulated_age_active = True
         if is_closed:
             lifecycle_state = "closed"
         logger.info("canary simulatedAge=%s for %s → lifecycle=%s", simulated_age, space_id, lifecycle_state)
@@ -923,7 +929,7 @@ async def process_one_space(
             consecutive_closed_cycles = 0
             lifecycle_state = "confirmed"
 
-        if content_changed and not is_closed:
+        if content_changed and not is_closed and not _simulated_age_active:
             lifecycle_state, _ = classify_lifecycle(0)  # just updated → confirmed
 
         preserved = await _read_space_metadata(space_uri, oxigraph_endpoint)

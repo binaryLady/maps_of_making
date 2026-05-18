@@ -7,7 +7,7 @@
   "location": {
     "lat": 51.65,
     "lon": 1.7,
-    "address": "North Sea, 51.65\u00b0N 1.70\u00b0E"
+    "address": "North Sea, SS3 9XR"
   },
   "contact": {
     "email": "bernard@mothersands.example.org",
@@ -15,15 +15,13 @@
     "twitter": "@mothersands"
   },
   "state": {
-    "open": true,
+    "open": false,
     "lastchange": 1715000000,
-    "message": "Canary nominal \u2014 all systems operational"
+    "message": "Canary nominal — all systems operational"
   },
-  "issue_report_channels": [
-    "email"
-  ],
+  "issue_report_channels": ["email"],
   "ext_mom": {
-    "simulatedAge": 0,
-    "canary": true
+    "canary": true,
+    "simulatedAge": null
   }
 }

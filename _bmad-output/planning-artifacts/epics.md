@@ -1049,6 +1049,7 @@ So that I can identify exactly where a discrepancy enters the pipeline without g
 **And** mismatches between Column 1 and Column 2 (fields present in raw JSON but absent from ingested triples) are flagged with ⚠ inline — these signal transformation gaps in `tasks/ingest.py`
 **And** mismatches between Column 2 and Column 3 (triples ingested but not rendered) are flagged with ⚠ inline — these signal display mapping gaps in `app.js`
 **And** the panel is the primary diagnostic tool — no raw log access, no SSH required to diagnose a pipeline discrepancy
+**And** for spaces in terminal state (`operationalState = closed` or `dead`), the panel shows `mom:deathReason` with its value (`closed` = coordinator-declared, `dead` = auto-inferred from lifecycle) — this field is the prerequisite for the `mak:public_ledger` death event writer: the writer must emit `mom:deathReason` as part of the dag-json tombstone record pushed to IPFS (ledger writer is a dependency of this story, not in scope here — tracked as deferred work)
 
 ---
 

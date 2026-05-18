@@ -59,6 +59,10 @@ XSD_BOOL = "http://www.w3.org/2001/XMLSchema#boolean"
 
 GRAPH_URI = "urn:mak:canary"
 SPACE_URI = "urn:mak:canary/mother-sands"
+CANARY_ENDPOINT = os.environ.get(
+    "CANARY_ENDPOINT_URL",
+    "https://mapsofmaking.org/canary/mother-sands.json",
+)
 
 
 def _lit(val: str) -> str:
@@ -106,6 +110,7 @@ def build_canary_sparql(data: dict) -> str:
         f"<{SPACE_URI}> <{MOM}operationalState> {_lit(lifecycle)} .",
         f'<{SPACE_URI}> <{MOM}endpointHealth> "healthy" .',
         f'<{SPACE_URI}> <{MOM}source> "canary" .',
+        f"<{SPACE_URI}> <{MOM}endpointUrl> <{CANARY_ENDPOINT}> .",
         f'<{SPACE_URI}> <{MOM}lastFetched> "{now}"^^<{XSD_DT}> .',
     ]
 

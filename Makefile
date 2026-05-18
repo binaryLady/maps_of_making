@@ -156,13 +156,23 @@ endpoint:
 	rsync -avz web/mother-sands-logo.png $(REMOTE):$(REMOTE_APP)/web/
 	@echo "✓ canary + logo pushed → https://mapsofmaking.org/canary/mother-sands.json"
 
-## Restore web/canary/mother-sands.json from committed baseline (healthy + confirmed + open)
+## Restore web/canary/mother-sands.json from committed baseline (seeded state, no endpoint URL)
+## Also removes mom:endpointUrl from Oxigraph so heartbeat skips it — simulates fresh seeded space.
 c-reset:
 	@mkdir -p web/canary
 	cp data/canary/baseline.json $(CANARY_SERVED)
 	@chmod 644 $(CANARY_SERVED)
 	$(MAKE) endpoint
-	@echo "✓ canary reset to baseline + pushed to VPS"
+	source venv/bin/activate && python3 scripts/load_canary.py
+	curl -s -X POST http://localhost:7878/update \
+	  -H "Content-Type: application/sparql-update" \
+	  -d "PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#> \
+	      DELETE WHERE { GRAPH <urn:mak:canary> { <urn:mak:canary/mother-sands> mom:endpointUrl ?u } }" \
+	  && echo "✓ endpointUrl removed from Oxigraph — canary is seeded"
+	podman exec maps-link-handler python3 -c \
+	  "import httpx; r = httpx.post('http://localhost:8000/api/heartbeat/run', timeout=60); print('rematerialize:', r.status_code)" \
+	  && echo "✓ GeoJSON rematerialized"
+	@echo "✓ canary reset to seeded baseline"
 
 ## ── Axis A — Reachability ────────────────────────────────────────────────────
 

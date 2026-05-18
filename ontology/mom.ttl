@@ -57,6 +57,13 @@ mom:operationalState
   rdfs:domain mom:Space ;
   rdfs:range xsd:string .
 
+mom:deathReason
+  a owl:DatatypeProperty ;
+  rdfs:label "Death Reason" ;
+  rdfs:comment "Provenance of a terminal operationalState. Values: 'closed' (coordinator explicitly retired the space via the closure protocol — authoritative, human-confirmed) or 'dead' (auto-inferred by the heartbeat after the zombie→dead lifecycle threshold — no human confirmation). A future value 'explicit' is reserved for endpoints that publish a machine-readable retirement signal (protocol TBD). Absent on non-terminal states. Pair with mom:operationalState to distinguish authoritative closure from lifecycle inference." ;
+  rdfs:domain mom:Space ;
+  rdfs:range xsd:string .
+
 mom:visibility
   a owl:DatatypeProperty ;
   rdfs:label "Visibility" ;
