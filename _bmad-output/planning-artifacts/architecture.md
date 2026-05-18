@@ -12,6 +12,8 @@ date: '2026-04-22'
 editHistory:
   - date: '2026-04-29'
     changes: 'Added ADR-015 (SpaceAPI JSON → MOM JSON-LD transformation layer, raw snapshot to disk); updated Primary Users (3-way split: coordinator / network coordinator Luca / operator Nicolas); updated Data Flow (3-stage pipeline, operator inspection panel, Luca public toggle); updated FR mapping table; added /data/snapshots/ to project structure'
+  - date: '2026-05-18'
+    changes: 'Added ADR-016 (Layered Community Namespaces + Bundle-Loading Model) — four-layer schema, bundle = view config, schema:knowsAbout concept pivot, crosswalk.csv as living bridge registry; Story 3.5'
 ---
 
 # Architecture Decision Document — maps_of_making
@@ -511,6 +513,35 @@ The `.ttl` is the specification; `tasks/ingest.py` is its implementation. They a
 /data/snapshots/{space_id}/latest.json      # always the most recent raw fetch
 /data/snapshots/{space_id}/{timestamp}.json # append-only archive (optional, configurable)
 ```
+
+---
+
+### ADR-016: Layered Community Namespaces + Bundle-Loading Model
+
+**Decision:** The MOM schema is organised as four layers under the **single canonical authority** `https://nicolasdb.github.io/mapsofmaking_ontology/`. Communities are loaded as composable *bundles* — a view configuration, not a separate graph. The handoff document's `w3id.org` IRIs are illegal; the layer split is real and lives *under* the canonical authority as sub-namespaces. Operationalized by Story 3.5 (`core.ttl`, `crosswalk.csv`).
+
+**The four layers:**
+
+| Layer | Namespace / file | Loaded | Role |
+|---|---|---|---|
+| `core` | `…/ns/core#` — `ontology/core.ttl` | always | portable identity (name, logo, website, geoloc, address) + `core:relationships` |
+| `mom` | `…/ns#` — `ontology/mom.ttl` | always | federation engine — `operationalState`, `endpointHealth`, `lastFetched`, `lastUpdated`, `memberOf`, `source` |
+| concept commons | currently inside `mom.ttl` (`mom:ActivityScheme`); future own namespace | always (in the graph) | the SKOS concept graph `schema:knowsAbout` resolves into (CNC, 3D-printing…) — owned by nobody, traversable by everybody |
+| community (`fab`/`omt`/`edu`/`agri`…) | future per-community `.ttl` | per `config.yaml` bundle | community vocabulary, fields, and CSS |
+
+**Bundles are *view* configuration; the Oxigraph graph is universal.** A community map renders its bundle by default, but the graph holds every node. Bundle loading is analogous to `docker-compose` — the `config.yaml` composes which layers a given map surfaces; the underlying data is one shared graph.
+
+**`schema:knowsAbout` is the concept pivot (the "wormhole hub").** Every community's specialised skill field — `fab:equipment`, `omt:treatmentFocus`, `edu:subjects` — aliases to `schema:knowsAbout` via `skos:closeMatch`. Because all of them resolve to the *same* concept IRIs, a query crossing two communities works with **zero coordination** between them: a dentist who never loaded `fab:` is still discoverable by a woodworker's "who does CNC near me" query. This is design for emergence.
+
+**`crosswalk.csv` is a living bridge registry.** `ontology/crosswalk.csv` records, per concept, the predicate the pipeline actually emits, its SpaceAPI source, and the community fields that alias to it. It is **v1 and never "finished"** — new `skos:closeMatch` bridge rows are appended as cross-community overlaps are discovered. `scripts/validate_crosswalk.py` enforces the no-redefinition rule: an extension may alias a `core:`/`mom:` field but never redefine it.
+
+**External concept anchors (candidates, not wired):** OpenKnowHow (OKH) and Wikidata are candidate external anchors for the concept commons — `owl:sameAs` / `skos:closeMatch` targets that would let MOM concepts align with vocabularies beyond the federation. Not implemented; noted for continuity.
+
+**`mom.ttl` is currently impure** — it mixes the federation engine with makerspace activity concepts (`mom:ActivityScheme`). Extracting the activity scheme into a dedicated `fab.ttl` (or a standalone concept-commons namespace) is future work, tracked under the Epic 9 stub. Story 3.5 deliberately does **not** move it; `crosswalk.csv` labels those concepts "concept commons (shared layer)" so the future extraction does not mis-file them into `fab:`.
+
+**Ontology-gap on-ramp.** `mom:OntologyGap` is declared in `mom.ttl` (added by Story 3.5). Today, unrecognised activity tags are logged to `gap_log.txt` as plain text by `transformer.py::_log_unmapped_tags` — no gap *triples* are emitted yet. Emitting `mom:OntologyGap` triples is deferred to **Story 6.3**. The gap log is intentionally the on-ramp for emergent community ontology (gap term → curation → concept minting → bridge discovery), not a janitorial dump.
+
+**Sync model:** `ontology/mom.ttl` and `ontology/core.ttl` in this repo are the working copies. The maintainer manually syncs them to the `github.com/nicolasdb/mapsofmaking_ontology` repo (published via GitHub Pages). Ontology edits land in `ontology/` here first; nothing git-pushes to the ontology repo automatically.
 
 ---
 

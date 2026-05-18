@@ -199,3 +199,39 @@ mom:GameDesign
                 "conception de jeux", "speldesign" ;
   skos:broader mom:Games ;
   rdfs:label "Game Design" .
+
+# Ontology gap tracking
+# ──────────────────────────────────────────────────────────────────────────────
+# mom:OntologyGap records an input (query text or activity tag) that matched no
+# known concept. It is the on-ramp for emergent community ontology: gap term →
+# curation → concept minting → cross-community bridge discovery. NOT a janitorial
+# dump. Declared here (cheap) for Story 6.3, which builds gap-triple emission.
+# Today, unmapped activity tags are logged to gap_log.txt (plain text, see
+# transformer.py::_log_unmapped_tags) — no triples are emitted yet. See ADR-016.
+# ──────────────────────────────────────────────────────────────────────────────
+
+mom:OntologyGap
+  a owl:Class ;
+  rdfs:label "Ontology Gap" ;
+  rdfs:comment "An input (query text or activity tag) that did not match any known concept — logged for ontology curation. The on-ramp for emergent community ontology, not an error log. See ADR-016 and Story 6.3." .
+
+mom:rawQuery
+  a owl:DatatypeProperty ;
+  rdfs:label "Raw Query" ;
+  rdfs:comment "The unmatched input text that triggered the gap (a natural-language query or a raw activity tag)." ;
+  rdfs:domain mom:OntologyGap ;
+  rdfs:range xsd:string .
+
+mom:rawLLMOutput
+  a owl:DatatypeProperty ;
+  rdfs:label "Raw LLM Output" ;
+  rdfs:comment "The raw LLM output associated with the gap, when the gap arose from an NL query (Story 6.3)." ;
+  rdfs:domain mom:OntologyGap ;
+  rdfs:range xsd:string .
+
+mom:gapTimestamp
+  a owl:DatatypeProperty ;
+  rdfs:label "Gap Timestamp" ;
+  rdfs:comment "ISO 8601 datetime the ontology gap was recorded." ;
+  rdfs:domain mom:OntologyGap ;
+  rdfs:range xsd:dateTime .

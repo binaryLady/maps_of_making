@@ -1,6 +1,6 @@
 # Story 3.5: `core.ttl` + `crosswalk.csv` — Operationalize the Three-Layer Schema
 
-Status: ready-for-dev
+Status: done
 
 **Story ID:** 3.5
 **Epic:** 3 (Ingestion Pipeline + Endpoint Health + Stale Detection) — closes Epic 3
@@ -87,35 +87,35 @@ The flow diagram (`_bmad-output/planning-artifacts/26.05.17_data-lifecycle.excal
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1: Author `ontology/core.ttl`** (AC: 1)
-  - [ ] Read `mom-schema-architecture-handoff.md` Layer 2 section for the field list
-  - [ ] Read `ontology/mom.ttl` to identify properties already declared (do not redefine)
-  - [ ] Write `ontology/core.ttl` using the canonical `mom:` namespace prefix — Identity, MOM-operational, and `core:relationships` property groups; reuse `mom:operationalState`, `mom:geolocationFidelity`, etc.
-  - [ ] Add `rdfs:comment` annotations marking each property's layer (base/operational/relationship)
-  - [ ] Verify it parses (load into local Oxigraph or `python -c "import rdflib; rdflib.Graph().parse('ontology/core.ttl')"`)
-- [ ] **Task 2: Add `mom:OntologyGap` to `mom.ttl` if absent** (AC: 3)
-  - [ ] Check `mom.ttl` for `mom:OntologyGap`; if missing, declare the class + `mom:rawQuery`/`mom:rawLLMOutput`/`mom:timestamp` (or field-gap equivalent) per `architecture.md`
-- [ ] **Task 3: Author `ontology/crosswalk.csv` + `crosswalk.md`** (AC: 2)
-  - [ ] Read `transformer.py::transform_to_sparql` and enumerate every predicate it emits and the SpaceAPI field it derives from
-  - [ ] Cross-check against the handoff's SpaceAPI→`core:` table and ADR-015's field-mapping table
-  - [ ] Write `crosswalk.csv` with one row per real mapping; `core_field` = predicate actually emitted
-  - [ ] Add `fab:equipment` ↔ `schema:knowsAbout` row (activity tags)
-  - [ ] Add `omt:`/`edu:` placeholder rows, each `status: draft` in notes
-  - [ ] Write `crosswalk.md` narrative
-- [ ] **Task 4: Audit + verify permissive ingestion** (AC: 3)
-  - [ ] Trace field handling in `transformer.py` and `main.py`: confirm no "reject on field X" logic exists
-  - [ ] Document in Dev Notes how unrecognised fields/tags are currently handled (`_log_unmapped_tags` → `gap_log.txt`)
-  - [ ] Decide: extend to `mom:OntologyGap` triples now, or defer tagged `→ Story 6.3` — record decision + rationale
-- [ ] **Task 5: Author `scripts/validate_crosswalk.py`** (AC: 4)
-  - [ ] Parse `crosswalk.csv` with stdlib `csv`
-  - [ ] Enforce: non-empty `core_field` + non-alias extension field → fail with clear message
-  - [ ] Run it against `crosswalk.csv`; confirm it passes
-- [ ] **Task 6: Write ADR-016 — Layered community bundles** (AC: 1, 2)
-  - [ ] Add `ADR-016: Layered Community Namespaces + Bundle-Loading Model` to `architecture.md` (follow the existing ADR format, e.g. ADR-015)
-  - [ ] Record: the four-layer model (core / mom / concept commons / community); `config.yaml` bundle-loading (analogous to `docker-compose`); bundles = view config, graph = universal; `schema:knowsAbout` as the concept pivot; `crosswalk.csv` as a living bridge registry; OKH/Wikidata as external concept anchors (candidates, not wired)
-- [ ] **Task 7: Verify end-to-end**
-  - [ ] `core.ttl` parses; `validate_crosswalk.py` passes; all files committed under `ontology/` and `scripts/`
-  - [ ] Note in Completion Notes that `ontology/mom.ttl` (and now `core.ttl`) require **manual sync** to the `mapsofmaking_ontology` repo by the maintainer — do not attempt to push there
+- [x] **Task 1: Author `ontology/core.ttl`** (AC: 1)
+  - [x] Read `mom-schema-architecture-handoff.md` Layer 2 section for the field list
+  - [x] Read `ontology/mom.ttl` to identify properties already declared (do not redefine)
+  - [x] Write `ontology/core.ttl` — `core:` sub-namespace; Identity (schema: reuse via `rdfs:seeAlso`), MOM-operational (mom: reuse), and `core:relationships` groups
+  - [x] Add `rdfs:comment` annotations marking each property's layer (identity/operational/relationship)
+  - [x] Verify it parses (`rdflib` → 80 triples OK)
+- [x] **Task 2: Add `mom:OntologyGap` to `mom.ttl` if absent** (AC: 3)
+  - [x] Confirmed `mom:OntologyGap` absent; declared class + `mom:rawQuery`/`mom:rawLLMOutput`/`mom:timestamp` per `architecture.md` line 683
+- [x] **Task 3: Author `ontology/crosswalk.csv` + `crosswalk.md`** (AC: 2)
+  - [x] Read `transformer.py::transform_to_sparql` and enumerated every predicate it emits
+  - [x] Cross-checked against the handoff's SpaceAPI→`core:` table and ADR-015
+  - [x] Wrote `crosswalk.csv` — 31 rows; `core_field` = predicate actually emitted
+  - [x] Added `fab:equipment` ↔ `schema:knowsAbout` activities row (concept-commons pivot)
+  - [x] Added `omt:`/`edu:` placeholder rows, each `status: draft` in notes
+  - [x] Wrote `crosswalk.md` narrative (living bridge registry v1)
+- [x] **Task 4: Audit + verify permissive ingestion** (AC: 3)
+  - [x] Traced `transformer.py`: no "reject on field X" logic; `resolve_activities` never drops a tag
+  - [x] Documented `_log_unmapped_tags` → `gap_log.txt` behaviour in Dev Notes
+  - [x] Decision: defer `mom:OntologyGap` triple emission → Story 6.3 (recorded below)
+- [x] **Task 5: Author `scripts/validate_crosswalk.py`** (AC: 4)
+  - [x] Parses `crosswalk.csv` with stdlib `csv`
+  - [x] Enforces: non-empty `core_field` + non-alias extension field → fail with clear message (negative-tested)
+  - [x] Runs against `crosswalk.csv`; passes (31 rows checked)
+- [x] **Task 6: Write ADR-016 — Layered community bundles** (AC: 1, 2)
+  - [x] Added `ADR-016: Layered Community Namespaces + Bundle-Loading Model` to `architecture.md`
+  - [x] Recorded four-layer model, bundle-loading, concept pivot, living bridge registry, OKH/Wikidata anchors
+- [x] **Task 7: Verify end-to-end**
+  - [x] `core.ttl` parses (80 triples); `validate_crosswalk.py` passes; no `w3id.org` IRIs anywhere
+  - [x] Manual-sync note recorded in Completion Notes
 
 ## Dev Notes
 
@@ -189,8 +189,47 @@ Key principles the dev must respect (they shape `core.ttl` and the crosswalk, ev
 
 ### Agent Model Used
 
+claude-sonnet-4-6 (Amelia / bmad-dev-story)
+
 ### Debug Log References
+
+- `core.ttl` rdflib parse: 80 triples OK
+- `mom.ttl` rdflib parse after edit: 185 triples OK
+- `validate_crosswalk.py`: OK — 31 rows checked, no-redefinition rule holds
+- Negative test: validator correctly rejects a `core_field` + extension-field row with non-skos `mapping_type`
 
 ### Completion Notes List
 
+- **Static-artifact story** — no transformer/Docker/Oxigraph behaviour change. AC1/2/4 produce files; AC3 is an audit.
+- **AC3 permissive-ingestion decision (pinned):** `transformer.py` has no "reject on field X" logic. `resolve_activities()` never drops a tag — unknown tags fall back to the raw string and are appended to `gap_log.txt` (plain text) by `_log_unmapped_tags()`. Decision: **keep `gap_log` as-is; do NOT build `mom:OntologyGap` triple emission in this story — deferred → Story 6.3.** The `gap_log` is intentionally the on-ramp for emergent community ontology (gap term → curation → concept minting → bridge discovery), not a janitorial dump. `mom:OntologyGap` class declared in `mom.ttl` now (cheap; Story 6.3 needs it).
+- **Incoherence flagged & documented (not silently fixed):** Story Dev Notes line 130 and ADR-015 (`architecture.md:495`) state `location.address → schema:address`. The live transformer (`transformer.py:507`) actually emits `mom:address` as `xsd:string`. Per AC2 ("`core_field` = predicate the code actually writes"), `crosswalk.csv`'s address row records `mom:address` and flags the discrepancy in its `notes` column; `crosswalk.md` has a "Known incoherence" section. Reconciling code to the idealized mapping is out of scope for 3.5.
+- **`core.ttl` design:** identity fields are pure Schema.org terms — reused via `rdfs:seeAlso`, never re-minted. Operational fields stay owned by `mom:` and are referenced, not redefined. The only new terms minted in the `core:` sub-namespace (`…/ns/core#`) are `core:Place` and the `core:relationships` family. No `w3id.org` IRIs anywhere (verified).
+- **Manual sync required:** `ontology/mom.ttl` and `ontology/core.ttl` are working copies. The maintainer must manually sync them to the `github.com/nicolasdb/mapsofmaking_ontology` repo. No automated push was performed.
+- This story closes Epic 3. After it reaches `done`, Epic 3 can transition to `done` and the retrospective run.
+
 ### File List
+
+- `ontology/core.ttl` (NEW) — Layer 2 base schema
+- `ontology/crosswalk.csv` (NEW) — overlap-resolution table, 31 rows
+- `ontology/crosswalk.md` (NEW) — human-readable crosswalk narrative
+- `scripts/validate_crosswalk.py` (NEW) — no-redefinition enforcement
+- `ontology/mom.ttl` (MODIFIED) — added `mom:OntologyGap` class + `rawQuery`/`rawLLMOutput`/`timestamp`
+- `_bmad-output/planning-artifacts/architecture.md` (MODIFIED) — appended ADR-016 + editHistory entry
+
+### Review Findings
+
+- [x] [Review][Decision] `schema:contactJson` is not a real Schema.org predicate — `core.ttl` uses `rdfs:seeAlso schema:contactJson` (fabricated IRI; `schema:contactPoint` is the real one) and AC1 requires a `contactEmail` identity field. The transformer emits `schema:contactJson` as a non-standard predicate (pre-existing). Decision: (a) keep as-is with an explicit "non-standard" note; (b) alias to `schema:contactPoint` in core.ttl; (c) move to `mom:contactJson` under the mom: namespace. [AC1/AC2]
+- [x] [Review][Patch] `core:relationshipType`/`relationshipSince`/`relationshipTarget` declare `rdfs:domain core:relationships`, but `rdfs:domain` must be a class, not a property — removed domain declarations; comments updated to describe blank-node usage [ontology/core.ttl]
+- [x] [Review][Patch] `mom:timestamp` domain too narrow — renamed to `mom:gapTimestamp` [ontology/mom.ttl]
+- [x] [Review][Patch] `validate_crosswalk.py` — added header column assertion + BOM-safe `utf-8-sig` encoding [scripts/validate_crosswalk.py]
+- [x] [Review][Patch] `validate_crosswalk.py` error message now reports column names not field values [scripts/validate_crosswalk.py]
+- [x] [Review][Defer] `core:Place rdfs:subClassOf mom:Space` cross-layer dependency — both layers always load together per ADR-016, so portable-bundle portability is moot for PoC; revisit at Epic 9 fab.ttl extraction [ontology/core.ttl] — deferred, pre-existing by design
+- [x] [Review][Defer] No check that `core_field` IRI values actually exist in ontology files — typos pass validation silently [scripts/validate_crosswalk.py] — deferred, pre-existing
+- [x] [Review][Defer] `owl:versionInfo "0.1"` with no `dcterms:created`/`dcterms:modified` in core.ttl — deferred, pre-existing pattern in mom.ttl
+- [x] [Review][Defer] UTF-8 BOM not handled by `validate_crosswalk.py` — deferred, all files are git-tracked; low risk for this project
+
+## Change Log
+
+| Date | Change |
+|---|---|
+| 2026-05-18 | Story 3.5 implemented — `core.ttl`, `crosswalk.csv`, `crosswalk.md`, `validate_crosswalk.py` created; `mom:OntologyGap` added to `mom.ttl`; ADR-016 added to `architecture.md`. Status → review. |

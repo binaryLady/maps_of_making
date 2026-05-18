@@ -1,5 +1,12 @@
 # Deferred Work
 
+## Deferred from: code review of 3-5-core-ttl-crosswalk-csv (2026-05-18)
+
+- `core:Place rdfs:subClassOf mom:Space` cross-layer dependency — both layers always load together per ADR-016; revisit at Epic 9 fab.ttl extraction (`ontology/core.ttl`)
+- No check that `core_field` IRI values actually exist in ontology files — typos pass `validate_crosswalk.py` silently; add an ontology-load check in a future validator pass (`scripts/validate_crosswalk.py`)
+- `owl:versionInfo "0.1"` with no `dcterms:created`/`dcterms:modified` in `core.ttl` — pre-existing pattern in `mom.ttl`; add provenance metadata when ontology is promoted to canonical repo
+- UTF-8 BOM not handled by `validate_crosswalk.py` — low risk for this git-tracked project; add `encoding="utf-8-sig"` if CSV editing outside of git-native tools is ever needed
+
 ## Deferred from: Story 3.2 lore session (2026-05-06) — Mother Sands / Unit M canary space
 
 ### Concept
