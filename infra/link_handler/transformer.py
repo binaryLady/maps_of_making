@@ -324,15 +324,15 @@ def _extract_last_open_change(state) -> Optional[str]:
 
 def build_state_only_update(space_uri: str, endpoint_health: str, lifecycle_state: str,
                             graph_uri: Optional[str] = None,
-                            last_fetched: Optional[str] = None) -> str:
+                            observed_at: Optional[str] = None) -> str:
     """Build a surgical SPARQL UPDATE that replaces endpointHealth, operationalState
-    and (optionally) lastFetched.
+    and (optionally) observedAt.
 
-    Used for 304 and failure paths — must NOT touch mom:lastUpdated or mom:openNow.
+    Used for 304 and failure paths — must NOT touch mom:openNow.
 
-    When last_fetched is provided, mom:lastFetched is also refreshed. The 304 path
-    passes it so the map's "fetched N ago" caption stays current even when the
-    endpoint returns Not Modified and no content write happens (Story 3.4).
+    When observed_at is provided (304 path), mom:observedAt is also refreshed so
+    the pipeline carries the advanced freshness token into Oxigraph. Stored as
+    xsd:string to preserve byte-identity through Oxigraph (Story 3.6 debug note).
 
     Uses three-statement pattern (DELETE WHERE + INSERT DATA) instead of DELETE/INSERT/WHERE
     so the INSERT fires even when the named graph has no prior health/state triples, or
@@ -348,13 +348,13 @@ def build_state_only_update(space_uri: str, endpoint_health: str, lifecycle_stat
         f'    <{space_uri}> mom:endpointHealth "{endpoint_health}" .',
         f'    <{space_uri}> mom:operationalState "{lifecycle_state}" .',
     ]
-    if last_fetched:
+    if observed_at:
         deletes.append(
-            f"DELETE WHERE {{ GRAPH <{graph_uri}> {{ <{space_uri}> mom:lastFetched ?f }} }}"
+            f"DELETE WHERE {{ GRAPH <{graph_uri}> {{ <{space_uri}> mom:observedAt ?t }} }}"
         )
         inserts.append(
-            f'    <{space_uri}> mom:lastFetched '
-            f'"{last_fetched}"^^<http://www.w3.org/2001/XMLSchema#dateTime> .'
+            f'    <{space_uri}> mom:observedAt '
+            f'"{observed_at}"^^<http://www.w3.org/2001/XMLSchema#string> .'
         )
     delete_block = " ;\n".join(deletes)
     insert_block = "\n".join(inserts)
@@ -371,6 +371,7 @@ def transform_to_sparql(
     validated_data: "SpaceAPISchema",
     metadata: dict,
     content_changed: bool = True,
+    observed_at: Optional[str] = None,
 ) -> tuple[str, str]:
     """Build idempotent SPARQL UPDATE for a space.
 
@@ -382,7 +383,8 @@ def transform_to_sparql(
       - endpoint_health (str, optional): from classify_endpoint_health; defaults to "healthy"
       - lifecycle_state (str, optional): from classify_lifecycle; defaults to "confirmed"
 
-    content_changed: when False, mom:lastUpdated is NOT rewritten (304 / no-diff path).
+    observed_at: ISO-8601 UTC string minted once at fetch time (from snapshot store).
+      Carried byte-identical into mom:observedAt — never re-stamped here.
 
     Returns (sparql_update_str, snapshot_graph_uri).
     """
@@ -401,7 +403,6 @@ def transform_to_sparql(
     graph_uri = "urn:mak:canary" if is_canary else f"urn:mak:space/{slug}"
     space_uri = f"urn:mak:canary/{slug}" if is_canary else f"urn:mak:space/{slug}"
     endpoint_url = metadata.get("endpoint_url", "")
-    now = datetime.now(timezone.utc).isoformat()
     snapshot_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     snapshot_graph_uri = f"urn:mak:canary/{snapshot_date}" if is_canary else f"urn:mak:space/{slug}/{snapshot_date}"
 
@@ -419,7 +420,6 @@ def transform_to_sparql(
         f"  <{space_uri}> <{SCHEMA}geo> [ <{SCHEMA}latitude> {lat} ; <{SCHEMA}longitude> {lon} ] .",
         f'  <{space_uri}> <{MOM}operationalState> "{lifecycle_state}" .',
         f'  <{space_uri}> <{MOM}endpointHealth> "{endpoint_health}" .',
-        f'  <{space_uri}> <{MOM}lastFetched> "{now}"^^<http://www.w3.org/2001/XMLSchema#dateTime> .',
         f'  <{space_uri}> <{MOM}source> "{_sparql_str(source)}" .',
     ]
     for member_uri in metadata.get("member_of", []):
@@ -464,17 +464,12 @@ def transform_to_sparql(
         contact_json = json.dumps(validated_data.contact, separators=(',', ':'))
         triples.append(f'  <{space_uri}> <{SCHEMA}contactJson> "{_sparql_str(contact_json)}"^^<http://www.w3.org/2001/XMLSchema#string> .')
 
-    # mom:lastUpdated: written fresh on a content change. On a no-diff cycle we
-    # must RE-INSERT the prior value — the enclosing DROP SILENT GRAPH would
-    # otherwise wipe it, leaving the space 'updated unknown' / stuck-seeded.
-    if content_changed:
-        triples.append(f'  <{space_uri}> <{MOM}lastUpdated> "{now}"^^<http://www.w3.org/2001/XMLSchema#dateTime> .')
-    else:
-        preserved_last_updated = metadata.get("preserved_last_updated")
-        if preserved_last_updated:
-            triples.append(
-                f'  <{space_uri}> <{MOM}lastUpdated> "{preserved_last_updated}"^^<http://www.w3.org/2001/XMLSchema#dateTime> .'
-            )
+    # observed_at: minted once at fetch time, carried byte-identical (xsd:string to
+    # avoid Oxigraph normalizing xsd:dateTime and breaking byte-identity — Story 3.6).
+    if observed_at:
+        triples.append(
+            f'  <{space_uri}> <{MOM}observedAt> "{observed_at}"^^<http://www.w3.org/2001/XMLSchema#string> .'
+        )
 
     # open/closed state from SpaceAPI state field
     open_now = _extract_open_now(validated_data.state)
@@ -520,7 +515,6 @@ def transform_to_sparql(
     snapshot_summary = metadata.get("snapshot_summary", "Fetch successful")
 
     snapshot_triples = [
-        f"  <{space_uri}> <{MOM}snapshotDate> \"{now}\"^^<http://www.w3.org/2001/XMLSchema#dateTime> .",
         f"  <{space_uri}> <{MOM}snapshotSummary> \"{_sparql_str(snapshot_summary)}\" .",
         f"  <{space_uri}> <{MOM}lastHttpStatus> {http_status} .",
     ]
@@ -721,13 +715,13 @@ async def process_one_space(
     if was_304:
         minutes_ok = _minutes_since(last_fetched_ts)
         endpoint_health, _ = classify_endpoint_health(304, minutes_ok, consecutive_failures)
-        # Always write on 304 to refresh mom:lastFetched — otherwise the map's
-        # "fetched N ago" caption freezes at the last 200 response (Story 3.4).
-        _now_304 = datetime.now(timezone.utc).isoformat()
+        # Propagate advanced observed_at from snapshot store (advance_observed_at called
+        # in space_pipeline on 304) so Oxigraph carries the freshness token forward.
         _graph = "urn:mak:canary" if _is_canary else None
+        _obs_304 = snap["observed_at"] if snap else None
         state_update = build_state_only_update(
             _effective_space_uri, endpoint_health, lifecycle_state, _graph,
-            last_fetched=_now_304,
+            observed_at=_obs_304,
         )
         async with httpx.AsyncClient(timeout=15.0) as client:
             upd = await client.post(
@@ -746,7 +740,7 @@ async def process_one_space(
         )
         con.commit()
         con.close()
-        logger.info("heartbeat 304 for %s (%s/%s) — lastFetched refreshed", space_id,
+        logger.info("heartbeat 304 for %s (%s/%s) — observedAt propagated", space_id,
                     endpoint_health, lifecycle_state)
         return "not_modified", True
 
@@ -853,13 +847,7 @@ async def process_one_space(
             "lifecycle_state": lifecycle_state,
             "source": preserved["source"],
             "member_of": preserved["member_of"],
-            # Preserve mom:lastUpdated across the DROP on a no-diff cycle. The
-            # heartbeat_log's last_content_updated is the authoritative record of
-            # when content last changed, so it both preserves the value AND
-            # recovers spaces whose triple was already wiped by the old bug.
-            # Fall back to the Oxigraph-side value if the DB has no record.
-            "preserved_last_updated": last_content_updated_ts or preserved["last_updated"],
-        }, content_changed=content_changed)
+        }, content_changed=content_changed, observed_at=snap["observed_at"] if snap else None)
 
         if revival_sparql:
             # SPARQL UPDATE operations must be ';'-separated. The revival block is a

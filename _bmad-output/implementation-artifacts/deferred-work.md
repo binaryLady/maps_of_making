@@ -1,5 +1,20 @@
 # Deferred Work
 
+## Deferred from: Story 3.8 operator verification (2026-05-19)
+
+- **Registration flow does not call clean canary pipeline after rematerialization** —
+  `_rematerialize_geojson()` is called at line 853 of `main.py` after a space registers.
+  This overwrites `spaces.geojson` with the fat SPARQL shape (29 properties, `observed_at: None`)
+  for all spaces including Mother Sands. `_run_clean_canary_pipeline()` is only called from
+  `_heartbeat_job()`, so the canary feature stays fat until the next 10-min heartbeat corrects it.
+  **Story 3.9 must resolve this** by making `_rematerialize_geojson()` itself produce the clean
+  shape (with `mom:observedAt` read from Oxigraph for all spaces) — at which point the canary
+  pipeline patch step becomes redundant and can be merged or dropped.
+  Relevant locations: `main.py:50-54` (`_heartbeat_job` sequence), `main.py:853` (registration
+  call site), `main.py:166-186` (`_SPARQL_SELECT` UNION block for `urn:mak:canary` — currently
+  queries `mom:lastFetched`/`mom:lastUpdated` which are empty after Story 3.8; needs
+  `mom:observedAt` added). → Story 3.9
+
 ## Deferred from: Epic 3 retro party-mode roundtable (2026-05-18)
 
 - **`spaces.geojson` payload-slimming** — `web/data/spaces.geojson` currently force-feeds every

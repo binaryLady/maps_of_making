@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-01
-last_updated: "2026-05-19 (Story 3.6 code review — patches applied, story closed)"
+last_updated: "2026-05-19 (Story 3.8 created — ready-for-dev)"
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
@@ -125,7 +125,7 @@ development_status:
   epic-3.5: in-progress
   3-6-walking-skeleton-observed-at-end-to-end: done
   3-7-heartbeat-log-observed-at-fetch-status: done
-  3-8-transformer-emits-mom-observedat: backlog
+  3-8-transformer-emits-mom-observedat: ready-for-dev
   3-9-materializer-propagates-observed-at-to-geojson: backlog
   3-10-browser-lifecycle-buckets-canary-e2e: backlog
   epic-3.5-retrospective: optional

@@ -14,6 +14,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, ConfigDict
 
 from canary_pipeline import run_canary_pipeline
+from snapshot_store import mint_observed_at, write_snapshot
 from transformer import (get_config, query_active_spaces, process_one_space, run_heartbeat_cycle,
                          effective_marker)
 from utils import MOM, SCHEMA, _ALLOWED_SCHEMES, _sparql_str, _sparql_iri, _slug
@@ -780,13 +781,14 @@ async def register_url(req: UrlRequest):
 
     from transformer import transform_to_sparql
     cls: dict = {}
+    reg_observed_at = mint_observed_at()
     try:
         schema_obj = SpaceAPISchema.model_validate(data)
         cls = classify_subset(schema_obj)
         sparql_update, _ = transform_to_sparql(schema_obj, {
             "endpoint_url": req.url, "space_id": slug,
             "subset": cls.get("subset", ""), "next_unlock": cls.get("next_unlock"),
-        })
+        }, observed_at=reg_observed_at)
     except Exception as e:
         logger.exception("transform_to_sparql failed, falling back to legacy builder: %s", e)
         sparql_update = _build_sparql_update(
@@ -805,6 +807,12 @@ async def register_url(req: UrlRequest):
     except Exception as e:
         logger.error("Oxigraph UPDATE failed: %s", e)
         raise HTTPException(status_code=502, detail={"error": "triplestore_write_failed"})
+
+    # Write snapshot to store so heartbeat cycles can read observed_at
+    try:
+        write_snapshot(slug, reg_observed_at, data, fetch_status="ok")
+    except Exception as snap_err:
+        logger.warning("snapshot store write failed for %s: %s", slug, snap_err)
 
     # Write snapshot graph with ingestion metadata
     snapshot_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")

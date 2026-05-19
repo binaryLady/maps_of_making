@@ -1,9 +1,10 @@
-"""Regression tests for Story 3.4: stuck-seeded bug.
+"""Regression tests for Story 3.4: stuck-seeded bug; updated Story 3.8.
 
 This test suite reproduces the stuck-seeded bug where spaces fetch successfully
-but their mom:lastUpdated is never written to Oxigraph, causing them to remain
+but their freshness token is never written to Oxigraph, causing them to remain
 stuck in seeded state instead of transitioning to confirmed.
 
+Story 3.8: mom:lastUpdated replaced by mom:observedAt (snapshot-minted token).
 Tests use the Mother Sands diagnostic canary and live Oxigraph integration.
 """
 import json
@@ -77,7 +78,7 @@ def _oxigraph_update(sparql: str) -> None:
 
 
 class TestRegressionStuckSeeded:
-    """Test suite for stuck-seeded bug: mom:lastUpdated not written on fetch."""
+    """Test suite for stuck-seeded bug: freshness token not written on fetch."""
 
     def test_regression_revival_write_persists_lastupdated(self):
         """
@@ -115,15 +116,27 @@ class TestRegressionStuckSeeded:
             "The stuck-seeded bug: this 400 froze all triples for closed spaces."
         )
 
-        # Verify mom:lastUpdated actually landed — the cure for 'updated unknown'.
+        # Verify mom:observedAt landed — Story 3.8 replaces mom:lastUpdated with
+        # the snapshot-minted observed_at token as the freshness proof.
+        T = "2026-05-19T10:00:00Z"
         check = f"""PREFIX mom: <{MOM}>
-SELECT ?lastUpdated WHERE {{
-  GRAPH <{space_uri}> {{ <{space_uri}> mom:lastUpdated ?lastUpdated }}
+SELECT ?observedAt WHERE {{
+  GRAPH <{space_uri}> {{ <{space_uri}> mom:observedAt ?observedAt }}
 }}"""
+        # Re-run the write with an observed_at to confirm the triple lands.
+        main_update2, _ = transform_to_sparql(schema, metadata, content_changed=True,
+                                              observed_at=T)
+        combined2 = revival.rstrip() + " ;\n" + main_update2
+        httpx.post(
+            f"{OXIGRAPH_URL}/update",
+            content=combined2,
+            headers={"Content-Type": "application/sparql-update"},
+            timeout=10.0,
+        )
         bindings = _oxigraph_query(check)
         assert len(bindings) > 0, (
-            "mom:lastUpdated is STILL absent after a successful revival write.\n"
-            "The space would render as 'updated unknown' / stuck-seeded."
+            "mom:observedAt is absent after a successful revival write.\n"
+            "The space would have no freshness token — equivalent to old stuck-seeded bug."
         )
 
         # Cleanup test graph
@@ -204,18 +217,17 @@ SELECT ?lastUpdated WHERE {{
         )
 
 
-    def test_transform_to_sparql_writes_lastupdated_when_content_changed(self):
+    def test_transform_to_sparql_writes_observedat_when_provided(self):
         """
-        Unit test: transform_to_sparql should write mom:lastUpdated when content_changed=True.
+        Unit test: transform_to_sparql writes mom:observedAt when observed_at is supplied.
 
-        This test validates the transform layer directly, ensuring that when
-        content_changed=True, the SPARQL output includes the mom:lastUpdated triple.
+        Story 3.8: observed_at replaces mom:lastUpdated as the freshness token.
+        The token is minted once at fetch time and carried byte-identical into Oxigraph.
         """
         baseline = _read_baseline()
-
-        # Parse the baseline as a SpaceAPISchema (simulating successful validation)
         schema = SpaceAPISchema(**baseline)
 
+        T = "2026-05-19T10:00:00Z"
         metadata = {
             "endpoint_url": "http://localhost:9191/",
             "space_id": "mother-sands",
@@ -223,20 +235,24 @@ SELECT ?lastUpdated WHERE {{
             "lifecycle_state": "confirmed",
         }
 
-        # Generate SPARQL with content_changed=True
-        sparql_update, _ = transform_to_sparql(schema, metadata, content_changed=True)
+        sparql_update, _ = transform_to_sparql(schema, metadata, content_changed=True,
+                                               observed_at=T)
 
-        # SPARQL should contain mom:lastUpdated
-        assert f"{MOM}lastUpdated" in sparql_update or "lastUpdated" in sparql_update, (
-            "BUG: transform_to_sparql should write mom:lastUpdated when content_changed=True.\n"
+        assert f"{MOM}observedAt" in sparql_update or "observedAt" in sparql_update, (
+            "BUG: transform_to_sparql should write mom:observedAt when observed_at is provided.\n"
             f"SPARQL output:\n{sparql_update}"
+        )
+        assert T in sparql_update, (
+            "observed_at value must appear byte-identical in the SPARQL output."
         )
 
 
-    def test_transform_to_sparql_no_fresh_lastupdated_when_no_content_change(self):
+    def test_transform_to_sparql_no_observedat_when_not_provided(self):
         """
-        Unit test: with content_changed=False AND no preserved value,
-        transform_to_sparql writes no mom:lastUpdated (nothing to write yet).
+        Unit test: transform_to_sparql writes no mom:observedAt when observed_at is absent.
+
+        Story 3.8: the freshness token is optional — callers that don't yet have
+        a snapshot (e.g. legacy fallback paths) produce a graph without observedAt.
         """
         baseline = _read_baseline()
         schema = SpaceAPISchema(**baseline)
@@ -250,47 +266,41 @@ SELECT ?lastUpdated WHERE {{
 
         sparql_update, _ = transform_to_sparql(schema, metadata, content_changed=False)
 
-        insert_section = sparql_update.split("WHERE")[0] if "WHERE" in sparql_update else sparql_update
-        assert f"{MOM}lastUpdated" not in insert_section, (
-            "With no preserved value, content_changed=False should write no lastUpdated.\n"
+        assert f"{MOM}observedAt" not in sparql_update and "observedAt" not in sparql_update, (
+            "Without observed_at, transform_to_sparql should write no mom:observedAt.\n"
             f"SPARQL output:\n{sparql_update}"
         )
 
-    def test_transform_to_sparql_preserves_lastupdated_across_drop(self):
+    def test_transform_to_sparql_carries_observedat_across_drop(self):
         """
-        ROOT CAUSE #2 of stuck-seeded bug (Story 3.4):
+        Story 3.8 analog of the ROOT CAUSE #2 fix:
 
-        transform_to_sparql emits DROP SILENT GRAPH + INSERT DATA. On a no-diff
-        cycle (content_changed=False) the INSERT used to omit mom:lastUpdated, so
-        the DROP wiped the prior value permanently — the space went 'updated
-        unknown' even though it had a valid timestamp before.
-
-        FIX: when content_changed=False, the prior mom:lastUpdated is passed via
-        metadata['preserved_last_updated'] and MUST be re-inserted across the DROP.
+        transform_to_sparql emits DROP SILENT GRAPH + INSERT DATA. The freshness
+        token (observed_at) must be carried into the INSERT — otherwise the DROP
+        wipes it permanently. Story 3.8 fixes this structurally: the caller always
+        passes observed_at (from snapshot store) so it is always re-inserted.
         """
         baseline = _read_baseline()
         schema = SpaceAPISchema(**baseline)
 
-        prior_timestamp = "2026-05-07T16:08:30.804057+00:00"
+        T = "2026-05-19T10:00:00Z"
         metadata = {
             "endpoint_url": "http://localhost:9191/",
             "space_id": "mother-sands",
             "endpoint_health": "healthy",
             "lifecycle_state": "confirmed",
-            "preserved_last_updated": prior_timestamp,
         }
 
-        # No-diff cycle, but a prior lastUpdated exists and must survive the DROP.
-        sparql_update, _ = transform_to_sparql(schema, metadata, content_changed=False)
+        sparql_update, _ = transform_to_sparql(schema, metadata, content_changed=False,
+                                               observed_at=T)
 
-        assert prior_timestamp in sparql_update, (
-            "BUG: prior mom:lastUpdated was NOT preserved across DROP SILENT GRAPH.\n"
-            "On a no-diff cycle the timestamp must be re-inserted, or the space\n"
-            "renders as 'updated unknown' / stuck-seeded.\n"
+        assert T in sparql_update, (
+            "BUG: observed_at was NOT carried across DROP SILENT GRAPH.\n"
+            "The freshness token must be re-inserted on every write.\n"
             f"SPARQL output:\n{sparql_update}"
         )
-        assert f"{MOM}lastUpdated" in sparql_update, (
-            "mom:lastUpdated triple missing entirely from no-diff write."
+        assert f"{MOM}observedAt" in sparql_update, (
+            "mom:observedAt triple missing entirely from no-diff write."
         )
 
 
@@ -392,49 +402,44 @@ class TestRevivalSparqlConcatenation:
         )
 
 
-class TestStaleLastFetchedOn304:
+class TestStaleObservedAtOn304:
     """
-    ROOT CAUSE #3 of stale display (Story 3.4):
+    Story 3.8 replacement for TestStaleLastFetchedOn304:
 
-    On HTTP 304 Not Modified, the heartbeat skipped writing mom:lastFetched to
-    Oxigraph (build_state_only_update only touched health/state, and only fired
-    when health/state changed). The map reads mom:lastFetched for its
-    'fetched N ago' caption, so a space returning 304 forever showed a frozen
-    timestamp from its last 200 response — e.g. 'fetched 9d ago' while the
-    heartbeat actually ran minutes ago.
-
-    FIX: build_state_only_update accepts last_fetched and the 304 path always
-    writes it.
+    On HTTP 304 Not Modified, build_state_only_update now propagates the
+    snapshot store's observed_at value to Oxigraph (instead of re-stamping
+    mom:lastFetched with datetime.now()). The advanced token keeps Oxigraph
+    in sync with the snapshot store across all three HTTP outcomes.
     """
 
-    def test_state_only_update_omits_lastfetched_by_default(self):
-        """Failure/legacy callers that pass no last_fetched must not touch it."""
+    def test_state_only_update_omits_observedat_by_default(self):
+        """Error path callers pass no observed_at — observedAt must not be touched."""
         sparql = build_state_only_update(
             "urn:mak:space/x", "healthy", "confirmed"
         )
-        assert "lastFetched" not in sparql, (
-            "build_state_only_update should only write lastFetched when asked."
+        assert "observedAt" not in sparql, (
+            "build_state_only_update should only write observedAt when provided."
         )
 
-    def test_state_only_update_writes_lastfetched_when_provided(self):
-        """The 304 path passes last_fetched; it must land in the SPARQL."""
-        ts = "2026-05-16T19:00:00+00:00"
+    def test_state_only_update_writes_observedat_when_provided(self):
+        """The 304 path passes observed_at; it must land byte-identical in the SPARQL."""
+        T = "2026-05-19T10:00:00Z"
         sparql = build_state_only_update(
-            "urn:mak:space/x", "healthy", "confirmed", last_fetched=ts
+            "urn:mak:space/x", "healthy", "confirmed", observed_at=T
         )
-        assert "mom:lastFetched" in sparql, (
-            "lastFetched triple missing — map 'fetched N ago' caption would freeze."
+        assert "mom:observedAt" in sparql, (
+            "observedAt triple missing — freshness token would not reach Oxigraph."
         )
-        assert ts in sparql
+        assert T in sparql, "observed_at must appear byte-identical."
         # DELETE-before-INSERT so the value is replaced, not duplicated.
-        assert "DELETE WHERE" in sparql and sparql.count("lastFetched") >= 2
+        assert "DELETE WHERE" in sparql and sparql.count("observedAt") >= 2
 
     def test_state_only_update_is_valid_sparql_against_oxigraph(self):
-        """Live check: the 304 state+lastFetched update is accepted by Oxigraph."""
-        space_uri = "urn:mak:space/test-304-lastfetched"
-        ts = datetime.now(timezone.utc).isoformat()
+        """Live check: the 304 state+observedAt update is accepted by Oxigraph."""
+        space_uri = "urn:mak:space/test-304-observedat"
+        T = "2026-05-19T10:00:00Z"
         sparql = build_state_only_update(
-            space_uri, "healthy", "confirmed", last_fetched=ts
+            space_uri, "healthy", "confirmed", observed_at=T
         )
         resp = httpx.post(
             f"{OXIGRAPH_URL}/update",
@@ -443,18 +448,19 @@ class TestStaleLastFetchedOn304:
             timeout=10.0,
         )
         assert resp.status_code == 204, (
-            f"304 state+lastFetched update rejected (HTTP {resp.status_code}): {resp.text}"
+            f"304 state+observedAt update rejected (HTTP {resp.status_code}): {resp.text}"
         )
 
         check = f"""PREFIX mom: <{MOM}>
-SELECT ?f WHERE {{ GRAPH <{space_uri}> {{ <{space_uri}> mom:lastFetched ?f }} }}"""
+SELECT ?t WHERE {{ GRAPH <{space_uri}> {{ <{space_uri}> mom:observedAt ?t }} }}"""
         bindings = _oxigraph_query(check)
         assert len(bindings) == 1, (
-            "mom:lastFetched did not land exactly once after a 304-style write."
+            "mom:observedAt did not land exactly once after a 304-style write."
         )
-        # Oxigraph normalizes the dateTime (+00:00 → Z); compare by value, not string.
-        stored = datetime.fromisoformat(bindings[0]["f"]["value"].replace("Z", "+00:00"))
-        assert stored == datetime.fromisoformat(ts)
+        # observedAt is stored as xsd:string (byte-identical, no Oxigraph normalization).
+        assert bindings[0]["t"]["value"] == T, (
+            f"Stored value {bindings[0]['t']['value']!r} != minted {T!r}"
+        )
 
         httpx.post(
             f"{OXIGRAPH_URL}/update",
@@ -469,10 +475,13 @@ class TestHeartbeatLogState:
 
     def test_heartbeat_log_has_required_columns(self):
         """
-        Verify heartbeat_log.db schema has all columns needed for coherence tracking.
+        Verify heartbeat_log.db schema has the columns needed for coherence tracking.
 
-        Story 3.3 added columns: last_endpoint_health, last_lifecycle_state,
-        last_open_now, last_effective_marker. All must exist for the bug fix to work.
+        Story 3.3 original columns: last_endpoint_health, last_lifecycle_state,
+        last_open_now, last_effective_marker.
+
+        Story 3.7 dropped last_endpoint_health and last_lifecycle_state (timing data
+        moved to snapshot_store). Remaining columns: last_open_now, last_effective_marker.
         """
         con = sqlite3.connect(str(HEARTBEAT_DB))
         cursor = con.cursor()
@@ -480,13 +489,14 @@ class TestHeartbeatLogState:
         columns = {row[1] for row in cursor.fetchall()}
         con.close()
 
-        required = {"last_endpoint_health", "last_lifecycle_state", "last_open_now", "last_effective_marker"}
+        # Story 3.7 schema: timing columns removed, open/marker columns kept.
+        required = {"last_open_now", "last_effective_marker"}
         missing = required - columns
 
         assert not missing, (
             f"heartbeat_log schema is incomplete.\n"
             f"Missing columns: {missing}\n"
-            f"Story 3.3 should have created these for coherence tracking."
+            f"Story 3.7 schema: last_open_now and last_effective_marker must remain."
         )
 
 
