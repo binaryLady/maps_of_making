@@ -1006,17 +1006,33 @@ render-critical fields — geolocation, UID, `observed_at` (age-math + marker st
 space fields are loaded on demand when the space-profile card opens. The canary path is minimal
 from 3.6; GeoJSON slimming for *registered* spaces lands as they migrate in Story 3.9.
 
-**The freshness token (`observed_at`):**
-- Wall-clock UTC instant of a *successful* fetch — NOT SpaceAPI's optional `lastchange`.
-- HTTP **200** → snapshot minted, `observed_at` = fetch time; Oxigraph rewritten only on a real
-  content change.
-- HTTP **304 Not Modified** → `observed_at` **advances** (data confirmed current), no rewrite.
-- **Unreachable / error** → `observed_at` does **NOT** advance — that frozen value is the
-  staleness clock.
-- Carried unchanged: snapshot store → Oxigraph `mom:observedAt` → GeoJSON `properties.observed_at`
-  → browser.
-- `generated_at` (file-level, materialization time) is a separate field answering a different
-  question and IS allowed to be "now."
+**The three freshness tokens (correct-course 2026-05-19):**
+
+| Token | Minted by | Advances when | Home | Axis |
+|---|---|---|---|---|
+| `observed_at` (ISO-8601) | us | every responsive fetch (200 or 304) | SQLite `snapshot_store.db` only | **A — endpoint health** |
+| `updated_at` (ISO-8601) | us, on content diff | content JSON meaningfully differs | Oxigraph `mom:updatedAt` | **B — content maintenance** |
+| `state.lastchange` (Unix s) | the space (source claim) | they flip open/closed | Oxigraph `mom:lastOpenChange` (already exists) | **C — operational liveness** |
+
+**Storage holds facts, never derived buckets.** `operationalState` and `endpointHealth` are
+`f(token, now, thresholds)` — computed at consumption time (browser) from the three tokens plus
+a `thresholds` block shipped in the GeoJSON header from `config.yaml`. They are removed from
+Oxigraph entirely.
+
+**Ingestion rule:**
+
+| Fetch outcome | `observed_at` (SQLite) | Oxigraph write | `updated_at` |
+|---|---|---|---|
+| 304 | advance to now | **none** | unchanged |
+| 200, content identical | advance to now | **none** | unchanged |
+| 200, content changed | advance to now | DROP+INSERT | set to now |
+
+Oxigraph is written ONLY on a real content change. The `build_state_only_update` 304→Oxigraph
+path is deleted. The `state` block is added to the `_IGNORED` diff set so `updated_at` tracks
+only content changes; open/closed flips count toward Axis C via `state.lastchange`.
+
+`generated_at` (file-level, materialization time) is a separate GENERATE stamp answering
+"when was this file built?" — allowed to be `now`, distinct from all three freshness tokens.
 
 **Epic-level done-condition (acceptance test — must flip false→true, demonstrably, live):**
 > An operator loads the map; a space whose endpoint has stopped updating past the staleness
@@ -1104,67 +1120,67 @@ against a fixture server returning 200 → capture `observed_at`=T1; cycle 2 ret
 `fetch_status=unreachable`. **+ operator visual confirmation** on the canary (kill the endpoint,
 watch the age freeze).
 
-### Story 3.8: Migrate the Transformer Seam — `mom:observedAt`, No Re-Stamp
+### Story 3.8: Migrate the Transformer Seam — `mom:observedAt`, No Re-Stamp *(done — old model)*
 
-The clean transform reads `observed_at` from the snapshot into the named graph and never
-re-stamps. Migrate registered spaces onto it and delete all transform-time timestamp stamping
-flagged *carry* by the 3.6 audit.
+> **Completed 2026-05-19 under the single-token model.** `mom:observedAt` was written to Oxigraph. Superseded by Story 3.8b which corrects the transformer to the three-token model. Story 3.8's code is the starting point for 3.8b's diff.
+
+### Story 3.8b: Correct the Transformer Seam — Three-Token Model
+
+> **Added 2026-05-19** (correct-course from Story 3.9 architectural review). Story 3.8 wrote `mom:observedAt` to Oxigraph — wrong axis. `observed_at` belongs in SQLite only (Axis A); Oxigraph carries `mom:updatedAt` (Axis B, content diff) and `mom:lastOpenChange` (Axis C, already exists). Derived buckets removed.
 
 **Acceptance Criteria:**
-**Given** a snapshot with a known `observed_at`
-**Then** the transformer writes exactly one `mom:observedAt` triple per space into its named graph
-**And** the triple value is byte-equal to the snapshot value
-**And** all transform-time timestamp stamping classified *carry* by the 3.6 audit is removed
-**Gating test** — `test_observed_at_roundtrip_real_triplestore` (live Oxigraph + real snapshot
-store): write a known `observed_at`=T, run the transformer, SPARQL-SELECT `mom:observedAt` back,
-assert == T exactly; re-run the transformer with no new snapshot, assert the triple is unchanged.
-**+ operator visual confirmation.**
+**Given** a heartbeat cycle that produces a 200 response with a content diff
+**Then** `transform_to_sparql` writes `mom:updatedAt` (ISO-8601, set to now) into the space's named graph
+**And** `mom:observedAt`, `mom:operationalState`, and `mom:endpointHealth` are NOT written to Oxigraph
+**Given** a 304 or 200-identical response
+**Then** Oxigraph receives no write at all (`build_state_only_update` is deleted; the 304 path produces zero Oxigraph operations)
+**And** `observed_at` in SQLite still advances (already done by Story 3.7's snapshot store)
+**And** the `state` block is added to `_IGNORED` diff set so `updated_at` tracks content only
+**And** `_read_space_metadata` drops the stale `mom:lastUpdated` query
+**And** the dead `content_changed` parameter is removed from `transform_to_sparql`
+**Gating test** — `test_transformer_three_token` (live Oxigraph + real snapshot store):
+(a) content-changed path → assert `mom:updatedAt` exists, `mom:observedAt` absent;
+(b) 304 path → assert Oxigraph triple count unchanged. **+ operator visual confirmation.**
 
-### Story 3.9: Migrate the Materializer Seam — Multi-Space, Minimal GeoJSON, Fail-Loud
+### Story 3.9: Materializer Joins SQLite+Oxigraph — Three Tokens in GeoJSON
 
-Generalize the clean materializer from the canary to the full graph. Every feature carries
-`properties.observed_at`; the file carries one `generated_at`; a missing token fails loud.
-Registered-space features slim to render-critical fields — the rest moves to on-demand card
-loading.
+Materializer reads `observed_at` from SQLite (Axis A), `updated_at` and `last_open_change` /
+`open_now` from Oxigraph (Axes B and C), and writes all three into each GeoJSON feature.
+A `thresholds` block from `config.yaml` is added to the GeoJSON header so the browser can
+compute all three axes without re-reading config. `_run_clean_canary_pipeline` is removed.
 
 **Acceptance Criteria:**
 **Given** the materialization step
-**Then** both `scripts/materialize_geojson.py` and the SPARQL select in `infra/link_handler/main.py`
-copy `observed_at` into each `feature.properties`
-**And** each feature carries only render-critical fields — geolocation, UID, `observed_at`,
-marker state — with remaining space fields served on demand when the card opens
-**And** the file carries one file-level `generated_at` (materialization time)
-**And** the materializer raises / exits non-zero if any feature lacks `observed_at` — never
-silently drops
-**Gating test** — `test_materialize_asserts_on_missing_observed_at` (live Oxigraph): seed one
-space with `mom:observedAt` and one without; assert the materializer exits non-zero. Full-graph
-case: assert each feature's `properties.observed_at` matches its triple. **+ operator visual
-confirmation.**
+**Then** SPARQL drops `observedAt`/`operationalState`/`endpointHealth`/`lastUpdated`/`lastFetched` reads; adds `updatedAt`; keeps `lastOpenChange`/`openNow`
+**And** the materializer joins SQLite via `snapshot_store.read_last_ok_observed_at(space_id)` for `observed_at` (Axis A — not from Oxigraph)
+**And** each GeoJSON feature carries `observed_at`, `updated_at`, `last_open_change`, `open_now`, and last-fetch-status
+**And** the file-level GeoJSON carries `generated_at` (materialization stamp) and a `thresholds` block copied from `config.yaml` (`endpoint_health` and `operational_state` sections)
+**And** `_run_clean_canary_pipeline()` is removed from `_heartbeat_job` and `heartbeat_run`
+**And** the materializer exits non-zero / logs `THREE_TOKENS_MISSING` if any feature lacks all three tokens
+**Gating test** — `test_materializer_three_tokens` (live Oxigraph + real snapshot store): seed spaces, run `scripts/materialize_geojson.py`, assert `observed_at` (from SQLite), `updated_at` (from Oxigraph), and `last_open_change` land byte-correct per feature; assert `thresholds` block present at file level. **+ operator visual confirmation.**
 
-### Story 3.10: Migrate the Browser Seam — Lifecycle Buckets + Canary Aging Demo
+### Story 3.10: Browser Computes Three Axes Live — Canary Demo
 
-`web/app.js` computes the lifecycle bucket from `observed_at` via a pure, config-driven function
-and renders the four marker states. The skeleton's raw age display is replaced with real
-bucketing, and the space-profile card loads its non-render fields on demand from the slimmed
-GeoJSON.
+`web/app.js` computes all three freshness axes live from the three tokens and the `thresholds`
+block in the GeoJSON header. `freshnessText()` is rewired; `effective_marker` is computed from
+the three axes, not from a stored bucket.
 
 **Acceptance Criteria:**
-**Given** a GeoJSON feature with `properties.observed_at`
-**Then** `web/app.js` computes `age = now − observed_at` and buckets it into confirmed / aging /
-zombie / dead via a pure function fed by config-driven thresholds
-**And** all four marker states render distinctly on the map
-**And** the space-profile card loads its non-render fields on demand (not from the slimmed
-GeoJSON feature)
-**And** the lifecycle thresholds live in `config.yaml` so the canary demo can run in minutes
-**Gating test** — `test_canary_lifecycle_end_to_end` (full stack, operator-controlled Mother
-Sands canary): inject a normal state → assert the marker renders `confirmed`; make the canary
-endpoint unreachable, compress thresholds to seconds, poll the rendered marker and assert it
-transitions confirmed → aging → zombie → dead from elapsed time alone, with `observed_at` frozen
-throughout. **+ operator visual confirmation** — this IS the epic done-condition, demonstrated
-live to Nicolas.
+**Given** a GeoJSON feature with `observed_at`, `updated_at`, `last_open_change`, `open_now`
+**Then** `web/app.js` computes Axis A (endpoint health) live from `observed_at` + last-fetch-status + thresholds
+**And** Axis B (content lifecycle: confirmed/aging/zombie/dead) live from `updated_at` + thresholds
+**And** Axis C (operational liveness) from `last_open_change` / `open_now`
+**And** `effective_marker` is computed live from the three axes (not read from a stored field)
+**And** `freshnessText()` is rewired to display the three-axis state; `timeAgo()` is unchanged
+**And** thresholds are read from the GeoJSON header `thresholds` block — not hardcoded
+**And** coordinator notification fires on bucket transition (aging→zombie→dead) — human safety net
+**Gating test** — `test_canary_three_axis_e2e` (full stack, operator-controlled Mother Sands canary):
+compress thresholds to seconds; make canary unreachable → Axis A degrades; leave content unchanged
+→ Axis B ages independently; `open_now` flip → Axis C updates. Operator confirms all three axes
+render correctly and independently. **+ operator visual confirmation** — this IS the epic
+done-condition, demonstrated live to Nicolas.
 
-**Dependencies:** 3.6 (skeleton) first; 3.7 → 3.8 → 3.9 → 3.10 migrate the seams in pipeline
-order. Blocks Epic 4.
+**Dependencies:** 3.6 (skeleton) → 3.7 → 3.8 → 3.8b → 3.9 → 3.10. Blocks Epic 4.
 
 ---
 

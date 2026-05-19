@@ -566,39 +566,43 @@ find /var/backups/oxigraph -name "*.nq" -mtime +7 -delete
 
 ---
 
-### Epic 3.5 Transition State — Snapshot-as-Unit Model (2026-05-19 onwards)
+### Epic 3.5 Transition State — Three-Token Freshness Model (2026-05-19 correct-course)
 
-**Decision:** Dual-pipeline transition from legacy `heartbeat_log` pipeline (noisy, independently-stamped columns) to clean snapshot-as-unit pipeline (payload + observed_at + UID = single source of truth).
+**Decision:** Dual-pipeline transition from legacy `heartbeat_log` pipeline to clean snapshot pipeline,
+further correct-coursed from a single `observed_at` token to **three tokens on three axes**.
 
-**The new model:**
-- Snapshot = {JSON payload + observed_at (UTC fetch instant) + space UID}
-- One snapshot minted per successful fetch; every lifecycle fact derived from it, never re-stamped
-- `observed_at` carried byte-identical through Oxigraph → minimal GeoJSON → browser (age = now − observed_at)
+**The three tokens:**
 
-**Dual-pipeline approach:**
-- **Clean path (Story 3.6):** New snapshot store (recommended SQLite table, keyed by UID) + clean transform + minimal canary GeoJSON → browser age display. Canary only; old pipeline untouched.
-- **Legacy path (registered spaces, being migrated):** `heartbeat_log.db` + transformer + fat GeoJSON. Unchanged during 3.6. Stories 3.7–3.10 move each seam to the clean path and delete legacy code.
-- **Isolation:** Different named graphs (`urn:mak:canary` vs `urn:mak:space/*`), different GeoJSON features. No shared mutable state except Oxigraph (read-only during transition).
+| Token | Minted by | Advances when | Home | Axis |
+|---|---|---|---|---|
+| `observed_at` (ISO-8601) | us | every responsive fetch (200 or 304) | SQLite `snapshot_store.db` ONLY | A — endpoint health |
+| `updated_at` (ISO-8601) | us, on content diff | content JSON meaningfully differs | Oxigraph `mom:updatedAt` | B — content maintenance |
+| `state.lastchange` (Unix s) | the source (SpaceAPI claim) | they flip open/closed | Oxigraph `mom:lastOpenChange` | C — operational liveness |
 
-**New snapshot store (ADR-017, pending):**
-- Dedicated store, NOT columns on `heartbeat_log.db`
-- Fields: UID, `observed_at` (UTC instant), JSON payload (TEXT/BLOB), etag, last_modified
-- Keyed by space UID; one row per successful fetch (REPLACE on next fetch)
-- Clean model: no derived columns (no `last_fetched`, `last_updated`, etc.)
+**Governing principle:** storage holds facts (observations + source claims), never derived buckets.
+`operationalState` and `endpointHealth` are computed at consumption time (browser) from the three
+tokens + a `thresholds` block shipped in the GeoJSON header from `config.yaml`.
 
-**Why clean rebuild, not patch:**
-- Legacy pipeline accumulated independently-stamped noise columns — the retro-3 bug class
-- Grafting a clean token onto that foundation builds on noise
-- Everything is on git; a rebuild is reversible; a patched-on-noise foundation is not
-- Walking-skeleton discipline: Story 3.6 is a thin end-to-end slice of new clean code
+**Ingestion rule:**
 
-**Stories 3.7–3.10 — Migration sequence:**
-- 3.7: Fetch seam — registered spaces → clean snapshot store; 304/unreachable rules; delete `heartbeat_log` noise columns
-- 3.8: Transform seam — read from snapshot; write `mom:observedAt`; delete transform-time stamping
-- 3.9: Materializer seam — generalize to full graph; slim GeoJSON (render-critical only); fail-loud on missing token
-- 3.10: Browser seam — lifecycle buckets; on-demand field loading from slimmed GeoJSON
+| Fetch outcome | `observed_at` (SQLite) | Oxigraph write | `updated_at` |
+|---|---|---|---|
+| 304 | advance | **none** | unchanged |
+| 200, content identical | advance | **none** | unchanged |
+| 200, content changed | advance | DROP+INSERT | set to now |
 
-**End state (after 3.10):** One pipeline, the clean one. `heartbeat_log.db` and legacy transformer code deleted.
+Oxigraph written ONLY on a real content change. `build_state_only_update` (304→Oxigraph path) deleted.
+`state` block added to `_IGNORED` diff set — open/closed flips count toward Axis C, not Axis B.
+
+**Migration sequence (3.7 done; 3.8 done under old model; 3.8b–3.10 in progress):**
+- 3.7 ✅: Fetch seam — snapshot store + 304/unreachable rules; delete `heartbeat_log` noise columns
+- 3.8 ✅: Transform seam (old model) — wrote `mom:observedAt` to Oxigraph; superseded by 3.8b
+- 3.8b: Correct transformer — stop writing `mom:observedAt`; add `mom:updatedAt` on content-changed path only; delete `build_state_only_update`; remove derived bucket triples
+- 3.9: Materializer joins SQLite+Oxigraph — three tokens in each GeoJSON feature + `thresholds` block at file level
+- 3.10: Browser computes all three axes live from tokens + thresholds header
+
+**End state (after 3.10):** One clean pipeline. `heartbeat_log.db` and legacy transformer code deleted.
+`mom:operationalState` and `mom:endpointHealth` absent from Oxigraph; computed live in browser.
 
 ---
 
@@ -629,7 +633,7 @@ find /var/backups/oxigraph -name "*.nq" -mtime +7 -delete
 | `<urn:mak:notifications>` | Heartbeat agent | Pending notification queue |
 | `<urn:mak:canary>` | Canary scenario tools (Story 3.3) | Synthetic "Mother Sands" space — isolated from real-space graphs |
 | `<urn:mak:public_ledger>` | Ledger writer (future epic) | Append-only, immutable, IPFS/IPLD-anchored space life-events (registration, relocation, schema upgrade, `closed`, `dead`). Name + append-only principle locked 2026-05-16; event schema deferred. |
-| `<urn:mak:snapshot/{id}>` | Clean snapshot pipeline (Story 3.6+) | Current snapshot (payload + observed_at + UID), replaced on each successful fetch. Clean alternative to `heartbeat_log.db` noise columns (legacy path being migrated). |
+| `<urn:mak:snapshot/{id}>` | *(reserved, not used)* | Snapshot data lives in SQLite `snapshot_store.db`, not Oxigraph. This named graph slot is reserved for future append-only archival if needed. `observed_at` (Axis A) is authoritative in SQLite only. |
 | `<urn:mak:ontology/iop>` | Init script | IoP ontology (read-only) |
 | `<urn:mak:ontology/mom>` | Init script | MOM vocabulary (read-only) |
 
