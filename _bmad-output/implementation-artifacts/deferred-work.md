@@ -234,3 +234,7 @@ Generating a real openfab.jsonld against the `space-jsonld-generator` skill expo
 - **SPARQL injection via space_uri**: `space_uri` is f-string interpolated into SPARQL strings (`_build_pii_strip_sparql`, `build_state_only_update`, etc.) without using the `_sparql_iri` sanitization helper from `utils.py`. Pre-existing pattern throughout `transformer.py`. → Epic 5 hardening.
 - **SQLite concurrency on `consecutive_closed_cycles`**: read-modify-write on the counter is not atomic — two concurrent manual refreshes for the same space could lose a counter increment. Pre-existing pattern for `consecutive_failures`. → Epic 5 hardening.
 - **Snapshot ORDER BY lexicographic**: `_fetch_last_snapshot` orders by snapshot graph URI string; relies on ISO datetime lexicographic sort being stable across timezone formats. Pre-existing. → investigate if mixed TZ formats ever appear.
+
+## Deferred from: code review of 3-6-walking-skeleton-observed-at-end-to-end (2026-05-19)
+
+- **`fetch_canary_snapshot` silent None after successful write**: `read_snapshot` is called immediately after `write_snapshot` and returns None silently if the read fails. Practically impossible since the row was just written, but the caller receives None with no error. Story 3.7 adds proper error handling for non-200 paths — consider adding an assertion or explicit error here at that time.

@@ -13,6 +13,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, ConfigDict
 
+from canary_pipeline import run_canary_pipeline
 from transformer import (get_config, query_active_spaces, process_one_space, run_heartbeat_cycle,
                          effective_marker)
 from utils import MOM, SCHEMA, _ALLOWED_SCHEMES, _sparql_str, _sparql_iri, _slug
@@ -32,10 +33,23 @@ _TOKEN_RE = re.compile(r'^[A-Za-z0-9_\-]{8,255}$')
 
 _scheduler = AsyncIOScheduler()
 
+_CANARY_ENDPOINT_URL = os.getenv("CANARY_ENDPOINT_URL", "https://mapsofmaking.org/canary/mother-sands.json")
+
+
+async def _run_clean_canary_pipeline() -> None:
+    """Run the clean canary pipeline (Epic 3.5 Story 3.6) alongside the legacy path.
+    Non-fatal — exceptions are logged and swallowed so the legacy path keeps running.
+    """
+    try:
+        await run_canary_pipeline(_CANARY_ENDPOINT_URL, OXIGRAPH_ENDPOINT, GEOJSON_OUTPUT)
+    except Exception as e:
+        logger.warning("clean canary pipeline error (non-fatal): %s", e)
+
 
 async def _heartbeat_job():
     global _last_heartbeat_completed
     await run_heartbeat_cycle(OXIGRAPH_ENDPOINT, _rematerialize_geojson)
+    await _run_clean_canary_pipeline()
     _last_heartbeat_completed = datetime.now(timezone.utc)
 
 
@@ -665,6 +679,7 @@ async def heartbeat_run():
     """Trigger an immediate full heartbeat cycle. Used by make publish after deploy."""
     global _last_heartbeat_completed
     await run_heartbeat_cycle(OXIGRAPH_ENDPOINT, _rematerialize_geojson)
+    await _run_clean_canary_pipeline()
     _last_heartbeat_completed = datetime.now(timezone.utc)
     return {"status": "ok"}
 

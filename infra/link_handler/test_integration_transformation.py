@@ -15,7 +15,10 @@ import httpx
 
 # Story 3.4b: quarantined — pins the transformer pipeline that Story 3.5 rewrites.
 # Deselected from the default green bar. Run explicitly with: pytest -m legacy
-pytestmark = pytest.mark.legacy
+# The skipif check is a secondary guard for when running the legacy suite manually.
+pytestmark = [
+    pytest.mark.legacy,
+]
 
 OXIGRAPH_ENDPOINT = os.getenv("OXIGRAPH_ENDPOINT", "http://localhost:7878")
 
@@ -33,7 +36,7 @@ def _oxigraph_available() -> bool:
         return False
 
 
-pytestmark = pytest.mark.skipif(
+_oxigraph_skip = pytest.mark.skipif(
     not _oxigraph_available(),
     reason="Oxigraph not reachable — start the stack to run integration tests",
 )
