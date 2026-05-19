@@ -1,6 +1,6 @@
 # Story 3.9: Materializer Propagates `observed_at` to GeoJSON
 
-Status: ready-for-dev
+Status: depreciated
 
 ## Story
 

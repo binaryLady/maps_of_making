@@ -11,9 +11,11 @@ import json
 import logging
 import os
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 import httpx
+import yaml
 
 REPO_ROOT = Path(__file__).parent.parent
 OUTPUT_FILE = REPO_ROOT / "web" / "data" / "spaces.geojson"
@@ -23,6 +25,7 @@ if not OXIGRAPH_URL.endswith("/query"):
 
 sys.path.insert(0, str(REPO_ROOT / "infra" / "link_handler"))
 from transformer import effective_marker  # noqa: E402
+from snapshot_store import read_last_ok_observed_at  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger(__name__)
@@ -32,11 +35,10 @@ SPARQL_QUERY = """PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology
 PREFIX schema: <https://schema.org/>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
-SELECT ?spaceUri ?name ?latitude ?longitude ?operationalState ?endpointHealth
+SELECT ?spaceUri ?name ?latitude ?longitude
        ?geolocationFidelity ?geolocationNote
        ?street ?postcode ?city ?country ?address ?website ?profileUrl ?openNow ?lastOpenChange
-       ?source ?endpointUrl ?lastFetched ?errorType ?description ?logo ?contactJson
-       ?lastUpdated ?subset ?nextUnlock
+       ?source ?endpointUrl ?description ?logo ?contactJson ?updatedAt ?subset ?nextUnlock
        (GROUP_CONCAT(DISTINCT ?specialty; separator="|") AS ?specialties)
        (COALESCE(GROUP_CONCAT(DISTINCT STR(?network); separator="|"), "") AS ?networkMemberships)
 WHERE {
@@ -49,8 +51,6 @@ WHERE {
           schema:latitude ?latitude ;
           schema:longitude ?longitude
         ] .
-      OPTIONAL { ?spaceUri mom:operationalState ?operationalState }
-      OPTIONAL { ?spaceUri mom:endpointHealth ?endpointHealth }
       OPTIONAL { ?spaceUri mom:geolocationFidelity ?geolocationFidelity }
       OPTIONAL { ?spaceUri mom:geolocationNote ?geolocationNote }
       OPTIONAL { ?spaceUri schema:streetAddress ?street }
@@ -63,13 +63,11 @@ WHERE {
       OPTIONAL { ?spaceUri schema:knowsAbout ?specialty }
       OPTIONAL { ?spaceUri mom:source ?source }
       OPTIONAL { ?spaceUri mom:endpointUrl ?endpointUrl }
-      OPTIONAL { ?spaceUri mom:lastFetched ?lastFetched }
-      OPTIONAL { ?spaceUri mom:errorType ?errorType }
       OPTIONAL { ?spaceUri schema:description ?description }
       OPTIONAL { ?spaceUri mom:memberOf ?network }
       OPTIONAL { ?spaceUri schema:logo ?logo }
       OPTIONAL { ?spaceUri schema:contactJson ?contactJson }
-      OPTIONAL { ?spaceUri mom:lastUpdated ?lastUpdated }
+      OPTIONAL { ?spaceUri mom:updatedAt ?updatedAt }
       OPTIONAL { ?spaceUri mom:openNow ?openNow }
       OPTIONAL { ?spaceUri mom:lastOpenChange ?lastOpenChange }
       OPTIONAL { ?spaceUri mom:subset ?subset }
@@ -87,8 +85,6 @@ WHERE {
           schema:latitude ?latitude ;
           schema:longitude ?longitude
         ] .
-      OPTIONAL { ?spaceUri mom:operationalState ?operationalState }
-      OPTIONAL { ?spaceUri mom:endpointHealth ?endpointHealth }
       OPTIONAL { ?spaceUri mom:geolocationFidelity ?geolocationFidelity }
       OPTIONAL { ?spaceUri mom:geolocationNote ?geolocationNote }
       OPTIONAL { ?spaceUri schema:streetAddress ?street }
@@ -101,13 +97,11 @@ WHERE {
       OPTIONAL { ?spaceUri schema:knowsAbout ?specialty }
       OPTIONAL { ?spaceUri mom:source ?source }
       OPTIONAL { ?spaceUri mom:endpointUrl ?endpointUrl }
-      OPTIONAL { ?spaceUri mom:lastFetched ?lastFetched }
-      OPTIONAL { ?spaceUri mom:errorType ?errorType }
       OPTIONAL { ?spaceUri schema:description ?description }
       OPTIONAL { ?spaceUri mom:memberOf ?network }
       OPTIONAL { ?spaceUri schema:logo ?logo }
       OPTIONAL { ?spaceUri schema:contactJson ?contactJson }
-      OPTIONAL { ?spaceUri mom:lastUpdated ?lastUpdated }
+      OPTIONAL { ?spaceUri mom:updatedAt ?updatedAt }
       OPTIONAL { ?spaceUri mom:openNow ?openNow }
       OPTIONAL { ?spaceUri mom:lastOpenChange ?lastOpenChange }
       OPTIONAL { ?spaceUri mom:subset ?subset }
@@ -124,13 +118,10 @@ WHERE {
           schema:latitude ?latitude ;
           schema:longitude ?longitude
         ] .
-      OPTIONAL { ?spaceUri mom:operationalState ?operationalState }
-      OPTIONAL { ?spaceUri mom:endpointHealth ?endpointHealth }
       OPTIONAL { ?spaceUri schema:url ?website }
       OPTIONAL { ?spaceUri schema:logo ?logo }
       OPTIONAL { ?spaceUri mom:endpointUrl ?endpointUrl }
-      OPTIONAL { ?spaceUri mom:lastFetched ?lastFetched }
-      OPTIONAL { ?spaceUri mom:lastUpdated ?lastUpdated }
+      OPTIONAL { ?spaceUri mom:updatedAt ?updatedAt }
       OPTIONAL { ?spaceUri mom:openNow ?openNow }
       OPTIONAL { ?spaceUri mom:lastOpenChange ?lastOpenChange }
       OPTIONAL { ?spaceUri mom:source ?source }
@@ -139,11 +130,10 @@ WHERE {
     }
   }
 }
-GROUP BY ?spaceUri ?name ?latitude ?longitude ?operationalState ?endpointHealth
+GROUP BY ?spaceUri ?name ?latitude ?longitude
          ?geolocationFidelity ?geolocationNote
          ?street ?postcode ?city ?country ?address ?website ?profileUrl ?openNow ?lastOpenChange
-         ?source ?endpointUrl ?lastFetched ?errorType ?description ?logo ?contactJson
-         ?lastUpdated ?subset ?nextUnlock
+         ?source ?endpointUrl ?description ?logo ?contactJson ?updatedAt ?subset ?nextUnlock
 ORDER BY ?spaceUri"""
 
 
@@ -206,8 +196,6 @@ def binding_to_space(binding: dict) -> dict:
     latitude = float(lat_raw)
     longitude = float(lon_raw)
 
-    operational_state = binding.get("operationalState", {}).get("value", "seeded")
-    endpoint_health_raw = binding.get("endpointHealth", {}).get("value", "unknown")
     fidelity = binding.get("geolocationFidelity", {}).get("value", "")
     geo_note = binding.get("geolocationNote", {}).get("value", "")
     street = binding.get("street", {}).get("value", "")
@@ -220,14 +208,12 @@ def binding_to_space(binding: dict) -> dict:
     open_now_raw = binding.get("openNow", {}).get("value")
     open_now = open_now_raw.lower() == "true" if open_now_raw is not None else False
     last_open_change = binding.get("lastOpenChange", {}).get("value", "")
-    resolved_status = effective_marker(endpoint_health_raw, operational_state, open_now)
+    updated_at = binding.get("updatedAt", {}).get("value")
     raw_specialties = binding.get("specialties", {}).get("value", "")
     specialties = [s for s in raw_specialties.split("|") if s] if raw_specialties else []
     raw_networks = binding.get("networkMemberships", {}).get("value", "")
     network_memberships = [n for n in raw_networks.split("|") if n] if raw_networks else []
     source = binding.get("source", {}).get("value")
-    last_fetched = binding.get("lastFetched", {}).get("value", "")
-    error_type = binding.get("errorType", {}).get("value", "")
     description = binding.get("description", {}).get("value", "")
     logo = binding.get("logo", {}).get("value", "")
     contact_raw = binding.get("contactJson", {}).get("value")
@@ -235,7 +221,6 @@ def binding_to_space(binding: dict) -> dict:
         contact = json.loads(contact_raw) if contact_raw else None
     except (json.JSONDecodeError, TypeError):
         contact = None
-    last_updated = binding.get("lastUpdated", {}).get("value", "")
     subset = binding.get("subset", {}).get("value", "")
     next_unlock = binding.get("nextUnlock", {}).get("value", "")
 
@@ -256,9 +241,7 @@ def binding_to_space(binding: dict) -> dict:
             "id": space_id,
             "uri": space_uri,
             "name": name,
-            "status": resolved_status,
-            "endpoint_health": endpoint_health_raw,
-            "operational_state": operational_state,
+            "status": "unknown",  # Computed at render time; kept for compatibility
             "geolocationFidelity": fidelity,
             "geolocationNote": geo_note,
             "address": address,
@@ -274,17 +257,33 @@ def binding_to_space(binding: dict) -> dict:
             "network_memberships": network_memberships,
             "logo": logo,
             "contact": contact,
-            "last_updated": last_updated,
             "subset": subset,
             "next_unlock": next_unlock,
             "opening_hours": "",
             "founded": "",
             "capacity": 0,
             "open_for_hosting": False,
-            "last_fetched": last_fetched,
-            "error_type": error_type,
+            # Three freshness tokens (Axis A, B, C)
+            "observed_at": None,  # Filled from SQLite by materialize_spaces
+            "updated_at": updated_at,  # From Oxigraph mom:updatedAt; may be null for pre-3.8b spaces
+            "last_fetch_status": None,  # Filled from SQLite by materialize_spaces
         },
     }
+
+
+def _load_thresholds_from_config() -> dict:
+    """Load thresholds from config.yaml."""
+    config_path = REPO_ROOT / "infra" / "link_handler" / "config.yaml"
+    try:
+        with open(config_path, "r") as f:
+            cfg = yaml.safe_load(f) or {}
+        return {
+            "endpoint_health": cfg.get("endpoint_health", {}),
+            "operational_state": cfg.get("operational_state", {}),
+        }
+    except Exception as e:
+        log.warning(f"Failed to load thresholds from config: {e}")
+        return {"endpoint_health": {}, "operational_state": {}}
 
 
 def materialize_spaces() -> dict:
@@ -301,8 +300,32 @@ def materialize_spaces() -> dict:
     features = [f for f in features if f is not None]
     log.info(f"Materialized {len(features)} spaces")
 
+    # SQLite join: fill in observed_at and last_fetch_status for each feature
+    for feature in features:
+        space_id = feature["properties"]["id"]
+        observed_at = read_last_ok_observed_at(space_id)
+        if observed_at is not None:
+            feature["properties"]["observed_at"] = observed_at
+
+        # Check for missing tokens (fail-loud contract for standalone script)
+        has_observed = feature["properties"].get("observed_at") is not None
+        has_updated = feature["properties"].get("updated_at") is not None
+        has_lastchange = feature["properties"].get("last_open_change") is not None
+
+        if not (has_observed and has_updated and has_lastchange):
+            log.warning(
+                f"THREE_TOKENS_MISSING: space={feature['properties']['uri']} "
+                f"observed={has_observed} updated={has_updated} lastchange={has_lastchange}"
+            )
+
+    # Load thresholds and generate timestamp
+    thresholds = _load_thresholds_from_config()
+    generated_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
     return {
         "type": "FeatureCollection",
+        "generated_at": generated_at,
+        "thresholds": thresholds,
         "features": features,
     }
 
@@ -330,6 +353,17 @@ def main() -> int:
     """Main entry point."""
     try:
         spaces_data = materialize_spaces()
+        # Check for zero-token spaces (all three tokens missing is a data integrity problem)
+        for feature in spaces_data.get("features", []):
+            has_observed = feature["properties"].get("observed_at") is not None
+            has_updated = feature["properties"].get("updated_at") is not None
+            has_lastchange = feature["properties"].get("last_open_change") is not None
+            if not has_observed and not has_updated and not has_lastchange:
+                log.error(
+                    f"THREE_TOKENS_MISSING: space={feature['properties']['uri']} "
+                    f"has zero freshness tokens — cannot materialize"
+                )
+                return 1
         write_output_atomically(spaces_data)
         return 0
     except Exception as e:

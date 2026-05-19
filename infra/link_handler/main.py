@@ -8,13 +8,14 @@ from pathlib import Path
 from typing import Any, Optional, List, Union
 
 import httpx
+import yaml
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, ConfigDict
 
 from canary_pipeline import run_canary_pipeline
-from snapshot_store import mint_observed_at, write_snapshot
+from snapshot_store import mint_observed_at, write_snapshot, read_last_ok_observed_at
 from transformer import (get_config, query_active_spaces, process_one_space, run_heartbeat_cycle,
                          effective_marker)
 from utils import MOM, SCHEMA, _ALLOWED_SCHEMES, _sparql_str, _sparql_iri, _slug
@@ -37,20 +38,14 @@ _scheduler = AsyncIOScheduler()
 _CANARY_ENDPOINT_URL = os.getenv("CANARY_ENDPOINT_URL", "https://mapsofmaking.org/canary/mother-sands.json")
 
 
-async def _run_clean_canary_pipeline() -> None:
-    """Run the clean canary pipeline (Epic 3.5 Story 3.6) alongside the legacy path.
-    Non-fatal — exceptions are logged and swallowed so the legacy path keeps running.
-    """
+async def _heartbeat_job():
+    global _last_heartbeat_completed
+    await run_heartbeat_cycle(OXIGRAPH_ENDPOINT, _rematerialize_geojson)
+    # Run the clean canary pipeline alongside the legacy path (non-fatal)
     try:
         await run_canary_pipeline(_CANARY_ENDPOINT_URL, OXIGRAPH_ENDPOINT, GEOJSON_OUTPUT)
     except Exception as e:
         logger.warning("clean canary pipeline error (non-fatal): %s", e)
-
-
-async def _heartbeat_job():
-    global _last_heartbeat_completed
-    await run_heartbeat_cycle(OXIGRAPH_ENDPOINT, _rematerialize_geojson)
-    await _run_clean_canary_pipeline()
     _last_heartbeat_completed = datetime.now(timezone.utc)
 
 
@@ -84,10 +79,10 @@ _SPARQL_SELECT = """PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontolo
 PREFIX schema: <https://schema.org/>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
-SELECT ?spaceUri ?name ?latitude ?longitude ?operationalState ?endpointHealth
+SELECT ?spaceUri ?name ?latitude ?longitude
        ?geolocationFidelity ?geolocationNote
        ?street ?postcode ?city ?country ?address ?website ?profileUrl ?openNow ?lastOpenChange
-       ?source ?openingHours ?description ?logo ?contactJson ?lastUpdated ?lastFetched
+       ?source ?openingHours ?description ?logo ?contactJson ?updatedAt
        ?subset ?nextUnlock
        (GROUP_CONCAT(DISTINCT ?specialty; separator="|") AS ?specialties)
        (GROUP_CONCAT(DISTINCT STR(?memberOf); separator="|") AS ?networkMemberships)
@@ -100,8 +95,6 @@ WHERE {
           schema:latitude ?latitude ;
           schema:longitude ?longitude
         ] .
-      OPTIONAL { ?spaceUri mom:operationalState ?operationalState }
-      OPTIONAL { ?spaceUri mom:endpointHealth ?endpointHealth }
       OPTIONAL { ?spaceUri mom:geolocationFidelity ?geolocationFidelity }
       OPTIONAL { ?spaceUri mom:geolocationNote ?geolocationNote }
       OPTIONAL { ?spaceUri schema:streetAddress ?street }
@@ -118,8 +111,7 @@ WHERE {
       OPTIONAL { ?spaceUri schema:description ?description }
       OPTIONAL { ?spaceUri schema:logo ?logo }
       OPTIONAL { ?spaceUri schema:contactJson ?contactJson }
-      OPTIONAL { ?spaceUri mom:lastUpdated ?lastUpdated }
-      OPTIONAL { ?spaceUri mom:lastFetched ?lastFetched }
+      OPTIONAL { ?spaceUri mom:updatedAt ?updatedAt }
       OPTIONAL { ?spaceUri mom:openNow ?openNow }
       OPTIONAL { ?spaceUri mom:lastOpenChange ?lastOpenChange }
       OPTIONAL { ?spaceUri mom:subset ?subset }
@@ -136,8 +128,6 @@ WHERE {
           schema:latitude ?latitude ;
           schema:longitude ?longitude
         ] .
-      OPTIONAL { ?spaceUri mom:operationalState ?operationalState }
-      OPTIONAL { ?spaceUri mom:endpointHealth ?endpointHealth }
       OPTIONAL { ?spaceUri mom:geolocationFidelity ?geolocationFidelity }
       OPTIONAL { ?spaceUri mom:geolocationNote ?geolocationNote }
       OPTIONAL { ?spaceUri schema:streetAddress ?street }
@@ -154,8 +144,7 @@ WHERE {
       OPTIONAL { ?spaceUri schema:description ?description }
       OPTIONAL { ?spaceUri schema:logo ?logo }
       OPTIONAL { ?spaceUri schema:contactJson ?contactJson }
-      OPTIONAL { ?spaceUri mom:lastUpdated ?lastUpdated }
-      OPTIONAL { ?spaceUri mom:lastFetched ?lastFetched }
+      OPTIONAL { ?spaceUri mom:updatedAt ?updatedAt }
       OPTIONAL { ?spaceUri mom:openNow ?openNow }
       OPTIONAL { ?spaceUri mom:lastOpenChange ?lastOpenChange }
       OPTIONAL { ?spaceUri mom:subset ?subset }
@@ -172,12 +161,9 @@ WHERE {
           schema:latitude ?latitude ;
           schema:longitude ?longitude
         ] .
-      OPTIONAL { ?spaceUri mom:operationalState ?operationalState }
-      OPTIONAL { ?spaceUri mom:endpointHealth ?endpointHealth }
       OPTIONAL { ?spaceUri schema:url ?website }
       OPTIONAL { ?spaceUri schema:logo ?logo }
-      OPTIONAL { ?spaceUri mom:lastFetched ?lastFetched }
-      OPTIONAL { ?spaceUri mom:lastUpdated ?lastUpdated }
+      OPTIONAL { ?spaceUri mom:updatedAt ?updatedAt }
       OPTIONAL { ?spaceUri mom:openNow ?openNow }
       OPTIONAL { ?spaceUri mom:lastOpenChange ?lastOpenChange }
       OPTIONAL { ?spaceUri mom:source ?source }
@@ -186,10 +172,10 @@ WHERE {
     }
   }
 }
-GROUP BY ?spaceUri ?name ?latitude ?longitude ?operationalState ?endpointHealth
+GROUP BY ?spaceUri ?name ?latitude ?longitude
          ?geolocationFidelity ?geolocationNote
          ?street ?postcode ?city ?country ?address ?website ?profileUrl ?openNow ?lastOpenChange
-         ?source ?openingHours ?description ?logo ?contactJson ?lastUpdated ?lastFetched
+         ?source ?openingHours ?description ?logo ?contactJson ?updatedAt
          ?subset ?nextUnlock
 ORDER BY ?spaceUri"""
 
@@ -604,6 +590,8 @@ def _binding_to_feature(b: dict) -> Optional[dict]:
         address = ", ".join(address_parts)
 
     resolved_status = effective_marker(endpoint_health_raw, operational_state, open_now)
+    updated_at = b.get("updatedAt", {}).get("value")
+    last_open_change = b.get("lastOpenChange", {}).get("value", "")
 
     return {
         "type": "Feature",
@@ -624,22 +612,38 @@ def _binding_to_feature(b: dict) -> Optional[dict]:
             "endpoint_url": b.get("profileUrl", {}).get("value", ""),
             "specialties": specialties,
             "open_now": open_now,
-            "last_open_change": b.get("lastOpenChange", {}).get("value", ""),
+            "last_open_change": last_open_change,
             "source": b.get("source", {}).get("value"),
             "opening_hours": b.get("openingHours", {}).get("value", ""),
             "description": b.get("description", {}).get("value", ""),
             "logo": b.get("logo", {}).get("value", ""),
             "contact": _parse_contact_json(b.get("contactJson", {}).get("value")),
-            "last_updated": b.get("lastUpdated", {}).get("value", ""),
-            "last_fetched": b.get("lastFetched", {}).get("value", ""),
             "subset": b.get("subset", {}).get("value", ""),
             "next_unlock": b.get("nextUnlock", {}).get("value", ""),
             "founded": "",
             "capacity": 0,
             "network_memberships": [m for m in b.get("networkMemberships", {}).get("value", "").split("|") if m],
             "open_for_hosting": False,
+            # Three freshness tokens (Axis A, B, C)
+            "observed_at": None,  # Filled from SQLite by _rematerialize_geojson
+            "updated_at": updated_at,  # From Oxigraph mom:updatedAt; may be null for pre-3.8b spaces
+            "last_fetch_status": None,  # Filled from SQLite by _rematerialize_geojson
         },
     }
+
+
+def _load_thresholds_from_config() -> dict:
+    config_path = Path(__file__).parent / "config.yaml"
+    try:
+        with open(config_path, "r") as f:
+            cfg = yaml.safe_load(f) or {}
+        return {
+            "endpoint_health": cfg.get("endpoint_health", {}),
+            "operational_state": cfg.get("operational_state", {}),
+        }
+    except Exception as e:
+        logger.warning("Failed to load thresholds from config: %s", e)
+        return {"endpoint_health": {}, "operational_state": {}}
 
 
 async def _rematerialize_geojson() -> None:
@@ -657,7 +661,35 @@ async def _rematerialize_geojson() -> None:
 
     features = [_binding_to_feature(b) for b in bindings]
     features = [f for f in features if f is not None]
-    geojson = {"type": "FeatureCollection", "features": features}
+
+    # SQLite join: fill in observed_at and last_fetch_status for each feature
+    for feature in features:
+        space_id = feature["properties"]["id"]
+        observed_at = read_last_ok_observed_at(space_id)
+        if observed_at is not None:
+            feature["properties"]["observed_at"] = observed_at
+
+        # Check for missing tokens (fail-loud contract for materialization)
+        has_observed = feature["properties"].get("observed_at") is not None
+        has_updated = feature["properties"].get("updated_at") is not None
+        has_lastchange = feature["properties"].get("last_open_change") is not None
+
+        if not (has_observed and has_updated and has_lastchange):
+            logger.warning(
+                "THREE_TOKENS_MISSING: space=%s observed=%s updated=%s lastchange=%s",
+                feature["properties"]["uri"], has_observed, has_updated, has_lastchange
+            )
+
+    # Load thresholds and generate timestamp
+    thresholds = _load_thresholds_from_config()
+    generated_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+    geojson = {
+        "type": "FeatureCollection",
+        "generated_at": generated_at,
+        "thresholds": thresholds,
+        "features": features,
+    }
 
     out_path = Path(GEOJSON_OUTPUT)
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -680,7 +712,11 @@ async def heartbeat_run():
     """Trigger an immediate full heartbeat cycle. Used by make publish after deploy."""
     global _last_heartbeat_completed
     await run_heartbeat_cycle(OXIGRAPH_ENDPOINT, _rematerialize_geojson)
-    await _run_clean_canary_pipeline()
+    # Run the clean canary pipeline alongside the legacy path (non-fatal)
+    try:
+        await run_canary_pipeline(_CANARY_ENDPOINT_URL, OXIGRAPH_ENDPOINT, GEOJSON_OUTPUT)
+    except Exception as e:
+        logger.warning("clean canary pipeline error (non-fatal): %s", e)
     _last_heartbeat_completed = datetime.now(timezone.utc)
     return {"status": "ok"}
 

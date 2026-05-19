@@ -129,7 +129,7 @@ development_status:
   3-7-heartbeat-log-observed-at-fetch-status: done
   3-8-transformer-emits-mom-observedat: done  # old model — superseded by 3-8b
   3-8b-corrected-token-model: done
-  3-9-materializer-three-tokens-geojson: ready-for-dev
+  3-9-materializer-three-tokens-geojson: review
   3-10-browser-lifecycle-buckets-canary-e2e: backlog
   epic-3.5-retrospective: optional
 
