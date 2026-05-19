@@ -514,6 +514,8 @@ The `.ttl` is the specification; `tasks/ingest.py` is its implementation. They a
 /data/snapshots/{space_id}/{timestamp}.json # append-only archive (optional, configurable)
 ```
 
+> **[Transition note, 2026-05-19]:** This ADR describes the **legacy pipeline** (registered spaces → `heartbeat_log.db` → transformer → Oxigraph). Story 3.6 (Epic 3.5) builds a **new clean snapshot pipeline** alongside it, canary-only, implementing the snapshot-as-unit model (payload + observed_at + UID). Stories 3.7–3.10 migrate registered spaces onto the clean path and delete the legacy code wholesale. During transition, both pipelines run in parallel, isolated by named graph and GeoJSON features.
+
 ---
 
 ### ADR-016: Layered Community Namespaces + Bundle-Loading Model
@@ -564,6 +566,42 @@ find /var/backups/oxigraph -name "*.nq" -mtime +7 -delete
 
 ---
 
+### Epic 3.5 Transition State — Snapshot-as-Unit Model (2026-05-19 onwards)
+
+**Decision:** Dual-pipeline transition from legacy `heartbeat_log` pipeline (noisy, independently-stamped columns) to clean snapshot-as-unit pipeline (payload + observed_at + UID = single source of truth).
+
+**The new model:**
+- Snapshot = {JSON payload + observed_at (UTC fetch instant) + space UID}
+- One snapshot minted per successful fetch; every lifecycle fact derived from it, never re-stamped
+- `observed_at` carried byte-identical through Oxigraph → minimal GeoJSON → browser (age = now − observed_at)
+
+**Dual-pipeline approach:**
+- **Clean path (Story 3.6):** New snapshot store (recommended SQLite table, keyed by UID) + clean transform + minimal canary GeoJSON → browser age display. Canary only; old pipeline untouched.
+- **Legacy path (registered spaces, being migrated):** `heartbeat_log.db` + transformer + fat GeoJSON. Unchanged during 3.6. Stories 3.7–3.10 move each seam to the clean path and delete legacy code.
+- **Isolation:** Different named graphs (`urn:mak:canary` vs `urn:mak:space/*`), different GeoJSON features. No shared mutable state except Oxigraph (read-only during transition).
+
+**New snapshot store (ADR-017, pending):**
+- Dedicated store, NOT columns on `heartbeat_log.db`
+- Fields: UID, `observed_at` (UTC instant), JSON payload (TEXT/BLOB), etag, last_modified
+- Keyed by space UID; one row per successful fetch (REPLACE on next fetch)
+- Clean model: no derived columns (no `last_fetched`, `last_updated`, etc.)
+
+**Why clean rebuild, not patch:**
+- Legacy pipeline accumulated independently-stamped noise columns — the retro-3 bug class
+- Grafting a clean token onto that foundation builds on noise
+- Everything is on git; a rebuild is reversible; a patched-on-noise foundation is not
+- Walking-skeleton discipline: Story 3.6 is a thin end-to-end slice of new clean code
+
+**Stories 3.7–3.10 — Migration sequence:**
+- 3.7: Fetch seam — registered spaces → clean snapshot store; 304/unreachable rules; delete `heartbeat_log` noise columns
+- 3.8: Transform seam — read from snapshot; write `mom:observedAt`; delete transform-time stamping
+- 3.9: Materializer seam — generalize to full graph; slim GeoJSON (render-critical only); fail-loud on missing token
+- 3.10: Browser seam — lifecycle buckets; on-demand field loading from slimmed GeoJSON
+
+**End state (after 3.10):** One pipeline, the clean one. `heartbeat_log.db` and legacy transformer code deleted.
+
+---
+
 ## Core Architectural Decisions
 
 ### Decision Priority Analysis
@@ -591,6 +629,7 @@ find /var/backups/oxigraph -name "*.nq" -mtime +7 -delete
 | `<urn:mak:notifications>` | Heartbeat agent | Pending notification queue |
 | `<urn:mak:canary>` | Canary scenario tools (Story 3.3) | Synthetic "Mother Sands" space — isolated from real-space graphs |
 | `<urn:mak:public_ledger>` | Ledger writer (future epic) | Append-only, immutable, IPFS/IPLD-anchored space life-events (registration, relocation, schema upgrade, `closed`, `dead`). Name + append-only principle locked 2026-05-16; event schema deferred. |
+| `<urn:mak:snapshot/{id}>` | Clean snapshot pipeline (Story 3.6+) | Current snapshot (payload + observed_at + UID), replaced on each successful fetch. Clean alternative to `heartbeat_log.db` noise columns (legacy path being migrated). |
 | `<urn:mak:ontology/iop>` | Init script | IoP ontology (read-only) |
 | `<urn:mak:ontology/mom>` | Init script | MOM vocabulary (read-only) |
 

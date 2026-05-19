@@ -96,6 +96,33 @@ make c-report           →  coherence check: endpoint · heartbeat_log · Oxigr
 
 ---
 
+## Epic 3.5 — clean snapshot pipeline (transition state)
+
+*Added 2026-05-19 (`sprint-change-proposal-2026-05-19.md`).*
+
+Epic 3.5 re-architects the freshness path around the **snapshot as the unit of truth**: a
+successful fetch produces one snapshot — `{JSON payload + observed_at + space UID}` — from which
+every lifecycle fact is derived, never independently stamped. `observed_at` (UTC instant of a
+successful fetch) is minted once and carried byte-identical to the browser, which computes
+`age = now − observed_at`.
+
+During the transition **two pipelines run side by side**:
+
+| | Legacy pipeline | Clean snapshot pipeline |
+|---|---|---|
+| Serves | Registered spaces (`urn:mak:space/*`) | Mother Sands canary (`urn:mak:canary`) |
+| Fetch store | `heartbeat_log.db` (noisy — derived columns) | New clean snapshot store, keyed by UID |
+| Transform | `transformer.py` `_build_sparql_update` (fat) | Clean transform — copies `observed_at`, no re-stamp |
+| GeoJSON | Full-payload feature | Minimal feature — geoloc + UID + `observed_at` |
+| Built / owned by | Epic 3 | Story 3.6 (built), 3.7–3.10 (migration) |
+
+Story 3.6 builds the clean pipeline canary-only, leaving the legacy path untouched (zero
+regression risk). Stories 3.7–3.10 migrate registered spaces onto the clean path seam by seam
+and **delete** the legacy `heartbeat_log` noise columns and transform-time stamping wholesale.
+End state: one pipeline, the clean one.
+
+---
+
 ## What is deferred
 
 | Item | Target |
@@ -104,6 +131,7 @@ make c-report           →  coherence check: endpoint · heartbeat_log · Oxigr
 | Three-layer schema formalization (SpaceAPI core / mom: extended / community) | Story 3.5 |
 | Heartbeat transformer rewrite on clean schema | Story 3.5 |
 | EU-spaces reintroduction (20 filtered from SpaceAPI directory) | Story 3.5+ |
+| GeoJSON payload-slimming for registered spaces (render-critical fields only) | Story 3.9 |
 | Heartbeat routing on `ext_mom.public_ledger` → append-only write | Post-3.5 |
 | `urn:mak:public_ledger` minting (IPFS-IPLD dag-json) | Epic 4+ |
 | Full SpaceAPI directory (~244 spaces) | Post-pilot |

@@ -977,18 +977,44 @@ party-mode roundtable that followed it.
 **Why this epic exists.** Epic 3 shipped a five-stage chain for one fact about a space —
 endpoint JSON → `heartbeat_log.db` (SQLite) → Oxigraph named graph → `web/data/spaces.geojson`
 → browser. Every retro bug lived at a *seam* between two stages, because each stage stamped its
-own "now," so a stale payload looked fresh whenever the stage that last touched it was recent.
-The fix is a single freshness token, `observed_at`, **minted once** at a successful heartbeat
-fetch and **carried unchanged** — never recomputed — through every stage. The browser derives
-the lifecycle bucket from `age = now − observed_at`. This is the propagation contract that the
-ontology layer and the trust-UX layer both depend on; it must exist before either is built on.
+own "now" and `heartbeat_log.db` accumulated independently-stamped derived columns
+(`last_update`, `last_fetched`, `last_content_updated`, `last_lifecycle_state`,
+`last_endpoint_health`, `is_closed`…). A stale payload looked fresh whenever the stage that last
+touched it ran recently.
+
+**The model — the snapshot is the unit.** A fetch of a reachable endpoint produces one
+**snapshot**: the JSON payload + the UTC instant it was observed (`observed_at`) + the space
+UID. The snapshot is the single source of truth; every lifecycle fact is *derived* from it,
+never independently stamped. `observed_at` is minted once, at fetch, and carried byte-identical
+to the browser, which derives the lifecycle bucket from `age = now − observed_at`. This is the
+propagation contract that the ontology layer and the trust-UX layer both depend on; it must
+exist before either is built on.
+
+**Clean rebuild, not a patch.** The corrected approach (operator decision, 2026-05-19) does NOT
+graft `observed_at` onto the noisy `heartbeat_log` schema or the fat transformer. Story 3.6
+builds a **new, clean snapshot pipeline alongside the existing one**, exercised on the Mother
+Sands canary only. The old pipeline keeps serving registered spaces untouched — zero regression
+risk during 3.6. Stories 3.7–3.10 migrate registered spaces onto the clean path and **delete**
+the old `heartbeat_log` noise columns and old transform-time stamping wholesale — replace, never
+patch. Everything is on git; a rebuild is reversible, a patched-on-noise foundation is not.
+
+**Fetch triggers (all produce a snapshot the same way):** the coordinator registration drawer,
+the cron heartbeat, and the card "refresh from endpoint" button.
+
+**What the map carries vs. what the card loads.** The materialized GeoJSON carries only
+render-critical fields — geolocation, UID, `observed_at` (age-math + marker state). All other
+space fields are loaded on demand when the space-profile card opens. The canary path is minimal
+from 3.6; GeoJSON slimming for *registered* spaces lands as they migrate in Story 3.9.
 
 **The freshness token (`observed_at`):**
-- Wall-clock UTC instant of a *successful* heartbeat fetch — NOT SpaceAPI's optional `lastchange`.
-- On HTTP **304 Not Modified**: `observed_at` **advances** (the data is confirmed current).
-- On **unreachable / error**: `observed_at` does **NOT** advance (that is the staleness clock).
-- Minted in `heartbeat_log.db`, copied (never regenerated) into Oxigraph as `mom:observedAt`,
-  copied into each GeoJSON feature's `properties`, read by the browser to compute the bucket.
+- Wall-clock UTC instant of a *successful* fetch — NOT SpaceAPI's optional `lastchange`.
+- HTTP **200** → snapshot minted, `observed_at` = fetch time; Oxigraph rewritten only on a real
+  content change.
+- HTTP **304 Not Modified** → `observed_at` **advances** (data confirmed current), no rewrite.
+- **Unreachable / error** → `observed_at` does **NOT** advance — that frozen value is the
+  staleness clock.
+- Carried unchanged: snapshot store → Oxigraph `mom:observedAt` → GeoJSON `properties.observed_at`
+  → browser.
 - `generated_at` (file-level, materialization time) is a separate field answering a different
   question and IS allowed to be "now."
 
@@ -1001,111 +1027,134 @@ ontology layer and the trust-UX layer both depend on; it must exist before eithe
 **Decisions owed before story creation:**
 - Numeric staleness thresholds (confirmed→aging→zombie→dead) — in `config.yaml`, config-driven
   so the canary demo can compress them to minutes/seconds.
+- Minimal snapshot metadata: UID, `observed_at`, payload (or content hash), and
+  `etag`/`last_modified` for the 304 check. The derived lifecycle columns of the old
+  `heartbeat_log` are NOT carried forward — they are recomputed from the snapshot.
 - This epic IS the multi-cache fix named in the Epic 3 retro as "the main single epic fix" for
   demo v0.2. It is a known blocker for Epic 4 — Epic 4 mission control cannot show health data
   that does not yet propagate.
 
 **Scope guard (do NOT pull in):** retry logic, lifecycle *policy* changes, per-stage
-gatekeeping, ontology work, and the `spaces.geojson` payload-slimming optimization (deferred —
-see `deferred-work.md`). This epic adds ONE field and carries it faithfully. Nothing else.
+gatekeeping, ontology work. This epic re-architects the freshness path around the snapshot unit
+and nothing else.
 
-**Sequencing — walking skeleton first, then seam-hardening.** Story 3.6 is a thin vertical
-slice that carries `observed_at` end-to-end across all five stages on the Mother Sands canary —
-proving the propagation contract works *on day one* rather than at the end of a horizontal
-build-up. Stories 3.7–3.10 then harden each seam in turn, each a refactor against a working
-end-to-end target rather than a build-from-nothing.
+**Sequencing — clean skeleton first, then migrate-and-delete.** Story 3.6 builds the clean
+snapshot pipeline end-to-end on the Mother Sands canary — proving the propagation contract works
+*on day one* against new code, not grafted onto the old noise. Stories 3.7–3.10 then each
+migrate one seam's worth of the old pipeline onto the clean path and delete the code it
+replaces.
 
 **Test gate (every story).** No story merges until its named test is green. Two non-negotiable
-rules: (1) **real seams only** — real SQLite file, live Oxigraph, real fixture HTTP server, real
-browser render; mocked integration seams do NOT count toward the gate. (2) **operator visual
-confirmation** — every story closes with Nicolas visually confirming the behavior on the live
-canary, not just a green pytest exit code. Both are required; a scripted pass alone is not done.
+rules: (1) **real seams only** — real snapshot store, live Oxigraph, real fixture HTTP server,
+real browser render; mocked integration seams do NOT count toward the gate. (2) **operator
+visual confirmation** — every story closes with Nicolas visually confirming the behavior on the
+live canary, not just a green pytest exit code. Both are required; a scripted pass alone is not
+done.
 
-### Story 3.6: Walking Skeleton — `observed_at` End-to-End on the Canary
+### Story 3.6: Walking Skeleton — Clean Snapshot Pipeline on the Canary
 
-A thin vertical slice: mint `observed_at` once at the canary heartbeat fetch and carry it,
-unchanged, through all five stages — SQLite → Oxigraph → GeoJSON → browser — by the crudest
-path that works. Happy path only, one space (Mother Sands). Task 1 is the `datetime.now()`
-audit (inventory every stamp on the data path, classify *carry* vs. *generate*) — you cannot
-carry a clean token without first knowing where the re-stamping lives. The skeleton may hardcode
-or shortcut anything *except* the token's identity: `observed_at` is minted exactly once and is
-byte-identical at every stage.
+Build a **new, clean snapshot pipeline end-to-end on the Mother Sands canary, alongside the
+existing one**. A reachable (HTTP 200) fetch produces one snapshot — `{payload + observed_at +
+UID}` — stored in a new clean snapshot store (NOT `heartbeat_log.db`), transformed to triples in
+`urn:mak:canary`, materialized into a minimal GeoJSON feature, and rendered as a live age in the
+browser. Happy path only, one space. The old `heartbeat_log` / fat-transformer path is NOT
+touched and keeps serving registered spaces — zero regression risk. Task 1 is the
+`datetime.now()` audit (inventory every stamp on the data path, classify *carry* vs. *generate*)
+— it tells Stories 3.7–3.10 exactly what to delete when they migrate registered spaces onto the
+clean path. The skeleton may hardcode or shortcut anything *except* the token's identity:
+`observed_at` is minted exactly once and is byte-identical at every stage.
 
 **Acceptance Criteria:**
-**Given** a successful heartbeat fetch of the Mother Sands canary
-**Then** an `observed_at` UTC instant is minted once at fetch time and written to `heartbeat_log.db`
-**And** it is copied unchanged into Oxigraph as `mom:observedAt`, into the GeoJSON feature's
-`properties.observed_at`, and read by `web/app.js`
+**Given** a successful (HTTP 200) heartbeat fetch of the Mother Sands canary
+**Then** one snapshot is created — JSON payload + `observed_at` (UTC, minted once at fetch) +
+space UID — and stored in the new clean snapshot store
+**And** `observed_at` is copied unchanged into Oxigraph as `mom:observedAt` on `urn:mak:canary`,
+into the canary GeoJSON feature's `properties.observed_at`, and read by `web/app.js`
+**And** the canary GeoJSON feature carries only render-critical fields — geolocation, UID,
+`observed_at`
 **And** the browser renders an `age = now − observed_at` value derived from that single token
+**And** the existing `heartbeat_log` / transformer path for registered spaces is unchanged
 **And** a `datetime.now()` carry/generate audit doc exists, listing every stamp on the
 transform/heartbeat data path with a `file:line` and verdict
-**Gating test** — `test_observed_at_skeleton_e2e` (full stack, live canary): inject a canary
-state, run one heartbeat cycle, assert the same `observed_at` value appears byte-equal in
-`heartbeat_log.db`, in the `mom:observedAt` triple, in `spaces.geojson`, and in the browser-read
-value. **+ operator visual confirmation** the canary marker shows a live age.
+**Gating test** — `test_observed_at_skeleton_e2e` (full stack, live canary): run one fetch
+cycle, assert the same `observed_at` value appears byte-equal in the snapshot store, in the
+`mom:observedAt` triple, in `spaces.geojson`, and in the browser-read value. **+ operator visual
+confirmation** the canary marker shows a live age.
 
-### Story 3.7: Harden the Heartbeat Seam — `fetch_status` + 304/unreachable Rules
+### Story 3.7: Migrate the Fetch Seam — Snapshot Store + 304/Unreachable Rules
 
-The skeleton minted `observed_at` on the happy path. Harden it: `heartbeat_log.db` gains a
-`fetch_status` column and the 304/unreachable rules that make `observed_at` a real staleness
-clock.
+Move registered-space fetching onto the clean snapshot store built in 3.6. Each fetch produces a
+snapshot; the store records `observed_at` and `fetch_status`. The old `heartbeat_log.db` noise
+columns this replaces are deleted — migrate, then delete.
 
 **Acceptance Criteria:**
-**Given** the heartbeat cycle writes a row per space
-**Then** `heartbeat_log.db` has columns `observed_at` and `fetch_status` ∈ {`ok`,`not_modified`,`unreachable`}
+**Given** the heartbeat cycle fetches a registered space
+**Then** it writes a snapshot to the clean store carrying `observed_at` and `fetch_status` ∈
+{`ok`,`not_modified`,`unreachable`}
 **And** HTTP 200 → `fetch_status=ok`, `observed_at` = fetch time
 **And** HTTP 304 → `fetch_status=not_modified`, `observed_at` ADVANCES to fetch time
-**And** unreachable/error → `fetch_status=unreachable`, `observed_at` UNCHANGED from the prior row
-**Gating test** — `test_heartbeat_two_cycle_temporal` (real SQLite file, no mock DB): cycle 1
+**And** unreachable/error → `fetch_status=unreachable`, `observed_at` UNCHANGED from the prior
+snapshot
+**And** the `heartbeat_log.db` columns now superseded by the snapshot store (`last_fetched`,
+`last_content_updated`, `last_endpoint_health`, `last_lifecycle_state`, `is_closed`, …) are
+removed
+**Gating test** — `test_heartbeat_two_cycle_temporal` (real snapshot store, no mock DB): cycle 1
 against a fixture server returning 200 → capture `observed_at`=T1; cycle 2 returns 304 → assert
 `observed_at` > T1; cycle 3 with the server killed → assert `observed_at` == cycle-2 value and
 `fetch_status=unreachable`. **+ operator visual confirmation** on the canary (kill the endpoint,
 watch the age freeze).
 
-### Story 3.8: Harden the Transformer Seam — `mom:observedAt`, No Re-Stamp
+### Story 3.8: Migrate the Transformer Seam — `mom:observedAt`, No Re-Stamp
 
-The transform copies `observed_at` from the SQLite row into the named graph and never re-stamps.
-Replace any skeleton shortcut; delete all transform-time timestamp stamping flagged by the 3.6 audit.
+The clean transform reads `observed_at` from the snapshot into the named graph and never
+re-stamps. Migrate registered spaces onto it and delete all transform-time timestamp stamping
+flagged *carry* by the 3.6 audit.
 
 **Acceptance Criteria:**
-**Given** a `heartbeat_log.db` row with a known `observed_at`
+**Given** a snapshot with a known `observed_at`
 **Then** the transformer writes exactly one `mom:observedAt` triple per space into its named graph
-**And** the triple value is byte-equal to the SQLite row value
+**And** the triple value is byte-equal to the snapshot value
 **And** all transform-time timestamp stamping classified *carry* by the 3.6 audit is removed
-**Gating test** — `test_observed_at_roundtrip_real_triplestore` (live Oxigraph + real SQLite):
-write a known `observed_at`=T, run the transformer, SPARQL-SELECT `mom:observedAt` back, assert
-== T exactly; re-run the transformer with no new heartbeat, assert the triple is unchanged.
+**Gating test** — `test_observed_at_roundtrip_real_triplestore` (live Oxigraph + real snapshot
+store): write a known `observed_at`=T, run the transformer, SPARQL-SELECT `mom:observedAt` back,
+assert == T exactly; re-run the transformer with no new snapshot, assert the triple is unchanged.
 **+ operator visual confirmation.**
 
-### Story 3.9: Harden the Materializer Seam — Multi-Space, Fail-Loud
+### Story 3.9: Migrate the Materializer Seam — Multi-Space, Minimal GeoJSON, Fail-Loud
 
-Every GeoJSON feature carries `properties.observed_at`; the file carries one `generated_at`;
-a missing token fails loud. Generalize the skeleton from one space to the full graph.
+Generalize the clean materializer from the canary to the full graph. Every feature carries
+`properties.observed_at`; the file carries one `generated_at`; a missing token fails loud.
+Registered-space features slim to render-critical fields — the rest moves to on-demand card
+loading.
 
 **Acceptance Criteria:**
 **Given** the materialization step
 **Then** both `scripts/materialize_geojson.py` and the SPARQL select in `infra/link_handler/main.py`
 copy `observed_at` into each `feature.properties`
+**And** each feature carries only render-critical fields — geolocation, UID, `observed_at`,
+marker state — with remaining space fields served on demand when the card opens
 **And** the file carries one file-level `generated_at` (materialization time)
-**And** the materializer raises / exits non-zero if any feature lacks `observed_at` — never silently drops
+**And** the materializer raises / exits non-zero if any feature lacks `observed_at` — never
+silently drops
 **Gating test** — `test_materialize_asserts_on_missing_observed_at` (live Oxigraph): seed one
 space with `mom:observedAt` and one without; assert the materializer exits non-zero. Full-graph
 case: assert each feature's `properties.observed_at` matches its triple. **+ operator visual
 confirmation.**
-**Note:** `observed_at` stays in the GeoJSON — it is lifecycle-critical render data, not card
-data, and the marker can never fetch it lazily. The full-payload GeoJSON is retained for
-demo-v0.2 (payload-slimming is deferred — see `deferred-work.md`).
 
-### Story 3.10: Harden the Browser Seam — Lifecycle Buckets + Canary Aging Demo
+### Story 3.10: Migrate the Browser Seam — Lifecycle Buckets + Canary Aging Demo
 
 `web/app.js` computes the lifecycle bucket from `observed_at` via a pure, config-driven function
-and renders the four marker states. Replace the skeleton's raw age display with real bucketing.
+and renders the four marker states. The skeleton's raw age display is replaced with real
+bucketing, and the space-profile card loads its non-render fields on demand from the slimmed
+GeoJSON.
 
 **Acceptance Criteria:**
 **Given** a GeoJSON feature with `properties.observed_at`
 **Then** `web/app.js` computes `age = now − observed_at` and buckets it into confirmed / aging /
 zombie / dead via a pure function fed by config-driven thresholds
 **And** all four marker states render distinctly on the map
+**And** the space-profile card loads its non-render fields on demand (not from the slimmed
+GeoJSON feature)
 **And** the lifecycle thresholds live in `config.yaml` so the canary demo can run in minutes
 **Gating test** — `test_canary_lifecycle_end_to_end` (full stack, operator-controlled Mother
 Sands canary): inject a normal state → assert the marker renders `confirmed`; make the canary
@@ -1114,7 +1163,7 @@ transitions confirmed → aging → zombie → dead from elapsed time alone, wit
 throughout. **+ operator visual confirmation** — this IS the epic done-condition, demonstrated
 live to Nicolas.
 
-**Dependencies:** 3.6 (skeleton) first; 3.7 → 3.8 → 3.9 → 3.10 harden the seams in pipeline
+**Dependencies:** 3.6 (skeleton) first; 3.7 → 3.8 → 3.9 → 3.10 migrate the seams in pipeline
 order. Blocks Epic 4.
 
 ---

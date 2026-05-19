@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-01
-last_updated: "2026-05-18 (Story 3.6 created — Epic 3.5 started)"
+last_updated: "2026-05-19 (Epic 3.5 correct-course — snapshot-as-unit re-architecture)"
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
@@ -118,8 +118,10 @@ development_status:
   # Epic 3.5: Freshness Propagation Contract (pre-Epic-4 — built standalone first)
   # Created 2026-05-18 from Epic 3 retro + party-mode roundtable. Closes the
   # "pytest passes / live pipeline breaks" bug class via the observed_at token.
-  # Restructured 2026-05-18: walking skeleton (3.6) first, then 3.7-3.10 harden each
-  # seam. Each story gated by a real-seam test + operator visual confirmation. Blocks Epic 4.
+  # Correct-coursed 2026-05-19 (sprint-change-proposal-2026-05-19.md): snapshot-as-unit
+  # clean rebuild. 3.6 builds a clean snapshot pipeline alongside the legacy one (canary
+  # only); 3.7-3.10 migrate registered spaces onto it and delete the legacy code.
+  # Each story gated by a real-seam test + operator visual confirmation. Blocks Epic 4.
   epic-3.5: in-progress
   3-6-walking-skeleton-observed-at-end-to-end: ready-for-dev
   3-7-heartbeat-log-observed-at-fetch-status: backlog
