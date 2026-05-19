@@ -126,7 +126,7 @@ development_status:
   3-6-walking-skeleton-observed-at-end-to-end: done
   3-7-heartbeat-log-observed-at-fetch-status: done
   3-8-transformer-emits-mom-observedat: done
-  3-9-materializer-propagates-observed-at-to-geojson: backlog
+  3-9-materializer-propagates-observed-at-to-geojson: ready-for-dev
   3-10-browser-lifecycle-buckets-canary-e2e: backlog
   epic-3.5-retrospective: optional
 
