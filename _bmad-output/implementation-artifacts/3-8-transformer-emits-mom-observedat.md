@@ -1,6 +1,6 @@
 # Story 3.8: Transformer Emits `mom:observedAt`, No Re-Stamp
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -182,3 +182,16 @@ claude-sonnet-4-6
 - `tests/test_transformer_observed_at.py` — new gating tests
 - `tests/test_regression_stuck_seeded.py` — updated regression assertions
 - `_bmad-output/implementation-artifacts/sprint-status.yaml` — 3-8 marked ready-for-dev
+
+### Review Findings
+
+- [x] [Review][Decision] `mom:snapshotDate` still written in `register_url` snapshot graph — patched: removed from `main.py` registration snapshot block [`infra/link_handler/main.py`]
+- [x] [Review][Patch] `snap is None` silent drop — added `OBSERVED_AT_MISSING_200/304` WARNING logs; changed to `.get()` on all three access sites [`infra/link_handler/transformer.py`]
+- [x] [Review][Patch] `snap["observed_at"]` direct dict access — changed to `.get("observed_at")` at L707, L721, L850 [`infra/link_handler/transformer.py`]
+- [x] [Review][Patch] `write_snapshot` hardcoded `fetch_status="ok"` on fallback path — now tracks `_reg_used_fallback`, passes `"degraded"` on fallback [`infra/link_handler/main.py`]
+- [x] [Review][Patch] Stale comment still references `mom:lastUpdated` — updated comment at L861 and `_read_space_metadata` docstring [`infra/link_handler/transformer.py`]
+- [x] [Review][Defer] `_read_space_metadata` still reads `mom:lastUpdated` from Oxigraph — no → Story 3.9 tag; intentionally deferred per dev notes [`infra/link_handler/transformer.py`] — deferred, pre-existing
+- [x] [Review][Defer] `content_changed` parameter now effectively dead in `transform_to_sparql` — cleanup for Story 3.9 [`infra/link_handler/transformer.py`] — deferred, pre-existing
+- [x] [Review][Defer] SPARQL injection via `observed_at` interpolation — pre-existing pattern across codebase, theoretical risk [`infra/link_handler/transformer.py`] — deferred, pre-existing
+- [x] [Review][Defer] Non-canary 304 `graph_uri=None` + `observed_at` → GRAPH <None> DELETE — pre-existing issue (identical bug existed with `lastFetched` before this story) [`infra/link_handler/transformer.py`] — deferred, pre-existing
+- [x] [Review][Defer] Concurrent registration+heartbeat double-write race on `mom:observedAt` — pre-existing architectural pattern [`infra/link_handler/main.py`] — deferred, pre-existing

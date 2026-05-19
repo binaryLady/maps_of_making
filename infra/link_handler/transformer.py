@@ -704,7 +704,7 @@ async def process_one_space(
     is_closed = db_row.get("is_closed", 0)
 
     # Replacements for deleted columns:
-    last_fetched_ts = snap["observed_at"] if snap else None
+    last_fetched_ts = snap.get("observed_at") if snap else None
     last_content_updated_ts = read_last_ok_observed_at(space_id, db_path=resolved_db_snap)
 
     days_since_update = _days_since(last_content_updated_ts)
@@ -718,7 +718,9 @@ async def process_one_space(
         # Propagate advanced observed_at from snapshot store (advance_observed_at called
         # in space_pipeline on 304) so Oxigraph carries the freshness token forward.
         _graph = "urn:mak:canary" if _is_canary else None
-        _obs_304 = snap["observed_at"] if snap else None
+        _obs_304 = snap.get("observed_at") if snap else None
+        if _obs_304 is None:
+            logger.warning("OBSERVED_AT_MISSING_304 space=%s — snap absent or has no observed_at; mom:observedAt will not be propagated", space_id)
         state_update = build_state_only_update(
             _effective_space_uri, endpoint_health, lifecycle_state, _graph,
             observed_at=_obs_304,
@@ -836,6 +838,9 @@ async def process_one_space(
         if content_changed and not is_closed and not _simulated_age_active:
             lifecycle_state, _ = classify_lifecycle(0)  # just updated → confirmed
 
+        _obs_200 = snap.get("observed_at") if snap else None
+        if _obs_200 is None:
+            logger.warning("OBSERVED_AT_MISSING_200 space=%s — snap absent or has no observed_at; mom:observedAt will not be written", space_id)
         preserved = await _read_space_metadata(space_uri, oxigraph_endpoint)
         sparql_update, _ = transform_to_sparql(schema_obj, {
             "endpoint_url": endpoint_url,
@@ -847,13 +852,13 @@ async def process_one_space(
             "lifecycle_state": lifecycle_state,
             "source": preserved["source"],
             "member_of": preserved["member_of"],
-        }, content_changed=content_changed, observed_at=snap["observed_at"] if snap else None)
+        }, content_changed=content_changed, observed_at=_obs_200)
 
         if revival_sparql:
             # SPARQL UPDATE operations must be ';'-separated. The revival block is a
             # DELETE/WHERE op; sparql_update starts with DROP. Without the separator
             # Oxigraph parses DROP as part of the WHERE clause and rejects the whole
-            # request with 400 — freezing every triple, including mom:lastUpdated.
+            # request with 400 — freezing every triple in the graph.
             sparql_update = revival_sparql.rstrip() + " ;\n" + sparql_update
 
     except Exception as e:
@@ -948,10 +953,9 @@ async def _read_space_metadata(space_uri: str, oxigraph_endpoint: str) -> dict:
     """Read source, memberOf and lastUpdated from existing space graph.
 
     transform_to_sparql does DROP SILENT GRAPH + INSERT DATA. Any triple not
-    re-inserted is lost. mom:lastUpdated is only re-inserted when content_changed
-    is True — so on a no-diff (content_changed=False) cycle the DROP would wipe
-    it permanently, leaving the space 'updated unknown' / stuck-seeded. We read
-    the prior value here so the caller can preserve it across the DROP.
+    re-inserted is lost. mom:lastUpdated read here is stale post-Story-3.8 (triple
+    removed from write path); kept for Story 3.9 which will replace with
+    mom:observedAt reads from the materializer.
     """
     query = f"""PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
 SELECT ?source ?memberOf ?lastUpdated WHERE {{

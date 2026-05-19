@@ -782,6 +782,7 @@ async def register_url(req: UrlRequest):
     from transformer import transform_to_sparql
     cls: dict = {}
     reg_observed_at = mint_observed_at()
+    _reg_used_fallback = False
     try:
         schema_obj = SpaceAPISchema.model_validate(data)
         cls = classify_subset(schema_obj)
@@ -791,6 +792,7 @@ async def register_url(req: UrlRequest):
         }, observed_at=reg_observed_at)
     except Exception as e:
         logger.exception("transform_to_sparql failed, falling back to legacy builder: %s", e)
+        _reg_used_fallback = True
         sparql_update = _build_sparql_update(
             graph_uri, space_uri, name, lat, lon, req.url, data,
             subset=cls.get("subset", ""), next_unlock=cls.get("next_unlock"),
@@ -810,7 +812,8 @@ async def register_url(req: UrlRequest):
 
     # Write snapshot to store so heartbeat cycles can read observed_at
     try:
-        write_snapshot(slug, reg_observed_at, data, fetch_status="ok")
+        snap_status = "degraded" if _reg_used_fallback else "ok"
+        write_snapshot(slug, reg_observed_at, data, fetch_status=snap_status)
     except Exception as snap_err:
         logger.warning("snapshot store write failed for %s: %s", slug, snap_err)
 
@@ -832,7 +835,6 @@ async def register_url(req: UrlRequest):
     truncated_triple = f'    <{space_uri}> <{MOM}rawTruncated> "true"^^<http://www.w3.org/2001/XMLSchema#boolean> .\n' if raw_truncated else ""
     snapshot_update = f"""INSERT DATA {{
   GRAPH <{snapshot_graph}> {{
-    <{space_uri}> <{MOM}snapshotDate> "{snapshot_date}" .
     <{space_uri}> <{MOM}snapshotSummary> "First registration" .
     <{space_uri}> <{MOM}lastHttpStatus> 200 .
     <{space_uri}> <{MOM}rawContent> "{escaped_raw}"^^<http://www.w3.org/2001/XMLSchema#string> .
