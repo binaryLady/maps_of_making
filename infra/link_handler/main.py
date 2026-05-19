@@ -15,7 +15,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, ConfigDict
 
 from canary_pipeline import run_canary_pipeline
-from snapshot_store import mint_observed_at, write_snapshot, read_last_ok_observed_at
+from snapshot_store import mint_observed_at, write_snapshot, read_last_ok_observed_at, read_snapshot
 from transformer import (get_config, query_active_spaces, process_one_space, run_heartbeat_cycle,
                          effective_marker)
 from utils import MOM, SCHEMA, _ALLOWED_SCHEMES, _sparql_str, _sparql_iri, _slug
@@ -591,7 +591,7 @@ def _binding_to_feature(b: dict) -> Optional[dict]:
 
     resolved_status = effective_marker(endpoint_health_raw, operational_state, open_now)
     updated_at = b.get("updatedAt", {}).get("value")
-    last_open_change = b.get("lastOpenChange", {}).get("value", "")
+    last_open_change = b.get("lastOpenChange", {}).get("value")
 
     return {
         "type": "Feature",
@@ -665,19 +665,21 @@ async def _rematerialize_geojson() -> None:
     # SQLite join: fill in observed_at and last_fetch_status for each feature
     for feature in features:
         space_id = feature["properties"]["id"]
-        observed_at = read_last_ok_observed_at(space_id)
-        if observed_at is not None:
-            feature["properties"]["observed_at"] = observed_at
+        snapshot = read_snapshot(space_id)
+        if snapshot:
+            if snapshot["fetch_status"] != "unreachable":
+                feature["properties"]["observed_at"] = snapshot["observed_at"]
+            feature["properties"]["last_fetch_status"] = snapshot["fetch_status"]
 
         # Check for missing tokens (fail-loud contract for materialization)
         has_observed = feature["properties"].get("observed_at") is not None
         has_updated = feature["properties"].get("updated_at") is not None
         has_lastchange = feature["properties"].get("last_open_change") is not None
 
-        if not (has_observed and has_updated and has_lastchange):
+        if not has_observed and not has_updated and not has_lastchange:
             logger.warning(
-                "THREE_TOKENS_MISSING: space=%s observed=%s updated=%s lastchange=%s",
-                feature["properties"]["uri"], has_observed, has_updated, has_lastchange
+                "THREE_TOKENS_MISSING: space=%s — zero freshness tokens (data integrity)",
+                feature["properties"]["uri"]
             )
 
     # Load thresholds and generate timestamp

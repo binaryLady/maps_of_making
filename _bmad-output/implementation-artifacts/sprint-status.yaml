@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-01
-last_updated: "2026-05-19 (Story 3.8b code review complete — patches applied, done)"
+last_updated: "2026-05-19 (Story 3.9 code review complete — 3 patches fixed, story done)"
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
@@ -129,7 +129,7 @@ development_status:
   3-7-heartbeat-log-observed-at-fetch-status: done
   3-8-transformer-emits-mom-observedat: done  # old model — superseded by 3-8b
   3-8b-corrected-token-model: done
-  3-9-materializer-three-tokens-geojson: review
+  3-9-materializer-three-tokens-geojson: done
   3-10-browser-lifecycle-buckets-canary-e2e: backlog
   epic-3.5-retrospective: optional
 

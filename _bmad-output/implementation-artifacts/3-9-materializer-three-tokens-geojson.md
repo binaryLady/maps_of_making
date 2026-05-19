@@ -1,6 +1,6 @@
 # Story 3.9: Materializer Joins SQLite+Oxigraph — Three Tokens in GeoJSON
 
-Status: review
+Status: done
 
 > **Rewritten 2026-05-19** (correct-course from single-token model). The old Story 3.9
 > ("Materializer Propagates `observed_at` to GeoJSON") assumed `mom:observedAt` lived in
@@ -316,3 +316,16 @@ Claude Haiku 4.5 (claude-haiku-4-5-20251001)
 ### Change Log
 
 - **2026-05-19:** Story 3.9 implementation complete. Three-token freshness model propagated through both materializers (main.py async + script sync). SQLite join for `observed_at` implemented; config thresholds added to GeoJSON; canary pipeline inlined; gating tests written; full pytest suite green (69 passed). Ready for code review.
+
+### Review Findings
+
+_Code review 2026-05-19 — Blind Hunter + Acceptance Auditor (Edge Case Hunter failed: sandbox could not read diff path). 3 patch, 3 defer, 5 dismissed._
+
+- [x] [Review][Patch] `last_open_change` empty-string default defeats the entire fail-loud contract [infra/link_handler/main.py:594,675; scripts/materialize_geojson.py:binding_to_space + zero-token check] — Fixed: changed default from `""` to `None` in `_binding_to_feature()` and `binding_to_space()`.
+- [x] [Review][Patch] `last_fetch_status` is never filled — ships as `None` on every feature [infra/link_handler/main.py:630,665; scripts/materialize_geojson.py binding_to_space + materialize_spaces] — Fixed: replaced `read_last_ok_observed_at()` call with `read_snapshot()` and now fill both `observed_at` and `last_fetch_status` in both materializers.
+- [x] [Review][Patch] `THREE_TOKENS_MISSING` warning uses "any token missing" not "zero tokens" [infra/link_handler/main.py:677; scripts/materialize_geojson.py materialize_spaces] — Fixed: changed condition from `not (has_observed and has_updated and has_lastchange)` to `not has_observed and not has_updated and not has_lastchange` (all three missing) in both `_rematerialize_geojson()` and `materialize_spaces()`.
+- [x] [Review][Defer] Dead `effective_marker`/`resolved_status` computation + `status` divergence between materializers [infra/link_handler/main.py:576-592; scripts/materialize_geojson.py:binding_to_space] — deferred, scope-guarded to Story 3.10 field-slimming (Technical Decisions note confirms intent).
+- [x] [Review][Defer] `_load_thresholds_from_config` swallows all exceptions and ships empty `thresholds` block silently [infra/link_handler/main.py:_load_thresholds_from_config; scripts/materialize_geojson.py same] — deferred, minor robustness; warning is logged.
+- [x] [Review][Defer] Test fragility: `test_observed_at_from_sqlite_not_oxigraph` never asserts the negative ("not from Oxigraph"); subprocess vs in-process import use different contexts [tests/test_materializer_three_tokens.py] — deferred, pre-existing test-design concern, not a correctness defect.
+
+_Dismissed as noise: NameError on `endpoint_health_raw` (false — safe `.get()` defaults); AC 5 canary inlining (AC explicitly permits "keep as-is"); AC 7 `content_changed` (parameter genuinely absent from `transform_to_sparql` signature); AC 8 `mom:lastUpdated` (genuinely absent from transformer.py); redundant `@pytest.mark.live_integration` on class + methods (harmless)._

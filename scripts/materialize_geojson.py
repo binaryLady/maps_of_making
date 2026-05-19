@@ -25,7 +25,7 @@ if not OXIGRAPH_URL.endswith("/query"):
 
 sys.path.insert(0, str(REPO_ROOT / "infra" / "link_handler"))
 from transformer import effective_marker  # noqa: E402
-from snapshot_store import read_last_ok_observed_at  # noqa: E402
+from snapshot_store import read_last_ok_observed_at, read_snapshot  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger(__name__)
@@ -207,7 +207,7 @@ def binding_to_space(binding: dict) -> dict:
     endpoint_url = binding.get("endpointUrl", {}).get("value") or binding.get("profileUrl", {}).get("value", "")
     open_now_raw = binding.get("openNow", {}).get("value")
     open_now = open_now_raw.lower() == "true" if open_now_raw is not None else False
-    last_open_change = binding.get("lastOpenChange", {}).get("value", "")
+    last_open_change = binding.get("lastOpenChange", {}).get("value")
     updated_at = binding.get("updatedAt", {}).get("value")
     raw_specialties = binding.get("specialties", {}).get("value", "")
     specialties = [s for s in raw_specialties.split("|") if s] if raw_specialties else []
@@ -303,19 +303,21 @@ def materialize_spaces() -> dict:
     # SQLite join: fill in observed_at and last_fetch_status for each feature
     for feature in features:
         space_id = feature["properties"]["id"]
-        observed_at = read_last_ok_observed_at(space_id)
-        if observed_at is not None:
-            feature["properties"]["observed_at"] = observed_at
+        snapshot = read_snapshot(space_id)
+        if snapshot:
+            if snapshot["fetch_status"] != "unreachable":
+                feature["properties"]["observed_at"] = snapshot["observed_at"]
+            feature["properties"]["last_fetch_status"] = snapshot["fetch_status"]
 
         # Check for missing tokens (fail-loud contract for standalone script)
         has_observed = feature["properties"].get("observed_at") is not None
         has_updated = feature["properties"].get("updated_at") is not None
         has_lastchange = feature["properties"].get("last_open_change") is not None
 
-        if not (has_observed and has_updated and has_lastchange):
+        if not has_observed and not has_updated and not has_lastchange:
             log.warning(
                 f"THREE_TOKENS_MISSING: space={feature['properties']['uri']} "
-                f"observed={has_observed} updated={has_updated} lastchange={has_lastchange}"
+                f"— zero freshness tokens (data integrity)"
             )
 
     # Load thresholds and generate timestamp
