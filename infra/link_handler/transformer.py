@@ -113,6 +113,7 @@ def classify_endpoint_health(
     Returns (health, reason). Rungs: healthy | unresponsive | warning | broken.
     Thresholds read from config.yaml endpoint_health section.
     """
+    # Axis computation moved to browser — Story 3.10
     cfg = get_config().get("endpoint_health", {})
     unresponsive_min = cfg.get("unresponsive_minutes_threshold", 10)
     warning_min = cfg.get("warning_minutes_threshold", 30)
@@ -139,6 +140,7 @@ def classify_lifecycle(days_since_last_update: float) -> tuple[str, str]:
     for complete enumeration. Negative values (clock-skew) are clamped to 0.
     Thresholds from config.yaml.
     """
+    # Axis computation moved to browser — Story 3.10
     if days_since_last_update < 0:
         logger.warning(
             "WARNING_CLOCK_SKEW: days_since_last_update=%s is negative — clamping to 0",
@@ -235,9 +237,9 @@ def detect_diff(old_snap: dict, new_snap: dict) -> dict | None:
         return None
 
     # sensors/extensions ignored — they flap for physical reasons.
-    # state is intentionally NOT ignored — state.open flips are the designed freshness signal.
+    # state ignored — open/close flips advance Axis C (mom:lastOpenChange), not Axis B (updatedAt).
     _IGNORED = {"mom:lastFetched", "mom:snapshotDate", "lastFetched", "snapshotDate",
-                "sensors", "extensions"}
+                "sensors", "extensions", "state"}
 
     def _normalize(obj):
         if isinstance(obj, dict):
@@ -322,69 +324,22 @@ def _extract_last_open_change(state) -> Optional[str]:
     return None
 
 
-def build_state_only_update(space_uri: str, endpoint_health: str, lifecycle_state: str,
-                            graph_uri: Optional[str] = None,
-                            observed_at: Optional[str] = None) -> str:
-    """Build a surgical SPARQL UPDATE that replaces endpointHealth, operationalState
-    and (optionally) observedAt.
-
-    Used for 304 and failure paths — must NOT touch mom:openNow.
-
-    When observed_at is provided (304 path), mom:observedAt is also refreshed so
-    the pipeline carries the advanced freshness token into Oxigraph. Stored as
-    xsd:string to preserve byte-identity through Oxigraph (Story 3.6 debug note).
-
-    Uses three-statement pattern (DELETE WHERE + INSERT DATA) instead of DELETE/INSERT/WHERE
-    so the INSERT fires even when the named graph has no prior health/state triples, or
-    doesn't exist yet.
-    """
-    if graph_uri is None:
-        graph_uri = space_uri  # named graph URI == space URI (one graph per space)
-    deletes = [
-        f"DELETE WHERE {{ GRAPH <{graph_uri}> {{ <{space_uri}> mom:endpointHealth ?h }} }}",
-        f"DELETE WHERE {{ GRAPH <{graph_uri}> {{ <{space_uri}> mom:operationalState ?s }} }}",
-    ]
-    inserts = [
-        f'    <{space_uri}> mom:endpointHealth "{endpoint_health}" .',
-        f'    <{space_uri}> mom:operationalState "{lifecycle_state}" .',
-    ]
-    if observed_at:
-        deletes.append(
-            f"DELETE WHERE {{ GRAPH <{graph_uri}> {{ <{space_uri}> mom:observedAt ?t }} }}"
-        )
-        inserts.append(
-            f'    <{space_uri}> mom:observedAt '
-            f'"{observed_at}"^^<http://www.w3.org/2001/XMLSchema#string> .'
-        )
-    delete_block = " ;\n".join(deletes)
-    insert_block = "\n".join(inserts)
-    return f"""PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
-{delete_block} ;
-INSERT DATA {{
-  GRAPH <{graph_uri}> {{
-{insert_block}
-  }}
-}}"""
-
 
 def transform_to_sparql(
     validated_data: "SpaceAPISchema",
     metadata: dict,
-    content_changed: bool = True,
-    observed_at: Optional[str] = None,
 ) -> tuple[str, str]:
     """Build idempotent SPARQL UPDATE for a space.
+
+    Only called on the 200+content-changed path. Writes mom:updatedAt (GENERATE stamp).
+    Does NOT write mom:observedAt, mom:operationalState, or mom:endpointHealth — those
+    are either SQLite-only (Axis A) or computed at consumption time (browser).
 
     metadata keys:
       - endpoint_url (str): URL the data was fetched from
       - space_id (str, optional): override slug; derived from name if absent
       - http_status (int, optional): HTTP status of the fetch
       - snapshot_summary (str, optional): human-readable summary for snapshot
-      - endpoint_health (str, optional): from classify_endpoint_health; defaults to "healthy"
-      - lifecycle_state (str, optional): from classify_lifecycle; defaults to "confirmed"
-
-    observed_at: ISO-8601 UTC string minted once at fetch time (from snapshot store).
-      Carried byte-identical into mom:observedAt — never re-stamped here.
 
     Returns (sparql_update_str, snapshot_graph_uri).
     """
@@ -410,16 +365,13 @@ def transform_to_sparql(
     raw_tags = validated_data.resolved_tags
     activity_iris = resolve_activities(raw_tags) if raw_tags else []
 
-    endpoint_health = metadata.get("endpoint_health", "healthy")
-    lifecycle_state = metadata.get("lifecycle_state", "confirmed")
-
+    now = datetime.now(timezone.utc).isoformat()
     source = metadata.get("source", "self-registered")
     triples = [
         f"  <{space_uri}> a <{MOM}Space> .",
         f'  <{space_uri}> <{SCHEMA}name> "{_sparql_str(name)}" .',
         f"  <{space_uri}> <{SCHEMA}geo> [ <{SCHEMA}latitude> {lat} ; <{SCHEMA}longitude> {lon} ] .",
-        f'  <{space_uri}> <{MOM}operationalState> "{lifecycle_state}" .',
-        f'  <{space_uri}> <{MOM}endpointHealth> "{endpoint_health}" .',
+        f'  <{space_uri}> <{MOM}updatedAt> "{now}"^^<{XSD}dateTime> .',
         f'  <{space_uri}> <{MOM}source> "{_sparql_str(source)}" .',
     ]
     for member_uri in metadata.get("member_of", []):
@@ -463,13 +415,6 @@ def transform_to_sparql(
     if validated_data.contact and isinstance(validated_data.contact, dict):
         contact_json = json.dumps(validated_data.contact, separators=(',', ':'))
         triples.append(f'  <{space_uri}> <{SCHEMA}contactJson> "{_sparql_str(contact_json)}"^^<http://www.w3.org/2001/XMLSchema#string> .')
-
-    # observed_at: minted once at fetch time, carried byte-identical (xsd:string to
-    # avoid Oxigraph normalizing xsd:dateTime and breaking byte-identity — Story 3.6).
-    if observed_at:
-        triples.append(
-            f'  <{space_uri}> <{MOM}observedAt> "{observed_at}"^^<http://www.w3.org/2001/XMLSchema#string> .'
-        )
 
     # open/closed state from SpaceAPI state field
     open_now = _extract_open_now(validated_data.state)
@@ -715,23 +660,8 @@ async def process_one_space(
     if was_304:
         minutes_ok = _minutes_since(last_fetched_ts)
         endpoint_health, _ = classify_endpoint_health(304, minutes_ok, consecutive_failures)
-        # Propagate advanced observed_at from snapshot store (advance_observed_at called
-        # in space_pipeline on 304) so Oxigraph carries the freshness token forward.
-        _graph = "urn:mak:canary" if _is_canary else None
-        _obs_304 = snap.get("observed_at") if snap else None
-        if _obs_304 is None:
-            logger.warning("OBSERVED_AT_MISSING_304 space=%s — snap absent or has no observed_at; mom:observedAt will not be propagated", space_id)
-        state_update = build_state_only_update(
-            _effective_space_uri, endpoint_health, lifecycle_state, _graph,
-            observed_at=_obs_304,
-        )
-        async with httpx.AsyncClient(timeout=15.0) as client:
-            upd = await client.post(
-                f"{oxigraph_endpoint}/update",
-                content=state_update,
-                headers={"Content-Type": "application/sparql-update"},
-            )
-            upd.raise_for_status()
+        # 304 path: advance_observed_at already ran in space_pipeline (Axis A / SQLite).
+        # No Oxigraph write — three-token model writes to Oxigraph only on content change.
         prior_open_now = db_row.get("last_open_now")
         _open_304 = bool(prior_open_now) if prior_open_now is not None else False
         _marker_304 = effective_marker(endpoint_health, lifecycle_state, _open_304)
@@ -742,25 +672,17 @@ async def process_one_space(
         )
         con.commit()
         con.close()
-        logger.info("heartbeat 304 for %s (%s/%s) — observedAt propagated", space_id,
+        logger.info("heartbeat 304 for %s (%s/%s) — SQLite advanced, Oxigraph unchanged", space_id,
                     endpoint_health, lifecycle_state)
         return "not_modified", True
 
     if resp is None or resp.status_code != 200:
         status_code = resp.status_code if resp else None
         logger.warning("heartbeat fetch failed for %s: status=%s", space_id, status_code)
-        # minutes_since_last_good: use large sentinel if never fetched, so health degrades correctly
+        # Error path: no Oxigraph write — three-token model writes only on content change.
         minutes_since_good = _minutes_since(last_fetched_ts) if last_fetched_ts else float("inf")
         endpoint_health, _ = classify_endpoint_health(status_code, minutes_since_good, consecutive_failures + 1)
-        state_update = build_state_only_update(space_uri, endpoint_health, lifecycle_state)
         try:
-            async with httpx.AsyncClient(timeout=15.0) as client:
-                upd = await client.post(
-                    f"{oxigraph_endpoint}/update",
-                    content=state_update,
-                    headers={"Content-Type": "application/sparql-update"},
-                )
-                upd.raise_for_status()
             _marker_err = effective_marker(endpoint_health, lifecycle_state, False)
             con = sqlite3.connect(resolved_db)
             con.execute(
@@ -770,7 +692,7 @@ async def process_one_space(
             con.commit()
             con.close()
         except Exception as e:
-            logger.error("state-only write failed for %s: %s", space_id, e)
+            logger.error("heartbeat_log write failed for %s: %s", space_id, e)
         return "error", True
 
     try:
@@ -838,28 +760,33 @@ async def process_one_space(
         if content_changed and not is_closed and not _simulated_age_active:
             lifecycle_state, _ = classify_lifecycle(0)  # just updated → confirmed
 
-        _obs_200 = snap.get("observed_at") if snap else None
-        if _obs_200 is None:
-            logger.warning("OBSERVED_AT_MISSING_200 space=%s — snap absent or has no observed_at; mom:observedAt will not be written", space_id)
-        preserved = await _read_space_metadata(space_uri, oxigraph_endpoint)
-        sparql_update, _ = transform_to_sparql(schema_obj, {
-            "endpoint_url": endpoint_url,
-            "space_id": space_id,
-            "subset": cls.get("subset", ""),
-            "next_unlock": cls.get("next_unlock"),
-            "raw_content": resp.text,
-            "endpoint_health": endpoint_health,
-            "lifecycle_state": lifecycle_state,
-            "source": preserved["source"],
-            "member_of": preserved["member_of"],
-        }, content_changed=content_changed, observed_at=_obs_200)
+        # Only write to Oxigraph on content change (three-token model: Axis B writes only on material diff).
+        if content_changed:
+            preserved = await _read_space_metadata(space_uri, oxigraph_endpoint)
+            sparql_update, _ = transform_to_sparql(schema_obj, {
+                "endpoint_url": endpoint_url,
+                "space_id": space_id,
+                "subset": cls.get("subset", ""),
+                "next_unlock": cls.get("next_unlock"),
+                "raw_content": resp.text,
+                "source": preserved["source"],
+                "member_of": preserved["member_of"],
+            })
 
-        if revival_sparql:
-            # SPARQL UPDATE operations must be ';'-separated. The revival block is a
-            # DELETE/WHERE op; sparql_update starts with DROP. Without the separator
-            # Oxigraph parses DROP as part of the WHERE clause and rejects the whole
-            # request with 400 — freezing every triple in the graph.
-            sparql_update = revival_sparql.rstrip() + " ;\n" + sparql_update
+            if revival_sparql:
+                # SPARQL UPDATE operations must be ';'-separated. The revival block is a
+                # DELETE/WHERE op; sparql_update starts with DROP. Without the separator
+                # Oxigraph parses DROP as part of the WHERE clause and rejects the whole
+                # request with 400 — freezing every triple in the graph.
+                sparql_update = revival_sparql.rstrip() + " ;\n" + sparql_update
+
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                upd = await client.post(
+                    f"{oxigraph_endpoint}/update",
+                    content=sparql_update,
+                    headers={"Content-Type": "application/sparql-update"},
+                )
+                upd.raise_for_status()
 
     except Exception as e:
         logger.exception("transform_to_sparql failed for %s, using legacy builder: %s", space_id, e)
@@ -871,14 +798,17 @@ async def process_one_space(
             subset=cls.get("subset", ""), next_unlock=cls.get("next_unlock"),
         )
         content_changed = True
+        # Note: fallback path always has content_changed=True, so POST will execute below.
 
-    async with httpx.AsyncClient(timeout=15.0) as client:
-        upd = await client.post(
-            f"{oxigraph_endpoint}/update",
-            content=sparql_update,
-            headers={"Content-Type": "application/sparql-update"},
-        )
-        upd.raise_for_status()
+    # POST to Oxigraph only if content changed (normal path) or fallback was used (content_changed forced True).
+    if content_changed:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            upd = await client.post(
+                f"{oxigraph_endpoint}/update",
+                content=sparql_update,
+                headers={"Content-Type": "application/sparql-update"},
+            )
+            upd.raise_for_status()
 
     # Closure trigger: threshold reached and not already closed
     cfg_closure = get_config().get("closure", {})
@@ -950,19 +880,16 @@ LIMIT 1"""
 
 
 async def _read_space_metadata(space_uri: str, oxigraph_endpoint: str) -> dict:
-    """Read source, memberOf and lastUpdated from existing space graph.
+    """Read source and memberOf from existing space graph.
 
-    transform_to_sparql does DROP SILENT GRAPH + INSERT DATA. Any triple not
-    re-inserted is lost. mom:lastUpdated read here is stale post-Story-3.8 (triple
-    removed from write path); kept for Story 3.9 which will replace with
-    mom:observedAt reads from the materializer.
+    transform_to_sparql does DROP SILENT GRAPH + INSERT DATA — any triple not
+    re-inserted is lost. source and memberOf must be preserved across heartbeat cycles.
     """
     query = f"""PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
-SELECT ?source ?memberOf ?lastUpdated WHERE {{
+SELECT ?source ?memberOf WHERE {{
   GRAPH <{space_uri}> {{
     OPTIONAL {{ <{space_uri}> mom:source ?source }}
     OPTIONAL {{ <{space_uri}> mom:memberOf ?memberOf }}
-    OPTIONAL {{ <{space_uri}> mom:lastUpdated ?lastUpdated }}
   }}
 }}"""
     try:
@@ -976,10 +903,9 @@ SELECT ?source ?memberOf ?lastUpdated WHERE {{
         bindings = resp.json().get("results", {}).get("bindings", [])
         source = bindings[0].get("source", {}).get("value", "self-registered") if bindings else "self-registered"
         member_of = list({b["memberOf"]["value"] for b in bindings if "memberOf" in b})
-        last_updated = bindings[0].get("lastUpdated", {}).get("value") if bindings else None
-        return {"source": source, "member_of": member_of, "last_updated": last_updated}
+        return {"source": source, "member_of": member_of}
     except Exception:
-        return {"source": "self-registered", "member_of": [], "last_updated": None}
+        return {"source": "self-registered", "member_of": []}
 
 
 async def run_heartbeat_cycle(oxigraph_endpoint: str, rematerialize_fn) -> None:

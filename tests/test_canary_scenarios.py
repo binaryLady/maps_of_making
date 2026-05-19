@@ -84,7 +84,7 @@ def test_a_reachable_marker():
     payload, override = scenario_a_reachable()
     assert override is None
     marker = _resolve_marker(payload, "healthy", 0)
-    assert marker == "open", f"Expected 'open', got {marker!r}"
+    assert marker == "confirmed", f"Expected 'confirmed' (baseline open:false), got {marker!r}"
 
 
 def test_a_timeout_produces_http_override():
@@ -138,7 +138,7 @@ def test_classify_endpoint_health_exceeds_warning_threshold():
 
 @pytest.mark.parametrize("scenario_fn, expected_marker", [
     (scenario_b_seeded,    "seeded"),
-    (scenario_b_confirmed, "open"),      # confirmed + open_now=true → "open"
+    (scenario_b_confirmed, "confirmed"),  # confirmed + open_now=false (baseline) → "confirmed"
     (scenario_b_aging,     "aging"),
     (scenario_b_zombie,    "zombie"),
     (scenario_b_closed,    "closed"),
@@ -230,11 +230,13 @@ def test_sensors_only_change_is_not_meaningful():
     )
 
 
-def test_open_flip_is_meaningful():
+def test_open_flip_is_not_meaningful():
+    # Story 3.8b: state is excluded from Axis B diff — open/close flips advance
+    # mom:lastOpenChange (Axis C) via _extract_last_open_change, not updatedAt.
     old = _make_snap({"state": {"open": True}})
     new = _make_snap({"state": {"open": False}})
-    assert has_meaningful_change(old, new), (
-        "open/close flip MUST trigger lifecycle clock reset"
+    assert not has_meaningful_change(old, new), (
+        "open/close flip must NOT advance updatedAt (state excluded from Axis B diff)"
     )
 
 

@@ -789,7 +789,7 @@ async def register_url(req: UrlRequest):
         sparql_update, _ = transform_to_sparql(schema_obj, {
             "endpoint_url": req.url, "space_id": slug,
             "subset": cls.get("subset", ""), "next_unlock": cls.get("next_unlock"),
-        }, observed_at=reg_observed_at)
+        })
     except Exception as e:
         logger.exception("transform_to_sparql failed, falling back to legacy builder: %s", e)
         _reg_used_fallback = True

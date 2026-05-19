@@ -1,5 +1,13 @@
 # Deferred Work
 
+## Deferred from: code review of 3-8b-corrected-token-model (2026-05-19)
+
+- **`content_changed=True` default on `_fetch_last_snapshot` exception** — every 200 response after Oxigraph query failure advances `mom:updatedAt` silently; pre-existing default behavior [transformer.py:741-747]
+- **Canary SPARQL prefix mismatch in `_fetch_last_snapshot`** — filter `urn:mak:space/` never matches canary graphs (`urn:mak:canary/`); canary always `content_changed=True`; pre-existing [transformer.py]
+- **Error path `consecutive_failures` not persisted to SQLite** — `classify_endpoint_health` called with `+1` but value never written back; health never advances through degradation levels; pre-existing [transformer.py:681-698]
+- **Legacy fallback `_build_sparql_update` still writes `mom:operationalState` + `mom:lastFetched`** — violates three-token contract when `transform_to_sparql` raises an exception; pre-existing path [main.py:787]
+- **304 path `last_open_now` goes stale during 304 streaks** — `effective_marker` can report `open` indefinitely after space closes; pre-existing [transformer.py:667]
+
 ## Deferred from: Story 3.8 operator verification (2026-05-19)
 
 - **Registration flow does not call clean canary pipeline after rematerialization** —
