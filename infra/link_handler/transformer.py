@@ -10,6 +10,8 @@ from typing import Optional, TYPE_CHECKING
 import httpx
 import yaml
 
+from space_pipeline import fetch_space_snapshot
+from snapshot_store import read_last_ok_observed_at
 from utils import MOM, SCHEMA, _sparql_str, _sparql_iri, _slug
 
 MAK = "urn:mak:"
@@ -551,11 +553,7 @@ def _init_heartbeat_db(db_path: str) -> None:
     con.execute("""
         CREATE TABLE IF NOT EXISTS heartbeat_log (
             space_id TEXT PRIMARY KEY,
-            etag TEXT,
-            last_modified TEXT,
-            last_fetched TEXT,
             consecutive_failures INTEGER DEFAULT 0,
-            last_content_updated TEXT,
             consecutive_closed_cycles INTEGER DEFAULT 0,
             is_closed INTEGER DEFAULT 0,
             last_endpoint_health TEXT DEFAULT 'unknown',
@@ -566,8 +564,6 @@ def _init_heartbeat_db(db_path: str) -> None:
     """)
     # Migrate existing tables that lack newer columns
     cols = {r[1] for r in con.execute("PRAGMA table_info(heartbeat_log)").fetchall()}
-    if "last_content_updated" not in cols:
-        con.execute("ALTER TABLE heartbeat_log ADD COLUMN last_content_updated TEXT")
     if "consecutive_closed_cycles" not in cols:
         con.execute("ALTER TABLE heartbeat_log ADD COLUMN consecutive_closed_cycles INTEGER DEFAULT 0")
     if "is_closed" not in cols:
@@ -580,6 +576,11 @@ def _init_heartbeat_db(db_path: str) -> None:
         con.execute("ALTER TABLE heartbeat_log ADD COLUMN last_open_now INTEGER DEFAULT NULL")
     if "last_effective_marker" not in cols:
         con.execute("ALTER TABLE heartbeat_log ADD COLUMN last_effective_marker TEXT DEFAULT 'unknown'")
+    # Story 3.7: drop columns superseded by snapshot_store (SQLite 3.35+ DROP COLUMN)
+    _COLS_DROP_37 = {"last_fetched", "last_content_updated", "last_endpoint_health", "last_lifecycle_state"}
+    for col in _COLS_DROP_37:
+        if col in cols:
+            con.execute(f"ALTER TABLE heartbeat_log DROP COLUMN {col}")
     con.commit()
     con.close()
 
@@ -588,46 +589,27 @@ def _read_heartbeat_row(space_id: str, resolved_db: str) -> dict:
     """Read heartbeat_log row for a space. Returns dict with defaults if absent."""
     con = sqlite3.connect(resolved_db)
     row = con.execute(
-        "SELECT etag, last_modified, last_fetched, consecutive_failures, last_content_updated, "
-        "consecutive_closed_cycles, is_closed, last_endpoint_health, last_lifecycle_state, "
+        "SELECT consecutive_failures, consecutive_closed_cycles, is_closed, "
         "last_open_now, last_effective_marker "
         "FROM heartbeat_log WHERE space_id=?", (space_id,)
     ).fetchone()
     con.close()
     if row:
         return {
-            "etag": row[0],
-            "last_modified": row[1],
-            "last_fetched": row[2],
-            "consecutive_failures": row[3] or 0,
-            "last_content_updated": row[4],
-            "consecutive_closed_cycles": row[5] or 0,
-            "is_closed": row[6] or 0,
-            "last_endpoint_health": row[7] or "unknown",
-            "last_lifecycle_state": row[8] or "unknown",
-            "last_open_now": row[9],
-            "last_effective_marker": row[10] or "unknown",
+            "consecutive_failures": row[0] or 0,
+            "consecutive_closed_cycles": row[1] or 0,
+            "is_closed": row[2] or 0,
+            "last_open_now": row[3],
+            "last_effective_marker": row[4] or "unknown",
         }
-    return {"etag": None, "last_modified": None, "last_fetched": None,
-            "consecutive_failures": 0, "last_content_updated": None,
-            "consecutive_closed_cycles": 0, "is_closed": 0,
-            "last_endpoint_health": "unknown", "last_lifecycle_state": "unknown",
+    return {"consecutive_failures": 0, "consecutive_closed_cycles": 0, "is_closed": 0,
             "last_open_now": None, "last_effective_marker": "unknown"}
 
 
 def update_last_content_updated(space_id: str, db_path: Optional[str] = None) -> None:
-    """Record that content changed for a space, resetting the lifecycle clock."""
-    cfg = get_config()
-    resolved_db = db_path or os.getenv("HEARTBEAT_DB_PATH") or cfg.get("bandwidth", {}).get(
-        "heartbeat_log_path", "/app/tasks/heartbeat_log.db"
-    )
-    now = datetime.now(timezone.utc).isoformat()
-    con = sqlite3.connect(resolved_db)
-    con.execute(
-        "UPDATE heartbeat_log SET last_content_updated=? WHERE space_id=?", (now, space_id)
-    )
-    con.commit()
-    con.close()
+    """No-op since Story 3.7 — snapshot store owns timing data."""
+    logger.debug("update_last_content_updated is a no-op since Story 3.7 — snapshot store owns this")
+    pass
 
 
 async def fetch_endpoint_conditional(
@@ -783,14 +765,26 @@ async def process_one_space(
     resolved_db = os.getenv("HEARTBEAT_DB_PATH") or _cfg_early.get("bandwidth", {}).get(
         "heartbeat_log_path", "/app/tasks/heartbeat_log.db"
     )
+    _init_heartbeat_db(resolved_db)
+    resolved_db_snap = os.getenv("SNAPSHOT_DB_PATH") or _cfg_early.get("bandwidth", {}).get(
+        "snapshot_db_path", "/app/tasks/snapshot_store.db"
+    )
 
-    resp, _headers, was_304, db_row = await fetch_endpoint_conditional(endpoint_url, space_id)
+    result = await fetch_space_snapshot(space_id, endpoint_url, db_path=resolved_db_snap)
+    fetch_status_val = result["fetch_status"]
+    snap = result["snapshot"]
+    resp = result["response"]
+    was_304 = (fetch_status_val == "not_modified")
 
+    # Read remaining fields still in heartbeat_log
+    db_row = _read_heartbeat_row(space_id, resolved_db)
     consecutive_failures = db_row.get("consecutive_failures", 0)
-    last_fetched_ts = db_row.get("last_fetched")
-    last_content_updated_ts = db_row.get("last_content_updated")
     consecutive_closed_cycles = db_row.get("consecutive_closed_cycles", 0)
     is_closed = db_row.get("is_closed", 0)
+
+    # Replacements for deleted columns:
+    last_fetched_ts = snap["observed_at"] if snap else None
+    last_content_updated_ts = read_last_ok_observed_at(space_id, db_path=resolved_db_snap)
 
     days_since_update = _days_since(last_content_updated_ts)
     lifecycle_state, _lc_reason = classify_lifecycle(days_since_update)
@@ -824,9 +818,8 @@ async def process_one_space(
             _marker_304 = effective_marker(endpoint_health, lifecycle_state, _open_304)
             con = sqlite3.connect(resolved_db)
             con.execute(
-                "UPDATE heartbeat_log SET last_endpoint_health=?, last_lifecycle_state=?, "
-                "last_effective_marker=? WHERE space_id=?",
-                (endpoint_health, lifecycle_state, _marker_304, space_id),
+                "UPDATE heartbeat_log SET last_effective_marker=? WHERE space_id=?",
+                (_marker_304, space_id),
             )
             con.commit()
             con.close()
@@ -857,9 +850,8 @@ async def process_one_space(
                 _marker_err = effective_marker(endpoint_health, lifecycle_state, False)
                 con = sqlite3.connect(resolved_db)
                 con.execute(
-                    "UPDATE heartbeat_log SET last_endpoint_health=?, last_lifecycle_state=?, "
-                    "last_effective_marker=? WHERE space_id=?",
-                    (endpoint_health, lifecycle_state, _marker_err, space_id),
+                    "UPDATE heartbeat_log SET last_effective_marker=? WHERE space_id=?",
+                    (_marker_err, space_id),
                 )
                 con.commit()
                 con.close()
@@ -1000,10 +992,8 @@ async def process_one_space(
         con = sqlite3.connect(resolved_db)
         con.execute(
             "UPDATE heartbeat_log SET consecutive_closed_cycles=?, is_closed=?, "
-            "last_endpoint_health=?, last_lifecycle_state=?, "
             "last_open_now=?, last_effective_marker=? WHERE space_id=?",
-            (consecutive_closed_cycles, is_closed, endpoint_health, lifecycle_state,
-             _open_now_int, _marker, space_id),
+            (consecutive_closed_cycles, is_closed, _open_now_int, _marker, space_id),
         )
         con.commit()
         con.close()

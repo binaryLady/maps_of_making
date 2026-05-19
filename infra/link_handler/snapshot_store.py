@@ -31,9 +31,13 @@ def init_snapshot_db(db_path: Optional[str] = None) -> None:
             observed_at TEXT NOT NULL,
             payload TEXT NOT NULL,
             etag TEXT,
-            last_modified TEXT
+            last_modified TEXT,
+            fetch_status TEXT NOT NULL DEFAULT 'ok'
         )
     """)
+    cols = {r[1] for r in con.execute("PRAGMA table_info(snapshots)").fetchall()}
+    if "fetch_status" not in cols:
+        con.execute("ALTER TABLE snapshots ADD COLUMN fetch_status TEXT NOT NULL DEFAULT 'ok'")
     con.commit()
     con.close()
 
@@ -44,6 +48,7 @@ def write_snapshot(
     payload: dict,
     etag: Optional[str] = None,
     last_modified: Optional[str] = None,
+    fetch_status: str = "ok",
     db_path: Optional[str] = None,
 ) -> None:
     """Write a snapshot row. observed_at must already be minted — never re-stamp here."""
@@ -52,14 +57,15 @@ def write_snapshot(
     payload_json = json.dumps(payload, separators=(",", ":"))
     con = sqlite3.connect(path)
     con.execute("""
-        INSERT INTO snapshots (uid, observed_at, payload, etag, last_modified)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO snapshots (uid, observed_at, payload, etag, last_modified, fetch_status)
+        VALUES (?, ?, ?, ?, ?, ?)
         ON CONFLICT(uid) DO UPDATE SET
             observed_at=excluded.observed_at,
             payload=excluded.payload,
             etag=excluded.etag,
-            last_modified=excluded.last_modified
-    """, (uid, observed_at, payload_json, etag, last_modified))
+            last_modified=excluded.last_modified,
+            fetch_status=excluded.fetch_status
+    """, (uid, observed_at, payload_json, etag, last_modified, fetch_status))
     con.commit()
     con.close()
 
@@ -70,7 +76,7 @@ def read_snapshot(uid: str, db_path: Optional[str] = None) -> Optional[dict]:
     init_snapshot_db(path)
     con = sqlite3.connect(path)
     row = con.execute(
-        "SELECT uid, observed_at, payload, etag, last_modified FROM snapshots WHERE uid=?",
+        "SELECT uid, observed_at, payload, etag, last_modified, fetch_status FROM snapshots WHERE uid=?",
         (uid,)
     ).fetchone()
     con.close()
@@ -82,6 +88,7 @@ def read_snapshot(uid: str, db_path: Optional[str] = None) -> Optional[dict]:
         "payload": json.loads(row[2]),
         "etag": row[3],
         "last_modified": row[4],
+        "fetch_status": row[5],
     }
 
 
@@ -92,3 +99,39 @@ def mint_observed_at() -> str:
     through Oxigraph (which normalizes xsd:dateTime to Z format).
     """
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def advance_observed_at(uid: str, observed_at: str, db_path: Optional[str] = None) -> None:
+    """Update observed_at and mark fetch_status='not_modified'. Called on 304 responses."""
+    path = db_path or _get_db_path()
+    con = sqlite3.connect(path)
+    con.execute(
+        "UPDATE snapshots SET observed_at=?, fetch_status='not_modified' WHERE uid=?",
+        (observed_at, uid)
+    )
+    con.commit()
+    con.close()
+
+
+def mark_unreachable(uid: str, db_path: Optional[str] = None) -> None:
+    """Mark fetch_status='unreachable'. Does NOT touch observed_at."""
+    path = db_path or _get_db_path()
+    con = sqlite3.connect(path)
+    con.execute(
+        "UPDATE snapshots SET fetch_status='unreachable' WHERE uid=?",
+        (uid,)
+    )
+    con.commit()
+    con.close()
+
+
+def read_last_ok_observed_at(uid: str, db_path: Optional[str] = None) -> Optional[str]:
+    """Read observed_at if row exists and fetch_status='ok', else None."""
+    path = db_path or _get_db_path()
+    con = sqlite3.connect(path)
+    row = con.execute(
+        "SELECT observed_at FROM snapshots WHERE uid=? AND fetch_status='ok'",
+        (uid,)
+    ).fetchone()
+    con.close()
+    return row[0] if row else None
