@@ -124,7 +124,7 @@ development_status:
   # Each story gated by a real-seam test + operator visual confirmation. Blocks Epic 4.
   epic-3.5: in-progress
   3-6-walking-skeleton-observed-at-end-to-end: done
-  3-7-heartbeat-log-observed-at-fetch-status: review
+  3-7-heartbeat-log-observed-at-fetch-status: done
   3-8-transformer-emits-mom-observedat: backlog
   3-9-materializer-propagates-observed-at-to-geojson: backlog
   3-10-browser-lifecycle-buckets-canary-e2e: backlog

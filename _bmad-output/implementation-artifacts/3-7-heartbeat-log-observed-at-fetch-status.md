@@ -1,6 +1,6 @@
 # Story 3.7: Migrate the Fetch Seam — Snapshot Store + 304/Unreachable Rules
 
-Status: review
+Status: done
 
 ## Story
 
@@ -309,3 +309,14 @@ All 13 active tests pass. No regressions.
 ### Change Log
 
 **2026-05-19:** Story 3.7 complete — fetch seam migrated to snapshot store with three-outcome rules. Registered spaces now write to snapshot_store with fetch_status tracking. Timing data (observed_at) single source of truth. Ready for 3.8 (transformer read-path migration).
+
+---
+
+## Review Findings
+
+- [ ] [Review][Decision] SQLite 3.35+ required for DROP COLUMN — confirm VPS SQLite version [transformer.py:580-583] — Ubuntu 20.04 ships SQLite 3.31 which does not support `ALTER TABLE ... DROP COLUMN`; if VPS runs 20.04, `_init_heartbeat_db` will throw `OperationalError` on startup.
+- [x] [Review][Patch] `read_last_ok_observed_at` returns None after any 304 → lifecycle clock always "confirmed" [snapshot_store.py:read_last_ok_observed_at] — Fixed: query changed to `WHERE fetch_status != 'unreachable'`.
+- [x] [Review][Patch] `state_changed` reads dropped columns from db_row — always compares against "unknown" [transformer.py:797-799, 837-839] — Fixed: removed `prior_health`/`prior_lifecycle`/`state_changed` logic; 304 path always writes marker unconditionally; error path returns `True`.
+- [x] [Review][Patch] `fetch_endpoint_conditional` dead code still writes to dropped `last_fetched` column [transformer.py:615-680] — Fixed: function deleted.
+- [x] [Review][Defer] No WAL mode / busy timeout on SQLite — concurrent writers can deadlock [snapshot_store.py, transformer.py] — deferred, pre-existing
+- [x] [Review][Defer] `httpx.RequestError` broad catch includes `InvalidURL` — config errors treated as transient [space_pipeline.py] — deferred, pre-existing pattern from canary_pipeline

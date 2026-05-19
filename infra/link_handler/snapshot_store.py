@@ -126,11 +126,11 @@ def mark_unreachable(uid: str, db_path: Optional[str] = None) -> None:
 
 
 def read_last_ok_observed_at(uid: str, db_path: Optional[str] = None) -> Optional[str]:
-    """Read observed_at if row exists and fetch_status='ok', else None."""
+    """Read observed_at if row exists and endpoint was reachable (ok or not_modified), else None."""
     path = db_path or _get_db_path()
     con = sqlite3.connect(path)
     row = con.execute(
-        "SELECT observed_at FROM snapshots WHERE uid=? AND fetch_status='ok'",
+        "SELECT observed_at FROM snapshots WHERE uid=? AND fetch_status != 'unreachable'",
         (uid,)
     ).fetchone()
     con.close()

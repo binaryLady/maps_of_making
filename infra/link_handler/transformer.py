@@ -612,79 +612,6 @@ def update_last_content_updated(space_id: str, db_path: Optional[str] = None) ->
     pass
 
 
-async def fetch_endpoint_conditional(
-    endpoint_url: str,
-    space_id: str,
-    db_path: Optional[str] = None,
-) -> tuple:
-    """Fetch an endpoint with ETag/Last-Modified conditional GET support.
-
-    Returns (response_or_none, response_headers_dict, was_304, db_row).
-    On 304: response_or_none is None, was_304 is True.
-    On 200: response is the httpx.Response object, was_304 is False.
-    db_row contains pre-fetch DB state: consecutive_failures, last_content_updated, etc.
-    """
-    cfg = get_config()
-    resolved_db = db_path or os.getenv("HEARTBEAT_DB_PATH") or cfg.get("bandwidth", {}).get(
-        "heartbeat_log_path", "/app/tasks/heartbeat_log.db"
-    )
-    _init_heartbeat_db(resolved_db)
-
-    db_row = _read_heartbeat_row(space_id, resolved_db)
-
-    req_headers = {}
-    # Canary endpoint must never 304 — simulatedAge injection requires a full 200 response
-    # so the lifecycle override is always evaluated. Skip conditional GET for canary.
-    if space_id != "mother-sands":
-        if db_row["etag"]:
-            req_headers["If-None-Match"] = db_row["etag"]
-        if db_row["last_modified"]:
-            req_headers["If-Modified-Since"] = db_row["last_modified"]
-
-    fetch_timeout = cfg.get("bandwidth", {}).get("heartbeat_timeout_seconds", 60.0)
-    async with httpx.AsyncClient(timeout=fetch_timeout, follow_redirects=True) as client:
-        resp = await client.get(endpoint_url, headers=req_headers)
-
-    was_304 = resp.status_code == 304
-    response_headers = dict(resp.headers)
-    new_etag = response_headers.get("etag")
-    new_lm = response_headers.get("last-modified")
-    now = datetime.now(timezone.utc).isoformat()
-
-    con = sqlite3.connect(resolved_db)
-    if resp.status_code == 200:
-        con.execute("""
-            INSERT INTO heartbeat_log (space_id, etag, last_modified, last_fetched, consecutive_failures)
-            VALUES (?, ?, ?, ?, 0)
-            ON CONFLICT(space_id) DO UPDATE SET
-                etag=excluded.etag,
-                last_modified=excluded.last_modified,
-                last_fetched=excluded.last_fetched,
-                consecutive_failures=0
-        """, (space_id, new_etag, new_lm, now))
-    elif resp.status_code == 304:
-        con.execute("""
-            INSERT INTO heartbeat_log (space_id, etag, last_modified, last_fetched, consecutive_failures)
-            VALUES (?, ?, ?, ?, 0)
-            ON CONFLICT(space_id) DO UPDATE SET
-                last_fetched=excluded.last_fetched,
-                consecutive_failures=0
-        """, (space_id, new_etag, new_lm, now))
-    else:
-        con.execute("""
-            INSERT INTO heartbeat_log (space_id, etag, last_modified, last_fetched, consecutive_failures)
-            VALUES (?, ?, ?, ?, 1)
-            ON CONFLICT(space_id) DO UPDATE SET
-                last_fetched=excluded.last_fetched,
-                consecutive_failures=consecutive_failures + 1
-        """, (space_id, new_etag, new_lm, now))
-    con.commit()
-    con.close()
-
-    if was_304:
-        logger.info("304 Not Modified for %s — bandwidth saved", space_id)
-        return None, response_headers, True, db_row
-    return resp, response_headers, False, db_row
 
 
 _SPARQL_ACTIVE_SPACES = """PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
@@ -794,9 +721,6 @@ async def process_one_space(
     if was_304:
         minutes_ok = _minutes_since(last_fetched_ts)
         endpoint_health, _ = classify_endpoint_health(304, minutes_ok, consecutive_failures)
-        prior_health = db_row.get("last_endpoint_health", "unknown")
-        prior_lifecycle = db_row.get("last_lifecycle_state", "unknown")
-        state_changed = (endpoint_health != prior_health or lifecycle_state != prior_lifecycle)
         # Always write on 304 to refresh mom:lastFetched — otherwise the map's
         # "fetched N ago" caption freezes at the last 200 response (Story 3.4).
         _now_304 = datetime.now(timezone.utc).isoformat()
@@ -812,20 +736,18 @@ async def process_one_space(
                 headers={"Content-Type": "application/sparql-update"},
             )
             upd.raise_for_status()
-        if state_changed:
-            prior_open_now = db_row.get("last_open_now")
-            _open_304 = bool(prior_open_now) if prior_open_now is not None else False
-            _marker_304 = effective_marker(endpoint_health, lifecycle_state, _open_304)
-            con = sqlite3.connect(resolved_db)
-            con.execute(
-                "UPDATE heartbeat_log SET last_effective_marker=? WHERE space_id=?",
-                (_marker_304, space_id),
-            )
-            con.commit()
-            con.close()
-        logger.info("heartbeat 304 for %s (%s/%s) — lastFetched refreshed%s", space_id,
-                    endpoint_health, lifecycle_state,
-                    ", state written" if state_changed else "")
+        prior_open_now = db_row.get("last_open_now")
+        _open_304 = bool(prior_open_now) if prior_open_now is not None else False
+        _marker_304 = effective_marker(endpoint_health, lifecycle_state, _open_304)
+        con = sqlite3.connect(resolved_db)
+        con.execute(
+            "UPDATE heartbeat_log SET last_effective_marker=? WHERE space_id=?",
+            (_marker_304, space_id),
+        )
+        con.commit()
+        con.close()
+        logger.info("heartbeat 304 for %s (%s/%s) — lastFetched refreshed", space_id,
+                    endpoint_health, lifecycle_state)
         return "not_modified", True
 
     if resp is None or resp.status_code != 200:
@@ -834,9 +756,6 @@ async def process_one_space(
         # minutes_since_last_good: use large sentinel if never fetched, so health degrades correctly
         minutes_since_good = _minutes_since(last_fetched_ts) if last_fetched_ts else float("inf")
         endpoint_health, _ = classify_endpoint_health(status_code, minutes_since_good, consecutive_failures + 1)
-        prior_health = db_row.get("last_endpoint_health", "unknown")
-        prior_lifecycle = db_row.get("last_lifecycle_state", "unknown")
-        state_changed = (endpoint_health != prior_health or lifecycle_state != prior_lifecycle)
         state_update = build_state_only_update(space_uri, endpoint_health, lifecycle_state)
         try:
             async with httpx.AsyncClient(timeout=15.0) as client:
@@ -846,18 +765,17 @@ async def process_one_space(
                     headers={"Content-Type": "application/sparql-update"},
                 )
                 upd.raise_for_status()
-            if state_changed:
-                _marker_err = effective_marker(endpoint_health, lifecycle_state, False)
-                con = sqlite3.connect(resolved_db)
-                con.execute(
-                    "UPDATE heartbeat_log SET last_effective_marker=? WHERE space_id=?",
-                    (_marker_err, space_id),
-                )
-                con.commit()
-                con.close()
+            _marker_err = effective_marker(endpoint_health, lifecycle_state, False)
+            con = sqlite3.connect(resolved_db)
+            con.execute(
+                "UPDATE heartbeat_log SET last_effective_marker=? WHERE space_id=?",
+                (_marker_err, space_id),
+            )
+            con.commit()
+            con.close()
         except Exception as e:
             logger.error("state-only write failed for %s: %s", space_id, e)
-        return "error", state_changed
+        return "error", True
 
     try:
         data = resp.json()

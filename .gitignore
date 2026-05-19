@@ -39,3 +39,4 @@ archive.tar.gz
 data/tasks/heartbeat_log.db
 data/tasks/snapshot_store.db
 data/tasks/gap_log.txt
+data/tasks/oxigraph.db

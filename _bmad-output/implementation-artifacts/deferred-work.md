@@ -238,3 +238,8 @@ Generating a real openfab.jsonld against the `space-jsonld-generator` skill expo
 ## Deferred from: code review of 3-6-walking-skeleton-observed-at-end-to-end (2026-05-19)
 
 - **`fetch_canary_snapshot` silent None after successful write**: `read_snapshot` is called immediately after `write_snapshot` and returns None silently if the read fails. Practically impossible since the row was just written, but the caller receives None with no error. Story 3.7 adds proper error handling for non-200 paths — consider adding an assertion or explicit error here at that time.
+
+## Deferred from: code review of 3-7-heartbeat-log-observed-at-fetch-status (2026-05-19)
+
+- **No WAL mode / busy timeout on SQLite**: Both `snapshot_store.db` and `heartbeat_log.db` use default journal mode with 0ms busy timeout. Concurrent heartbeat coroutines writing to the same file will intermittently raise `OperationalError: database is locked`. Add `PRAGMA journal_mode=WAL` and `timeout=5` to `sqlite3.connect()` calls.
+- **`httpx.RequestError` broad catch includes `InvalidURL`**: `fetch_space_snapshot` catches `httpx.RequestError` (base class) alongside `ConnectError`/`TimeoutException`. A malformed `endpoint_url` will be silently treated as a transient network failure and mark the space unreachable rather than surfacing a config bug. Consider narrowing the catch or logging at ERROR level for `InvalidURL`.
