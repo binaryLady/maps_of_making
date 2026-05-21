@@ -32,12 +32,15 @@ def init_snapshot_db(db_path: Optional[str] = None) -> None:
             payload TEXT NOT NULL,
             etag TEXT,
             last_modified TEXT,
-            fetch_status TEXT NOT NULL DEFAULT 'ok'
+            fetch_status TEXT NOT NULL DEFAULT 'ok',
+            fetch_error TEXT
         )
     """)
     cols = {r[1] for r in con.execute("PRAGMA table_info(snapshots)").fetchall()}
     if "fetch_status" not in cols:
         con.execute("ALTER TABLE snapshots ADD COLUMN fetch_status TEXT NOT NULL DEFAULT 'ok'")
+    if "fetch_error" not in cols:
+        con.execute("ALTER TABLE snapshots ADD COLUMN fetch_error TEXT")
     con.commit()
     con.close()
 
@@ -57,14 +60,15 @@ def write_snapshot(
     payload_json = json.dumps(payload, separators=(",", ":"))
     con = sqlite3.connect(path)
     con.execute("""
-        INSERT INTO snapshots (uid, observed_at, payload, etag, last_modified, fetch_status)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO snapshots (uid, observed_at, payload, etag, last_modified, fetch_status, fetch_error)
+        VALUES (?, ?, ?, ?, ?, ?, NULL)
         ON CONFLICT(uid) DO UPDATE SET
             observed_at=excluded.observed_at,
             payload=excluded.payload,
             etag=excluded.etag,
             last_modified=excluded.last_modified,
-            fetch_status=excluded.fetch_status
+            fetch_status=excluded.fetch_status,
+            fetch_error=NULL
     """, (uid, observed_at, payload_json, etag, last_modified, fetch_status))
     con.commit()
     con.close()
@@ -76,7 +80,7 @@ def read_snapshot(uid: str, db_path: Optional[str] = None) -> Optional[dict]:
     init_snapshot_db(path)
     con = sqlite3.connect(path)
     row = con.execute(
-        "SELECT uid, observed_at, payload, etag, last_modified, fetch_status FROM snapshots WHERE uid=?",
+        "SELECT uid, observed_at, payload, etag, last_modified, fetch_status, fetch_error FROM snapshots WHERE uid=?",
         (uid,)
     ).fetchone()
     con.close()
@@ -89,6 +93,7 @@ def read_snapshot(uid: str, db_path: Optional[str] = None) -> Optional[dict]:
         "etag": row[3],
         "last_modified": row[4],
         "fetch_status": row[5],
+        "fetch_error": row[6],
     }
 
 
@@ -113,13 +118,17 @@ def advance_observed_at(uid: str, observed_at: str, db_path: Optional[str] = Non
     con.close()
 
 
-def mark_unreachable(uid: str, db_path: Optional[str] = None) -> None:
-    """Mark fetch_status='unreachable'. Does NOT touch observed_at."""
+def mark_unreachable(uid: str, db_path: Optional[str] = None, reason: Optional[str] = None) -> None:
+    """Mark fetch_status='unreachable'. Does NOT touch observed_at.
+
+    `reason` is a short human-readable string (e.g. "HTTP 503", "Invalid JSON at line 19",
+    "DNS resolution failed") surfaced to coordinators as a CTA hint on the broken card.
+    """
     path = db_path or _get_db_path()
     con = sqlite3.connect(path)
     con.execute(
-        "UPDATE snapshots SET fetch_status='unreachable' WHERE uid=?",
-        (uid,)
+        "UPDATE snapshots SET fetch_status='unreachable', fetch_error=? WHERE uid=?",
+        (reason, uid),
     )
     con.commit()
     con.close()

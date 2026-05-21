@@ -24,7 +24,6 @@ if not OXIGRAPH_URL.endswith("/query"):
     OXIGRAPH_URL = OXIGRAPH_URL + "/query"
 
 sys.path.insert(0, str(REPO_ROOT / "infra" / "link_handler"))
-from transformer import effective_marker  # noqa: E402
 from snapshot_store import read_last_ok_observed_at, read_snapshot  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -241,7 +240,6 @@ def binding_to_space(binding: dict) -> dict:
             "id": space_id,
             "uri": space_uri,
             "name": name,
-            "status": "unknown",  # Computed at render time; kept for compatibility
             "geolocationFidelity": fidelity,
             "geolocationNote": geo_note,
             "address": address,
@@ -272,18 +270,19 @@ def binding_to_space(binding: dict) -> dict:
 
 
 def _load_thresholds_from_config() -> dict:
-    """Load thresholds from config.yaml."""
+    """Load thresholds from config.yaml. Fails loud on missing/malformed block (AC 6)."""
     config_path = REPO_ROOT / "infra" / "link_handler" / "config.yaml"
-    try:
-        with open(config_path, "r") as f:
-            cfg = yaml.safe_load(f) or {}
-        return {
-            "endpoint_health": cfg.get("endpoint_health", {}),
-            "operational_state": cfg.get("operational_state", {}),
-        }
-    except Exception as e:
-        log.warning(f"Failed to load thresholds from config: {e}")
-        return {"endpoint_health": {}, "operational_state": {}}
+    with open(config_path, "r") as f:
+        cfg = yaml.safe_load(f) or {}
+    endpoint_health = cfg.get("endpoint_health") or {}
+    operational_state = cfg.get("operational_state") or {}
+    if not endpoint_health or not operational_state:
+        raise RuntimeError(
+            f"THRESHOLDS_MISSING: config.yaml missing endpoint_health/operational_state blocks "
+            f"(endpoint_health={endpoint_health!r}, operational_state={operational_state!r}) — "
+            f"materializer cannot ship a GeoJSON the browser can compute against"
+        )
+    return {"endpoint_health": endpoint_health, "operational_state": operational_state}
 
 
 def materialize_spaces() -> dict:

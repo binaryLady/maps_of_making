@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-01
-last_updated: "2026-05-19 (Story 3.10 created — ready-for-dev)"
+last_updated: "2026-05-20 (Story 3.10 review — pending operator visual confirmation)"
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
@@ -130,7 +130,7 @@ development_status:
   3-8-transformer-emits-mom-observedat: done  # old model — superseded by 3-8b
   3-8b-corrected-token-model: done
   3-9-materializer-three-tokens-geojson: done
-  3-10-browser-lifecycle-buckets-canary-e2e: ready-for-dev
+  3-10-browser-lifecycle-buckets-canary-e2e: review
   epic-3.5-retrospective: optional
 
   # Epic 4: Operator Observability Dashboard

@@ -583,7 +583,9 @@ def _binding_to_feature(b: dict) -> Optional[dict]:
     raw_specialties = b.get("specialties", {}).get("value", "")
     specialties = [s for s in raw_specialties.split("|") if s] if raw_specialties else []
     open_now_raw = b.get("openNow", {}).get("value")
-    open_now = open_now_raw.lower() == "true" if open_now_raw is not None else False
+    # None preserved (not coerced to False) so the browser distinguishes
+    # "operator declared closed" (False) from "operator opted out / no state field" (None → opt-out).
+    open_now = open_now_raw.lower() == "true" if open_now_raw is not None else None
     street = b.get("street", {}).get("value", "")
     postcode = b.get("postcode", {}).get("value", "")
     city = b.get("city", {}).get("value", "")
@@ -629,6 +631,7 @@ def _binding_to_feature(b: dict) -> Optional[dict]:
             "observed_at": None,  # Filled from SQLite by _rematerialize_geojson
             "updated_at": updated_at,  # From Oxigraph mom:updatedAt; may be null for pre-3.8b spaces
             "last_fetch_status": None,  # Filled from SQLite by _rematerialize_geojson
+            "last_fetch_error": None,   # Human-readable failure reason when last_fetch_status='unreachable'
         },
     }
 
@@ -674,6 +677,7 @@ async def _rematerialize_geojson() -> None:
             # last-good snapshot timestamp ("fetched X ago" growing while broken).
             feature["properties"]["observed_at"] = snapshot["observed_at"]
             feature["properties"]["last_fetch_status"] = snapshot["fetch_status"]
+            feature["properties"]["last_fetch_error"] = snapshot.get("fetch_error")
 
             # Story 3.10 B1: canary self-describes its demo mode via ext_mom.thresholdMode
             # in its own payload. When true, attach seconds-scale thresholds_override
@@ -785,6 +789,18 @@ async def heartbeat_space(space_id: str):
             status_code=429,
             detail={"error": "rate_limited", "retry_after_seconds": retry_after},
         )
+
+    # Canary uses the clean canary_pipeline path (Story 3.10 Axes A & B).
+    # It owns its own graph (urn:mak:canary) and its own claimed-state check,
+    # so skip the regular endpoint-URL lookup entirely.
+    if space_id == "mother-sands":
+        _manual_refresh_cooldowns[space_id] = now
+        observed_at = await run_canary_pipeline(
+            _CANARY_ENDPOINT_URL, OXIGRAPH_ENDPOINT, GEOJSON_OUTPUT
+        )
+        await _rematerialize_geojson()
+        outcome = "ok" if observed_at else "unreachable_or_unclaimed"
+        return {"status": "ok", "space_id": space_id, "outcome": outcome}
 
     space_uri = f"urn:mak:space/{space_id}"
     sparql = f"""PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>

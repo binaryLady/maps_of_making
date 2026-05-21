@@ -18,7 +18,7 @@ from typing import Optional
 import httpx
 
 from snapshot_store import mint_observed_at, write_snapshot, read_snapshot, mark_unreachable
-from transformer import detect_diff
+from transformer import detect_diff, _extract_open_now, _extract_last_open_change
 
 logger = logging.getLogger(__name__)
 
@@ -47,18 +47,29 @@ async def fetch_canary_snapshot(
             resp = await client.get(endpoint_url)
     except httpx.HTTPError as e:
         # Story 3.10 Axis A: network-level failure → flag unreachable, preserve observed_at.
+        reason = f"Network error: {e.__class__.__name__}"
         logger.warning("[axis-a] canary fetch raised %s — marking unreachable", e.__class__.__name__)
-        mark_unreachable(CANARY_UID, db_path=db_path)
+        mark_unreachable(CANARY_UID, db_path=db_path, reason=reason)
         return None, False
 
     if resp.status_code != 200:
         # Story 3.10 Axis A: HTTP failure → flag unreachable, preserve observed_at.
+        reason = f"HTTP {resp.status_code}"
         logger.warning("[axis-a] canary fetch returned %s — marking unreachable", resp.status_code)
-        mark_unreachable(CANARY_UID, db_path=db_path)
+        mark_unreachable(CANARY_UID, db_path=db_path, reason=reason)
         return None, False
 
     observed_at = mint_observed_at()  # minted exactly once, right here
-    payload = resp.json()
+    try:
+        payload = resp.json()
+    except json.JSONDecodeError as e:
+        # Server returned 200 but body is not valid JSON — treat as unreachable so
+        # Axis A flips broken, and surface the parse-error position as a CTA hint
+        # for the operator (e.g. "Invalid JSON at line 19 col 5: Expecting ',' delimiter").
+        reason = f"Invalid JSON at line {e.lineno} col {e.colno}: {e.msg}"
+        logger.warning("[axis-a] canary fetch returned malformed JSON — %s", reason)
+        mark_unreachable(CANARY_UID, db_path=db_path, reason=reason)
+        return None, False
     etag = resp.headers.get("etag")
     last_modified = resp.headers.get("last-modified")
 
@@ -218,6 +229,55 @@ def materialize_canary_geojson(
     return observed_at
 
 
+async def write_canary_open_now_to_oxigraph(
+    oxigraph_endpoint: str,
+    open_now: Optional[bool],
+    last_open_change: Optional[str],
+) -> None:
+    """Axis C: write/refresh (or clear) mom:openNow + mom:lastOpenChange.
+
+    open_now=None → operator opted out (state field absent/malformed) → DELETE only,
+    leaving the canary subject without mom:openNow. The browser's computeAxisC then
+    falls through to confirmed/B/A logic.
+    """
+    delete_block = f"""DELETE WHERE {{
+  GRAPH <{CANARY_GRAPH}> {{
+    <{CANARY_SUBJECT}> mom:openNow ?v .
+  }}
+}} ;
+DELETE WHERE {{
+  GRAPH <{CANARY_GRAPH}> {{
+    <{CANARY_SUBJECT}> mom:lastOpenChange ?t .
+  }}
+}}"""
+
+    insert_block = ""
+    if open_now is not None:
+        triples = [f'<{CANARY_SUBJECT}> mom:openNow "{str(open_now).lower()}"^^xsd:boolean .']
+        if last_open_change:
+            triples.append(f'<{CANARY_SUBJECT}> mom:lastOpenChange "{last_open_change}"^^xsd:dateTime .')
+        insert_block = f""" ;
+INSERT DATA {{
+  GRAPH <{CANARY_GRAPH}> {{
+    {chr(10).join(triples)}
+  }}
+}}"""
+
+    sparql = f"""PREFIX mom: <{MOM_NS}>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+{delete_block}{insert_block}"""
+
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        resp = await client.post(
+            f"{oxigraph_endpoint}/update",
+            content=sparql,
+            headers={"Content-Type": "application/sparql-update"},
+        )
+        resp.raise_for_status()
+    logger.info("[axis-c] canary mom:openNow=%s lastOpenChange=%s", open_now, last_open_change)
+
+
 async def write_canary_updated_at_to_oxigraph(
     oxigraph_endpoint: str,
     updated_at: str,
@@ -295,4 +355,12 @@ async def run_canary_pipeline(
             await write_canary_updated_at_to_oxigraph(oxigraph_endpoint, snap["observed_at"])
         except Exception as e:
             logger.warning("[axis-b] canary mom:updatedAt write failed (non-fatal): %s", e)
+    # Axis C: refresh open/shut from payload.state every fetch (volatile, not diff-gated).
+    state_obj = snap["payload"].get("state") if isinstance(snap.get("payload"), dict) else None
+    open_now = _extract_open_now(state_obj)
+    last_open_change = _extract_last_open_change(state_obj)
+    try:
+        await write_canary_open_now_to_oxigraph(oxigraph_endpoint, open_now, last_open_change)
+    except Exception as e:
+        logger.warning("[axis-c] canary mom:openNow write failed (non-fatal): %s", e)
     return snap["observed_at"]

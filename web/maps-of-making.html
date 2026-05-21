@@ -139,6 +139,7 @@
   .pin-swatch.seeded { background: var(--paper); }
   .pin-swatch.confirmed { background: var(--accent-2); }
   .pin-swatch.open { background: var(--green); }
+  .pin-swatch.shut { background: var(--ink); }
   .pin-swatch.unlinked { background: var(--paper); border-style: dashed; box-shadow: none; }
   .pin-swatch.aging { background: var(--paper); border-style: dashed; border-color: #c49a00; box-shadow: none; }
   .pin-swatch.zombie { background: var(--paper); border-style: dashed; border-color: var(--muted); box-shadow: none; opacity: 0.6; }
@@ -151,6 +152,7 @@
   .status-label.seeded { color: var(--muted); }
   .status-label.confirmed { color: var(--accent-2); border-color: var(--accent-2); }
   .status-label.open { color: var(--green); border-color: var(--green); }
+  .status-label.shut { color: var(--ink); border-color: var(--ink); }
   .status-label.unlinked { color: var(--muted); border-color: var(--rule); border-style: dashed; }
   .status-label.aging { color: #a37e00; border-color: #c49a00; background: #fff8d6; }
   .status-label.zombie { color: var(--muted); border-color: var(--muted); }
@@ -169,6 +171,7 @@
   .map-marker.seeded    .marker-fill { fill: var(--paper); }
   .map-marker.confirmed .marker-fill { fill: var(--accent-2); }
   .map-marker.open      .marker-fill { fill: var(--green); }
+  .map-marker.shut      .marker-fill { fill: var(--ink); }
   .map-marker.unlinked  .marker-fill { fill: var(--paper); stroke-dasharray: 3 2; }
   .map-marker.broken    .marker-fill { fill: var(--accent); }
 
@@ -191,7 +194,7 @@
     margin: 0 0 4px; line-height: 1; }
   .detail-hero .where { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); }
   .detail-hero .badges { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
-  .detail-section { padding: 12px 16px; border-bottom: 1px dashed var(--rule); }
+  .detail-section { padding: 12px 16px; }
   .detail-section .wf-label { margin-bottom: 6px; }
   .kv { display: grid; grid-template-columns: 90px 1fr; gap: 4px 10px; font-size: 12.5px; }
   .kv dt { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); text-transform: uppercase;
@@ -221,6 +224,7 @@
   .sp-badges-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
   .sp-badge { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 7px; border: 1.5px solid currentColor; }
   .sp-badge-open { color: var(--green); background: rgba(94,160,114,0.1); }
+  .sp-badge-shut { color: var(--ink); background: rgba(26,26,26,0.08); }
   .sp-badge-confirmed { color: var(--accent-2); background: rgba(76,108,179,0.08); }
   .sp-badge-broken { color: var(--accent); background: rgba(200,80,60,0.08); }
   .sp-badge-seeded { color: var(--muted); border-color: var(--muted); }
@@ -268,8 +272,8 @@
 
   .sp-terminal-wrap { border: 1.5px solid var(--rule); background: #18160f; overflow: hidden; }
   .sp-terminal-head { background: #0e0c08; padding: 6px 10px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #2a261c; }
-  .sp-terminal-head-label { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.08em; color: #8a8070; text-transform: uppercase; }
-  .sp-terminal-head-meta { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #6a6050; }
+  .sp-terminal-head-label { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.08em; color: var(--paper); text-transform: uppercase; }
+  .sp-terminal-head-meta { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: var(--paper); }
   pre.json.sp-terminal-body { margin: 0; padding: 10px 12px; background: #18160f; color: #c8c0a8; max-height: 320px; }
   pre.json.sp-terminal-body .k { color: #8fc4e8; }
   pre.json.sp-terminal-body .s { color: #b8d89a; }
@@ -279,7 +283,7 @@
   .sp-trust-line { font-size: 11px; color: var(--muted); margin-top: 8px; line-height: 1.5; font-style: italic; }
   .sp-trust-line::before { content: '↳ '; color: var(--faint); }
 
-  .sp-refresh-btn { display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; padding: 11px; background: #fff; border: none; border-top: 1.5px solid var(--rule); font-family: 'Inter Tight', sans-serif; font-size: 12px; font-weight: 500; color: var(--ink); cursor: pointer; transition: background 0.12s, color 0.12s; }
+  .sp-refresh-btn { display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; padding: 14px 11px; margin-top: 10px; background: #fff; border: none; font-family: 'Inter Tight', sans-serif; font-size: 12px; font-weight: 500; color: var(--ink); cursor: pointer; transition: background 0.12s, color 0.12s; }
   .sp-refresh-btn:hover:not(:disabled) { background: var(--ink); color: var(--paper); }
   .sp-refresh-btn:disabled { opacity: 0.55; cursor: default; }
   .sp-refresh-meta { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); margin-left: 4px; }
@@ -583,9 +587,6 @@
     <div class="filter-group" id="fg-status">
       <h3>Status</h3>
       <div class="chips" id="chips-status"></div>
-      <div class="chips" style="margin-top:6px;">
-        <button class="chip" id="btn-show-unhealthy" aria-pressed="false" type="button">show aging · zombie · dead</button>
-      </div>
     </div>
     <div class="filter-group" id="fg-spec">
       <h3>Specialties</h3>

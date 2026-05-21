@@ -325,31 +325,27 @@
   }
 
   // Axis C — operational liveness. Current source claim, does not age.
+  // 'open'  = state.open=true   → green dot
+  // 'shut'  = state.open=false  → black dot (operator-declared closed-right-now)
+  // 'opt-out' = state field absent/unknown → C contributes nothing, fall through.
   function computeAxisC(s) {
-    if (!s) return 'not-open';
-    return s.open_now === true ? 'open' : 'not-open';
+    if (!s || s.open_now === undefined || s.open_now === null) return 'opt-out';
+    return s.open_now === true ? 'open' : 'shut';
   }
 
-  // Combined marker — AC 4 precedence:
-  // broken (A) → dead/zombie/aging (B) → open (C) → confirmed → seeded.
-  // 'seeded' = no freshness tokens at all (registered but never heartbeated).
+  // Combined marker — precedence (per user, Axis C iteration):
+  //   dead/zombie/aging (B) → broken (A) → open/shut (C) → confirmed → seeded.
+  // Rationale: long-term silence (B) is louder than a transient endpoint blip (A);
+  // a broken endpoint is louder than the current open/shut claim (we can't trust it).
   function computeMarker(s) {
     if (!s) return 'seeded';
-    const a = computeAxisA(s, state.thresholds);
-    if (a === 'broken' && s.observed_at) {
-      // Endpoint is reachable history exists but stale beyond broken_minutes — flag broken.
-      return 'broken';
-    }
     const b = computeAxisB(s, state.thresholds);
-    if (b === 'dead' || b === 'zombie' || b === 'aging') {
-      if (s.updated_at) return b;
-    }
-    // Note: no late `if (a === 'broken') return 'broken'` — line 339 already
-    // handled broken-with-history. A bare 'broken' from Axis A here means
-    // "no observed_at at all" (never claimed / fresh c-reset) → must fall
-    // through to the seeded fallback below, otherwise unclaimed spaces render
-    // as broken instead of seeded.
-    if (computeAxisC(s) === 'open') return 'open';
+    if (s.updated_at && (b === 'dead' || b === 'zombie' || b === 'aging')) return b;
+    const a = computeAxisA(s, state.thresholds);
+    if (a === 'broken' && s.observed_at) return 'broken';
+    const c = computeAxisC(s);
+    if (c === 'open') return 'open';
+    if (c === 'shut') return 'shut';
     if (s.updated_at || s.observed_at) return 'confirmed';
     return 'seeded';
   }
@@ -415,7 +411,7 @@
     const networks = unique(state.spaces.flatMap((s) => s.network_memberships))
       .map((n) => [n, n.split('/').pop().toUpperCase()]);
     const countries = unique(state.spaces.map((s) => s.country));
-    const statuses = ['seeded', 'confirmed', 'open', 'unlinked', 'broken'];
+    const statuses = ['seeded', 'confirmed', 'open', 'shut', 'unlinked', 'broken'];
     const specialties = unique(state.spaces.flatMap((s) => s.specialties)).sort();
 
     renderChips('#chips-network', networks, state.filters.networks);
@@ -566,7 +562,7 @@
       logoBox.classList.add('is-placeholder');
       logoBox.appendChild(_logoPlaceholder());
     }
-    const badgeKindClass = { open: 'sp-badge-open', confirmed: 'sp-badge-confirmed', broken: 'sp-badge-broken', seeded: 'sp-badge-seeded' };
+    const badgeKindClass = { open: 'sp-badge-open', shut: 'sp-badge-shut', confirmed: 'sp-badge-confirmed', broken: 'sp-badge-broken', seeded: 'sp-badge-seeded' };
     body.appendChild(el('div', { class: 'sp-hero' }, [
       el('div', { class: 'sp-name-row' }, [
         el('div', { class: 'sp-name' }, [s.name]),
@@ -595,7 +591,7 @@
     if (kind !== 'seeded') {
       const dotClass = ['aging', 'zombie'].includes(kind) ? 'sp-dot sp-dot-stale'
         : kind === 'broken' ? 'sp-dot sp-dot-error' : 'sp-dot';
-      const statusPhrases = { open: 'Open right now', confirmed: 'Confirmed', broken: 'Endpoint issue', aging: 'Going quiet', zombie: 'Unreachable', dead: 'Permanently closed' };
+      const statusPhrases = { open: 'Open right now', shut: 'Closed right now', confirmed: 'Confirmed', broken: 'Endpoint issue', aging: 'Going quiet', zombie: 'Unreachable', dead: 'Permanently closed' };
       const phrase = statusPhrases[kind] || kind;
       body.appendChild(el('div', { class: 'sp-status-bar' }, [
         el('div', { class: 'sp-status-left' }, [
@@ -695,10 +691,16 @@
       } else if (kind === 'broken') {
         const errLabel = ERROR_LABELS[s.error_type] || 'Endpoint unavailable';
         const lastOkAgo = s.observed_at ? ` Last successful fetch ${timeAgo(s.observed_at)} ago.` : '';
-        body.appendChild(el('div', { class: 'sp-section' }, [
+        const sectionChildren = [
           el('div', { class: 'sp-section-label' }, ['Endpoint issue']),
           el('div', { style: { fontSize: '13px', color: 'var(--error, #c0392b)', marginTop: '4px' } }, [`${errLabel} — check your SpaceAPI endpoint is reachable and returns valid JSON-LD.${lastOkAgo}`]),
-        ]));
+        ];
+        if (s.last_fetch_error) {
+          sectionChildren.push(el('div', {
+            style: { fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', color: 'var(--muted)', marginTop: '6px', padding: '6px 8px', background: 'var(--paper-2)', border: '1px dashed var(--rule)' }
+          }, [`Last fetch error: ${s.last_fetch_error}`]));
+        }
+        body.appendChild(el('div', { class: 'sp-section' }, sectionChildren));
       } else if (kind === 'aging') {
         const agingAgo = s.observed_at ? ` — last fetched ${timeAgo(s.observed_at)} ago` : '';
         body.appendChild(el('div', { class: 'sp-section' }, [
@@ -753,7 +755,7 @@
 
     // ── Source Data — desktop only, non-seeded ──
     if (window.innerWidth >= 768 && kind !== 'seeded') {
-      const zone3 = el('div', { class: 'detail-section zone-source', style: { padding: '12px 14px', borderBottom: '1px dashed var(--rule)' } }, [
+      const zone3 = el('div', { class: 'detail-section zone-source', style: { padding: '12px 14px' } }, [
         el('div', { class: 'sp-section-header' }, [
           el('div', { class: 'sp-section-label' }, ['Source Data']),
           s.endpoint_url ? el('a', { href: s.endpoint_url, target: '_blank', rel: 'noopener', class: 'sp-section-label', style: { textDecoration: 'none', marginBottom: '0' } }, ['↗ Open source']) : null,
@@ -888,6 +890,7 @@
     if (kind === 'zombie') return `Unreachable · last content update ${timeAgo(s.updated_at)} ago.`;
     if (kind === 'dead')   return `Long inactive · last content update ${timeAgo(s.updated_at)} ago.`;
     if (kind === 'open')   return `Open right now · last content update ${timeAgo(s.updated_at)} ago.`;
+    if (kind === 'shut')   return `Closed right now · last content update ${timeAgo(s.updated_at)} ago.`;
     return `Confirmed · last content update ${timeAgo(s.updated_at)} ago.`;
   }
 

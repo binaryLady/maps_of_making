@@ -25,19 +25,6 @@ def _baseline() -> dict:
     return json.loads(BASELINE_FILE.read_text())
 
 
-def _stamp_scenario(payload: dict, name: str) -> None:
-    """Stamp scenario identity + apply-time into ext_mom so two runs produce
-    different bytes. Without this, the heartbeat 304-path short-circuits and
-    `detect_diff` never runs → `mom:updatedAt` never advances. The stamp lives
-    under ext_mom (not ignored by detect_diff) and is the canary-side equivalent
-    of a real operator content change.
-    """
-    from datetime import datetime, timezone
-    payload.setdefault("ext_mom", {})
-    payload["ext_mom"]["scenarioName"] = name
-    payload["ext_mom"]["scenarioAppliedAt"] = datetime.now(timezone.utc).isoformat()
-
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Axis A — Reachability
 # ─────────────────────────────────────────────────────────────────────────────
@@ -247,7 +234,6 @@ def apply_scenario(name: str, served_path: Path, db_path: str | None = None) -> 
 
     fn = SCENARIOS[name]
     payload, http_override = fn()
-    _stamp_scenario(payload, name)
 
     # Safe write: temp → fsync → atomic rename
     parent = served_path.parent
