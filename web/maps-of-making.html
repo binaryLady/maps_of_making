@@ -160,9 +160,9 @@
   .status-label.broken { color: var(--accent); border-color: var(--accent); }
 
   /* Map SVG markers — intrinsic SVG dimensions guarantee stable offsetWidth for MapLibre anchor math */
-  .map-marker { cursor: pointer; filter: drop-shadow(1px 1px 0 var(--ink)); }
+  .map-marker { cursor: pointer; filter: drop-shadow(1px 1px 0 var(--paper)); }
   .map-marker.unlinked { filter: none; }
-  .map-marker:hover { filter: drop-shadow(1px 1px 0 var(--ink)) brightness(1.1); }
+  .map-marker:hover { filter: drop-shadow(1px 1px 0 var(--paper)) brightness(1.1); }
   .map-marker.unlinked:hover { filter: brightness(1.1); }
   .map-marker.selected { outline: 1px solid var(--accent); outline-offset: 1px; border-radius: 50%; }
 
@@ -171,7 +171,7 @@
   .map-marker.seeded    .marker-fill { fill: var(--paper); }
   .map-marker.confirmed .marker-fill { fill: var(--accent-2); }
   .map-marker.open      .marker-fill { fill: var(--green); }
-  .map-marker.shut      .marker-fill { fill: var(--ink); }
+  .map-marker.shut      .marker-fill { fill: var(--ink); stroke: var(--paper); }
   .map-marker.unlinked  .marker-fill { fill: var(--paper); stroke-dasharray: 3 2; }
   .map-marker.broken    .marker-fill { fill: var(--accent); }
 

@@ -14,9 +14,10 @@ from apscheduler.triggers.interval import IntervalTrigger
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, ConfigDict
 
-from canary_pipeline import run_canary_pipeline
+import asyncio
+from pipeline import run_space_pipeline
+from pipeline_helpers import get_config
 from snapshot_store import mint_observed_at, write_snapshot, read_last_ok_observed_at, read_snapshot
-from transformer import (get_config, query_active_spaces, process_one_space, run_heartbeat_cycle)
 from utils import MOM, SCHEMA, _ALLOWED_SCHEMES, _sparql_str, _sparql_iri, _slug
 
 logging.basicConfig(level=logging.INFO)
@@ -34,26 +35,95 @@ _TOKEN_RE = re.compile(r'^[A-Za-z0-9_\-]{8,255}$')
 
 _scheduler = AsyncIOScheduler()
 
-_CANARY_ENDPOINT_URL = os.getenv("CANARY_ENDPOINT_URL", "https://mapsofmaking.org/canary/mother-sands.json")
-
-
 async def _heartbeat_job():
     global _last_heartbeat_completed
-    # Story 3.10 Axis A: run canary FIRST so its snapshot fetch_status is
-    # current before _rematerialize_geojson reads SQLite. Otherwise a 404 on
-    # the canary only surfaces in the GeoJSON on the *next* heartbeat.
-    canary_ran = False
     try:
-        await run_canary_pipeline(_CANARY_ENDPOINT_URL, OXIGRAPH_ENDPOINT, GEOJSON_OUTPUT)
-        canary_ran = True
+        await run_heartbeat_tick(OXIGRAPH_ENDPOINT)
     except Exception as e:
-        logger.warning("clean canary pipeline error (non-fatal): %s", e)
-    await run_heartbeat_cycle(OXIGRAPH_ENDPOINT, _rematerialize_geojson)
-    # Force a rematerialize so canary fetch_status changes always surface,
-    # even when run_heartbeat_cycle saw no space-side deltas and skipped its own.
-    if canary_ran:
-        await _rematerialize_geojson()
+        logger.exception("[heartbeat] tick failed: %s", e)
     _last_heartbeat_completed = datetime.now(timezone.utc)
+
+
+async def _query_all_claimed_spaces(oxigraph_endpoint: str) -> list[dict]:
+    """Return [{uid, endpoint_url, graph_uri, subject}, ...] for every space
+    (canary + regular) that has mom:endpointUrl written.
+
+    One SPARQL SELECT across all urn:mak:* named graphs. The seeded/unclaimed
+    gate inside run_space_pipeline is still authoritative — this just prunes
+    the work list early.
+    """
+    sparql = """PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
+SELECT ?graph ?subject ?endpointUrl WHERE {
+  GRAPH ?graph {
+    ?subject mom:endpointUrl ?endpointUrl .
+  }
+  FILTER(STRSTARTS(STR(?graph), "urn:mak:"))
+}"""
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        resp = await client.post(
+            f"{oxigraph_endpoint}/query",
+            content=sparql,
+            headers={
+                "Content-Type": "application/sparql-query",
+                "Accept": "application/sparql-results+json",
+            },
+        )
+        resp.raise_for_status()
+    rows = resp.json().get("results", {}).get("bindings", [])
+    out = []
+    for b in rows:
+        subject = b["subject"]["value"]
+        graph_uri = b["graph"]["value"]
+        endpoint_url = b["endpointUrl"]["value"]
+        # Derive uid from subject URI:
+        #   urn:mak:canary/mother-sands  → mother-sands
+        #   urn:mak:space/<slug>         → <slug>
+        if "/" in subject:
+            uid = subject.rsplit("/", 1)[-1]
+        else:
+            uid = subject
+        out.append({
+            "uid": uid,
+            "endpoint_url": endpoint_url,
+            "graph_uri": graph_uri,
+            "subject": subject,
+        })
+    return out
+
+
+async def run_heartbeat_tick(oxigraph_endpoint: str) -> int:
+    """Unified single tick: fetch every claimed space concurrently, then rematerialize once.
+
+    Returns the number of spaces dispatched (for logs / smoke tests).
+    """
+    spaces = await _query_all_claimed_spaces(oxigraph_endpoint)
+    if not spaces:
+        logger.info("[heartbeat] no claimed spaces — skipping tick")
+        await _rematerialize_geojson()
+        return 0
+
+    cfg = get_config()
+    concurrency = int(cfg.get("bandwidth", {}).get("heartbeat_concurrency", 8))
+    sem = asyncio.Semaphore(max(1, concurrency))
+
+    async def _guarded(s: dict):
+        async with sem:
+            try:
+                return await run_space_pipeline(
+                    uid=s["uid"],
+                    endpoint_url=s["endpoint_url"],
+                    graph_uri=s["graph_uri"],
+                    subject=s["subject"],
+                    oxigraph_endpoint=oxigraph_endpoint,
+                )
+            except Exception as e:
+                logger.exception("[heartbeat] space %s failed: %s", s["uid"], e)
+                return None
+
+    logger.info("[heartbeat] dispatching %d spaces (concurrency=%d)", len(spaces), concurrency)
+    await asyncio.gather(*(_guarded(s) for s in spaces))
+    await _rematerialize_geojson()
+    return len(spaces)
 
 
 @asynccontextmanager
@@ -488,9 +558,7 @@ def _build_sparql_update(graph_uri: str, space_uri: str, name: str, lat: float, 
         f"  <{space_uri}> a <{MOM}Space> .",
         f'  <{space_uri}> <{SCHEMA}name> "{_sparql_str(name)}" .',
         f"  <{space_uri}> <{SCHEMA}geo> [ <{SCHEMA}latitude> {lat} ; <{SCHEMA}longitude> {lon} ] .",
-        f'  <{space_uri}> <{MOM}operationalState> "confirmed" .',
         f'  <{space_uri}> <{MOM}endpointUrl> <{endpoint_url}> .',
-        f'  <{space_uri}> <{MOM}lastFetched> "{now}"^^<http://www.w3.org/2001/XMLSchema#dateTime> .',
         f'  <{space_uri}> <{MOM}source> "self-registered" .',
     ]
 
@@ -737,22 +805,9 @@ async def health():
 async def heartbeat_run():
     """Trigger an immediate full heartbeat cycle. Used by make publish after deploy."""
     global _last_heartbeat_completed
-    # Story 3.10 Axis A: run canary FIRST so its snapshot fetch_status is
-    # current before _rematerialize_geojson reads SQLite. Otherwise a 404 on
-    # the canary only surfaces in the GeoJSON on the *next* heartbeat.
-    canary_ran = False
-    try:
-        await run_canary_pipeline(_CANARY_ENDPOINT_URL, OXIGRAPH_ENDPOINT, GEOJSON_OUTPUT)
-        canary_ran = True
-    except Exception as e:
-        logger.warning("clean canary pipeline error (non-fatal): %s", e)
-    await run_heartbeat_cycle(OXIGRAPH_ENDPOINT, _rematerialize_geojson)
-    # Force a rematerialize so canary fetch_status changes always surface,
-    # even when run_heartbeat_cycle saw no space-side deltas and skipped its own.
-    if canary_ran:
-        await _rematerialize_geojson()
+    dispatched = await run_heartbeat_tick(OXIGRAPH_ENDPOINT)
     _last_heartbeat_completed = datetime.now(timezone.utc)
-    return {"status": "ok"}
+    return {"status": "ok", "dispatched": dispatched}
 
 
 @app.post("/api/rematerialize")
@@ -790,23 +845,19 @@ async def heartbeat_space(space_id: str):
             detail={"error": "rate_limited", "retry_after_seconds": retry_after},
         )
 
-    # Canary uses the clean canary_pipeline path (Story 3.10 Axes A & B).
-    # It owns its own graph (urn:mak:canary) and its own claimed-state check,
-    # so skip the regular endpoint-URL lookup entirely.
+    # Canary lives in urn:mak:canary, regular spaces in urn:mak:space/<slug>.
+    # One lookup across both graphs — same shape as the heartbeat driver.
     if space_id == "mother-sands":
-        _manual_refresh_cooldowns[space_id] = now
-        observed_at = await run_canary_pipeline(
-            _CANARY_ENDPOINT_URL, OXIGRAPH_ENDPOINT, GEOJSON_OUTPUT
-        )
-        await _rematerialize_geojson()
-        outcome = "ok" if observed_at else "unreachable_or_unclaimed"
-        return {"status": "ok", "space_id": space_id, "outcome": outcome}
+        graph_uri = "urn:mak:canary"
+        subject = f"urn:mak:canary/{space_id}"
+    else:
+        graph_uri = f"urn:mak:space/{space_id}"
+        subject = graph_uri
 
-    space_uri = f"urn:mak:space/{space_id}"
     sparql = f"""PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
 SELECT ?endpointUrl WHERE {{
-  GRAPH <{space_uri}> {{
-    <{space_uri}> mom:endpointUrl ?endpointUrl .
+  GRAPH <{graph_uri}> {{
+    <{subject}> mom:endpointUrl ?endpointUrl .
   }}
 }}"""
     async with httpx.AsyncClient(timeout=10.0) as client:
@@ -829,11 +880,15 @@ SELECT ?endpointUrl WHERE {{
     endpoint_url = bindings[0]["endpointUrl"]["value"]
     _manual_refresh_cooldowns[space_id] = now
 
-    outcome, state_changed = await process_one_space(space_uri, endpoint_url, OXIGRAPH_ENDPOINT)
-    if state_changed:
-        await _rematerialize_geojson()
-    else:
-        logger.info("manual refresh %s: no changes; skipping rematerialize", space_id)
+    observed_at = await run_space_pipeline(
+        uid=space_id,
+        endpoint_url=endpoint_url,
+        graph_uri=graph_uri,
+        subject=subject,
+        oxigraph_endpoint=OXIGRAPH_ENDPOINT,
+    )
+    await _rematerialize_geojson()
+    outcome = "ok" if observed_at else "unreachable_or_unclaimed"
     return {"status": "ok", "space_id": space_id, "outcome": outcome}
 
 
@@ -872,24 +927,18 @@ async def register_url(req: UrlRequest):
     graph_uri = f"urn:mak:space/{slug}"
     space_uri = f"urn:mak:space/{slug}"
 
-    from transformer import transform_to_sparql
     cls: dict = {}
     reg_observed_at = mint_observed_at()
-    _reg_used_fallback = False
     try:
         schema_obj = SpaceAPISchema.model_validate(data)
         cls = classify_subset(schema_obj)
-        sparql_update, _ = transform_to_sparql(schema_obj, {
-            "endpoint_url": req.url, "space_id": slug,
-            "subset": cls.get("subset", ""), "next_unlock": cls.get("next_unlock"),
-        })
     except Exception as e:
-        logger.exception("transform_to_sparql failed, falling back to legacy builder: %s", e)
-        _reg_used_fallback = True
-        sparql_update = _build_sparql_update(
-            graph_uri, space_uri, name, lat, lon, req.url, data,
-            subset=cls.get("subset", ""), next_unlock=cls.get("next_unlock"),
-        )
+        logger.warning("classify_subset failed for %s (non-fatal): %s", slug, e)
+
+    sparql_update = _build_sparql_update(
+        graph_uri, space_uri, name, lat, lon, req.url, data,
+        subset=cls.get("subset", ""), next_unlock=cls.get("next_unlock"),
+    )
 
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
@@ -903,46 +952,25 @@ async def register_url(req: UrlRequest):
         logger.error("Oxigraph UPDATE failed: %s", e)
         raise HTTPException(status_code=502, detail={"error": "triplestore_write_failed"})
 
-    # Write snapshot to store so heartbeat cycles can read observed_at
+    # Snapshot store gets the registration payload so heartbeat ticks can
+    # diff against it. No mom:rawContent / snapshot-graph write (Story 3.10).
     try:
-        snap_status = "degraded" if _reg_used_fallback else "ok"
-        write_snapshot(slug, reg_observed_at, data, fetch_status=snap_status)
+        write_snapshot(slug, reg_observed_at, data, fetch_status="ok")
     except Exception as snap_err:
         logger.warning("snapshot store write failed for %s: %s", slug, snap_err)
 
-    # Write snapshot graph with ingestion metadata
-    snapshot_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    snapshot_graph = f"urn:mak:space/{slug}/{snapshot_date}"
-
-    # Serialize raw JSON — cap at 50 KB
-    raw_json = json.dumps(data, separators=(",", ":"))
-    raw_truncated = False
-    if len(raw_json) > 50_000:
-        logger.warning("raw endpoint content for %s exceeds 50KB (%d bytes), dropping raw storage", slug, len(raw_json))
-        raw_json = "{}"
-        raw_truncated = True
-
-    # Escape for SPARQL string literal
-    escaped_raw = raw_json.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t")
-
-    truncated_triple = f'    <{space_uri}> <{MOM}rawTruncated> "true"^^<http://www.w3.org/2001/XMLSchema#boolean> .\n' if raw_truncated else ""
-    snapshot_update = f"""INSERT DATA {{
-  GRAPH <{snapshot_graph}> {{
-    <{space_uri}> <{MOM}snapshotSummary> "First registration" .
-    <{space_uri}> <{MOM}lastHttpStatus> 200 .
-    <{space_uri}> <{MOM}rawContent> "{escaped_raw}"^^<http://www.w3.org/2001/XMLSchema#string> .
-{truncated_triple}  }}
-}}"""
+    # Fire one synchronous tick so the new space lights up immediately on
+    # the map (writes mom:observedAt/updatedAt/openNow into urn:mak:space/<slug>).
     try:
-        async with httpx.AsyncClient(timeout=15.0) as client:
-            snap = await client.post(
-                f"{OXIGRAPH_ENDPOINT}/update",
-                content=snapshot_update,
-                headers={"Content-Type": "application/sparql-update"},
-            )
-            snap.raise_for_status()
+        await run_space_pipeline(
+            uid=slug,
+            endpoint_url=req.url,
+            graph_uri=graph_uri,
+            subject=space_uri,
+            oxigraph_endpoint=OXIGRAPH_ENDPOINT,
+        )
     except Exception as e:
-        logger.warning("Snapshot graph write failed (non-fatal): %s", e)
+        logger.warning("[register] initial heartbeat for %s failed (non-fatal): %s", slug, e)
 
     try:
         await _rematerialize_geojson()
@@ -1019,62 +1047,12 @@ async def get_space_raw(space_id: str):
     if not re.match(r'^[a-zA-Z0-9_-]+$', space_id):
         return {"error": "no_snapshot", "message": "This space has no cached endpoint content yet."}
 
-    # Clean path (Epic 3.5): the canary — and eventually all spaces — store their
-    # raw payload in snapshot_store (SQLite), not as mom:rawContent triples in
-    # Oxigraph. Read from there first; the SPARQL fallback below covers legacy
-    # space graphs (urn:mak:space/<id>/...) until they are migrated.
+    # snapshot_store (SQLite) is the only raw-payload source. mom:rawContent
+    # triples were retired in Story 3.10.
     snap = read_snapshot(space_id)
-    if snap is not None and snap.get("payload"):
-        return {
-            "raw": snap["payload"],
-            "snapshotDate": snap.get("observed_at", ""),
-        }
-
-    sparql_query = f"""PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
-
-SELECT ?rawContent ?snapshotDate
-WHERE {{
-  GRAPH ?graph {{
-    <urn:mak:space/{space_id}> <{MOM}rawContent> ?rawContent ;
-                                 <{MOM}snapshotDate> ?snapshotDate .
-  }}
-  FILTER (STRSTARTS(STR(?graph), "urn:mak:space/{space_id}/"))
-}}
-ORDER BY DESC(?snapshotDate)
-LIMIT 1
-"""
-    try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.post(
-                f"{OXIGRAPH_ENDPOINT}/query",
-                content=sparql_query,
-                headers={
-                    "Content-Type": "application/sparql-query",
-                    "Accept": "application/sparql-results+json",
-                },
-            )
-            resp.raise_for_status()
-            bindings = resp.json().get("results", {}).get("bindings", [])
-    except Exception as e:
-        logger.warning("Failed to fetch raw content for space %s: %s", space_id, e)
+    if snap is None or not snap.get("payload"):
         return {"error": "no_snapshot", "message": "This space has no cached endpoint content yet."}
-
-    if not bindings:
-        return {"error": "no_snapshot", "message": "This space has no cached endpoint content yet."}
-
-    binding = bindings[0]
-    raw_json_str = binding.get("rawContent", {}).get("value", "")
-    snapshot_date = binding.get("snapshotDate", {}).get("value", "")
-
-    try:
-        raw_obj = json.loads(raw_json_str)
-    except (json.JSONDecodeError, TypeError):
-        logger.warning("Failed to parse raw content JSON for space %s", space_id)
-        return {"error": "no_snapshot", "message": "This space has no cached endpoint content yet."}
-
     return {
-        "raw": raw_obj if raw_obj != {} else None,
-        "truncated": raw_obj == {},
-        "snapshot_date": snapshot_date,
-        "source": "cached"
+        "raw": snap["payload"],
+        "snapshotDate": snap.get("observed_at", ""),
     }

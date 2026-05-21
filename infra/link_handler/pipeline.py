@@ -1,0 +1,285 @@
+"""Unified heartbeat pipeline (Story 3.10 Step 2).
+
+Parameterized by (uid, endpoint_url, graph_uri, subject) so the same primitives
+drive the canary and every registered space. The canary side is just one row in
+the driver's SPARQL SELECT.
+
+Stages per space:
+  1. fetch_snapshot           — HTTP GET, mint observed_at once, persist to snapshot_store
+  2. write_observed_at        — copy observed_at into <graph> as mom:observedAt
+  3. write_updated_at         — only when content_changed (Axis B)
+  4. write_open_now           — Axis C, refreshed every fetch (volatile, not diff-gated)
+
+All Oxigraph writes are idempotent (DELETE WHERE + INSERT DATA).
+"""
+from __future__ import annotations
+
+import json
+import logging
+from typing import Optional
+
+import httpx
+
+from snapshot_store import mint_observed_at, write_snapshot, read_snapshot, mark_unreachable
+from pipeline_helpers import detect_diff, _extract_open_now, _extract_last_open_change
+
+logger = logging.getLogger(__name__)
+
+MOM_NS = "https://nicolasdb.github.io/mapsofmaking_ontology/ns#"
+XSD_DT = "http://www.w3.org/2001/XMLSchema#dateTime"
+
+
+async def fetch_snapshot(
+    uid: str,
+    endpoint_url: str,
+    db_path: Optional[str] = None,
+) -> tuple[Optional[dict], bool]:
+    """Fetch a SpaceAPI endpoint, mint observed_at once, persist snapshot.
+
+    Returns (snapshot_row, content_changed). On any failure path, marks the snapshot
+    unreachable (preserving observed_at) and returns (None, False).
+    """
+    prev = read_snapshot(uid, db_path=db_path)
+    prev_payload = prev["payload"] if prev else None
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+            resp = await client.get(endpoint_url)
+    except httpx.HTTPError as e:
+        reason = f"Network error: {e.__class__.__name__}"
+        logger.warning("[axis-a] %s fetch raised %s — marking unreachable", uid, e.__class__.__name__)
+        mark_unreachable(uid, db_path=db_path, reason=reason)
+        return None, False
+
+    if resp.status_code != 200:
+        reason = f"HTTP {resp.status_code}"
+        logger.warning("[axis-a] %s fetch returned %s — marking unreachable", uid, resp.status_code)
+        mark_unreachable(uid, db_path=db_path, reason=reason)
+        return None, False
+
+    observed_at = mint_observed_at()
+    try:
+        payload = resp.json()
+    except json.JSONDecodeError as e:
+        reason = f"Invalid JSON at line {e.lineno} col {e.colno}: {e.msg}"
+        logger.warning("[axis-a] %s fetch returned malformed JSON — %s", uid, reason)
+        mark_unreachable(uid, db_path=db_path, reason=reason)
+        return None, False
+
+    etag = resp.headers.get("etag")
+    last_modified = resp.headers.get("last-modified")
+
+    diff = detect_diff(prev_payload, payload)
+    content_changed = diff is not None
+    if content_changed:
+        logger.info("[axis-b] %s content_changed=True diff=%s", uid, diff)
+    else:
+        logger.info("[axis-b] %s content_changed=False (payload unchanged)", uid)
+
+    write_snapshot(
+        uid=uid,
+        observed_at=observed_at,
+        payload=payload,
+        etag=etag,
+        last_modified=last_modified,
+        db_path=db_path,
+    )
+    logger.info("[axis-a] %s snapshot minted observed_at=%s", uid, observed_at)
+    return read_snapshot(uid, db_path=db_path), content_changed
+
+
+async def _sparql_update(oxigraph_endpoint: str, sparql: str) -> None:
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        resp = await client.post(
+            f"{oxigraph_endpoint}/update",
+            content=sparql,
+            headers={"Content-Type": "application/sparql-update"},
+        )
+        resp.raise_for_status()
+
+
+async def write_observed_at(
+    oxigraph_endpoint: str,
+    graph_uri: str,
+    subject: str,
+    observed_at: str,
+) -> None:
+    """Axis A: copy observed_at from snapshot store into Oxigraph."""
+    sparql = f"""PREFIX mom: <{MOM_NS}>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+DELETE WHERE {{
+  GRAPH <{graph_uri}> {{
+    <{subject}> mom:observedAt ?t .
+  }}
+}} ;
+INSERT DATA {{
+  GRAPH <{graph_uri}> {{
+    <{subject}> mom:observedAt "{observed_at}"^^xsd:string .
+  }}
+}}"""
+    await _sparql_update(oxigraph_endpoint, sparql)
+    logger.info("[axis-a] %s mom:observedAt=%s written", subject, observed_at)
+
+
+async def write_updated_at(
+    oxigraph_endpoint: str,
+    graph_uri: str,
+    subject: str,
+    updated_at: str,
+) -> None:
+    """Axis B: refresh mom:updatedAt — only called on content_changed=True."""
+    sparql = f"""PREFIX mom: <{MOM_NS}>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+DELETE WHERE {{
+  GRAPH <{graph_uri}> {{
+    <{subject}> mom:updatedAt ?t .
+  }}
+}} ;
+INSERT DATA {{
+  GRAPH <{graph_uri}> {{
+    <{subject}> mom:updatedAt "{updated_at}"^^xsd:dateTime .
+  }}
+}}"""
+    await _sparql_update(oxigraph_endpoint, sparql)
+    logger.info("[axis-b] %s mom:updatedAt=%s written", subject, updated_at)
+
+
+async def write_open_now(
+    oxigraph_endpoint: str,
+    graph_uri: str,
+    subject: str,
+    open_now: Optional[bool],
+    last_open_change: Optional[str],
+) -> None:
+    """Axis C: write/refresh (or clear) mom:openNow + mom:lastOpenChange.
+
+    open_now=None → operator opted out (state field absent/malformed) → DELETE only,
+    leaving the subject without mom:openNow. The browser's computeAxisC then falls
+    through to confirmed/B/A logic.
+    """
+    delete_block = f"""DELETE WHERE {{
+  GRAPH <{graph_uri}> {{
+    <{subject}> mom:openNow ?v .
+  }}
+}} ;
+DELETE WHERE {{
+  GRAPH <{graph_uri}> {{
+    <{subject}> mom:lastOpenChange ?t .
+  }}
+}}"""
+
+    insert_block = ""
+    if open_now is not None:
+        triples = [f'<{subject}> mom:openNow "{str(open_now).lower()}"^^xsd:boolean .']
+        if last_open_change:
+            triples.append(f'<{subject}> mom:lastOpenChange "{last_open_change}"^^xsd:dateTime .')
+        insert_block = f""" ;
+INSERT DATA {{
+  GRAPH <{graph_uri}> {{
+    {chr(10).join(triples)}
+  }}
+}}"""
+
+    sparql = f"""PREFIX mom: <{MOM_NS}>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+{delete_block}{insert_block}"""
+    await _sparql_update(oxigraph_endpoint, sparql)
+    logger.info("[axis-c] %s mom:openNow=%s lastOpenChange=%s", subject, open_now, last_open_change)
+
+
+async def _space_is_claimed(
+    oxigraph_endpoint: str,
+    graph_uri: str,
+    subject: str,
+) -> bool:
+    """Is mom:endpointUrl present on the subject? Mirrors the legacy
+    `mom:operationalState != 'dead'` gate — without an endpoint, the space is
+    seeded/unclaimed and the heartbeat skips it entirely."""
+    sparql = f"""PREFIX mom: <{MOM_NS}>
+ASK {{ GRAPH <{graph_uri}> {{ <{subject}> mom:endpointUrl ?u }} }}"""
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.post(
+            f"{oxigraph_endpoint}/query",
+            content=sparql,
+            headers={"Content-Type": "application/sparql-query", "Accept": "application/sparql-results+json"},
+        )
+        resp.raise_for_status()
+    return bool(resp.json().get("boolean", False))
+
+
+async def read_observed_at_from_oxigraph(
+    oxigraph_endpoint: str,
+    graph_uri: str,
+    subject: str,
+) -> Optional[str]:
+    """SPARQL-SELECT mom:observedAt for a subject. Returns the string value or None."""
+    sparql = f"""PREFIX mom: <{MOM_NS}>
+SELECT ?t WHERE {{
+  GRAPH <{graph_uri}> {{
+    <{subject}> mom:observedAt ?t .
+  }}
+}}"""
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.post(
+            f"{oxigraph_endpoint}/query",
+            content=sparql,
+            headers={
+                "Content-Type": "application/sparql-query",
+                "Accept": "application/sparql-results+json",
+            },
+        )
+        resp.raise_for_status()
+    bindings = resp.json().get("results", {}).get("bindings", [])
+    if not bindings:
+        return None
+    return bindings[0].get("t", {}).get("value")
+
+
+async def run_space_pipeline(
+    uid: str,
+    endpoint_url: str,
+    graph_uri: str,
+    subject: str,
+    oxigraph_endpoint: str,
+    db_path: Optional[str] = None,
+) -> Optional[str]:
+    """Unified single-space pipeline. Returns observed_at or None on fetch failure.
+
+    Gating: skipped when mom:endpointUrl is absent in `graph_uri` (seeded/unclaimed).
+    Browser sees the marker with no observed_at and no updated_at — markerKind() = 'seeded'.
+
+    Axis A: observed_at minted once in fetch, lives in snapshot_store.
+    Axis B: if content_changed, write mom:updatedAt=observed_at to <graph_uri>.
+    Axis C: refresh mom:openNow from payload.state every fetch (volatile).
+    """
+    if not await _space_is_claimed(oxigraph_endpoint, graph_uri, subject):
+        logger.info("[pipeline] %s mom:endpointUrl absent — seeded/unclaimed, skipping", uid)
+        return None
+
+    snap, content_changed = await fetch_snapshot(uid, endpoint_url, db_path=db_path)
+    if snap is None:
+        return None
+
+    observed_at = snap["observed_at"]
+    # Note: mom:observedAt is NOT written to Oxigraph in the heartbeat path —
+    # it lives in snapshot_store.db and is joined into spaces.geojson by the
+    # materializer. write_observed_at() exists for the skeleton test only.
+
+    if content_changed:
+        try:
+            await write_updated_at(oxigraph_endpoint, graph_uri, subject, observed_at)
+        except Exception as e:
+            logger.warning("[axis-b] %s mom:updatedAt write failed (non-fatal): %s", uid, e)
+
+    state_obj = snap["payload"].get("state") if isinstance(snap.get("payload"), dict) else None
+    open_now = _extract_open_now(state_obj)
+    last_open_change = _extract_last_open_change(state_obj)
+    try:
+        await write_open_now(oxigraph_endpoint, graph_uri, subject, open_now, last_open_change)
+    except Exception as e:
+        logger.warning("[axis-c] %s mom:openNow write failed (non-fatal): %s", uid, e)
+
+    return observed_at

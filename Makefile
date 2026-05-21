@@ -21,12 +21,12 @@ RSYNC_EXCLUDE := \
 	--exclude='data/'
 
 .PHONY: sync sync-app sync-gateway publish startdev rebuild seed seed-spaceapi heartbeat devdeploy reset vps-rebuild vps-seed help endpoint
-.PHONY: c-reset c-activate c-report c-demo c-all
+.PHONY: c-reset c-activate c-demo c-all
 .PHONY: ca-reachable ca-timeout ca-dns-fail ca-http-error caxis-a
 .PHONY: cb-seeded cb-confirmed cb-aging cb-zombie cb-dead cb-closed caxis-b c-demo-on c-demo-off
 .PHONY: cc-open cc-shut caxis-c
 
-CANARY_DB ?= data/tasks/heartbeat_log.db
+CANARY_DB ?= data/tasks/snapshot_store.db
 CANARY_SERVED := web/canary/mother-sands.json
 CANARY_SCENARIO := source venv/bin/activate && python3 scripts/canary_scenarios.py
 
@@ -66,7 +66,6 @@ help:
 	@echo "── CANARY ───────────────────────────────────────────────────────────"
 	@echo "make c-reset      — restore canary from baseline (seeded, no endpointUrl)"
 	@echo "make c-activate   — add mom:endpointUrl to canary (simulates claiming step)"
-	@echo "make c-report     — per-layer coherence-diff report"
 	@echo "make c-demo-on    — turn on seconds-scale canary thresholds (live demo)"
 	@echo "make c-demo-off   — restore normal day-scale thresholds"
 	@echo "make c-demo       — seeded→confirmed→aging→zombie→dead→closed lifecycle chain"
@@ -116,11 +115,11 @@ devdeploy: rebuild heartbeat
 ## Loses ALL coordinator-registered spaces. Use before demos / fresh-state tests.
 ## On VPS, the equivalent is intentionally manual — see data-lifecycle.md.
 reset:
-	@echo "⚠  This will wipe data/oxigraph/ and data/tasks/heartbeat_log.db"
+	@echo "⚠  This will wipe data/oxigraph/ and data/tasks/snapshot_store.db"
 	@echo "   Coordinator-registered spaces will be lost."
 	@read -p "   Type 'reset' to confirm: " ans && [ "$$ans" = "reset" ] || (echo "aborted"; exit 1)
 	podman compose -f infra/docker-compose.yml -f infra/docker-compose.dev.yml down
-	rm -rf data/oxigraph/* data/tasks/heartbeat_log.db web/data/spaces.geojson
+	rm -rf data/oxigraph/* data/tasks/snapshot_store.db web/data/spaces.geojson
 	@sleep 2
 	$(MAKE) devdeploy
 	@echo "✓ reset complete — refresh your browser at http://localhost:8080"
@@ -304,11 +303,6 @@ caxis-c: cc-open cc-shut
 
 c-all: caxis-a caxis-b caxis-c
 	@echo "✓ All canary scenarios complete"
-
-## ── Coherence report ─────────────────────────────────────────────────────────
-
-c-report:
-	source venv/bin/activate && python3 scripts/canary_coherence_report.py
 
 ## ── Demo cycle ───────────────────────────────────────────────────────────────
 ## c-demo-on / c-demo-off restart the link-handler with seconds-scale thresholds

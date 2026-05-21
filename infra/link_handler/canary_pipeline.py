@@ -1,185 +1,102 @@
-"""Clean canary pipeline for Epic 3.5 — Story 3.6 walking skeleton.
+"""Canary-flavored wrappers around the unified pipeline (Story 3.10 Step 2).
 
-Stages:
-  1. fetch_canary_snapshot  — HTTP GET, mint observed_at once, write to snapshot_store
-  2. write_canary_to_oxigraph — carry observed_at from store, write mom:observedAt triple
-  3. materialize_canary_geojson — carry observed_at from store, update canary feature
+The canary is just another space with a fixed (uid, graph, subject). All real
+work now lives in pipeline.py; this module exists to preserve the
+fetch_canary_snapshot / write_canary_* / run_canary_pipeline import surface
+used by main.py and test_observed_at_skeleton_e2e.py until Step 4 cuts the
+last caller over to run_space_pipeline directly.
 
-observed_at is never re-generated after stage 1. Every stage reads it from the store.
-
-The legacy heartbeat_log / transformer path is untouched.
+When that happens, this file can be deleted.
 """
+from __future__ import annotations
+
 import json
 import logging
-import os
 from pathlib import Path
 from typing import Optional
 
-import httpx
-
-from snapshot_store import mint_observed_at, write_snapshot, read_snapshot, mark_unreachable
-from transformer import detect_diff, _extract_open_now, _extract_last_open_change
+from snapshot_store import read_snapshot
+from pipeline_helpers import _extract_open_now, _extract_last_open_change  # re-exported
+from pipeline import (
+    MOM_NS,
+    XSD_DT,
+    fetch_snapshot,
+    write_observed_at,
+    write_updated_at,
+    write_open_now,
+    read_observed_at_from_oxigraph,
+    run_space_pipeline,
+    _space_is_claimed,
+)
 
 logger = logging.getLogger(__name__)
 
 CANARY_UID = "mother-sands"
 CANARY_SUBJECT = f"urn:mak:canary/{CANARY_UID}"
 CANARY_GRAPH = "urn:mak:canary"
-MOM_NS = "https://nicolasdb.github.io/mapsofmaking_ontology/ns#"
-XSD_DT = "http://www.w3.org/2001/XMLSchema#dateTime"
 
 
 async def fetch_canary_snapshot(
     endpoint_url: str,
     db_path: Optional[str] = None,
 ) -> tuple[Optional[dict], bool]:
-    """Fetch the canary endpoint, mint observed_at once, persist snapshot.
-
-    Returns (snapshot, content_changed) on HTTP 200, or (None, False) on failure.
-    content_changed is True iff detect_diff(old_payload, new_payload) is non-null
-    (or this is the first fetch). Drives Axis B: caller writes mom:updatedAt iff True.
-    """
-    prev = read_snapshot(CANARY_UID, db_path=db_path)
-    prev_payload = prev["payload"] if prev else None
-
-    try:
-        async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
-            resp = await client.get(endpoint_url)
-    except httpx.HTTPError as e:
-        # Story 3.10 Axis A: network-level failure → flag unreachable, preserve observed_at.
-        reason = f"Network error: {e.__class__.__name__}"
-        logger.warning("[axis-a] canary fetch raised %s — marking unreachable", e.__class__.__name__)
-        mark_unreachable(CANARY_UID, db_path=db_path, reason=reason)
-        return None, False
-
-    if resp.status_code != 200:
-        # Story 3.10 Axis A: HTTP failure → flag unreachable, preserve observed_at.
-        reason = f"HTTP {resp.status_code}"
-        logger.warning("[axis-a] canary fetch returned %s — marking unreachable", resp.status_code)
-        mark_unreachable(CANARY_UID, db_path=db_path, reason=reason)
-        return None, False
-
-    observed_at = mint_observed_at()  # minted exactly once, right here
-    try:
-        payload = resp.json()
-    except json.JSONDecodeError as e:
-        # Server returned 200 but body is not valid JSON — treat as unreachable so
-        # Axis A flips broken, and surface the parse-error position as a CTA hint
-        # for the operator (e.g. "Invalid JSON at line 19 col 5: Expecting ',' delimiter").
-        reason = f"Invalid JSON at line {e.lineno} col {e.colno}: {e.msg}"
-        logger.warning("[axis-a] canary fetch returned malformed JSON — %s", reason)
-        mark_unreachable(CANARY_UID, db_path=db_path, reason=reason)
-        return None, False
-    etag = resp.headers.get("etag")
-    last_modified = resp.headers.get("last-modified")
-
-    diff = detect_diff(prev_payload, payload)
-    content_changed = diff is not None
-    if content_changed:
-        logger.info("[axis-b] canary content_changed=True diff=%s", diff)
-    else:
-        logger.info("[axis-b] canary content_changed=False (payload unchanged)")
-
-    write_snapshot(
-        uid=CANARY_UID,
-        observed_at=observed_at,
-        payload=payload,
-        etag=etag,
-        last_modified=last_modified,
-        db_path=db_path,
-    )
-    logger.info("[axis-a] canary snapshot minted: uid=%s observed_at=%s", CANARY_UID, observed_at)
-    return read_snapshot(CANARY_UID, db_path=db_path), content_changed
+    return await fetch_snapshot(CANARY_UID, endpoint_url, db_path=db_path)
 
 
 async def write_canary_to_oxigraph(
     oxigraph_endpoint: str,
     db_path: Optional[str] = None,
 ) -> str:
-    """Read observed_at from snapshot store, write mom:observedAt to urn:mak:canary.
-
-    Returns the observed_at value written (for assertion in tests).
-    Never calls datetime.now() — copies only.
-    """
     snap = read_snapshot(CANARY_UID, db_path=db_path)
     if snap is None:
         raise RuntimeError("No canary snapshot in store — run fetch_canary_snapshot first")
-
-    observed_at = snap["observed_at"]  # copied, never re-minted
-
-    sparql = f"""PREFIX mom: <{MOM_NS}>
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-
-DELETE WHERE {{
-  GRAPH <{CANARY_GRAPH}> {{
-    <{CANARY_SUBJECT}> mom:observedAt ?t .
-  }}
-}} ;
-INSERT DATA {{
-  GRAPH <{CANARY_GRAPH}> {{
-    <{CANARY_SUBJECT}> mom:observedAt "{observed_at}"^^xsd:string .
-  }}
-}}"""
-
-    async with httpx.AsyncClient(timeout=15.0) as client:
-        resp = await client.post(
-            f"{oxigraph_endpoint}/update",
-            content=sparql,
-            headers={"Content-Type": "application/sparql-update"},
-        )
-        resp.raise_for_status()
-
-    logger.info("canary observedAt written to Oxigraph: %s", observed_at)
+    observed_at = snap["observed_at"]
+    await write_observed_at(oxigraph_endpoint, CANARY_GRAPH, CANARY_SUBJECT, observed_at)
     return observed_at
 
 
 async def read_canary_observed_at_from_oxigraph(oxigraph_endpoint: str) -> Optional[str]:
-    """SPARQL-SELECT mom:observedAt for the canary subject. Returns the string value or None."""
-    sparql = f"""PREFIX mom: <{MOM_NS}>
-SELECT ?t WHERE {{
-  GRAPH <{CANARY_GRAPH}> {{
-    <{CANARY_SUBJECT}> mom:observedAt ?t .
-  }}
-}}"""
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.post(
-            f"{oxigraph_endpoint}/query",
-            content=sparql,
-            headers={
-                "Content-Type": "application/sparql-query",
-                "Accept": "application/sparql-results+json",
-            },
-        )
-        resp.raise_for_status()
-    bindings = resp.json().get("results", {}).get("bindings", [])
-    if not bindings:
-        return None
-    return bindings[0].get("t", {}).get("value")
+    return await read_observed_at_from_oxigraph(oxigraph_endpoint, CANARY_GRAPH, CANARY_SUBJECT)
+
+
+async def write_canary_open_now_to_oxigraph(
+    oxigraph_endpoint: str,
+    open_now: Optional[bool],
+    last_open_change: Optional[str],
+) -> None:
+    await write_open_now(oxigraph_endpoint, CANARY_GRAPH, CANARY_SUBJECT, open_now, last_open_change)
+
+
+async def write_canary_updated_at_to_oxigraph(
+    oxigraph_endpoint: str,
+    updated_at: str,
+) -> None:
+    await write_updated_at(oxigraph_endpoint, CANARY_GRAPH, CANARY_SUBJECT, updated_at)
+
+
+async def _canary_is_claimed(oxigraph_endpoint: str) -> bool:
+    return await _space_is_claimed(oxigraph_endpoint, CANARY_GRAPH, CANARY_SUBJECT)
 
 
 def materialize_canary_geojson(
     geojson_path: str,
     db_path: Optional[str] = None,
 ) -> str:
-    """Read observed_at from snapshot store, update canary feature in spaces.geojson.
+    """Single-feature canary materializer used by the observed_at skeleton test.
 
-    Writes only render-critical fields to the canary feature: geolocation, uid,
-    properties.observed_at. observed_at is copied from snapshot, never regenerated.
-
-    Returns observed_at written.
+    The regular heartbeat path goes through `_rematerialize_geojson` in main.py
+    (SQLite + Oxigraph join). This helper is kept solely for the skeleton test.
     """
     snap = read_snapshot(CANARY_UID, db_path=db_path)
     if snap is None:
         raise RuntimeError("No canary snapshot in store — run fetch_canary_snapshot first")
 
-    observed_at = snap["observed_at"]  # copied, never re-minted
+    observed_at = snap["observed_at"]
     payload = snap["payload"]
 
-    # Extract coordinates from SpaceAPI payload
     loc = payload.get("location", {})
     lat = loc.get("lat")
     lon = loc.get("lon")
-    # Fallback to JSON-LD shape
     if lat is None or lon is None:
         geo = payload.get("schema:geo", {})
         if isinstance(geo, list):
@@ -190,9 +107,6 @@ def materialize_canary_geojson(
     if lat is None or lon is None:
         raise ValueError(f"Cannot extract coordinates from canary payload for {CANARY_UID}")
 
-    # Story 3.10 Axis A: also carry last_fetch_status so the browser's computeAxisA
-    # can flip the marker to `broken` immediately on a failed canary fetch (instead of
-    # waiting for observed_at to age past broken_minutes_threshold).
     canary_feature = {
         "type": "Feature",
         "geometry": {"type": "Point", "coordinates": [float(lon), float(lat)]},
@@ -200,7 +114,7 @@ def materialize_canary_geojson(
             "id": CANARY_UID,
             "uri": CANARY_SUBJECT,
             "name": payload.get("space") or payload.get("name") or "Mother Sands",
-            "observed_at": observed_at,            # copied from snapshot
+            "observed_at": observed_at,
             "last_fetch_status": snap["fetch_status"],
         },
     }
@@ -216,7 +130,6 @@ def materialize_canary_geojson(
     else:
         existing = {"type": "FeatureCollection", "features": []}
 
-    # Replace or append the canary feature
     features = [f for f in existing.get("features", []) if f.get("properties", {}).get("id") != CANARY_UID]
     features.append(canary_feature)
     existing["features"] = features
@@ -229,138 +142,25 @@ def materialize_canary_geojson(
     return observed_at
 
 
-async def write_canary_open_now_to_oxigraph(
-    oxigraph_endpoint: str,
-    open_now: Optional[bool],
-    last_open_change: Optional[str],
-) -> None:
-    """Axis C: write/refresh (or clear) mom:openNow + mom:lastOpenChange.
-
-    open_now=None → operator opted out (state field absent/malformed) → DELETE only,
-    leaving the canary subject without mom:openNow. The browser's computeAxisC then
-    falls through to confirmed/B/A logic.
-    """
-    delete_block = f"""DELETE WHERE {{
-  GRAPH <{CANARY_GRAPH}> {{
-    <{CANARY_SUBJECT}> mom:openNow ?v .
-  }}
-}} ;
-DELETE WHERE {{
-  GRAPH <{CANARY_GRAPH}> {{
-    <{CANARY_SUBJECT}> mom:lastOpenChange ?t .
-  }}
-}}"""
-
-    insert_block = ""
-    if open_now is not None:
-        triples = [f'<{CANARY_SUBJECT}> mom:openNow "{str(open_now).lower()}"^^xsd:boolean .']
-        if last_open_change:
-            triples.append(f'<{CANARY_SUBJECT}> mom:lastOpenChange "{last_open_change}"^^xsd:dateTime .')
-        insert_block = f""" ;
-INSERT DATA {{
-  GRAPH <{CANARY_GRAPH}> {{
-    {chr(10).join(triples)}
-  }}
-}}"""
-
-    sparql = f"""PREFIX mom: <{MOM_NS}>
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-
-{delete_block}{insert_block}"""
-
-    async with httpx.AsyncClient(timeout=15.0) as client:
-        resp = await client.post(
-            f"{oxigraph_endpoint}/update",
-            content=sparql,
-            headers={"Content-Type": "application/sparql-update"},
-        )
-        resp.raise_for_status()
-    logger.info("[axis-c] canary mom:openNow=%s lastOpenChange=%s", open_now, last_open_change)
-
-
-async def write_canary_updated_at_to_oxigraph(
-    oxigraph_endpoint: str,
-    updated_at: str,
-) -> None:
-    """Write/refresh mom:updatedAt for the canary subject (Axis B clean path).
-
-    Called only when fetch_canary_snapshot reports content_changed=True.
-    The value is the snapshot's observed_at — the instant we confirmed the change.
-    """
-    sparql = f"""PREFIX mom: <{MOM_NS}>
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-
-DELETE WHERE {{
-  GRAPH <{CANARY_GRAPH}> {{
-    <{CANARY_SUBJECT}> mom:updatedAt ?t .
-  }}
-}} ;
-INSERT DATA {{
-  GRAPH <{CANARY_GRAPH}> {{
-    <{CANARY_SUBJECT}> mom:updatedAt "{updated_at}"^^xsd:dateTime .
-  }}
-}}"""
-
-    async with httpx.AsyncClient(timeout=15.0) as client:
-        resp = await client.post(
-            f"{oxigraph_endpoint}/update",
-            content=sparql,
-            headers={"Content-Type": "application/sparql-update"},
-        )
-        resp.raise_for_status()
-    logger.info("[axis-b] canary mom:updatedAt written to Oxigraph: %s", updated_at)
-
-
-async def _canary_is_claimed(oxigraph_endpoint: str) -> bool:
-    """Is mom:endpointUrl present on the canary subject? Mirrors the
-    `_SPARQL_ACTIVE_SPACES` gate that excludes seeded (unclaimed) spaces
-    from the regular heartbeat. Without this, the canary pipeline would
-    fetch unconditionally and re-stamp mom:updatedAt even when the operator
-    has explicitly unclaimed the canary via `make c-reset`."""
-    sparql = f"""PREFIX mom: <{MOM_NS}>
-ASK {{ GRAPH <{CANARY_GRAPH}> {{ <{CANARY_SUBJECT}> mom:endpointUrl ?u }} }}"""
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.post(
-            f"{oxigraph_endpoint}/query",
-            content=sparql,
-            headers={"Content-Type": "application/sparql-query", "Accept": "application/sparql-results+json"},
-        )
-        resp.raise_for_status()
-    return bool(resp.json().get("boolean", False))
-
-
 async def run_canary_pipeline(
     endpoint_url: str,
     oxigraph_endpoint: str,
     geojson_path: str,
     db_path: Optional[str] = None,
 ) -> Optional[str]:
-    """Clean pipeline for the canary. Returns observed_at or None on fetch failure.
+    """Compatibility shim — delegates to run_space_pipeline.
 
-    Gating: skipped entirely when mom:endpointUrl is absent in urn:mak:canary
-    (seeded / unclaimed). The browser sees a marker with no observed_at and no
-    updated_at — markerKind() resolves to 'seeded'.
-
-    Axis A: observed_at minted once in fetch, lives in snapshot_store.
-    Axis B: if content_changed, write mom:updatedAt=observed_at to urn:mak:canary.
+    geojson_path is ignored (the materializer is invoked by the caller / driver).
     """
-    if not await _canary_is_claimed(oxigraph_endpoint):
-        logger.info("[canary] mom:endpointUrl absent — canary is seeded/unclaimed, skipping fetch")
-        return None
-    snap, content_changed = await fetch_canary_snapshot(endpoint_url, db_path=db_path)
-    if snap is None:
-        return None
-    if content_changed:
-        try:
-            await write_canary_updated_at_to_oxigraph(oxigraph_endpoint, snap["observed_at"])
-        except Exception as e:
-            logger.warning("[axis-b] canary mom:updatedAt write failed (non-fatal): %s", e)
-    # Axis C: refresh open/shut from payload.state every fetch (volatile, not diff-gated).
-    state_obj = snap["payload"].get("state") if isinstance(snap.get("payload"), dict) else None
-    open_now = _extract_open_now(state_obj)
-    last_open_change = _extract_last_open_change(state_obj)
-    try:
-        await write_canary_open_now_to_oxigraph(oxigraph_endpoint, open_now, last_open_change)
-    except Exception as e:
-        logger.warning("[axis-c] canary mom:openNow write failed (non-fatal): %s", e)
-    return snap["observed_at"]
+    return await run_space_pipeline(
+        uid=CANARY_UID,
+        endpoint_url=endpoint_url,
+        graph_uri=CANARY_GRAPH,
+        subject=CANARY_SUBJECT,
+        oxigraph_endpoint=oxigraph_endpoint,
+        db_path=db_path,
+    )
+
+
+# Re-export detect_diff for any legacy importers
+from pipeline_helpers import detect_diff  # noqa: E402,F401

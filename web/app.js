@@ -672,15 +672,6 @@
 
     // ── What your data unlocks / state banners ──
     {
-      const ERROR_LABELS = {
-        'connection_timeout': 'Connection timeout',
-        'invalid_json_ld': 'Invalid JSON-LD',
-        'missing_coordinates': 'Missing coordinates',
-        'http_error': 'HTTP error',
-        '404': 'Endpoint not found (404)',
-        '500': 'Server error (500)',
-      };
-
       if (kind === 'seeded') {
         const bannerDiv = el('div', { class: 'sp-section', style: { cursor: 'pointer' } }, [
           el('div', { class: 'sp-section-label' }, ['Is this your space?']),
@@ -689,18 +680,12 @@
         bannerDiv.addEventListener('click', () => setDrawer('addurl'));
         body.appendChild(bannerDiv);
       } else if (kind === 'broken') {
-        const errLabel = ERROR_LABELS[s.error_type] || 'Endpoint unavailable';
         const lastOkAgo = s.observed_at ? ` Last successful fetch ${timeAgo(s.observed_at)} ago.` : '';
-        const sectionChildren = [
+        const headline = s.last_fetch_error || 'Endpoint unreachable';
+        body.appendChild(el('div', { class: 'sp-section' }, [
           el('div', { class: 'sp-section-label' }, ['Endpoint issue']),
-          el('div', { style: { fontSize: '13px', color: 'var(--error, #c0392b)', marginTop: '4px' } }, [`${errLabel} — check your SpaceAPI endpoint is reachable and returns valid JSON-LD.${lastOkAgo}`]),
-        ];
-        if (s.last_fetch_error) {
-          sectionChildren.push(el('div', {
-            style: { fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', color: 'var(--muted)', marginTop: '6px', padding: '6px 8px', background: 'var(--paper-2)', border: '1px dashed var(--rule)' }
-          }, [`Last fetch error: ${s.last_fetch_error}`]));
-        }
-        body.appendChild(el('div', { class: 'sp-section' }, sectionChildren));
+          el('div', { style: { fontSize: '13px', color: 'var(--error, #c0392b)', marginTop: '4px' } }, [`${headline}.${lastOkAgo}`]),
+        ]));
       } else if (kind === 'aging') {
         const agingAgo = s.observed_at ? ` — last fetched ${timeAgo(s.observed_at)} ago` : '';
         body.appendChild(el('div', { class: 'sp-section' }, [
@@ -873,16 +858,7 @@
     const kind = computeMarker(s);
     if (kind === 'seeded') return 'Seeded by network — not yet confirmed by the space.';
     if (kind === 'broken') {
-      const ERROR_LABELS = {
-        'connection_timeout': 'Connection timeout',
-        'invalid_json_ld': 'Invalid JSON-LD',
-        'missing_coordinates': 'Missing coordinates',
-        'http_error': 'HTTP error',
-        '404': 'Not found (404)',
-        '500': 'Server error (500)',
-      };
-      const errorMsg = ERROR_LABELS[s.error_type] || s.error_type
-        || (s.last_fetch_status === 'unreachable' ? 'Endpoint unreachable' : 'No recent successful fetch');
+      const errorMsg = s.last_fetch_error || 'Endpoint unreachable';
       const lastSeen = s.observed_at ? `last successful fetch: ${timeAgo(s.observed_at)} ago` : 'never observed';
       return `🔴 ${errorMsg} · ${lastSeen}.`;
     }
