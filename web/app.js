@@ -5,9 +5,28 @@
 (function () {
   'use strict';
 
+  // ───────────────────────────── thresholds (Story 3.10)
+  // Single named fallback for the missing-thresholds error path (AC 6).
+  // Numbers mirror infra/link_handler/config.yaml so a missing header degrades visibly
+  // but does not silently render everything `confirmed`. Real values come from the
+  // file-level `thresholds` block in spaces.geojson.
+  const FALLBACK_THRESHOLDS = {
+    endpoint_health: {
+      unresponsive_minutes_threshold: 10,
+      warning_minutes_threshold: 30,
+      broken_minutes_threshold: 60,
+    },
+    operational_state: {
+      aging_days_threshold: 30,
+      zombie_days_threshold: 90,
+      dead_days_threshold: 180,
+    },
+  };
+
   // ───────────────────────────── state
   const state = {
     spaces: [],
+    thresholds: FALLBACK_THRESHOLDS,
     filters: {
       networks: new Set(),     // empty = all
       countries: new Set(),
@@ -17,7 +36,6 @@
     search: '',
     selectedId: null,
     openDrawer: null,          // 'filters' | 'search' | 'preset' | 'addurl' | 'detail' | 'bot' | 'tweaks' | null
-    showUnhealthy: false,
     tweaks: {
       mapStyle: 'dim',
       density: 'roomy',
@@ -73,7 +91,14 @@
       state.spaces = [];
       return;
     }
-    // Parse GeoJSON FeatureCollection; flatten properties + geometry into space objects
+    ingestGeoJSON(json);
+  }
+
+  // Centralized GeoJSON → state ingestion. Sets state.spaces AND state.thresholds.
+  // Story 3.10: thresholds are required for live axis computation; missing block is
+  // logged loud and falls back to FALLBACK_THRESHOLDS so we never silently render
+  // everything as `confirmed`.
+  function ingestGeoJSON(json) {
     const features = json.features || [];
     state.spaces = features.map((f) => ({
       ...f.properties,
@@ -82,6 +107,15 @@
         lon: f.geometry.coordinates[0],
       },
     }));
+    const th = json.thresholds;
+    if (!th || !th.endpoint_health || !th.operational_state
+        || Object.keys(th.endpoint_health).length === 0
+        || Object.keys(th.operational_state).length === 0) {
+      console.error('[ingestGeoJSON] thresholds block missing/empty — using FALLBACK_THRESHOLDS. Pipeline contract violated.');
+      state.thresholds = FALLBACK_THRESHOLDS;
+    } else {
+      state.thresholds = th;
+    }
   }
 
   // ───────────────────────────── map
@@ -245,16 +279,83 @@
     updateCounts();
   }
 
-  function markerKind(s) {
+  // ───────────────────────────── live freshness axes (Story 3.10)
+  // f(token, now, thresholds) evaluated at view time. Storage holds raw tokens only.
+  function _ageMinutes(iso) {
+    if (!iso) return null;
+    const t = new Date(iso.endsWith('Z') ? iso : iso + 'Z').getTime();
+    if (isNaN(t)) return null;
+    return (Date.now() - t) / 60000;
+  }
+  function _ageDays(iso) {
+    const m = _ageMinutes(iso);
+    return m == null ? null : m / 1440;
+  }
+
+  // Axis A — endpoint health. Returns 'broken'|'warning'|'unresponsive'|'fresh'.
+  function computeAxisA(s, thresholds) {
+    if (!s) return 'broken';
+    if (s.last_fetch_status === 'unreachable') return 'broken';
+    if (!s.observed_at) return 'broken'; // never-observed → cannot claim healthy
+    const t = (thresholds && thresholds.endpoint_health) || FALLBACK_THRESHOLDS.endpoint_health;
+    const age = _ageMinutes(s.observed_at);
+    if (age == null) return 'broken';
+    if (age >= t.broken_minutes_threshold) return 'broken';
+    if (age >= t.warning_minutes_threshold) return 'warning';
+    if (age >= t.unresponsive_minutes_threshold) return 'unresponsive';
+    return 'fresh';
+  }
+
+  // Axis B — content lifecycle. Returns 'dead'|'zombie'|'aging'|'confirmed'.
+  // Null updated_at → oldest supported state (never observed to change). Per AC 2
+  // Dev Notes: do NOT crash, do NOT silently render `confirmed`.
+  function computeAxisB(s, thresholds) {
+    // Story 3.10 B1: per-feature override beats the global thresholds.
+    // Used by canary demo mode to compress aging/zombie/dead to seconds-scale
+    // so the bucket walk is observable in a live demo.
+    const override = s && s.thresholds_override && s.thresholds_override.operational_state;
+    const t = override || (thresholds && thresholds.operational_state) || FALLBACK_THRESHOLDS.operational_state;
+    if (!s || !s.updated_at) return 'dead';
+    const age = _ageDays(s.updated_at);
+    if (age == null) return 'dead';
+    if (age >= t.dead_days_threshold) return 'dead';
+    if (age >= t.zombie_days_threshold) return 'zombie';
+    if (age >= t.aging_days_threshold) return 'aging';
+    return 'confirmed';
+  }
+
+  // Axis C — operational liveness. Current source claim, does not age.
+  function computeAxisC(s) {
+    if (!s) return 'not-open';
+    return s.open_now === true ? 'open' : 'not-open';
+  }
+
+  // Combined marker — AC 4 precedence:
+  // broken (A) → dead/zombie/aging (B) → open (C) → confirmed → seeded.
+  // 'seeded' = no freshness tokens at all (registered but never heartbeated).
+  function computeMarker(s) {
     if (!s) return 'seeded';
-    if (s.status === 'broken' || s.status === 'error') return 'broken';
-    if (s.status === 'unlinked' || s.status === 'stale') return 'unlinked';
-    if (s.status === 'aging') return 'aging';
-    if (s.status === 'zombie') return 'zombie';
-    if (s.status === 'dead') return 'dead';
-    if (s.open_now) return 'open';
-    if (s.status === 'confirmed') return 'confirmed';
+    const a = computeAxisA(s, state.thresholds);
+    if (a === 'broken' && s.observed_at) {
+      // Endpoint is reachable history exists but stale beyond broken_minutes — flag broken.
+      return 'broken';
+    }
+    const b = computeAxisB(s, state.thresholds);
+    if (b === 'dead' || b === 'zombie' || b === 'aging') {
+      if (s.updated_at) return b;
+    }
+    // Note: no late `if (a === 'broken') return 'broken'` — line 339 already
+    // handled broken-with-history. A bare 'broken' from Axis A here means
+    // "no observed_at at all" (never claimed / fresh c-reset) → must fall
+    // through to the seeded fallback below, otherwise unclaimed spaces render
+    // as broken instead of seeded.
+    if (computeAxisC(s) === 'open') return 'open';
+    if (s.updated_at || s.observed_at) return 'confirmed';
     return 'seeded';
+  }
+
+  function markerKind(s) {
+    return computeMarker(s);
   }
 
   function highlightSelected() {
@@ -281,9 +382,7 @@
   function filteredSpaces() {
     const f = state.filters;
     const q = state.search.trim().toLowerCase();
-    const HEALTH_STATUSES = new Set(['aging', 'zombie', 'dead']);
     return state.spaces.filter((s) => {
-      if (!state.showUnhealthy && HEALTH_STATUSES.has(s.status)) return false;
       if (f.networks.size && !(s.network_memberships || []).some((n) => f.networks.has(n))) return false;
       if (f.countries.size && !f.countries.has(s.country)) return false;
       if (f.statuses.size) {
@@ -493,9 +592,9 @@
     }
 
     // ── Status bar (non-seeded) ──
-    if (s.status !== 'seeded') {
-      const dotClass = ['aging', 'zombie'].includes(s.status) ? 'sp-dot sp-dot-stale'
-        : s.status === 'broken' ? 'sp-dot sp-dot-error' : 'sp-dot';
+    if (kind !== 'seeded') {
+      const dotClass = ['aging', 'zombie'].includes(kind) ? 'sp-dot sp-dot-stale'
+        : kind === 'broken' ? 'sp-dot sp-dot-error' : 'sp-dot';
       const statusPhrases = { open: 'Open right now', confirmed: 'Confirmed', broken: 'Endpoint issue', aging: 'Going quiet', zombie: 'Unreachable', dead: 'Permanently closed' };
       const phrase = statusPhrases[kind] || kind;
       body.appendChild(el('div', { class: 'sp-status-bar' }, [
@@ -504,13 +603,13 @@
           el('span', {}, [phrase]),
         ]),
         el('div', { class: 'sp-status-right' }, [
-          'updated ' + (s.last_updated ? timeAgo(s.last_updated) + ' ago' : 'unknown')
+          'updated ' + (s.updated_at ? timeAgo(s.updated_at) + ' ago' : 'unknown')
         ]),
       ]));
     }
 
     // ── Quick Facts (non-seeded) ──
-    if (s.status !== 'seeded') {
+    if (kind !== 'seeded') {
       const factsKids = [
         el('span', { class: 'sp-fact-key' }, ['Description']),
         el('span', { class: 'sp-fact-val' }, [s.description || el('em', { class: 'sp-fact-empty' }, ['—'])]),
@@ -568,7 +667,7 @@
     }
 
     // ── Embed CTA (desktop-only via CSS) ──
-    if (s.status !== 'seeded') {
+    if (kind !== 'seeded') {
       const embedBtn = el('button', { class: 'sp-embed-btn' }, []);
       embedBtn.innerHTML = '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="4.5,3 1.5,7 4.5,11"/><polyline points="9.5,3 12.5,7 9.5,11"/><line x1="8.2" y1="2.5" x2="5.8" y2="11.5"/></svg> Embed this space →';
       embedBtn.addEventListener('click', () => embedSpace(s.id));
@@ -586,32 +685,33 @@
         '500': 'Server error (500)',
       };
 
-      if (s.status === 'seeded') {
+      if (kind === 'seeded') {
         const bannerDiv = el('div', { class: 'sp-section', style: { cursor: 'pointer' } }, [
           el('div', { class: 'sp-section-label' }, ['Is this your space?']),
           el('div', { style: { fontSize: '13px', color: 'var(--muted)', marginTop: '4px' } }, ['Register your SpaceAPI endpoint to activate it on the map and keep your information up to date.']),
         ]);
         bannerDiv.addEventListener('click', () => setDrawer('addurl'));
         body.appendChild(bannerDiv);
-      } else if (s.status === 'broken') {
+      } else if (kind === 'broken') {
         const errLabel = ERROR_LABELS[s.error_type] || 'Endpoint unavailable';
+        const lastOkAgo = s.observed_at ? ` Last successful fetch ${timeAgo(s.observed_at)} ago.` : '';
         body.appendChild(el('div', { class: 'sp-section' }, [
           el('div', { class: 'sp-section-label' }, ['Endpoint issue']),
-          el('div', { style: { fontSize: '13px', color: 'var(--error, #c0392b)', marginTop: '4px' } }, [`${errLabel} — check your SpaceAPI endpoint is reachable and returns valid JSON-LD.`]),
+          el('div', { style: { fontSize: '13px', color: 'var(--error, #c0392b)', marginTop: '4px' } }, [`${errLabel} — check your SpaceAPI endpoint is reachable and returns valid JSON-LD.${lastOkAgo}`]),
         ]));
-      } else if (s.status === 'aging') {
-        const agingAgo = s.last_fetched ? ` — last fetched ${timeAgo(s.last_fetched)} ago` : '';
+      } else if (kind === 'aging') {
+        const agingAgo = s.observed_at ? ` — last fetched ${timeAgo(s.observed_at)} ago` : '';
         body.appendChild(el('div', { class: 'sp-section' }, [
           el('div', { class: 'sp-section-label' }, ['Heads up']),
           el('div', { style: { fontSize: '13px', color: 'var(--muted)', marginTop: '4px' } }, [`Going quiet${agingAgo}. Data may be slightly stale.`]),
         ]));
-      } else if (s.status === 'zombie') {
-        const zombieAgo = s.last_fetched ? `. Last seen ${timeAgo(s.last_fetched)} ago` : '';
+      } else if (kind === 'zombie') {
+        const zombieAgo = s.observed_at ? `. Last seen ${timeAgo(s.observed_at)} ago` : '';
         body.appendChild(el('div', { class: 'sp-section' }, [
           el('div', { class: 'sp-section-label' }, ['Heads up']),
           el('div', { style: { fontSize: '13px', color: 'var(--error, #c0392b)', marginTop: '4px' } }, [`Unreachable for a while — information may be outdated${zombieAgo}.`]),
         ]));
-      } else if (s.status === 'dead') {
+      } else if (kind === 'dead') {
         body.appendChild(el('div', { class: 'sp-section' }, [
           el('div', { class: 'sp-section-label' }, ['Space status']),
           el('div', { style: { fontSize: '13px', color: 'var(--muted)', marginTop: '4px' } }, ['This space is permanently closed.']),
@@ -619,7 +719,7 @@
       }
 
       // Stepped unlock section — confirmed or broken-with-guidance
-      const showUnlock = (s.status === 'confirmed') || (s.status === 'broken' && s.next_unlock);
+      const showUnlock = (kind === 'confirmed') || (kind === 'broken' && s.next_unlock);
       if (showUnlock) {
         const unlockSection = el('div', { class: 'sp-section' }, [
           el('div', { class: 'sp-section-label' }, ['What your data unlocks']),
@@ -652,7 +752,7 @@
     }
 
     // ── Source Data — desktop only, non-seeded ──
-    if (window.innerWidth >= 768 && s.status !== 'seeded') {
+    if (window.innerWidth >= 768 && kind !== 'seeded') {
       const zone3 = el('div', { class: 'detail-section zone-source', style: { padding: '12px 14px', borderBottom: '1px dashed var(--rule)' } }, [
         el('div', { class: 'sp-section-header' }, [
           el('div', { class: 'sp-section-label' }, ['Source Data']),
@@ -682,7 +782,7 @@
             const termWrap = el('div', { class: 'sp-terminal-wrap' }, [
               el('div', { class: 'sp-terminal-head' }, [
                 el('span', { class: 'sp-terminal-head-label' }, ['JSON · Endpoint Response']),
-                el('span', { class: 'sp-terminal-head-meta' }, [result.snapshot_date ? new Date(result.snapshot_date).toLocaleString() : '—']),
+                el('span', { class: 'sp-terminal-head-meta' }, [s.observed_at ? new Date(s.observed_at).toLocaleString() : '—']),
               ]),
             ]);
             const pre = document.createElement('pre');
@@ -694,7 +794,7 @@
             rawEl.appendChild(trustLine);
             if (rawEl.parentElement) {
               rawEl.parentElement.querySelector('.sp-refresh-btn')?.remove();
-              rawEl.parentElement.appendChild(_makeRefreshBtn(s.last_fetched));
+              rawEl.parentElement.appendChild(_makeRefreshBtn(s.observed_at));
             }
           })
           .catch(() => {
@@ -735,10 +835,7 @@
                 fetch(`/data/spaces.geojson?t=${Date.now()}`)
                   .then(r => r.json())
                   .then(geoJson => {
-                    state.spaces = (geoJson.features || []).map(f => ({
-                      ...f.properties,
-                      coordinates: { lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0] },
-                    }));
+                    ingestGeoJSON(geoJson);
                     renderMarkers();
                     renderDetail();
                   })
@@ -770,8 +867,10 @@
   }
 
   function freshnessText(s) {
-    if (s.status === 'seeded') return 'Seeded by network — not yet confirmed by the space.';
-    if (s.status === 'broken') {
+    // Story 3.10: read live tokens, not stored buckets.
+    const kind = computeMarker(s);
+    if (kind === 'seeded') return 'Seeded by network — not yet confirmed by the space.';
+    if (kind === 'broken') {
       const ERROR_LABELS = {
         'connection_timeout': 'Connection timeout',
         'invalid_json_ld': 'Invalid JSON-LD',
@@ -780,16 +879,16 @@
         '404': 'Not found (404)',
         '500': 'Server error (500)',
       };
-      const errorMsg = ERROR_LABELS[s.error_type] || s.error_type || 'URL broken';
-      return `🔴 ${errorMsg} · last successful fetch: ${timeAgo(s.last_fetched)}.`;
+      const errorMsg = ERROR_LABELS[s.error_type] || s.error_type
+        || (s.last_fetch_status === 'unreachable' ? 'Endpoint unreachable' : 'No recent successful fetch');
+      const lastSeen = s.observed_at ? `last successful fetch: ${timeAgo(s.observed_at)} ago` : 'never observed';
+      return `🔴 ${errorMsg} · ${lastSeen}.`;
     }
-    if (s.status === 'unlinked' || s.status === 'stale') return 'Not linked to a network — present but independent.';
-    if (s.status === 'aging') return `Going quiet · last content update ${timeAgo(s.last_updated)} ago.`;
-    if (s.status === 'zombie') return `Unreachable · last content update ${timeAgo(s.last_updated)} ago.`;
-    if (s.status === 'dead') return `Long inactive · last content update ${timeAgo(s.last_updated)} ago.`;
-    if (s.status === 'broken') return `Endpoint unreachable · last successful fetch ${timeAgo(s.last_fetched)} ago.`;
-    if (s.open_now) return `Open right now · last content update ${timeAgo(s.last_updated)} ago.`;
-    return `Confirmed · last content update ${timeAgo(s.last_updated)} ago.`;
+    if (kind === 'aging')  return `Going quiet · last content update ${timeAgo(s.updated_at)} ago.`;
+    if (kind === 'zombie') return `Unreachable · last content update ${timeAgo(s.updated_at)} ago.`;
+    if (kind === 'dead')   return `Long inactive · last content update ${timeAgo(s.updated_at)} ago.`;
+    if (kind === 'open')   return `Open right now · last content update ${timeAgo(s.updated_at)} ago.`;
+    return `Confirmed · last content update ${timeAgo(s.updated_at)} ago.`;
   }
 
   function timeAgo(iso) {
@@ -1010,14 +1109,10 @@
       state.filters.countries.clear();
       state.filters.statuses.clear();
       state.filters.specialties.clear();
-      state.showUnhealthy = false;
       try {
         const geoResp = await fetch(`/data/spaces.geojson?t=${Date.now()}`);
         const geoJson = await geoResp.json();
-        state.spaces = (geoJson.features || []).map((f) => ({
-          ...f.properties,
-          coordinates: { lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0] },
-        }));
+        ingestGeoJSON(geoJson);
         if (state.selectedId && !state.spaces.find((s) => s.id === state.selectedId)) {
           state.selectedId = null;
         }
@@ -1205,20 +1300,11 @@
       renderMarkers();
     });
 
-    // Reset filters
-    $('#btn-show-unhealthy').addEventListener('click', () => {
-      state.showUnhealthy = !state.showUnhealthy;
-      $('#btn-show-unhealthy').setAttribute('aria-pressed', state.showUnhealthy ? 'true' : 'false');
-      renderMarkers();
-    });
-
     $('#btn-reset-filters').addEventListener('click', () => {
       state.filters.networks.clear();
       state.filters.countries.clear();
       state.filters.statuses.clear();
       state.filters.specialties.clear();
-      state.showUnhealthy = false;
-      $('#btn-show-unhealthy').setAttribute('aria-pressed', 'false');
       state.search = '';
       const searchInput = $('#search-input');
       searchInput.value = '';
@@ -1385,10 +1471,7 @@
           const geo = await fetch(`/data/spaces.geojson?t=${Date.now()}`);
           if (!geo.ok) return;
           const geoJson = await geo.json();
-          state.spaces = (geoJson.features || []).map((f) => ({
-            ...f.properties,
-            coordinates: { lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0] },
-          }));
+          ingestGeoJSON(geoJson);
           buildFilterChips();
           renderMarkers();
           renderDetail();

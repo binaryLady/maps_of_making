@@ -16,8 +16,7 @@ from pydantic import BaseModel, Field, ConfigDict
 
 from canary_pipeline import run_canary_pipeline
 from snapshot_store import mint_observed_at, write_snapshot, read_last_ok_observed_at, read_snapshot
-from transformer import (get_config, query_active_spaces, process_one_space, run_heartbeat_cycle,
-                         effective_marker)
+from transformer import (get_config, query_active_spaces, process_one_space, run_heartbeat_cycle)
 from utils import MOM, SCHEMA, _ALLOWED_SCHEMES, _sparql_str, _sparql_iri, _slug
 
 logging.basicConfig(level=logging.INFO)
@@ -40,12 +39,20 @@ _CANARY_ENDPOINT_URL = os.getenv("CANARY_ENDPOINT_URL", "https://mapsofmaking.or
 
 async def _heartbeat_job():
     global _last_heartbeat_completed
-    await run_heartbeat_cycle(OXIGRAPH_ENDPOINT, _rematerialize_geojson)
-    # Run the clean canary pipeline alongside the legacy path (non-fatal)
+    # Story 3.10 Axis A: run canary FIRST so its snapshot fetch_status is
+    # current before _rematerialize_geojson reads SQLite. Otherwise a 404 on
+    # the canary only surfaces in the GeoJSON on the *next* heartbeat.
+    canary_ran = False
     try:
         await run_canary_pipeline(_CANARY_ENDPOINT_URL, OXIGRAPH_ENDPOINT, GEOJSON_OUTPUT)
+        canary_ran = True
     except Exception as e:
         logger.warning("clean canary pipeline error (non-fatal): %s", e)
+    await run_heartbeat_cycle(OXIGRAPH_ENDPOINT, _rematerialize_geojson)
+    # Force a rematerialize so canary fetch_status changes always surface,
+    # even when run_heartbeat_cycle saw no space-side deltas and skipped its own.
+    if canary_ran:
+        await _rematerialize_geojson()
     _last_heartbeat_completed = datetime.now(timezone.utc)
 
 
@@ -573,8 +580,6 @@ def _binding_to_feature(b: dict) -> Optional[dict]:
     except (TypeError, ValueError):
         return None
 
-    operational_state = b.get("operationalState", {}).get("value", "seeded")
-    endpoint_health_raw = b.get("endpointHealth", {}).get("value", "unknown")
     raw_specialties = b.get("specialties", {}).get("value", "")
     specialties = [s for s in raw_specialties.split("|") if s] if raw_specialties else []
     open_now_raw = b.get("openNow", {}).get("value")
@@ -589,7 +594,6 @@ def _binding_to_feature(b: dict) -> Optional[dict]:
         address_parts = [p for p in [street, f"{postcode} {city}".strip()] if p]
         address = ", ".join(address_parts)
 
-    resolved_status = effective_marker(endpoint_health_raw, operational_state, open_now)
     updated_at = b.get("updatedAt", {}).get("value")
     last_open_change = b.get("lastOpenChange", {}).get("value")
 
@@ -600,9 +604,6 @@ def _binding_to_feature(b: dict) -> Optional[dict]:
             "id": space_id,
             "uri": space_uri,
             "name": name,
-            "status": resolved_status,
-            "endpoint_health": endpoint_health_raw,
-            "operational_state": operational_state,
             "geolocationFidelity": b.get("geolocationFidelity", {}).get("value", ""),
             "geolocationNote": b.get("geolocationNote", {}).get("value", ""),
             "address": address,
@@ -634,16 +635,17 @@ def _binding_to_feature(b: dict) -> Optional[dict]:
 
 def _load_thresholds_from_config() -> dict:
     config_path = Path(__file__).parent / "config.yaml"
-    try:
-        with open(config_path, "r") as f:
-            cfg = yaml.safe_load(f) or {}
-        return {
-            "endpoint_health": cfg.get("endpoint_health", {}),
-            "operational_state": cfg.get("operational_state", {}),
-        }
-    except Exception as e:
-        logger.warning("Failed to load thresholds from config: %s", e)
-        return {"endpoint_health": {}, "operational_state": {}}
+    with open(config_path, "r") as f:
+        cfg = yaml.safe_load(f) or {}
+    endpoint_health = cfg.get("endpoint_health") or {}
+    operational_state = cfg.get("operational_state") or {}
+    if not endpoint_health or not operational_state:
+        raise RuntimeError(
+            f"THRESHOLDS_MISSING: config.yaml missing endpoint_health/operational_state blocks "
+            f"(endpoint_health={endpoint_health!r}, operational_state={operational_state!r}) — "
+            f"materializer cannot ship a GeoJSON the browser can compute against"
+        )
+    return {"endpoint_health": endpoint_health, "operational_state": operational_state}
 
 
 async def _rematerialize_geojson() -> None:
@@ -667,9 +669,27 @@ async def _rematerialize_geojson() -> None:
         space_id = feature["properties"]["id"]
         snapshot = read_snapshot(space_id)
         if snapshot:
-            if snapshot["fetch_status"] != "unreachable":
-                feature["properties"]["observed_at"] = snapshot["observed_at"]
+            # Story 3.10 Axis A: always carry observed_at, even when unreachable —
+            # mark_unreachable preserves it intentionally so the card can show the
+            # last-good snapshot timestamp ("fetched X ago" growing while broken).
+            feature["properties"]["observed_at"] = snapshot["observed_at"]
             feature["properties"]["last_fetch_status"] = snapshot["fetch_status"]
+
+            # Story 3.10 B1: canary self-describes its demo mode via ext_mom.thresholdMode
+            # in its own payload. When true, attach seconds-scale thresholds_override
+            # so the aging→zombie→dead bucket walk is observable in ~minutes against
+            # real mom:updatedAt. Source of truth lives in the canary endpoint itself.
+            payload = snapshot.get("payload") or {}
+            ext_mom = payload.get("ext_mom") or {}
+            if ext_mom.get("thresholdMode") is True:
+                feature["properties"]["thresholds_override"] = {
+                    "operational_state": {
+                        # fractional days = seconds (1/86400 ≈ 1 second)
+                        "aging_days_threshold": 30 / 86400,
+                        "zombie_days_threshold": 60 / 86400,
+                        "dead_days_threshold": 120 / 86400,
+                    }
+                }
 
         # Check for missing tokens (fail-loud contract for materialization)
         has_observed = feature["properties"].get("observed_at") is not None
@@ -696,7 +716,7 @@ async def _rematerialize_geojson() -> None:
     out_path = Path(GEOJSON_OUTPUT)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     tmp_path = out_path.with_suffix(".geojson.tmp")
-    tmp_path.write_text(json.dumps(geojson, separators=(",", ":")))
+    tmp_path.write_text(json.dumps(geojson, indent=2))
     tmp_path.replace(out_path)
     logger.info("rematerialized %d spaces → %s", len(features), out_path)
 
@@ -713,13 +733,32 @@ async def health():
 async def heartbeat_run():
     """Trigger an immediate full heartbeat cycle. Used by make publish after deploy."""
     global _last_heartbeat_completed
-    await run_heartbeat_cycle(OXIGRAPH_ENDPOINT, _rematerialize_geojson)
-    # Run the clean canary pipeline alongside the legacy path (non-fatal)
+    # Story 3.10 Axis A: run canary FIRST so its snapshot fetch_status is
+    # current before _rematerialize_geojson reads SQLite. Otherwise a 404 on
+    # the canary only surfaces in the GeoJSON on the *next* heartbeat.
+    canary_ran = False
     try:
         await run_canary_pipeline(_CANARY_ENDPOINT_URL, OXIGRAPH_ENDPOINT, GEOJSON_OUTPUT)
+        canary_ran = True
     except Exception as e:
         logger.warning("clean canary pipeline error (non-fatal): %s", e)
+    await run_heartbeat_cycle(OXIGRAPH_ENDPOINT, _rematerialize_geojson)
+    # Force a rematerialize so canary fetch_status changes always surface,
+    # even when run_heartbeat_cycle saw no space-side deltas and skipped its own.
+    if canary_ran:
+        await _rematerialize_geojson()
     _last_heartbeat_completed = datetime.now(timezone.utc)
+    return {"status": "ok"}
+
+
+@app.post("/api/rematerialize")
+async def rematerialize_endpoint():
+    """Rebuild web/data/spaces.geojson from current Oxigraph + SQLite state.
+
+    Story 3.10: used by `make cb-aging/zombie/dead/closed` after back-dating
+    mom:updatedAt — those scenarios don't need a fresh fetch, only a re-emit.
+    """
+    await _rematerialize_geojson()
     return {"status": "ok"}
 
 
@@ -963,6 +1002,17 @@ async def get_space_raw(space_id: str):
     """
     if not re.match(r'^[a-zA-Z0-9_-]+$', space_id):
         return {"error": "no_snapshot", "message": "This space has no cached endpoint content yet."}
+
+    # Clean path (Epic 3.5): the canary — and eventually all spaces — store their
+    # raw payload in snapshot_store (SQLite), not as mom:rawContent triples in
+    # Oxigraph. Read from there first; the SPARQL fallback below covers legacy
+    # space graphs (urn:mak:space/<id>/...) until they are migrated.
+    snap = read_snapshot(space_id)
+    if snap is not None and snap.get("payload"):
+        return {
+            "raw": snap["payload"],
+            "snapshotDate": snap.get("observed_at", ""),
+        }
 
     sparql_query = f"""PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
 

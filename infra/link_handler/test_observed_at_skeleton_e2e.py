@@ -42,7 +42,7 @@ async def test_observed_at_skeleton_e2e(tmp_path):
     geojson_path = str(tmp_path / "spaces.geojson")
 
     # Step 1: clean fetch cycle against live canary
-    snap = await fetch_canary_snapshot(CANARY_ENDPOINT_URL, db_path=db_path)
+    snap, _content_changed = await fetch_canary_snapshot(CANARY_ENDPOINT_URL, db_path=db_path)
     assert snap is not None, (
         f"fetch_canary_snapshot returned None — canary endpoint may be unreachable: {CANARY_ENDPOINT_URL}"
     )

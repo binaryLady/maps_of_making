@@ -22,6 +22,7 @@
   "issue_report_channels": ["email"],
   "ext_mom": {
     "canary": true,
-    "simulatedAge": null
+    "simulatedAge": null,
+    "thresholdMode": false
   }
 }

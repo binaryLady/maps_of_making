@@ -25,6 +25,19 @@ def _baseline() -> dict:
     return json.loads(BASELINE_FILE.read_text())
 
 
+def _stamp_scenario(payload: dict, name: str) -> None:
+    """Stamp scenario identity + apply-time into ext_mom so two runs produce
+    different bytes. Without this, the heartbeat 304-path short-circuits and
+    `detect_diff` never runs → `mom:updatedAt` never advances. The stamp lives
+    under ext_mom (not ignored by detect_diff) and is the canary-side equivalent
+    of a real operator content change.
+    """
+    from datetime import datetime, timezone
+    payload.setdefault("ext_mom", {})
+    payload["ext_mom"]["scenarioName"] = name
+    payload["ext_mom"]["scenarioAppliedAt"] = datetime.now(timezone.utc).isoformat()
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Axis A — Reachability
 # ─────────────────────────────────────────────────────────────────────────────
@@ -234,6 +247,7 @@ def apply_scenario(name: str, served_path: Path, db_path: str | None = None) -> 
 
     fn = SCENARIOS[name]
     payload, http_override = fn()
+    _stamp_scenario(payload, name)
 
     # Safe write: temp → fsync → atomic rename
     parent = served_path.parent
@@ -248,18 +262,32 @@ def apply_scenario(name: str, served_path: Path, db_path: str | None = None) -> 
     os.chmod(tmp_path, 0o644)   # NamedTemporaryFile defaults to 600; nginx needs world-read
     os.rename(tmp_path, served_path)
 
-    # Invalidate ETag/Last-Modified in heartbeat_log.db so next fetch is not served a stale 304
-    if db_path:
+    # Invalidate ETag/Last-Modified so the next fetch is unconditional.
+    # Story 3.10: ETag now lives in snapshot_store.snapshots (the new clean store),
+    # not heartbeat_log. We clear both for safety in case the legacy column exists.
+    snapshot_db = os.environ.get("SNAPSHOT_DB_PATH") or str(
+        Path(__file__).parent.parent / "data" / "tasks" / "snapshot_store.db"
+    )
+    for target_db, table, key_col, key_match in [
+        (snapshot_db, "snapshots", "uid", "mother-sands"),
+        (db_path, "heartbeat_log", "space_id", "%mother-sands%"),
+    ]:
+        if not target_db or not Path(target_db).exists():
+            continue
         try:
-            con = sqlite3.connect(db_path)
-            # Clear ETag/Last-Modified for the Mother Sands URL so next fetch is unconditional
+            con = sqlite3.connect(target_db)
+            op = "=" if key_match and "%" not in key_match else "LIKE"
             con.execute(
-                "UPDATE heartbeat_log SET etag=NULL, last_modified=NULL WHERE space_id LIKE '%mother-sands%'"
+                f"UPDATE {table} SET etag=NULL, last_modified=NULL WHERE {key_col} {op} ?",
+                (key_match,),
             )
             con.commit()
             con.close()
+        except sqlite3.OperationalError:
+            # Column missing on legacy schema — fine, the other table covers it.
+            pass
         except Exception as e:
-            print(f"[canary] WARNING: could not invalidate ETag in {db_path}: {e}")
+            print(f"[canary] WARNING: could not invalidate ETag in {target_db}: {e}")
 
     if http_override:
         mode = http_override.get("mode", "ok")
@@ -280,4 +308,28 @@ if __name__ == "__main__":
     served = Path(__file__).parent.parent / "web" / "canary" / "mother-sands.json"
     default_db = str(Path(__file__).parent.parent / "data" / "tasks" / "heartbeat_log.db")
     db = os.environ.get("HEARTBEAT_DB_PATH", default_db)
+
+    # Story 3.10 B1: toggle ext_mom.thresholdMode in the served canary payload.
+    # Self-describing demo mode — the canary endpoint itself tells the link-handler
+    # to emit a per-feature thresholds_override. No env var, no container restart.
+    if name == "threshold-mode":
+        if len(sys.argv) < 3 or sys.argv[2] not in ("on", "off"):
+            print("Usage: python3 canary_scenarios.py threshold-mode on|off")
+            sys.exit(1)
+        new_value = sys.argv[2] == "on"
+        payload = json.loads(served.read_text()) if served.exists() else _baseline()
+        payload.setdefault("ext_mom", {})
+        payload["ext_mom"]["thresholdMode"] = new_value
+        # Safe write — temp → fsync → atomic rename
+        import tempfile as _tf
+        with _tf.NamedTemporaryFile(mode="w", suffix=".json", dir=served.parent, delete=False) as tmp:
+            json.dump(payload, tmp, indent=2)
+            tmp.flush()
+            os.fsync(tmp.fileno())
+            tmp_path = tmp.name
+        os.chmod(tmp_path, 0o644)
+        os.rename(tmp_path, served)
+        print(f"[canary] ext_mom.thresholdMode = {new_value}")
+        sys.exit(0)
+
     apply_scenario(name, served, db_path=db if Path(db).exists() else None)

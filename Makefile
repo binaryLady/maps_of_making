@@ -21,14 +21,31 @@ RSYNC_EXCLUDE := \
 	--exclude='data/'
 
 .PHONY: sync sync-app sync-gateway publish startdev rebuild seed seed-spaceapi heartbeat devdeploy reset vps-rebuild vps-seed help endpoint
-.PHONY: c-reset c-report c-demo c-all
+.PHONY: c-reset c-activate c-report c-demo c-all
 .PHONY: ca-reachable ca-timeout ca-dns-fail ca-http-error caxis-a
-.PHONY: cb-seeded cb-confirmed cb-aging cb-zombie cb-closed caxis-b
+.PHONY: cb-seeded cb-confirmed cb-aging cb-zombie cb-dead cb-closed caxis-b c-demo-on c-demo-off
 .PHONY: cc-open cc-shut caxis-c
 
 CANARY_DB ?= data/tasks/heartbeat_log.db
 CANARY_SERVED := web/canary/mother-sands.json
 CANARY_SCENARIO := source venv/bin/activate && python3 scripts/canary_scenarios.py
+
+# Back-date helper: rewrites mom:updatedAt in urn:mak:canary to (now - N days)
+# via direct SPARQL UPDATE against Oxigraph (port 7878, exposed on dev), then
+# triggers a rematerialize-only inside the container so the new timestamp
+# lands in the GeoJSON. Usage: $(call BACKDATE_CANARY,45)
+define BACKDATE_CANARY
+TS=$$(date -u -d '-$(1) days' +%Y-%m-%dT%H:%M:%SZ) ; \
+curl -s -X POST http://localhost:7878/update \
+  -H "Content-Type: application/sparql-update" \
+  -d "PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#> \
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> \
+      DELETE WHERE { GRAPH <urn:mak:canary> { <urn:mak:canary/mother-sands> mom:updatedAt ?t } } ; \
+      INSERT DATA { GRAPH <urn:mak:canary> { <urn:mak:canary/mother-sands> mom:updatedAt \"$$TS\"^^xsd:dateTime } }" \
+  && echo "✓ mom:updatedAt back-dated to $$TS ($(1)d ago)" ; \
+podman exec maps-link-handler python3 -c \
+  "import httpx; r = httpx.post('http://localhost:8000/api/rematerialize', timeout=30); print('rematerialize:', r.status_code)"
+endef
 
 help:
 	@echo "── LOCAL ────────────────────────────────────────────────────────────"
@@ -47,12 +64,15 @@ help:
 	@echo "make vps-rebuild   — rebuild containers on VPS (no sync — code must be current)"
 	@echo "make vps-seed      — sync + reseed + heartbeat on VPS (no container rebuild)"
 	@echo "── CANARY ───────────────────────────────────────────────────────────"
-	@echo "make c-reset      — restore canary from baseline"
+	@echo "make c-reset      — restore canary from baseline (seeded, no endpointUrl)"
+	@echo "make c-activate   — add mom:endpointUrl to canary (simulates claiming step)"
 	@echo "make c-report     — per-layer coherence-diff report"
-	@echo "make c-demo       — seed→confirmed→aging→zombie→closed lifecycle chain"
+	@echo "make c-demo-on    — turn on seconds-scale canary thresholds (live demo)"
+	@echo "make c-demo-off   — restore normal day-scale thresholds"
+	@echo "make c-demo       — seeded→confirmed→aging→zombie→dead→closed lifecycle chain"
 	@echo "make c-all        — run all scenarios across all axes"
-	@echo "make ca-{reachable,timeout,dns-fail,http-error}  — Axis A"
-	@echo "make cb-{seeded,confirmed,aging,zombie,closed}   — Axis B"
+	@echo "make ca-{reachable,timeout,dns-fail,http-error}     — Axis A"
+	@echo "make cb-{seeded,confirmed,aging,zombie,dead,closed} — Axis B"
 	@echo "make cc-{open,shut}                              — Axis C"
 	@echo "make caxis-{a,b,c}   — run full axis"
 	@echo "make endpoint     — push canary JSON + logo to VPS"
@@ -169,10 +189,29 @@ c-reset:
 	  -d "PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#> \
 	      DELETE WHERE { GRAPH <urn:mak:canary> { <urn:mak:canary/mother-sands> mom:endpointUrl ?u } }" \
 	  && echo "✓ endpointUrl removed from Oxigraph — canary is seeded"
+	@# Wipe snapshot_store row — load_canary.py only touches Oxigraph; the SQLite
+	@# snapshot would otherwise carry observed_at / fetch_status forward into the
+	@# rematerialized GeoJSON and the marker would not be cleanly seeded.
+	@podman exec maps-link-handler python3 -c "import sqlite3, os; from snapshot_store import _get_db_path; c=sqlite3.connect(_get_db_path()); c.execute(\"DELETE FROM snapshots WHERE uid='mother-sands'\"); c.commit(); c.close(); print('✓ snapshot_store row cleared')" 2>/dev/null || echo "  (snapshot_store wipe skipped — container not running)"
 	podman exec maps-link-handler python3 -c \
 	  "import httpx; r = httpx.post('http://localhost:8000/api/heartbeat/run', timeout=60); print('rematerialize:', r.status_code)" \
 	  && echo "✓ GeoJSON rematerialized"
 	@echo "✓ canary reset to seeded baseline"
+
+## Add mom:endpointUrl to canary (simulates the operator "claiming" their space).
+## After c-reset the canary is seeded with no endpointUrl, so the heartbeat
+## transformer skips it (no mom:updatedAt → Axis B silent). This target adds the
+## endpointUrl back so the next heartbeat runs the full fetch→diff→updatedAt
+## path against the canary. Lets us skip the manual claiming flow during dev.
+c-activate:
+	@CANARY_URL="$${CANARY_ENDPOINT_URL:-https://mapsofmaking.org/canary/mother-sands.json}" ; \
+	curl -s -X POST http://localhost:7878/update \
+	  -H "Content-Type: application/sparql-update" \
+	  -d "PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#> \
+	      INSERT DATA { GRAPH <urn:mak:canary> { <urn:mak:canary/mother-sands> mom:endpointUrl <$$CANARY_URL> } }" \
+	  && echo "✓ endpointUrl added to Oxigraph — canary is claimed ($$CANARY_URL)"
+	$(MAKE) heartbeat
+	@echo "✓ canary activated — Axis B (mom:updatedAt) will advance on content change"
 
 ## ── Axis A — Reachability ────────────────────────────────────────────────────
 
@@ -198,28 +237,54 @@ caxis-a: ca-reachable ca-timeout ca-dns-fail ca-http-error
 	@echo "✓ Axis A complete"
 
 ## ── Axis B — Lifecycle Freshness ─────────────────────────────────────────────
+## Naming:
+##   cb-seeded    = no endpointUrl yet — alias of c-reset (clean slate, no claim)
+##   cb-confirmed = endpointUrl registered, recent updated_at — alias of c-activate
+##   cb-aging/zombie/dead = real updated_at exists but is back-dated to land in
+##                          that bucket (real pipeline ran; only the timestamp
+##                          is shifted)
+##   cb-closed    = explicit operator-declared closure (terminal-by-declaration);
+##                  distinct from cb-dead (terminal-by-inactivity)
+## Back-dating posts to /api/canary/backdate which rewrites mom:updatedAt in
+## the canary graph and re-emits the GeoJSON. No re-fetch — preserves the live
+## scenario payload visible in the Source Data terminal.
 
-cb-seeded:
-	$(CANARY_SCENARIO) b-seeded
-	$(MAKE) endpoint heartbeat
-
-cb-confirmed:
-	$(CANARY_SCENARIO) b-confirmed
-	$(MAKE) endpoint heartbeat
-
+# 30/86400 ≈ 30s. With CANARY_THRESHOLD_MODE=demo, the canary's
+# thresholds_override compresses the bucket walk to seconds; pick a days value
+# above the relevant compressed threshold so the bucket sticks.
 cb-aging:
 	$(CANARY_SCENARIO) b-aging
 	$(MAKE) endpoint heartbeat
+	@$(call BACKDATE_CANARY,45)
 
 cb-zombie:
 	$(CANARY_SCENARIO) b-zombie
 	$(MAKE) endpoint heartbeat
+	@$(call BACKDATE_CANARY,120)
+
+cb-dead:
+	$(CANARY_SCENARIO) b-zombie
+	$(MAKE) endpoint heartbeat
+	@$(call BACKDATE_CANARY,365)
 
 cb-closed:
 	$(CANARY_SCENARIO) b-closed
 	$(MAKE) endpoint heartbeat
+	@curl -s -X POST http://localhost:7878/update \
+	  -H "Content-Type: application/sparql-update" \
+	  -d "PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#> \
+	      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> \
+	      DELETE WHERE { GRAPH <urn:mak:canary> { <urn:mak:canary/mother-sands> mom:operatorDeclaredClosed ?c } } ; \
+	      INSERT DATA { GRAPH <urn:mak:canary> { <urn:mak:canary/mother-sands> mom:operatorDeclaredClosed \"true\"^^xsd:boolean } }" \
+	  && echo "✓ mom:operatorDeclaredClosed=true (terminal-by-declaration)"
+	@podman exec maps-link-handler python3 -c \
+	  "import httpx; r = httpx.post('http://localhost:8000/api/rematerialize', timeout=30); print('rematerialize:', r.status_code)"
 
-caxis-b: cb-seeded cb-confirmed cb-aging cb-zombie cb-closed
+# Aliases — natural lifecycle entry points
+cb-seeded: c-reset
+cb-confirmed: c-activate
+
+caxis-b: cb-seeded cb-confirmed cb-aging cb-zombie cb-dead cb-closed
 	@echo "✓ Axis B complete"
 
 ## ── Axis C — Open/Close Boolean ──────────────────────────────────────────────
@@ -246,9 +311,28 @@ c-report:
 	source venv/bin/activate && python3 scripts/canary_coherence_report.py
 
 ## ── Demo cycle ───────────────────────────────────────────────────────────────
+## c-demo-on / c-demo-off restart the link-handler with seconds-scale thresholds
+## on (or off) for the canary feature only. With demo mode ON, after cb-confirmed
+## the canary will naturally walk aging → zombie → dead in ~minutes against the
+## real (recent) mom:updatedAt timestamp. Use cb-aging/zombie/dead/closed to pin
+## a specific bucket via back-dating instead of waiting.
 
-c-demo: c-reset cb-seeded cb-confirmed cb-aging cb-zombie cb-closed
-	@echo "✓ demo cycle complete — Mother Sands walked through full lifecycle"
+## Demo mode lives in the canary payload itself (ext_mom.thresholdMode).
+## Single source of truth — the canary endpoint tells the link-handler whether
+## to emit a compressed thresholds_override. Symmetric with how simulatedAge
+## injects state into the payload.
+c-demo-on:
+	$(CANARY_SCENARIO) threshold-mode on
+	$(MAKE) endpoint heartbeat
+	@echo "✓ canary demo thresholds ON (aging≈30s, zombie≈60s, dead≈120s)"
+
+c-demo-off:
+	$(CANARY_SCENARIO) threshold-mode off
+	$(MAKE) endpoint heartbeat
+	@echo "✓ canary demo thresholds OFF (normal day-scale)"
+
+c-demo: c-reset c-activate cb-aging cb-zombie cb-dead cb-closed
+	@echo "✓ demo cycle complete — Mother Sands walked seeded → confirmed → aging → zombie → dead → closed"
 
 ## Push gateway nginx confs only (triggers manual nginx reload on VPS)
 sync-gateway:
