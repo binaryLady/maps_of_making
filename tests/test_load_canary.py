@@ -1,10 +1,15 @@
-"""Hermetic tests for the clean-slate canary loader (Story 3.4b).
+"""Hermetic tests for the clean-slate canary loader (Story 3.4b, updated Story 3.11).
 
 No HTTP, no Oxigraph — exercises the pure mapping functions in
 scripts/load_canary.py. Pins the triple contract the map's materialization
-query (urn:mak:canary UNION block in main.py) depends on.
+query (urn:mak:canary UNION block) depends on.
+
+Story 3.11 changes:
+  - address, countryCode, timeZone now present in output (from extract_mom)
+  - openNow / lastOpenChange removed (owned by heartbeat pipeline)
+  - lastUpdated renamed to updatedAt (three-token model Axis B)
+  - _lit() removed; escape_literal() used internally by extractor
 """
-import json
 import sys
 from pathlib import Path
 
@@ -24,7 +29,13 @@ def _baseline_payload(simulated_age=None) -> dict:
         "space": "Mother Sands",
         "logo": "https://mapsofmaking.org/mother-sands-logo.png",
         "url": "https://mapsofmaking.org/canary/mother-sands.json",
-        "location": {"lat": 51.65, "lon": 1.7, "address": "North Sea"},
+        "location": {
+            "lat": 51.65,
+            "lon": 1.7,
+            "address": "Maunsell Fort, North Sea",
+            "country_code": "sol-3",
+            "timezone": "UTC+0",
+        },
         "contact": {"email": "bernard@mothersands.example.org"},
         "state": {"open": True, "lastchange": 1715000000, "message": "nominal"},
         "ext_mom": {"simulatedAge": simulated_age, "canary": True},
@@ -53,20 +64,34 @@ def test_required_triples_present():
     """Required (non-OPTIONAL) triples the materialization query depends on."""
     sparql = build_canary_sparql(_baseline_payload())
     assert f"<{SPACE_URI}> a <https://nicolasdb.github.io/mapsofmaking_ontology/ns#Space>" in sparql
-    assert "https://schema.org/name> \"Mother Sands\"" in sparql
-    assert "https://schema.org/latitude> 51.65" in sparql
-    assert "https://schema.org/longitude> 1.7" in sparql
+    assert '"Mother Sands"' in sparql
+    assert "51.65" in sparql
+    assert "1.7" in sparql
+
+
+def test_new_payload_fields_present():
+    """Story 3.11: address, countryCode, timeZone now extracted."""
+    sparql = build_canary_sparql(_baseline_payload(simulated_age=0))
+    assert "Maunsell Fort, North Sea" in sparql
+    assert "sol-3" in sparql
+    assert "UTC+0" in sparql
 
 
 def test_optional_card_triples_present():
     """Optional triples the card renders from."""
     sparql = build_canary_sparql(_baseline_payload(simulated_age=0))
-    for pred in ["operationalState", "endpointHealth", "lastFetched",
-                 "lastUpdated", "openNow", "lastOpenChange", "source"]:
+    for pred in ["operationalState", "endpointHealth", "lastFetched", "updatedAt", "source"]:
         assert pred in sparql, f"missing mom:{pred}"
     assert "schema.org/url>" in sparql
     assert "schema.org/logo>" in sparql
     assert "contactJson>" in sparql
+
+
+def test_freshness_axis_predicates_absent():
+    """Heartbeat pipeline owns observedAt/openNow/lastOpenChange — not in loader."""
+    sparql = build_canary_sparql(_baseline_payload(simulated_age=0))
+    for pred in ["openNow", "lastOpenChange", "observedAt"]:
+        assert pred not in sparql, f"freshness predicate leaked into canary loader: mom:{pred}"
 
 
 def test_writes_only_canary_graph():
@@ -78,16 +103,16 @@ def test_writes_only_canary_graph():
     assert "urn:mak:public_ledger" not in sparql
 
 
-def test_seeded_omits_last_updated():
-    """A seeded canary has never had a confirmed update — no mom:lastUpdated."""
+def test_seeded_omits_updated_at():
+    """A seeded canary has no content-change history — no mom:updatedAt."""
     sparql = build_canary_sparql(_baseline_payload(simulated_age=None))
-    assert "lastUpdated" not in sparql
+    assert "updatedAt" not in sparql
     assert 'operationalState> "seeded"' in sparql
 
 
-def test_confirmed_includes_last_updated():
+def test_confirmed_includes_updated_at():
     sparql = build_canary_sparql(_baseline_payload(simulated_age=0))
-    assert "lastUpdated" in sparql
+    assert "updatedAt" in sparql
     assert 'operationalState> "confirmed"' in sparql
 
 

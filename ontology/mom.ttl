@@ -242,3 +242,17 @@ mom:gapTimestamp
   rdfs:comment "ISO 8601 datetime the ontology gap was recorded." ;
   rdfs:domain mom:OntologyGap ;
   rdfs:range xsd:dateTime .
+
+mom:countryCode
+  a owl:DatatypeProperty ;
+  rdfs:label "Country Code" ;
+  rdfs:comment "Country or jurisdiction code for the space. ISO 3166-1 alpha-2 codes are the common case, but extension codes are explicitly allowed (e.g. 'sol-3' for international waters / extraterrestrial installations where no national jurisdiction applies)." ;
+  rdfs:domain mom:Space ;
+  rdfs:range xsd:string .
+
+mom:timeZone
+  a owl:DatatypeProperty ;
+  rdfs:label "Time Zone" ;
+  rdfs:comment "IANA time zone identifier (e.g. 'Europe/Brussels') or UTC offset string (e.g. 'UTC+0') for the space's local time. Extension values are allowed for non-standard cases." ;
+  rdfs:domain mom:Space ;
+  rdfs:range xsd:string .

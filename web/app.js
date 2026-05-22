@@ -1044,9 +1044,6 @@
         } else {
           lines.push({ ok: true, text: `coordinates found (${escHtml(data.lat)}, ${escHtml(data.lon)})` });
         }
-        if (data.pii_warning) {
-          lines.push({ warn: true, text: `personal data detected: ${escHtml((data.pii_fields || []).join(', '))} — will not be stored` });
-        }
       }
     }
 

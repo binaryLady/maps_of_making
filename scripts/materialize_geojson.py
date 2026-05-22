@@ -36,8 +36,9 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 SELECT ?spaceUri ?name ?latitude ?longitude
        ?geolocationFidelity ?geolocationNote
-       ?street ?postcode ?city ?country ?address ?website ?profileUrl ?openNow ?lastOpenChange
-       ?source ?endpointUrl ?description ?logo ?contactJson ?updatedAt ?subset ?nextUnlock
+       ?street ?postcode ?city ?country ?address ?countryCode ?timeZone
+       ?website ?profileUrl ?openNow ?lastOpenChange
+       ?source ?endpointUrl ?description ?openingHours ?logo ?contactJson ?updatedAt ?subset ?nextUnlock
        (GROUP_CONCAT(DISTINCT ?specialty; separator="|") AS ?specialties)
        (COALESCE(GROUP_CONCAT(DISTINCT STR(?network); separator="|"), "") AS ?networkMemberships)
 WHERE {
@@ -57,12 +58,15 @@ WHERE {
       OPTIONAL { ?spaceUri schema:addressLocality ?city }
       OPTIONAL { ?spaceUri schema:addressCountry ?country }
       OPTIONAL { ?spaceUri mom:address ?address }
+      OPTIONAL { ?spaceUri mom:countryCode ?countryCode }
+      OPTIONAL { ?spaceUri mom:timeZone ?timeZone }
       OPTIONAL { ?spaceUri schema:url ?website }
       OPTIONAL { ?spaceUri mom:profileUrl ?profileUrl }
       OPTIONAL { ?spaceUri schema:knowsAbout ?specialty }
       OPTIONAL { ?spaceUri mom:source ?source }
       OPTIONAL { ?spaceUri mom:endpointUrl ?endpointUrl }
       OPTIONAL { ?spaceUri schema:description ?description }
+      OPTIONAL { ?spaceUri schema:openingHours ?openingHours }
       OPTIONAL { ?spaceUri mom:memberOf ?network }
       OPTIONAL { ?spaceUri schema:logo ?logo }
       OPTIONAL { ?spaceUri schema:contactJson ?contactJson }
@@ -91,12 +95,15 @@ WHERE {
       OPTIONAL { ?spaceUri schema:addressLocality ?city }
       OPTIONAL { ?spaceUri schema:addressCountry ?country }
       OPTIONAL { ?spaceUri mom:address ?address }
+      OPTIONAL { ?spaceUri mom:countryCode ?countryCode }
+      OPTIONAL { ?spaceUri mom:timeZone ?timeZone }
       OPTIONAL { ?spaceUri schema:url ?website }
       OPTIONAL { ?spaceUri mom:profileUrl ?profileUrl }
       OPTIONAL { ?spaceUri schema:knowsAbout ?specialty }
       OPTIONAL { ?spaceUri mom:source ?source }
       OPTIONAL { ?spaceUri mom:endpointUrl ?endpointUrl }
       OPTIONAL { ?spaceUri schema:description ?description }
+      OPTIONAL { ?spaceUri schema:openingHours ?openingHours }
       OPTIONAL { ?spaceUri mom:memberOf ?network }
       OPTIONAL { ?spaceUri schema:logo ?logo }
       OPTIONAL { ?spaceUri schema:contactJson ?contactJson }
@@ -117,9 +124,14 @@ WHERE {
           schema:latitude ?latitude ;
           schema:longitude ?longitude
         ] .
+      OPTIONAL { ?spaceUri mom:address ?address }
+      OPTIONAL { ?spaceUri mom:countryCode ?countryCode }
+      OPTIONAL { ?spaceUri mom:timeZone ?timeZone }
       OPTIONAL { ?spaceUri schema:url ?website }
       OPTIONAL { ?spaceUri schema:logo ?logo }
       OPTIONAL { ?spaceUri mom:endpointUrl ?endpointUrl }
+      OPTIONAL { ?spaceUri schema:description ?description }
+      OPTIONAL { ?spaceUri schema:openingHours ?openingHours }
       OPTIONAL { ?spaceUri mom:updatedAt ?updatedAt }
       OPTIONAL { ?spaceUri mom:openNow ?openNow }
       OPTIONAL { ?spaceUri mom:lastOpenChange ?lastOpenChange }
@@ -131,8 +143,9 @@ WHERE {
 }
 GROUP BY ?spaceUri ?name ?latitude ?longitude
          ?geolocationFidelity ?geolocationNote
-         ?street ?postcode ?city ?country ?address ?website ?profileUrl ?openNow ?lastOpenChange
-         ?source ?endpointUrl ?description ?logo ?contactJson ?updatedAt ?subset ?nextUnlock
+         ?street ?postcode ?city ?country ?address ?countryCode ?timeZone
+         ?website ?profileUrl ?openNow ?lastOpenChange
+         ?source ?endpointUrl ?description ?openingHours ?logo ?contactJson ?updatedAt ?subset ?nextUnlock
 ORDER BY ?spaceUri"""
 
 
@@ -220,6 +233,8 @@ def binding_to_space(binding: dict) -> dict:
         contact = json.loads(contact_raw) if contact_raw else None
     except (json.JSONDecodeError, TypeError):
         contact = None
+    country_code = binding.get("countryCode", {}).get("value", "")
+    timezone = binding.get("timeZone", {}).get("value", "")
     subset = binding.get("subset", {}).get("value", "")
     next_unlock = binding.get("nextUnlock", {}).get("value", "")
 
@@ -245,6 +260,8 @@ def binding_to_space(binding: dict) -> dict:
             "address": address,
             "city": city,
             "country": country,
+            "country_code": country_code,
+            "timezone": timezone,
             "website": website,
             "description": description,
             "endpoint_url": endpoint_url,
@@ -257,7 +274,7 @@ def binding_to_space(binding: dict) -> dict:
             "contact": contact,
             "subset": subset,
             "next_unlock": next_unlock,
-            "opening_hours": "",
+            "opening_hours": binding.get("openingHours", {}).get("value", ""),
             "founded": "",
             "capacity": 0,
             "open_for_hosting": False,

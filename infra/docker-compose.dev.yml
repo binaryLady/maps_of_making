@@ -23,8 +23,11 @@ services:
     volumes:
       - ../web/data:/app/web_data:z
       - ../scripts/activity_map.yaml:/app/scripts/activity_map.yaml:ro,z
+      - ../scripts/spaceapi_extract:/app/scripts/spaceapi_extract:ro,z
       - ../data/tasks:/app/tasks:z  # persist heartbeat_log.db; :z for Fedora SELinux
       - ../data/canary:/app/data/canary:ro,z  # for Mother Sands canary diagnostic endpoint
+    environment:
+      - SCRIPTS_DIR=/app/scripts
 
   oxigraph:
     ports:

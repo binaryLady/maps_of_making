@@ -23,9 +23,13 @@ import json
 import logging
 import os
 import sys
+from pathlib import Path
 from typing import Any
 
 import httpx
+
+sys.path.insert(0, str(Path(__file__).parent))
+from spaceapi_extract import escape_literal, extract_core, triples_for
 
 OXIGRAPH_ENDPOINT = os.getenv("OXIGRAPH_ENDPOINT", "http://localhost:7878")
 UPDATE_URL = f"{OXIGRAPH_ENDPOINT}/update"
@@ -34,6 +38,7 @@ QUERY_URL = f"{OXIGRAPH_ENDPOINT}/query"
 DIRECTORY_URL = "https://directory.spaceapi.io/"
 NETWORK_URI = "urn:mak:network/spaceapi"
 SOURCE_TAG = "spaceapi-directory"
+MOM_NS = "https://nicolasdb.github.io/mapsofmaking_ontology/ns#"
 
 FETCH_CONCURRENCY = 20
 PER_ENDPOINT_TIMEOUT = 10.0
@@ -43,13 +48,6 @@ BBOX_WEST, BBOX_SOUTH, BBOX_EAST, BBOX_NORTH = -25, 34, 45, 72
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("seed_spaceapi")
-
-
-def sparql_str(val: str | None) -> str:
-    if val is None:
-        return '""'
-    escaped = str(val).replace("\\", "\\\\").replace('"', '\\"')
-    return f'"{escaped}"'
 
 
 def space_id(name: str, endpoint_url: str) -> str:
@@ -93,26 +91,37 @@ def extract_fields(payload: dict[str, Any]) -> tuple[str | None, float | None, f
     return (name if isinstance(name, str) and name else None, lat, lon, url if isinstance(url, str) and url else None)
 
 
-def build_insert(name: str, lat: float, lon: float, website: str | None, endpoint_url: str) -> tuple[str, str]:
+def build_insert(name: str, endpoint_url: str, payload: dict) -> tuple[str, str]:
+    """Build a minimal seed INSERT for a SpaceAPI endpoint.
+
+    Uses extract_core(payload) only — seed time is a minimal anchor; contact,
+    specialties, and mom address fields are intentionally excluded (the heartbeat
+    re-extracts payload fields on the first confirmed fetch via write_payload_fields).
+    """
     sid = space_id(name, endpoint_url)
     graph_uri = f"urn:mak:space/{sid}"
-    subject = f"<{graph_uri}>"
-    triples = f"{subject} a mom:Space"
-    triples += f" ;\n    schema:name {sparql_str(name)}@en"
-    triples += f" ;\n    schema:geo [\n      schema:latitude {lat} ;\n      schema:longitude {lon}\n    ]"
-    if website:
-        triples += f" ;\n    schema:url <{website}>"
-    triples += f" ;\n    mom:endpointUrl <{endpoint_url}>"
-    triples += f" ;\n    mom:source {sparql_str(SOURCE_TAG)}"
-    triples += f" ;\n    mom:operationalState {sparql_str('seeded')}"
-    triples += f" ;\n    mom:memberOf <{NETWORK_URI}>"
-    triples += " ."
+    subject_uri = graph_uri
 
-    insert_query = (
-        "PREFIX schema: <https://schema.org/>\n"
-        "PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>\n"
-        f"INSERT DATA {{\n  GRAPH <{graph_uri}> {{\n    {triples}\n  }}\n}}"
-    )
+    # Seed envelope — identity + provenance
+    envelope = [
+        f"<{subject_uri}> a <{MOM_NS}Space> .",
+        f"<{subject_uri}> <{MOM_NS}endpointUrl> <{endpoint_url}> .",
+        f"<{subject_uri}> <{MOM_NS}source> {escape_literal(SOURCE_TAG)} .",
+        f'<{subject_uri}> <{MOM_NS}operationalState> "seeded" .',
+        f"<{subject_uri}> <{MOM_NS}memberOf> <{NETWORK_URI}> .",
+    ]
+
+    # Payload fields — core only; no contact/specialties at seed time
+    fields = extract_core(payload)
+    fields["schema:name"] = name  # use validated/chosen name
+    for skip in ("schema:contactJson", "schema:knowsAbout"):
+        fields.pop(skip, None)
+
+    payload_triples = triples_for(subject_uri, fields)
+
+    all_triples = envelope + payload_triples
+    triples_str = "\n    ".join(all_triples)
+    insert_query = f"INSERT DATA {{\n  GRAPH <{graph_uri}> {{\n    {triples_str}\n  }}\n}}"
     return graph_uri, insert_query
 
 
@@ -208,7 +217,7 @@ def main() -> int:
                 counters["no_geo"] += 1
                 continue
 
-            graph_uri, insert_query = build_insert(chosen_name, lat, lon, website, endpoint_url)
+            graph_uri, insert_query = build_insert(chosen_name, endpoint_url, payload)
 
             try:
                 existing_source = graph_source(client, graph_uri)

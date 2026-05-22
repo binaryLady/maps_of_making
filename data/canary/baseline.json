@@ -4,10 +4,14 @@
   "space": "Mother Sands",
   "logo": "https://mapsofmaking.org/mother-sands-logo.png",
   "url": "https://mothersands.example.org",
+  "description": "A canary space located on a Maunsell Fort in the North Sea, used to monitor the health of the fishtems and provide early warning of any issues.",
+  "opening_hours": "closed during low tide because they are out dredging sea floor for material.",
   "location": {
     "lat": 51.65,
     "lon": 1.7,
-    "address": "North Sea, SS3 9XR"
+    "address": "Maunsell Fort, North Sea",
+    "country_code": "sol-3",
+    "timezone": "UTC+0"
   },
   "contact": {
     "email": "bernard@mothersands.example.org",
@@ -17,12 +21,16 @@
   "state": {
     "open": false,
     "lastchange": 1715000000,
-    "message": "Canary nominal — all systems operational"
+    "message": "Canary nominal — all fishtems operational"
   },
   "issue_report_channels": ["email"],
   "ext_mom": {
     "canary": true,
     "simulatedAge": null,
     "thresholdMode": false
+  },
+  "ext_fab": {
+    "space_type": "makerspace",
+    "equipment": ["tide-powered fabrication", "salt 3D-printer", "recycling metal-shop"]
   }
 }

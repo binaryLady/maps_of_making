@@ -1,5 +1,22 @@
 # Deferred Work
 
+## Deferred from: Story 3.11 — bundle-choice config file (2026-05-22)
+
+- **Schema-bundle selection config** — a config mechanism to declare which schema
+  layers a space's payload is processed against (`core`, `core+mom`, `core+mom+fab`, …).
+  Deferred because it has nothing to drive yet: the extractor pipeline runs
+  `extract_core` + `extract_mom` unconditionally and `extract_fab` does not exist.
+  A bundle config now would be inert — the same status as the `ext_fab` data added
+  to `data/canary/baseline.json` in this story.
+  **Natural design when it lands (pair with `extract_fab`):** two-part —
+  (1) the space declares *what it is* in its own SpaceAPI document
+  (`ext_mom.bundle: ["core","mom","fab"]`); (2) `infra/link_handler/config.yaml`
+  gains a `bundles:` block mapping *bundle name → extractor layers* (how to process
+  each). Identity stays with the space, processing rules stay in config. The
+  extractor dispatch in `pipeline.py` / `load_canary.py` / `seed_spaceapi.py` then
+  composes layers per the declared bundle instead of hardcoding core+mom.
+  → Epic 9 (fab.ttl extraction + `extract_fab`)
+
 ## Deferred from: code review of 3-8b-corrected-token-model (2026-05-19)
 
 - **`content_changed=True` default on `_fetch_last_snapshot` exception** — every 200 response after Oxigraph query failure advances `mom:updatedAt` silently; pre-existing default behavior [transformer.py:741-747]

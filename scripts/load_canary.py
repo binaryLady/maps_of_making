@@ -1,20 +1,15 @@
 #!/usr/bin/env python3
 """Load the Mother Sands canary into Oxigraph — clean-slate skeleton (Story 3.4b).
 
-This is a deliberately minimal, self-contained loader. It does NOT import the
-heartbeat transformer: the goal of the 3.x clean-slate pivot is a tight
-`json -> card` loop with a single, readable mapping that Story 3.5 will
-formalize into the three-layer schema (SpaceAPI v15 core / mom: extended /
-community add-ons).
-
 What it does:
   1. Read web/canary/mother-sands.json (SpaceAPI document).
-  2. Map it to exactly the triples the map's materialization query reads
-     (see _SPARQL_SELECT, urn:mak:canary UNION block in main.py).
+  2. Map it to triples via the bundle-aligned extractor (spaceapi_extract).
   3. DROP + INSERT the urn:mak:canary named graph in Oxigraph.
 
 The HTTP fetch + APScheduler + heartbeat_log conditional-GET are intentionally
 bypassed — those belong to the heartbeat pipeline, not the canary baseline.
+Freshness axis predicates (observedAt, updatedAt, openNow, lastOpenChange) are
+written by the heartbeat pipeline; this loader seeds the payload fields only.
 
 Usage:  python3 scripts/load_canary.py
 Env:    OXIGRAPH_URL (default http://localhost:7878)
@@ -29,33 +24,27 @@ from pathlib import Path
 
 import httpx
 
+sys.path.insert(0, str(Path(__file__).parent))
+from spaceapi_extract import escape_literal, extract_core, extract_mom, triples_for
+
 # ── Three named-graph model (Story 3.4b architectural decision) ──────────────
 # Oxigraph holds three classes of named graph, isolated by mutation semantics:
 #
 #   urn:mak:space/*        live federated endpoints   — DROP + INSERT (mutable)
 #   urn:mak:canary         our own diagnostic space   — DROP + INSERT (mutable)
 #   urn:mak:public_ledger  immutable public records   — INSERT DATA ONLY, never DROP
-#                          (tombstones, closures, skill certs, relocations)
 #
-# RULE: every writer touches ONLY its own graph. Ledger writers must never DROP —
-# dropping the ledger destroys the trust guarantee.
-#
-# public_ledger is a known-unknown (TBD): the working assumption is that public
-# records are minted as IPFS-IPLD dag-json files that live on IPFS, and the
-# public_ledger graph stores triples *ingested* from those dag-json documents.
-# Not built here — reserved so nobody squats the URI.
+# RULE: every writer touches ONLY its own graph. Ledger writers must never DROP.
 # ─────────────────────────────────────────────────────────────────────────────
 
-logger = logging.getLogger("canary.loader")  # component TAG — Epic 4 monitor consumes this
+logger = logging.getLogger("canary.loader")
 
 REPO_ROOT = Path(__file__).parent.parent
 CANARY_FILE = REPO_ROOT / "web" / "canary" / "mother-sands.json"
 OXIGRAPH_URL = os.environ.get("OXIGRAPH_URL", "http://localhost:7878").rstrip("/")
 
 MOM = "https://nicolasdb.github.io/mapsofmaking_ontology/ns#"
-SCHEMA = "https://schema.org/"
 XSD_DT = "http://www.w3.org/2001/XMLSchema#dateTime"
-XSD_BOOL = "http://www.w3.org/2001/XMLSchema#boolean"
 
 GRAPH_URI = "urn:mak:canary"
 SPACE_URI = "urn:mak:canary/mother-sands"
@@ -65,16 +54,9 @@ CANARY_ENDPOINT = os.environ.get(
 )
 
 
-def _lit(val: str) -> str:
-    """Escape a string for a SPARQL quoted literal."""
-    escaped = str(val).replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
-    return f'"{escaped}"'
-
-
 def _classify_lifecycle(simulated_age) -> str:
     """Minimal lifecycle classifier for the canary skeleton.
 
-    # 3.5: formalize — canonical thresholds belong in the three-layer schema.
     simulated_age is `ext_mom.simulatedAge`: None = never confirmed (seeded),
     otherwise an integer count of days since the last content change.
     """
@@ -91,57 +73,47 @@ def _classify_lifecycle(simulated_age) -> str:
 
 
 def build_canary_sparql(data: dict) -> str:
-    """Map a SpaceAPI served.json document to the urn:mak:canary graph triples."""
-    now = datetime.now(timezone.utc).isoformat()
+    """Map a SpaceAPI document to the urn:mak:canary graph triples.
 
-    name = data.get("space", "Mother Sands")
+    Uses the bundle-aligned extractor for payload fields. Loader-owned
+    envelope triples (operationalState, source, endpointUrl, lastFetched)
+    are assembled separately. Freshness axis predicates (observedAt, updatedAt,
+    openNow, lastOpenChange) are the heartbeat pipeline's responsibility.
+    """
     loc = data.get("location", {})
     lat, lon = loc.get("lat"), loc.get("lon")
     if lat is None or lon is None:
         raise ValueError("canary served.json missing location.lat / location.lon")
 
-    state = data.get("state", {})
+    now = datetime.now(timezone.utc).isoformat()
     lifecycle = _classify_lifecycle(data.get("ext_mom", {}).get("simulatedAge"))
 
-    triples = [
+    # Loader-owned envelope — not extractable from the payload
+    envelope = [
         f"<{SPACE_URI}> a <{MOM}Space> .",
-        f"<{SPACE_URI}> <{SCHEMA}name> {_lit(name)} .",
-        f"<{SPACE_URI}> <{SCHEMA}geo> [ <{SCHEMA}latitude> {lat} ; <{SCHEMA}longitude> {lon} ] .",
-        f"<{SPACE_URI}> <{MOM}operationalState> {_lit(lifecycle)} .",
+        f"<{SPACE_URI}> <{MOM}operationalState> {escape_literal(lifecycle)} .",
         f'<{SPACE_URI}> <{MOM}endpointHealth> "healthy" .',
         f'<{SPACE_URI}> <{MOM}source> "canary" .',
         f"<{SPACE_URI}> <{MOM}endpointUrl> <{CANARY_ENDPOINT}> .",
         f'<{SPACE_URI}> <{MOM}lastFetched> "{now}"^^<{XSD_DT}> .',
     ]
-
-    # mom:lastUpdated — the lifecycle clock has only started once content is
-    # confirmed; a seeded canary has never had a confirmed update.
     if lifecycle != "seeded":
-        triples.append(f'<{SPACE_URI}> <{MOM}lastUpdated> "{now}"^^<{XSD_DT}> .')
+        # mom:updatedAt (Axis B) bootstrapped at load time; heartbeat overwrites on content change
+        envelope.append(f'<{SPACE_URI}> <{MOM}updatedAt> "{now}"^^<{XSD_DT}> .')
 
-    if data.get("url"):
-        triples.append(f"<{SPACE_URI}> <{SCHEMA}url> <{data['url']}> .")
-    if data.get("logo"):
-        triples.append(f"<{SPACE_URI}> <{SCHEMA}logo> <{data['logo']}> .")
+    # Payload fields via extractor (core + mom)
+    core_fields = extract_core(data)
+    mom_fields = extract_mom(data)
+    payload_triples = triples_for(SPACE_URI, core_fields) + triples_for(SPACE_URI, mom_fields)
 
-    if "open" in state:
-        triples.append(
-            f'<{SPACE_URI}> <{MOM}openNow> "{str(bool(state["open"])).lower()}"^^<{XSD_BOOL}> .'
-        )
-    if "lastchange" in state:
-        change_dt = datetime.fromtimestamp(state["lastchange"], tz=timezone.utc).isoformat()
-        triples.append(f'<{SPACE_URI}> <{MOM}lastOpenChange> "{change_dt}"^^<{XSD_DT}> .')
-
-    if data.get("contact"):
-        contact_json = json.dumps(data["contact"], separators=(",", ":"))
-        triples.append(f"<{SPACE_URI}> <{SCHEMA}contactJson> {_lit(contact_json)} .")
+    all_triples = envelope + payload_triples
 
     logger.info("stage=map_triples space=%s lifecycle=%s count=%d",
-                name, lifecycle, len(triples))
-    for t in triples:
+                data.get("space", "Mother Sands"), lifecycle, len(all_triples))
+    for t in all_triples:
         logger.debug("triple: %s", t)
 
-    triples_str = "\n    ".join(triples)
+    triples_str = "\n    ".join(all_triples)
     return (
         f"DROP SILENT GRAPH <{GRAPH_URI}> ;\n"
         f"INSERT DATA {{\n  GRAPH <{GRAPH_URI}> {{\n    {triples_str}\n  }}\n}}"

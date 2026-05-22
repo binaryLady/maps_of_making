@@ -1,4 +1,4 @@
-"""Unified heartbeat pipeline (Story 3.10 Step 2).
+"""Unified heartbeat pipeline (Story 3.10 Step 2, extended Story 3.11).
 
 Parameterized by (uid, endpoint_url, graph_uri, subject) so the same primitives
 drive the canary and every registered space. The canary side is just one row in
@@ -6,8 +6,8 @@ the driver's SPARQL SELECT.
 
 Stages per space:
   1. fetch_snapshot           — HTTP GET, mint observed_at once, persist to snapshot_store
-  2. write_observed_at        — copy observed_at into <graph> as mom:observedAt
-  3. write_updated_at         — only when content_changed (Axis B)
+  2. write_updated_at         — only when content_changed (Axis B)
+  3. write_payload_fields     — only when content_changed: re-extract address/contact/etc.
   4. write_open_now           — Axis C, refreshed every fetch (volatile, not diff-gated)
 
 All Oxigraph writes are idempotent (DELETE WHERE + INSERT DATA).
@@ -16,9 +16,20 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import sys
+from pathlib import Path
 from typing import Optional
 
 import httpx
+
+# Ensure scripts/ (containing spaceapi_extract) is on the path.
+# In Docker set SCRIPTS_DIR=/app/scripts via docker-compose env; locally resolved automatically.
+_scripts_dir = os.environ.get("SCRIPTS_DIR") or str(Path(__file__).resolve().parents[2] / "scripts")
+if _scripts_dir not in sys.path:
+    sys.path.insert(0, _scripts_dir)
+
+from spaceapi_extract import extract_core, extract_mom, triples_for
 
 from snapshot_store import mint_observed_at, write_snapshot, read_snapshot, mark_unreachable
 from pipeline_helpers import detect_diff, _extract_open_now, _extract_last_open_change
@@ -238,6 +249,74 @@ SELECT ?t WHERE {{
     return bindings[0].get("t", {}).get("value")
 
 
+async def write_payload_fields(
+    uid: str,
+    payload: dict,
+    graph_uri: str,
+    subject: str,
+    oxigraph_endpoint: str,
+) -> None:
+    """Re-extract payload fields (address, contact, description, …) and write to Oxigraph.
+
+    Called only when content_changed=True so SPARQL traffic is bounded by actual changes.
+    Uses per-predicate DELETE WHERE + INSERT DATA to avoid touching unrelated triples.
+
+    Explicitly excludes freshness axis predicates — their dedicated writers own them:
+      mom:observedAt   → snapshot_store (not in Oxigraph)
+      mom:updatedAt    → write_updated_at()
+      mom:openNow      → write_open_now()
+      mom:lastOpenChange → write_open_now()
+    """
+    _FRESHNESS_AXIS = frozenset({
+        f"{MOM_NS}observedAt", f"{MOM_NS}updatedAt",
+        f"{MOM_NS}openNow", f"{MOM_NS}lastOpenChange",
+    })
+
+    core_fields = extract_core(payload)
+    mom_fields = extract_mom(payload)
+    # Skip name/geo — those are the registration anchor and don't drift
+    _SKIP = {"schema:name", "schema:geo"}
+    all_fields = {k: v for k, v in {**core_fields, **mom_fields}.items() if k not in _SKIP}
+
+    # Build per-predicate DELETE WHERE + INSERT DATA blocks
+    from spaceapi_extract.sparql import _expand  # noqa: PLC0415
+    sparql_parts = []
+    for curie, val in all_fields.items():
+        if val is None:
+            continue
+        pred_uri = _expand(curie)
+        if pred_uri in _FRESHNESS_AXIS:
+            logger.warning("[payload-fields] %s skipped freshness predicate %s (bug guard)", uid, curie)
+            continue
+        triple_list = triples_for(subject, {curie: val})
+        if not triple_list:
+            continue
+        delete_block = (
+            f"DELETE WHERE {{\n"
+            f"  GRAPH <{graph_uri}> {{\n"
+            f"    <{subject}> <{pred_uri}> ?v .\n"
+            f"  }}\n"
+            f"}}"
+        )
+        insert_block = (
+            f"INSERT DATA {{\n"
+            f"  GRAPH <{graph_uri}> {{\n"
+            f"    {' '.join(triple_list)}\n"
+            f"  }}\n"
+            f"}}"
+        )
+        sparql_parts.append(f"{delete_block} ;\n{insert_block}")
+
+    if not sparql_parts:
+        logger.debug("[payload-fields] %s no payload fields to write", uid)
+        return
+
+    sparql = f"PREFIX mom: <{MOM_NS}>\nPREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n\n" + \
+             " ;\n".join(sparql_parts)
+    await _sparql_update(oxigraph_endpoint, sparql)
+    logger.info("[payload-fields] %s wrote %d predicate(s)", uid, len(sparql_parts))
+
+
 async def run_space_pipeline(
     uid: str,
     endpoint_url: str,
@@ -273,6 +352,10 @@ async def run_space_pipeline(
             await write_updated_at(oxigraph_endpoint, graph_uri, subject, observed_at)
         except Exception as e:
             logger.warning("[axis-b] %s mom:updatedAt write failed (non-fatal): %s", uid, e)
+        try:
+            await write_payload_fields(uid, snap["payload"], graph_uri, subject, oxigraph_endpoint)
+        except Exception as e:
+            logger.warning("[payload-fields] %s write failed (non-fatal): %s", uid, e)
 
     state_obj = snap["payload"].get("state") if isinstance(snap.get("payload"), dict) else None
     open_now = _extract_open_now(state_obj)

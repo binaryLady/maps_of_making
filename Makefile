@@ -119,7 +119,7 @@ reset:
 	@echo "   Coordinator-registered spaces will be lost."
 	@read -p "   Type 'reset' to confirm: " ans && [ "$$ans" = "reset" ] || (echo "aborted"; exit 1)
 	podman compose -f infra/docker-compose.yml -f infra/docker-compose.dev.yml down
-	rm -rf data/oxigraph/* data/tasks/snapshot_store.db web/data/spaces.geojson
+	rm -rf data/oxigraph/* data/tasks/snapshot_store.db data/tasks/heartbeat_log.db data/tasks/gap_log.txt data/tasks/oxigraph.db web/data/spaces.geojson
 	@sleep 2
 	$(MAKE) devdeploy
 	@echo "✓ reset complete — refresh your browser at http://localhost:8080"

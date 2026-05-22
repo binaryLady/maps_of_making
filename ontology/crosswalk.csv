@@ -30,3 +30,5 @@ activities,schema:knowsAbout,ext.tags / specialties,fab:equipment,omt:treatmentF
 fab_space_type,,,fab:spaceType,,,extension,status: draft - fab: namespace design is future work (Epic 9 fab.ttl extraction). Placeholder; no core: equivalent.
 omt_certification,,,,omt:certificationBody,,extension,status: draft - omt: namespace design out of scope; requires OMT practitioner community input.
 edu_curriculum,,,,,edu:curriculumTags,extension,status: draft - edu: namespace design out of scope; requires education community input.
+country_code,mom:countryCode,location.country_code,,,,direct,"Layer: identity. SpaceAPI location.country_code. ISO 3166-1 alpha-2 common case; extension codes allowed (e.g. sol-3 for international waters). Added Story 3.11."
+timezone,mom:timeZone,location.timezone,,,,direct,"Layer: identity. SpaceAPI location.timezone. IANA tz identifier or UTC offset string. Added Story 3.11."

@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import re
+import sys
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -15,6 +16,15 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, ConfigDict
 
 import asyncio
+
+# Ensure scripts/ (containing spaceapi_extract) is on the path.
+# In Docker set SCRIPTS_DIR=/app/scripts via docker-compose env; locally resolved automatically.
+_scripts_dir = os.environ.get("SCRIPTS_DIR") or str(Path(__file__).resolve().parents[2] / "scripts")
+if _scripts_dir not in sys.path:
+    sys.path.insert(0, _scripts_dir)
+
+from spaceapi_extract import escape_literal, extract_core, extract_mom, triples_for
+
 from pipeline import run_space_pipeline
 from pipeline_helpers import get_config
 from snapshot_store import mint_observed_at, write_snapshot, read_last_ok_observed_at, read_snapshot
@@ -151,14 +161,15 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Maps of Making Link Handler", lifespan=lifespan)
 
 
-# Same SELECT query as scripts/materialize_geojson.py — kept in sync intentionally
+# Same SELECT query as scripts/materialize_geojson.py:SPARQL_QUERY — keep the two in sync
 _SPARQL_SELECT = """PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
 PREFIX schema: <https://schema.org/>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 SELECT ?spaceUri ?name ?latitude ?longitude
        ?geolocationFidelity ?geolocationNote
-       ?street ?postcode ?city ?country ?address ?website ?profileUrl ?openNow ?lastOpenChange
+       ?street ?postcode ?city ?country ?address ?countryCode ?timeZone
+       ?website ?profileUrl ?endpointUrl ?openNow ?lastOpenChange
        ?source ?openingHours ?description ?logo ?contactJson ?updatedAt
        ?subset ?nextUnlock
        (GROUP_CONCAT(DISTINCT ?specialty; separator="|") AS ?specialties)
@@ -179,8 +190,11 @@ WHERE {
       OPTIONAL { ?spaceUri schema:addressLocality ?city }
       OPTIONAL { ?spaceUri schema:addressCountry ?country }
       OPTIONAL { ?spaceUri mom:address ?address }
+      OPTIONAL { ?spaceUri mom:countryCode ?countryCode }
+      OPTIONAL { ?spaceUri mom:timeZone ?timeZone }
       OPTIONAL { ?spaceUri schema:url ?website }
       OPTIONAL { ?spaceUri mom:profileUrl ?profileUrl }
+      OPTIONAL { ?spaceUri mom:endpointUrl ?endpointUrl }
       OPTIONAL { ?spaceUri schema:knowsAbout ?specialty }
       OPTIONAL { ?spaceUri mom:memberOf ?memberOf }
       OPTIONAL { ?spaceUri mom:source ?source }
@@ -212,8 +226,11 @@ WHERE {
       OPTIONAL { ?spaceUri schema:addressLocality ?city }
       OPTIONAL { ?spaceUri schema:addressCountry ?country }
       OPTIONAL { ?spaceUri mom:address ?address }
+      OPTIONAL { ?spaceUri mom:countryCode ?countryCode }
+      OPTIONAL { ?spaceUri mom:timeZone ?timeZone }
       OPTIONAL { ?spaceUri schema:url ?website }
       OPTIONAL { ?spaceUri mom:profileUrl ?profileUrl }
+      OPTIONAL { ?spaceUri mom:endpointUrl ?endpointUrl }
       OPTIONAL { ?spaceUri schema:knowsAbout ?specialty }
       OPTIONAL { ?spaceUri mom:memberOf ?memberOf }
       OPTIONAL { ?spaceUri mom:source ?source }
@@ -238,8 +255,14 @@ WHERE {
           schema:latitude ?latitude ;
           schema:longitude ?longitude
         ] .
+      OPTIONAL { ?spaceUri mom:address ?address }
+      OPTIONAL { ?spaceUri mom:countryCode ?countryCode }
+      OPTIONAL { ?spaceUri mom:timeZone ?timeZone }
       OPTIONAL { ?spaceUri schema:url ?website }
       OPTIONAL { ?spaceUri schema:logo ?logo }
+      OPTIONAL { ?spaceUri mom:endpointUrl ?endpointUrl }
+      OPTIONAL { ?spaceUri schema:openingHours ?openingHours }
+      OPTIONAL { ?spaceUri schema:description ?description }
       OPTIONAL { ?spaceUri mom:updatedAt ?updatedAt }
       OPTIONAL { ?spaceUri mom:openNow ?openNow }
       OPTIONAL { ?spaceUri mom:lastOpenChange ?lastOpenChange }
@@ -251,16 +274,11 @@ WHERE {
 }
 GROUP BY ?spaceUri ?name ?latitude ?longitude
          ?geolocationFidelity ?geolocationNote
-         ?street ?postcode ?city ?country ?address ?website ?profileUrl ?openNow ?lastOpenChange
+         ?street ?postcode ?city ?country ?address ?countryCode ?timeZone
+         ?website ?profileUrl ?endpointUrl ?openNow ?lastOpenChange
          ?source ?openingHours ?description ?logo ?contactJson ?updatedAt
          ?subset ?nextUnlock
 ORDER BY ?spaceUri"""
-
-# Only flag fields that are unambiguously personal data (not business contact info).
-# schema:email and schema:telephone on a LocalBusiness are public organizational contacts — not PII.
-# schema:Person is a class value (appears under @type), not a property key — excluded.
-_PII_FIELDS = {"foaf:mbox"}
-
 
 class UrlRequest(BaseModel):
     url: str
@@ -393,10 +411,6 @@ def _extract_coords(data: dict) -> tuple[Optional[float], Optional[float]]:
     return None, None
 
 
-def _scan_pii(data: dict) -> list[str]:
-    return [f for f in _PII_FIELDS if f in data]
-
-
 def classify_subset(schema: SpaceAPISchema) -> dict:
     """Classify the subset level reached by the endpoint data.
 
@@ -476,8 +490,6 @@ _EMPTY_RESULT = {
     "coords_found": False,
     "lat": None,
     "lon": None,
-    "pii_warning": False,
-    "pii_fields": [],
 }
 
 
@@ -522,7 +534,6 @@ async def _fetch_and_validate(url: str) -> dict:
     name = schema.resolved_name
     lat = schema.resolved_lat
     lon = schema.resolved_lon
-    pii_found = _scan_pii(data)
     subset_info = classify_subset(schema)
 
     result = {
@@ -533,8 +544,6 @@ async def _fetch_and_validate(url: str) -> dict:
         "coords_found": lat is not None and lon is not None,
         "lat": lat,
         "lon": lon,
-        "pii_warning": bool(pii_found),
-        "pii_fields": pii_found,
         "subset": subset_info["subset"],
         "subset_score": subset_info["subset_score"],
         "missing_card_fields": subset_info["missing_card_fields"],
@@ -553,71 +562,28 @@ async def _fetch_and_validate(url: str) -> dict:
 def _build_sparql_update(graph_uri: str, space_uri: str, name: str, lat: float, lon: float,
                           endpoint_url: str, data: dict,
                           subset: str = "", next_unlock: Optional[str] = None) -> str:
-    now = datetime.now(timezone.utc).isoformat()
-    triples = [
-        f"  <{space_uri}> a <{MOM}Space> .",
-        f'  <{space_uri}> <{SCHEMA}name> "{_sparql_str(name)}" .',
-        f"  <{space_uri}> <{SCHEMA}geo> [ <{SCHEMA}latitude> {lat} ; <{SCHEMA}longitude> {lon} ] .",
-        f'  <{space_uri}> <{MOM}endpointUrl> <{endpoint_url}> .',
-        f'  <{space_uri}> <{MOM}source> "self-registered" .',
+    # Registration envelope — identity + metadata (not extractable from payload)
+    envelope = [
+        f"<{space_uri}> a <{MOM}Space> .",
+        f"<{space_uri}> <{SCHEMA}name> {escape_literal(name)} .",
+        f"<{space_uri}> <{SCHEMA}geo> [ <{SCHEMA}latitude> {lat} ; <{SCHEMA}longitude> {lon} ] .",
+        f"<{space_uri}> <{MOM}endpointUrl> <{endpoint_url}> .",
+        f'<{space_uri}> <{MOM}source> "self-registered" .',
     ]
-
-    # Optional fields — skip PII; validate IRIs before inserting
-    addr_value = data.get("schema:address")
-    if addr_value is None:
-        loc = data.get("location")
-        if isinstance(loc, dict):
-            addr_value = loc.get("address")
-    if isinstance(addr_value, dict):
-        # Structured PostalAddress: write each component as the schema.org property
-        for json_key, schema_prop in (
-            ("schema:streetAddress", "streetAddress"),
-            ("schema:postalCode", "postalCode"),
-            ("schema:addressLocality", "addressLocality"),
-            ("schema:addressCountry", "addressCountry"),
-        ):
-            v = addr_value.get(json_key)
-            if v:
-                triples.append(f'  <{space_uri}> <{SCHEMA}{schema_prop}> "{_sparql_str(str(v))}" .')
-    elif addr_value:
-        # Flat address string (SpaceAPI v14 style): keep on mom:address
-        triples.append(f'  <{space_uri}> <{MOM}address> "{_sparql_str(str(addr_value))}" .')
-    website = data.get("schema:url") or data.get("url")
-    safe_website = _sparql_iri(str(website)) if website else None
-    if safe_website:
-        triples.append(f"  <{space_uri}> <{SCHEMA}url> <{safe_website}> .")
-    desc = data.get("schema:description")
-    if desc:
-        triples.append(f'  <{space_uri}> <{SCHEMA}description> "{_sparql_str(str(desc))}" .')
-    hours = data.get("schema:openingHours") or data.get("opening_hours")
-    if hours:
-        triples.append(f'  <{space_uri}> <{SCHEMA}openingHours> "{_sparql_str(str(hours))}" .')
-
-    # Specialties (schema:knowsAbout) — JSON-LD array OR SpaceAPI flat "knowsAbout"
-    specialties = data.get("schema:knowsAbout") or data.get("knowsAbout") or data.get("specialties") or []
-    if isinstance(specialties, str):
-        specialties = [specialties]
-    for sp in specialties:
-        if sp:
-            triples.append(f'  <{space_uri}> <{SCHEMA}knowsAbout> "{_sparql_str(str(sp))}" .')
-
-    logo_val = data.get("schema:logo") or data.get("logo")
-    if logo_val:
-        triples.append(f'  <{space_uri}> <{SCHEMA}logo> "{_sparql_str(str(logo_val))}" .')
-
-    contact_val = data.get("contact")
-    if contact_val and isinstance(contact_val, dict):
-        contact_json = json.dumps(contact_val, separators=(',', ':'))
-        triples.append(f'  <{space_uri}> <{SCHEMA}contactJson> "{_sparql_str(contact_json)}"^^<http://www.w3.org/2001/XMLSchema#string> .')
-
-    triples.append(f'  <{space_uri}> <{MOM}lastUpdated> "{now}"^^<http://www.w3.org/2001/XMLSchema#dateTime> .')
-
     if subset:
-        triples.append(f'  <{space_uri}> <{MOM}subset> "{_sparql_str(subset)}" .')
+        envelope.append(f"<{space_uri}> <{MOM}subset> {escape_literal(subset)} .")
     if next_unlock:
-        triples.append(f'  <{space_uri}> <{MOM}nextUnlock> "{_sparql_str(next_unlock)}" .')
+        envelope.append(f"<{space_uri}> <{MOM}nextUnlock> {escape_literal(next_unlock)} .")
 
-    triples_str = "\n".join(triples)
+    # Payload fields via extractor — skip name/geo (already in envelope)
+    _ENVELOPE_SKIP = {"schema:name", "schema:geo"}
+    core_fields = {k: v for k, v in extract_core(data).items() if k not in _ENVELOPE_SKIP}
+    mom_fields = extract_mom(data)
+
+    payload_triples = triples_for(space_uri, core_fields) + triples_for(space_uri, mom_fields)
+
+    all_triples = ["  " + t for t in envelope] + ["  " + t for t in payload_triples]
+    triples_str = "\n".join(all_triples)
     return f"""DROP SILENT GRAPH <{graph_uri}> ;
 INSERT DATA {{
   GRAPH <{graph_uri}> {{
@@ -679,8 +645,10 @@ def _binding_to_feature(b: dict) -> Optional[dict]:
             "address": address,
             "city": city,
             "country": b.get("country", {}).get("value", ""),
+            "country_code": b.get("countryCode", {}).get("value", ""),
+            "timezone": b.get("timeZone", {}).get("value", ""),
             "website": b.get("website", {}).get("value", ""),
-            "endpoint_url": b.get("profileUrl", {}).get("value", ""),
+            "endpoint_url": b.get("endpointUrl", {}).get("value") or b.get("profileUrl", {}).get("value", ""),
             "specialties": specialties,
             "open_now": open_now,
             "last_open_change": last_open_change,

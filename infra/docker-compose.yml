@@ -86,11 +86,13 @@ services:
     volumes:
       - ../web/data:/app/web_data
       - ../scripts/activity_map.yaml:/app/scripts/activity_map.yaml:ro
+      - ../scripts/spaceapi_extract:/app/scripts/spaceapi_extract:ro
       - ../data/tasks:/app/tasks    # persist heartbeat_log.db across restarts
     environment:
       - OXIGRAPH_ENDPOINT=http://oxigraph:7878
       - LINK_SECRET=${LINK_SECRET:?LINK_SECRET must be set in .env}
       - GEOJSON_OUTPUT=/app/web_data/spaces.geojson
+      - SCRIPTS_DIR=/app/scripts
     depends_on:
       oxigraph:
         condition: service_started

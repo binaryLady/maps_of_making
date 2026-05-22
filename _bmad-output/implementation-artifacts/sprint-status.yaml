@@ -131,6 +131,7 @@ development_status:
   3-8b-corrected-token-model: done
   3-9-materializer-three-tokens-geojson: done
   3-10-browser-lifecycle-buckets-canary-e2e: review
+  3-11-unify-spaceapi-payload-extractor: done
   epic-3.5-retrospective: optional
 
   # Epic 4: Operator Observability Dashboard
