@@ -20,7 +20,7 @@ RSYNC_EXCLUDE := \
 	--exclude='.pytest_cache/' \
 	--exclude='data/'
 
-.PHONY: sync sync-app sync-gateway publish startdev rebuild seed seed-spaceapi heartbeat devdeploy reset vps-rebuild vps-seed help endpoint
+.PHONY: sync sync-app sync-gateway publish startdev rebuild seed seed-spaceapi heartbeat devdeploy reset vps-rebuild vps-seed vps-reset help endpoint
 .PHONY: c-reset c-activate c-demo c-all
 .PHONY: ca-reachable ca-timeout ca-dns-fail ca-http-error caxis-a
 .PHONY: cb-seeded cb-confirmed cb-aging cb-zombie cb-dead cb-closed caxis-b c-demo-on c-demo-off
@@ -57,12 +57,14 @@ help:
 	@echo "make devdeploy     — rebuild + seed + heartbeat (mirrors publish, locally)"
 	@echo "make reset         — DESTRUCTIVE: wipe Oxigraph + heartbeat DB, then devdeploy"
 	@echo "── VPS ──────────────────────────────────────────────────────────────"
-	@echo "make publish       — full deploy: sync + rebuild + reseed + heartbeat"
+	@echo "make publish       — push code: sync + down/up --build + heartbeat + gateway reload (no seed)"
 	@echo "make sync          — sync everything (app + gateway confs)"
 	@echo "make sync-app      — sync project root (excl. dev artifacts) to VPS"
 	@echo "make sync-gateway  — sync gateway nginx confs (manual reload needed)"
 	@echo "make vps-rebuild   — rebuild containers on VPS (no sync — code must be current)"
-	@echo "make vps-seed      — sync + reseed + heartbeat on VPS (no container rebuild)"
+	@echo "make vps-seed [LIST=… NETWORK=…] — seed SpaceAPI list on VPS (default: directory.spaceapi.io, network=spaceapi)"
+	@echo "make vps-seed-bundle BUNDLE=… NETWORK=… [SOURCE=…] — seed Path B bundle (grey/claimable pins, no endpoint)"
+	@echo "make vps-reset     — DESTRUCTIVE: wipe VPS Oxigraph + SQLite, rebuild, reload canary only"
 	@echo "── CANARY ───────────────────────────────────────────────────────────"
 	@echo "make c-reset      — restore canary from baseline (seeded, no endpointUrl)"
 	@echo "make c-activate   — add mom:endpointUrl to canary (simulates claiming step)"
@@ -100,10 +102,13 @@ heartbeat:
 	podman exec maps-link-handler python3 -c \
 	  "import httpx; r = httpx.post('http://localhost:8000/api/heartbeat/run', timeout=180); print('heartbeat:', r.status_code)"
 
-## Import the SpaceAPI federation directory (https://directory.spaceapi.io/) into local Oxigraph.
-## Each space tagged mom:memberOf <urn:mak:network/spaceapi> → "SPACEAPI" filter chip on the map.
+## Seed a SpaceAPI endpoint list into local Oxigraph. LIST = URL or local path
+## (default: directory.spaceapi.io). NETWORK = filter-chip slug (default: spaceapi).
+## Examples:
+##   make seed-spaceapi
+##   make seed-spaceapi LIST=data/seed-lists/test-batch.json NETWORK=test-batch
 seed-spaceapi:
-	source venv/bin/activate && python scripts/seed_spaceapi.py --force
+	source venv/bin/activate && python scripts/seed_spaceapi.py --list "$(LIST)" --network "$(NETWORK)" --force
 	$(MAKE) heartbeat
 
 ## Full local pipeline: rebuild + heartbeat (no bulk seed — Story 3.4b clean slate)
@@ -124,19 +129,19 @@ reset:
 	$(MAKE) devdeploy
 	@echo "✓ reset complete — refresh your browser at http://localhost:8080"
 
-## Full deploy: sync code → rebuild link-handler → reseed → immediate heartbeat cycle
-## data/ (oxigraph DB, logs) is excluded from rsync — VPS runtime state is never overwritten.
-## coordinator-registered spaces (urn:mak:space/* graphs) are never cleared by seed --force.
-## Heartbeat is triggered immediately after startup so the map is live without waiting 10min.
+## Push latest code: sync → docker down → up --build → heartbeat → gateway reload.
+## Does NOT touch data/ (rsync excludes it) and does NOT seed — use `make vps-reset`
+## to factory-reset, or `make vps-seed LIST=…` to add a network. Heartbeat refreshes
+## already-claimed spaces so the map updates immediately instead of waiting 10min.
 publish: sync-app
 	@echo "→ full stack restart + rebuild on VPS..."
 	ssh $(REMOTE) 'cd $(REMOTE_APP) && docker compose -f infra/docker-compose.yml down && docker compose -f infra/docker-compose.yml up -d --build'
 	@echo "→ waiting for link-handler to be healthy..."
 	ssh $(REMOTE) 'timeout 90 sh -c "until docker exec maps-link-handler python3 -c \"import urllib.request; urllib.request.urlopen('"'"'http://localhost:8000/health'"'"')\" 2>/dev/null; do sleep 3; done" && echo ok'
-	@echo "→ reseeding Oxigraph on VPS..."
-	ssh $(REMOTE) 'cd $(REMOTE_APP) && source venv/bin/activate && python scripts/seed_import.py --force'
-	@echo "→ triggering immediate heartbeat cycle (updates all spaces + rematerializes GeoJSON)..."
-	ssh $(REMOTE) 'docker exec maps-link-handler python3 -c "import httpx; r = httpx.post(\"http://localhost:8000/api/heartbeat/run\", timeout=180); print(\"heartbeat:\", r.status_code)"'
+	@echo "→ triggering immediate heartbeat cycle (refreshes claimed spaces + rematerializes GeoJSON)..."
+	ssh $(REMOTE) 'docker exec maps-link-handler python3 -c "import httpx; r = httpx.post(\"http://localhost:8000/api/heartbeat/run\", timeout=300); print(\"heartbeat:\", r.status_code)"'
+	@echo "→ reloading gateway nginx (clears stale upstream cache after maps-nginx recreate)..."
+	ssh $(REMOTE) 'docker exec nginx-gateway nginx -s reload'
 	@echo "✓ published — map live"
 
 ## Push everything (app + gateway confs)
@@ -154,13 +159,88 @@ sync-app:
 vps-rebuild:
 	ssh $(REMOTE) 'cd $(REMOTE_APP) && docker compose -f infra/docker-compose.yml down && docker compose -f infra/docker-compose.yml up -d --build'
 
-## Sync code then reseed + heartbeat on VPS — use when seed data/scripts changed but containers are fine
-vps-seed: sync-app
-	@echo "→ reseeding Oxigraph on VPS..."
-	ssh $(REMOTE) 'cd $(REMOTE_APP) && source venv/bin/activate && python scripts/seed_import.py --force'
+## Seed a SpaceAPI endpoint list onto the VPS. LIST = URL or local path (default:
+## directory.spaceapi.io). NETWORK = filter-chip slug (default: spaceapi).
+## Runs the seed script inside the link-handler container; no venv needed on VPS.
+## Examples:
+##   make vps-seed                                                   # full SpaceAPI directory
+##   make vps-seed LIST=data/seed-lists/test-batch.json NETWORK=test-batch
+##   make vps-seed LIST=https://example.org/my-list.json NETWORK=vow
+LIST    ?= https://directory.spaceapi.io/
+NETWORK ?= spaceapi
+vps-seed:
+	@echo "→ staging seed script into maps-link-handler..."
+	ssh $(REMOTE) 'cd $(REMOTE_APP) && docker cp scripts/seed_spaceapi.py maps-link-handler:/app/scripts/seed_spaceapi.py'
+	@case "$(LIST)" in \
+	  http://*|https://*) \
+	    echo "→ seeding from URL: $(LIST) (network=$(NETWORK))..." ; \
+	    ssh $(REMOTE) 'docker exec -e OXIGRAPH_ENDPOINT=http://oxigraph:7878 -e PYTHONPATH=/app maps-link-handler python3 /app/scripts/seed_spaceapi.py --list "$(LIST)" --network "$(NETWORK)" --force' ;; \
+	  *) \
+	    echo "→ uploading local list $(LIST) → VPS /tmp → container..." ; \
+	    scp -q "$(LIST)" $(REMOTE):/tmp/mom-seed-list.json ; \
+	    ssh $(REMOTE) 'docker cp /tmp/mom-seed-list.json maps-link-handler:/tmp/seed-list.json && rm -f /tmp/mom-seed-list.json' ; \
+	    echo "→ seeding from file: $(LIST) (network=$(NETWORK))..." ; \
+	    ssh $(REMOTE) 'docker exec -e OXIGRAPH_ENDPOINT=http://oxigraph:7878 -e PYTHONPATH=/app maps-link-handler python3 /app/scripts/seed_spaceapi.py --list /tmp/seed-list.json --network "$(NETWORK)" --force' ;; \
+	esac
 	@echo "→ triggering heartbeat cycle..."
-	ssh $(REMOTE) 'docker exec maps-link-handler python3 -c "import httpx; r = httpx.post(\"http://localhost:8000/api/heartbeat/run\", timeout=180); print(\"heartbeat:\", r.status_code)"'
-	@echo "✓ VPS reseeded"
+	ssh $(REMOTE) 'docker exec maps-link-handler python3 -c "import httpx; r = httpx.post(\"http://localhost:8000/api/heartbeat/run\", timeout=300); print(\"heartbeat:\", r.status_code)"'
+	@echo "→ rematerializing GeoJSON..."
+	ssh $(REMOTE) 'docker exec maps-link-handler python3 -c "import httpx; r = httpx.post(\"http://localhost:8000/api/rematerialize\", timeout=30); print(\"rematerialize:\", r.status_code)"'
+	@echo "✓ VPS seeded (network=$(NETWORK))"
+
+## Seed a bundle of mom:Space JSON-LD records (Path B — spaces without an endpoint).
+## BUNDLE = URL or local path to a JSON array of records. NETWORK = filter-chip slug.
+## SOURCE = mom:source tag (default: scraped-<NETWORK>). Records become grey/seeded
+## pins that coordinators can later claim in place by registering a SpaceAPI URL.
+## Examples:
+##   make vps-seed-bundle BUNDLE=data/archive/moms_seed.json NETWORK=vow
+##   make vps-seed-bundle BUNDLE=data/archive/rff_mockup.json NETWORK=rff SOURCE=mock-rff
+BUNDLE  ?= data/archive/moms_seed.json
+SOURCE  ?=
+vps-seed-bundle:
+	@echo "→ staging bundle seed script into maps-link-handler..."
+	ssh $(REMOTE) 'cd $(REMOTE_APP) && docker cp scripts/seed_bundle.py maps-link-handler:/app/scripts/seed_bundle.py'
+	@case "$(BUNDLE)" in \
+	  http://*|https://*) \
+	    echo "→ seeding bundle from URL: $(BUNDLE) (network=$(NETWORK))..." ; \
+	    ssh $(REMOTE) 'docker exec -e OXIGRAPH_ENDPOINT=http://oxigraph:7878 -e PYTHONPATH=/app maps-link-handler python3 /app/scripts/seed_bundle.py --bundle "$(BUNDLE)" --network "$(NETWORK)" $(if $(SOURCE),--source "$(SOURCE)") --force' ;; \
+	  *) \
+	    echo "→ uploading local bundle $(BUNDLE) → VPS /tmp → container..." ; \
+	    scp -q "$(BUNDLE)" $(REMOTE):/tmp/mom-seed-bundle.json ; \
+	    ssh $(REMOTE) 'docker cp /tmp/mom-seed-bundle.json maps-link-handler:/tmp/seed-bundle.json && rm -f /tmp/mom-seed-bundle.json' ; \
+	    echo "→ seeding from file: $(BUNDLE) (network=$(NETWORK))..." ; \
+	    ssh $(REMOTE) 'docker exec -e OXIGRAPH_ENDPOINT=http://oxigraph:7878 -e PYTHONPATH=/app maps-link-handler python3 /app/scripts/seed_bundle.py --bundle /tmp/seed-bundle.json --network "$(NETWORK)" $(if $(SOURCE),--source "$(SOURCE)") --force' ;; \
+	esac
+	@echo "→ rematerializing GeoJSON..."
+	ssh $(REMOTE) 'docker exec maps-link-handler python3 -c "import httpx; r = httpx.post(\"http://localhost:8000/api/rematerialize\", timeout=60); print(\"rematerialize:\", r.status_code)"'
+	@echo "✓ VPS bundle seeded (network=$(NETWORK))"
+
+## DESTRUCTIVE: VPS analog of `make reset`. Wipes Oxigraph store + SQLite
+## (heartbeat_log, snapshot_store) and materialized GeoJSON on the VPS, then
+## rebuilds containers and seeds only the Mother Sands canary. Use to factory-
+## reset the deployment; claim additional URLs afterwards through the admin UI.
+vps-reset:
+	@echo "⚠  This will wipe data/oxigraph/ and data/tasks/*.db on $(REMOTE)."
+	@echo "   All coordinator-registered spaces will be lost. Only the Mother Sands"
+	@echo "   canary will be reloaded."
+	@read -p "   Type 'vps-reset' to confirm: " ans && [ "$$ans" = "vps-reset" ] || (echo "aborted"; exit 1)
+	@echo "→ stopping containers on VPS..."
+	ssh $(REMOTE) 'cd $(REMOTE_APP) && docker compose -f infra/docker-compose.yml down'
+	@echo "→ wiping Oxigraph + SQLite + materialized GeoJSON on VPS..."
+	ssh $(REMOTE) 'cd $(REMOTE_APP) && rm -rf data/oxigraph/* data/tasks/snapshot_store.db data/tasks/heartbeat_log.db data/tasks/gap_log.txt data/tasks/oxigraph.db web/data/spaces.geojson'
+	@echo "→ rebuilding containers on VPS..."
+	ssh $(REMOTE) 'cd $(REMOTE_APP) && docker compose -f infra/docker-compose.yml up -d --build'
+	@echo "→ waiting for link-handler to be healthy..."
+	ssh $(REMOTE) 'timeout 90 sh -c "until docker exec maps-link-handler python3 -c \"import urllib.request; urllib.request.urlopen('"'"'http://localhost:8000/health'"'"')\" 2>/dev/null; do sleep 3; done" && echo ok'
+	@echo "→ staging canary loader + payload into container..."
+	ssh $(REMOTE) 'cd $(REMOTE_APP) && docker cp scripts/load_canary.py maps-link-handler:/app/scripts/load_canary.py && docker exec maps-link-handler mkdir -p /app/web/canary && docker cp web/canary/mother-sands.json maps-link-handler:/app/web/canary/mother-sands.json'
+	@echo "→ loading Mother Sands canary into Oxigraph..."
+	ssh $(REMOTE) 'docker exec -e OXIGRAPH_URL=http://oxigraph:7878 -e PYTHONPATH=/app maps-link-handler python3 /app/scripts/load_canary.py'
+	@echo "→ rematerializing GeoJSON..."
+	ssh $(REMOTE) 'docker exec maps-link-handler python3 -c "import httpx; r = httpx.post(\"http://localhost:8000/api/rematerialize\", timeout=30); print(\"rematerialize:\", r.status_code)"'
+	@echo "→ reloading gateway nginx (clears stale upstream cache after maps-nginx restart)..."
+	ssh $(REMOTE) 'docker exec nginx-gateway nginx -s reload'
+	@echo "✓ vps-reset complete — only Mother Sands canary in graph; claim additional URLs through the admin UI."
 
 ## ── CANARY ───────────────────────────────────────────────────────────────────
 ## Mother Sands diagnostic canary — three-axis fault attribution tool.

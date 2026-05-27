@@ -65,4 +65,24 @@ def extract_core(payload: dict) -> dict[str, Any]:
         if tags:
             fields["schema:knowsAbout"] = tags
 
+    # Top-level `memberOf` (preferred) or ext_mom.memberOf (canary convention).
+    # Coordinators self-declare network affiliation via slugs ("spaceapi", "vow", ...).
+    # Future deferred work: handshake verification against the declared network's
+    # directory before honouring (e.g. spaceapi → cross-check directory.spaceapi.io).
+    raw_member = payload.get("memberOf")
+    if raw_member is None:
+        ext_mom = payload.get("ext_mom") or {}
+        if isinstance(ext_mom, dict):
+            raw_member = ext_mom.get("memberOf")
+    if isinstance(raw_member, str):
+        raw_member = [raw_member]
+    if isinstance(raw_member, list):
+        slugs = [str(s).strip() for s in raw_member if isinstance(s, str) and s.strip()]
+        if slugs:
+            # Expand bare slugs to urn:mak:network/<slug>; pass through full URIs.
+            fields["mom:memberOf"] = [
+                s if (":" in s or s.startswith("urn:")) else f"urn:mak:network/{s}"
+                for s in slugs
+            ]
+
     return fields

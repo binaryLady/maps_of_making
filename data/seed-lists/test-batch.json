@@ -1,0 +1,12 @@
+[
+  { "name": "Linux User Group Saar", "url": "https://lugsaar.de/spaceapi/api.json" },
+  { "name": "Bitlair", "url": "https://bitlair.nl/spaceapi.json" },
+  { "name": "Hackwerk Aalen", "url": "https://spaceapi.sfz-aalen.space/api/spaceapi.json" },
+  { "name": "Hacksaar", "url": "http://spaceapi.hacksaar.de/status.json" },
+  { "name": "Hackerspace Drenthe", "url": "https://mqtt.hackerspace-drenthe.nl/spaceapi" },
+  { "name": "Krautspace", "url": "https://status.kraut.space/api" },
+  { "name": "Ko-Lab", "url": "https://status.ko-lab.space/" },
+  { "name": "RaumZeitLabor", "url": "https://status.raumzeitlabor.de/api/spaceapi.json" },
+  { "name": "LAG", "url": "https://state.laglab.org/spaceapi.json" },
+  { "name": "Maakplek", "url": "https://maakplek.nl/api/" }
+]

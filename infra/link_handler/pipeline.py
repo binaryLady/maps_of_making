@@ -54,7 +54,11 @@ async def fetch_snapshot(
     prev_payload = prev["payload"] if prev else None
 
     try:
-        async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+        async with httpx.AsyncClient(
+            timeout=30.0,
+            follow_redirects=True,
+            headers={"User-Agent": "MapsOfMaking-heartbeat/1.0 (+https://mapsofmaking.org)"},
+        ) as client:
             resp = await client.get(endpoint_url)
     except httpx.HTTPError as e:
         reason = f"Network error: {e.__class__.__name__}"

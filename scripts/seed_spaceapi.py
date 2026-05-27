@@ -1,17 +1,22 @@
 #!/usr/bin/env python3
-"""Seed local Oxigraph from the SpaceAPI federation directory.
+"""Seed local Oxigraph from a SpaceAPI endpoint list.
 
-Fetches https://directory.spaceapi.io/ (a name → endpoint URL map), fetches each
-SpaceAPI endpoint concurrently, and writes seeded mom:Space graphs tagged with
-mom:memberOf <urn:mak:network/spaceapi> (renders as the "SPACEAPI" filter chip).
+Default source: https://directory.spaceapi.io/ (a name → endpoint URL map).
+Override with --list <url-or-path> to seed from any other list. Two shapes are
+accepted:
+  * {name: url}                          — SpaceAPI directory shape
+  * [{"name": ..., "url": ..., "network": ...}, ...]   — extended array shape
 
-Heartbeat picks the spaces up on its next cycle to populate Zone 3 / track liveness.
+Each entry becomes a seeded mom:Space graph tagged with mom:memberOf
+<urn:mak:network/{network}> (renders as a filter chip). Per-entry `network`
+overrides the --network CLI default (default: "spaceapi"). Heartbeat picks the
+spaces up on its next cycle to populate Zone 3 / track liveness.
 
 PII rule: only public fields (name, geo, website, endpoint URL) are stored.
 contact.email / phone / etc. are discarded — same policy as Story 3.2b.
 
-Coordinator-registered graphs (mom:source = "self-registered") are protected from
-overwrite even with --force, mirroring seed_import.py behaviour.
+Coordinator-registered graphs (mom:source = "self-registered") are protected
+from overwrite even with --force, mirroring seed_import.py behaviour.
 """
 
 from __future__ import annotations
@@ -36,9 +41,16 @@ UPDATE_URL = f"{OXIGRAPH_ENDPOINT}/update"
 QUERY_URL = f"{OXIGRAPH_ENDPOINT}/query"
 
 DIRECTORY_URL = "https://directory.spaceapi.io/"
-NETWORK_URI = "urn:mak:network/spaceapi"
-SOURCE_TAG = "spaceapi-directory"
+DEFAULT_NETWORK = "spaceapi"
 MOM_NS = "https://nicolasdb.github.io/mapsofmaking_ontology/ns#"
+
+
+def network_uri(slug: str) -> str:
+    return f"urn:mak:network/{slug}"
+
+
+def source_tag(slug: str) -> str:
+    return f"{slug}-directory"
 
 FETCH_CONCURRENCY = 20
 PER_ENDPOINT_TIMEOUT = 10.0
@@ -91,7 +103,7 @@ def extract_fields(payload: dict[str, Any]) -> tuple[str | None, float | None, f
     return (name if isinstance(name, str) and name else None, lat, lon, url if isinstance(url, str) and url else None)
 
 
-def build_insert(name: str, endpoint_url: str, payload: dict) -> tuple[str, str]:
+def build_insert(name: str, endpoint_url: str, payload: dict, network: str) -> tuple[str, str]:
     """Build a minimal seed INSERT for a SpaceAPI endpoint.
 
     Uses extract_core(payload) only — seed time is a minimal anchor; contact,
@@ -106,15 +118,15 @@ def build_insert(name: str, endpoint_url: str, payload: dict) -> tuple[str, str]
     envelope = [
         f"<{subject_uri}> a <{MOM_NS}Space> .",
         f"<{subject_uri}> <{MOM_NS}endpointUrl> <{endpoint_url}> .",
-        f"<{subject_uri}> <{MOM_NS}source> {escape_literal(SOURCE_TAG)} .",
+        f"<{subject_uri}> <{MOM_NS}source> {escape_literal(source_tag(network))} .",
         f'<{subject_uri}> <{MOM_NS}operationalState> "seeded" .',
-        f"<{subject_uri}> <{MOM_NS}memberOf> <{NETWORK_URI}> .",
+        f"<{subject_uri}> <{MOM_NS}memberOf> <{network_uri(network)}> .",
     ]
 
     # Payload fields — core only; no contact/specialties at seed time
     fields = extract_core(payload)
     fields["schema:name"] = name  # use validated/chosen name
-    for skip in ("schema:contactJson", "schema:knowsAbout"):
+    for skip in ("schema:contactJson", "schema:knowsAbout", "mom:memberOf"):
         fields.pop(skip, None)
 
     payload_triples = triples_for(subject_uri, fields)
@@ -128,10 +140,11 @@ def build_insert(name: str, endpoint_url: str, payload: dict) -> tuple[str, str]
 async def fetch_endpoint(
     name: str,
     endpoint_url: str,
+    network: str,
     client: httpx.AsyncClient,
     sem: asyncio.Semaphore,
-) -> tuple[str, str, dict[str, Any] | None, str | None]:
-    """Return (name, endpoint_url, payload_or_none, error_kind_or_none)."""
+) -> tuple[str, str, str, dict[str, Any] | None, str | None]:
+    """Return (name, endpoint_url, network, payload_or_none, error_kind_or_none)."""
     async with sem:
         try:
             resp = await client.get(endpoint_url, timeout=PER_ENDPOINT_TIMEOUT, follow_redirects=True)
@@ -139,50 +152,92 @@ async def fetch_endpoint(
             try:
                 payload = resp.json()
             except (json.JSONDecodeError, ValueError):
-                return name, endpoint_url, None, "invalid_json"
+                return name, endpoint_url, network, None, "invalid_json"
             if not isinstance(payload, dict):
-                return name, endpoint_url, None, "invalid_json"
-            return name, endpoint_url, payload, None
+                return name, endpoint_url, network, None, "invalid_json"
+            return name, endpoint_url, network, payload, None
         except httpx.HTTPError:
-            return name, endpoint_url, None, "fetch_failed"
+            return name, endpoint_url, network, None, "fetch_failed"
         except Exception:
-            return name, endpoint_url, None, "fetch_failed"
+            return name, endpoint_url, network, None, "fetch_failed"
 
 
-async def fetch_all(directory: dict[str, str]) -> list[tuple[str, str, dict[str, Any] | None, str | None]]:
+async def fetch_all(
+    entries: list[tuple[str, str, str]],
+) -> list[tuple[str, str, str, dict[str, Any] | None, str | None]]:
     sem = asyncio.Semaphore(FETCH_CONCURRENCY)
     async with httpx.AsyncClient(headers={"User-Agent": "MapsOfMaking-seed/1.0"}) as client:
-        tasks = [fetch_endpoint(name, url, client, sem) for name, url in directory.items()]
+        tasks = [fetch_endpoint(name, url, net, client, sem) for name, url, net in entries]
         return await asyncio.gather(*tasks)
 
 
-def fetch_directory() -> dict[str, str]:
-    log.info(f"Fetching directory: {DIRECTORY_URL}")
-    resp = httpx.get(DIRECTORY_URL, timeout=20.0)
-    resp.raise_for_status()
-    data = resp.json()
-    if not isinstance(data, dict):
-        raise RuntimeError(f"Unexpected directory format: {type(data).__name__}")
-    return {k: v for k, v in data.items() if isinstance(k, str) and isinstance(v, str)}
+def _normalize_list(data: Any, default_network: str) -> list[tuple[str, str, str]]:
+    """Accept either {name: url} or [{name, url, network?}, ...] and return
+    a list of (name, url, network) tuples."""
+    entries: list[tuple[str, str, str]] = []
+    if isinstance(data, dict):
+        for k, v in data.items():
+            if isinstance(k, str) and isinstance(v, str):
+                entries.append((k, v, default_network))
+        return entries
+    if isinstance(data, list):
+        for i, item in enumerate(data):
+            if not isinstance(item, dict):
+                log.warning(f"entry {i}: not an object, skipping")
+                continue
+            name = item.get("name")
+            url = item.get("url")
+            net = item.get("network") or default_network
+            if not (isinstance(name, str) and isinstance(url, str) and isinstance(net, str)):
+                log.warning(f"entry {i}: missing name/url, skipping")
+                continue
+            entries.append((name, url, net))
+        return entries
+    raise RuntimeError(f"Unexpected list format: {type(data).__name__}")
+
+
+def load_list(source: str, default_network: str) -> list[tuple[str, str, str]]:
+    """Load a list from an HTTP(S) URL or local file path."""
+    if source.startswith(("http://", "https://")):
+        log.info(f"Fetching list: {source}")
+        resp = httpx.get(source, timeout=20.0)
+        resp.raise_for_status()
+        data = resp.json()
+    else:
+        path = Path(source)
+        log.info(f"Loading list: {path}")
+        data = json.loads(path.read_text(encoding="utf-8"))
+    return _normalize_list(data, default_network)
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Seed Oxigraph from SpaceAPI federation directory")
+    parser = argparse.ArgumentParser(description="Seed Oxigraph from a SpaceAPI endpoint list")
+    parser.add_argument(
+        "--list",
+        dest="list_source",
+        default=DIRECTORY_URL,
+        help=f"List source: URL or local path (default: {DIRECTORY_URL})",
+    )
+    parser.add_argument(
+        "--network",
+        default=DEFAULT_NETWORK,
+        help=f"Network slug for filter chip + source tag (default: {DEFAULT_NETWORK})",
+    )
     parser.add_argument(
         "--force",
         action="store_true",
-        help="Overwrite existing spaceapi-sourced graphs (still skips coordinator-registered)",
+        help="Overwrite existing seeded graphs (still skips coordinator-registered)",
     )
     args = parser.parse_args()
 
     try:
-        directory = fetch_directory()
+        entries = load_list(args.list_source, args.network)
     except Exception as e:
-        log.error(f"Directory fetch failed: {e}")
+        log.error(f"List load failed: {e}")
         return 1
 
-    log.info(f"Directory has {len(directory)} entries — fetching with concurrency={FETCH_CONCURRENCY}")
-    results = asyncio.run(fetch_all(directory))
+    log.info(f"List has {len(entries)} entries — fetching with concurrency={FETCH_CONCURRENCY}")
+    results = asyncio.run(fetch_all(entries))
 
     counters = {
         "imported": 0,
@@ -197,7 +252,7 @@ def main() -> int:
     }
 
     with httpx.Client(timeout=15.0) as client:
-        for name, endpoint_url, payload, err in results:
+        for name, endpoint_url, network, payload, err in results:
             if err == "fetch_failed":
                 counters["fetch_failed"] += 1
                 continue
@@ -217,7 +272,7 @@ def main() -> int:
                 counters["no_geo"] += 1
                 continue
 
-            graph_uri, insert_query = build_insert(chosen_name, endpoint_url, payload)
+            graph_uri, insert_query = build_insert(chosen_name, endpoint_url, payload, network)
 
             try:
                 existing_source = graph_source(client, graph_uri)
@@ -230,7 +285,14 @@ def main() -> int:
                 counters["skipped_coordinator"] += 1
                 continue
 
-            if existing_source is not None:
+            # Cross-network protect: never overwrite a graph whose source tag was
+            # written by a different seeder (e.g. seed_bundle.py / scraped-vow).
+            current_tag = source_tag(args.network)
+            if existing_source is not None and existing_source != current_tag:
+                counters["skipped_existing"] += 1
+                continue
+
+            if existing_source == current_tag:
                 if not args.force:
                     counters["skipped_existing"] += 1
                     continue

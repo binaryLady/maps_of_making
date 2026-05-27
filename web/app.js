@@ -380,7 +380,7 @@
     const q = state.search.trim().toLowerCase();
     return state.spaces.filter((s) => {
       if (f.networks.size && !(s.network_memberships || []).some((n) => f.networks.has(n))) return false;
-      if (f.countries.size && !f.countries.has(s.country)) return false;
+      if (f.countries.size && !f.countries.has(s.country_code)) return false;
       if (f.statuses.size) {
         const tag = markerKind(s);
         if (!f.statuses.has(tag)) return false;
@@ -410,7 +410,7 @@
     // Networks
     const networks = unique(state.spaces.flatMap((s) => s.network_memberships))
       .map((n) => [n, n.split('/').pop().toUpperCase()]);
-    const countries = unique(state.spaces.map((s) => s.country));
+    const countries = unique(state.spaces.map((s) => s.country_code)).filter(Boolean);
     const statuses = ['seeded', 'confirmed', 'open', 'shut', 'unlinked', 'broken'];
     const specialties = unique(state.spaces.flatMap((s) => s.specialties)).sort();
 
@@ -452,13 +452,21 @@
 
   function chipMatches(selector, s, val) {
     if (selector === '#chips-network') return (s.network_memberships || []).includes(val);
-    if (selector === '#chips-country') return s.country === val;
+    if (selector === '#chips-country') return s.country_code === val;
     if (selector === '#chips-status') return markerKind(s) === val;
     if (selector === '#chips-spec') return (s.specialties || []).includes(val);
     return false;
   }
 
-  function countryLabel(c) { return c === 'FR' ? '🇫🇷 France' : c === 'DE' ? '🇩🇪 Germany' : c; }
+  const COUNTRY_LABELS = {
+    FR: '🇫🇷 France', DE: '🇩🇪 Germany', BE: '🇧🇪 Belgium', NL: '🇳🇱 Netherlands',
+    CH: '🇨🇭 Switzerland', AT: '🇦🇹 Austria', LU: '🇱🇺 Luxembourg',
+    GB: '🇬🇧 United Kingdom', IT: '🇮🇹 Italy', ES: '🇪🇸 Spain',
+    CZ: '🇨🇿 Czechia', PL: '🇵🇱 Poland', SI: '🇸🇮 Slovenia', RS: '🇷🇸 Serbia',
+    DK: '🇩🇰 Denmark', SE: '🇸🇪 Sweden', NO: '🇳🇴 Norway', FI: '🇫🇮 Finland',
+    'sol-3': '🌍 Sol-3',
+  };
+  function countryLabel(c) { return COUNTRY_LABELS[c] || c; }
 
   function unique(arr) { return Array.from(new Set(arr)); }
 
@@ -1195,6 +1203,14 @@
   }
 
   function wireUI() {
+    const logoEl = $('#logo-shortcut');
+    if (logoEl) {
+      const openMS = () => selectSpace('mother-sands', { fly: true });
+      logoEl.addEventListener('click', openMS);
+      logoEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openMS(); }
+      });
+    }
     $('#btn-filters').addEventListener('click', () => toggleDrawer('filters'));
     $('#btn-search').addEventListener('click', () => toggleDrawer('search'));
     $('#btn-preset').addEventListener('click', () => toggleDrawer('preset'));

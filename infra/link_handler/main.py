@@ -101,6 +101,44 @@ SELECT ?graph ?subject ?endpointUrl WHERE {
     return out
 
 
+async def _find_seeded_graph_by_name(oxigraph_endpoint: str, name: str) -> Optional[str]:
+    """Find a bundle-seeded graph (mom:source starts with 'scraped-') matching the
+    given space name (case-insensitive). Returns the graph URI or None.
+
+    Used by register_url to claim a Path B record in place when a coordinator
+    self-registers a SpaceAPI URL whose name matches a previously-seeded bundle
+    entry. Same URI → grey pin upgrades to live with no orphan record.
+    """
+    # Escape the name for safe literal inclusion.
+    safe = name.replace("\\", "\\\\").replace('"', '\\"')
+    sparql = f"""PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
+PREFIX schema: <https://schema.org/>
+SELECT ?graph WHERE {{
+  GRAPH ?graph {{
+    ?s schema:name ?n ;
+       mom:source ?src .
+    FILTER(LCASE(STR(?n)) = LCASE("{safe}"))
+    FILTER(STRSTARTS(STR(?src), "scraped-"))
+  }}
+}} LIMIT 1"""
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(
+                f"{oxigraph_endpoint}/query",
+                content=sparql,
+                headers={
+                    "Content-Type": "application/sparql-query",
+                    "Accept": "application/sparql-results+json",
+                },
+            )
+            resp.raise_for_status()
+    except httpx.HTTPError as e:
+        logger.warning("[register] claim-merge lookup failed for %r: %s", name, e)
+        return None
+    rows = resp.json().get("results", {}).get("bindings", [])
+    return rows[0]["graph"]["value"] if rows else None
+
+
 async def run_heartbeat_tick(oxigraph_endpoint: str) -> int:
     """Unified single tick: fetch every claimed space concurrently, then rematerialize once.
 
@@ -892,8 +930,19 @@ async def register_url(req: UrlRequest):
     slug = _slug(name)
     if not slug:
         raise HTTPException(status_code=422, detail={"error": "space name contains no ASCII-compatible characters; cannot generate a URI slug"})
-    graph_uri = f"urn:mak:space/{slug}"
-    space_uri = f"urn:mak:space/{slug}"
+
+    # Claim-merge: if a bundle-seeded graph (mom:source starts with "scraped-")
+    # exists with the same name, claim it in place — same URI, drop+reinsert as
+    # self-registered. Handles the VOW/RFF Path B → coordinator flow without
+    # needing to parse a city out of the SpaceAPI address string.
+    claimed_uri = await _find_seeded_graph_by_name(OXIGRAPH_ENDPOINT, name)
+    if claimed_uri:
+        logger.info("[register] claim-merge: %r matches seeded graph %s", name, claimed_uri)
+        graph_uri = claimed_uri
+        space_uri = claimed_uri
+    else:
+        graph_uri = f"urn:mak:space/{slug}"
+        space_uri = f"urn:mak:space/{slug}"
 
     cls: dict = {}
     reg_observed_at = mint_observed_at()

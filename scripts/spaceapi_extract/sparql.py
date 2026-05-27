@@ -16,7 +16,10 @@ XSD_DT = "http://www.w3.org/2001/XMLSchema#dateTime"
 XSD_BOOL = "http://www.w3.org/2001/XMLSchema#boolean"
 
 # CURIEs whose values are URL strings and must be emitted as SPARQL IRIs
-_IRI_PREDS = {"schema:url", "schema:logo", "mom:endpointUrl"}
+_IRI_PREDS = {"schema:url", "schema:logo", "mom:endpointUrl", "mom:profileUrl"}
+
+# CURIEs whose values are lists of URIs (multi-value, IRI-emitted, one triple each)
+_IRI_LIST_PREDS = {"mom:memberOf"}
 
 # CURIEs whose string values are ISO-8601 datetime and must carry ^^xsd:dateTime
 _DT_PREDS = {"mom:lastOpenChange", "mom:updatedAt", "mom:observedAt", "mom:lastFetched"}
@@ -85,6 +88,13 @@ def triples_for(subject_uri: str, fields: dict[str, Any]) -> list[str]:
                     out.append(
                         f"<{subject_uri}> <{pred_uri}> {escape_literal(str(item))} ."
                     )
+            continue
+
+        if curie in _IRI_LIST_PREDS:
+            items = val if isinstance(val, list) else [val]
+            for item in items:
+                if item:
+                    out.append(f"<{subject_uri}> <{pred_uri}> <{item}> .")
             continue
 
         if isinstance(val, bool):

@@ -18,19 +18,21 @@
     "irc": "#mothersands",
     "twitter": "@mothersands"
   },
+  "issue_report_channels": ["email"],
   "state": {
     "open": false,
     "lastchange": 1715000000,
     "message": "Canary nominal — all fishtems operational"
   },
-  "issue_report_channels": ["email"],
   "ext_mom": {
+    "memberOf": ["canary"],
     "canary": true,
     "simulatedAge": null,
     "thresholdMode": false
   },
   "ext_fab": {
     "space_type": "makerspace",
-    "equipment": ["tide-powered fabrication", "salt 3D-printer", "recycling metal-shop"]
+    "equipment": ["tide-powered fabrication", "salt 3D-printer", "recycling metal-shop"],
+    "sdgs": [9, 11, 12, 14, 17]
   }
 }

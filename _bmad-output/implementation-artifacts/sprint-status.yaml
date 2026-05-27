@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-01
-last_updated: "2026-05-20 (Story 3.10 review — pending operator visual confirmation)"
+last_updated: "2026-05-27 (Story 3.12 retro-recorded — seeding model + VPS ops pass done)"
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
@@ -132,7 +132,11 @@ development_status:
   3-9-materializer-three-tokens-geojson: done
   3-10-browser-lifecycle-buckets-canary-e2e: review
   3-11-unify-spaceapi-payload-extractor: done
+  3-12-seeding-model-vps-ops-pass: done
   epic-3.5-retrospective: optional
+
+# the underlying risk remains — main.py:_SPARQL_SELECT and scripts/materialize_geojson.py are still two hand-maintained copies of the same query.
+#  If that bites again, consolidating them into one shared module is the real fix.
 
   # Epic 4: Operator Observability Dashboard
   # Depends on Epic 3's snapshot output and status graph

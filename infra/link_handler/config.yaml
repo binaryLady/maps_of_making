@@ -14,7 +14,7 @@ bandwidth:
   # How many spaces to fetch concurrently per cycle. The cycle is network-bound;
   # parallel fetches cut a multi-minute sequential sweep to seconds. Bounded so we
   # don't open hundreds of sockets or overwhelm Oxigraph / the heartbeat sqlite.
-  heartbeat_concurrency: 8
+  heartbeat_concurrency: 24
   heartbeat_log_path: "/app/tasks/heartbeat_log.db"
   gap_log_path: "/app/tasks/gap_log.txt"
 
