@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-01
-last_updated: "2026-05-27 (Story 3.12 retro-recorded — seeding model + VPS ops pass done)"
+last_updated: "2026-05-28 (Epic 3.5 retrospective done — three-token model live, 3.10 closed, epic complete)"
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
@@ -124,16 +124,16 @@ development_status:
   # Second correct-course 2026-05-19: three-token model (observed_at/updated_at/lastOpenChange).
   # Story 3.8 (done, old model) superseded by 3.8b. Story 3.9 fully rewritten.
   # Each story gated by a real-seam test + operator visual confirmation. Blocks Epic 4.
-  epic-3.5: in-progress
+  epic-3.5: done
   3-6-walking-skeleton-observed-at-end-to-end: done
   3-7-heartbeat-log-observed-at-fetch-status: done
   3-8-transformer-emits-mom-observedat: done  # old model — superseded by 3-8b
   3-8b-corrected-token-model: done
   3-9-materializer-three-tokens-geojson: done
-  3-10-browser-lifecycle-buckets-canary-e2e: review
+  3-10-browser-lifecycle-buckets-canary-e2e: done
   3-11-unify-spaceapi-payload-extractor: done
   3-12-seeding-model-vps-ops-pass: done
-  epic-3.5-retrospective: optional
+  epic-3.5-retrospective: done
 
 # the underlying risk remains — main.py:_SPARQL_SELECT and scripts/materialize_geojson.py are still two hand-maintained copies of the same query.
 #  If that bites again, consolidating them into one shared module is the real fix.

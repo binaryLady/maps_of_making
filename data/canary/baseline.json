@@ -25,7 +25,7 @@
     "message": "Canary nominal — all fishtems operational"
   },
   "ext_mom": {
-    "memberOf": ["canary"],
+    "memberOf": ["canary","vulca"],
     "canary": true,
     "simulatedAge": null,
     "thresholdMode": false

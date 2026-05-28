@@ -1,6 +1,6 @@
 # Story 3.10: Browser Computes Three Axes Live — Canary Demo
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
