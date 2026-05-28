@@ -165,8 +165,8 @@ Phase 1 (map SPA, deployed at mapofmaking.debarquin.eu) is shipped. The epic/sto
 - AR-INF5: Manual deploy for PoC (`git pull && docker compose up -d --build`); GitHub Actions deferred to pilot.
 
 **Data Architecture (ADR-006, ADR-007, core decisions):**
-- AR-DATA1: Oxigraph named graph topology — `<urn:mak:space/{id}>` (current), `<urn:mak:space/{id}/{date}>` (snapshots, append-only), `<urn:mak:status>` (materialized freshness), `<urn:mak:presence>` (webhook open-now), `<urn:mak:notifications>` (queue), `<urn:mak:ontology/iop>`, `<urn:mak:ontology/mom>`.
-- AR-DATA2: Freshness materialization — scheduler writes status triples (confirmed/aging/zombie/dead/error) on change; map queries filter `mom:visibility`; admin toggle overlays `mom:operationalState`. Lifecycle 30d/90d/180d configurable. **LOD note:** state values are `xsd:string` literals (`"confirmed"`, `"seeded"`, etc.) — deliberate 4-star LOD choice. Earlier drafts used `mak:confirmed` etc. as RDF IRIs (5-star upgrade path, deferred). Do not reintroduce IRI-style values without first defining them as `skos:Concept` entries in `mom.ttl`.
+- AR-DATA1: Oxigraph named graph topology — `<urn:mak:space/{id}>` (current per-space), `<urn:mak:canary/{id}>` (canary per-space), `<urn:mak:presence>` (webhook open-now, reserved), `<urn:mak:notifications>` (queue), `<urn:mak:ontology/iop>`, `<urn:mak:ontology/mom>`. **Epic 3.5 supersedes (2026-05-28):** `<urn:mak:status>` materialized-freshness graph was never built; freshness now lives in `snapshot_store.db` (Axis A) + per-space graphs (`mom:updatedAt` Axis B, `mom:lastOpenChange` Axis C); `<urn:mak:space/{id}/{date}>` per-date snapshot graphs were replaced by SQLite snapshot rows.
+- AR-DATA2: Freshness materialization — **Epic 3.5 supersedes (2026-05-28):** storage holds raw tokens only (three-token contract); derived state (`endpointHealth`, `operationalState`, marker colour, aging/zombie/dead bucket) is computed in the browser from a `thresholds` block in the GeoJSON header. Do not reintroduce stored derived columns. Lifecycle 30d/90d/180d thresholds still configurable, now in `config.yaml.thresholds`. **LOD note:** state values are `xsd:string` literals (`"confirmed"`, `"seeded"`, etc.) — deliberate 4-star LOD choice. Earlier drafts used `mak:confirmed` etc. as RDF IRIs (5-star upgrade path, deferred). Do not reintroduce IRI-style values without first defining them as `skos:Concept` entries in `mom.ttl`.
 - AR-DATA3: Presence graph reserved now for "open-now" webhook; handler implemented late Phase 2.
 - AR-DATA4: MOM ontology align-and-extend — Schema.org base + IoP `skos:closeMatch` + `mom:` extensions. Canonical IRI `https://w3id.org/maps-of-making/` → GitHub Pages.
 - AR-DATA5: IoP ontology loaded at harness startup into dedicated named graph; ~15–20% subset extracted via CONSTRUCT, cached in memory, injected into every NL→SPARQL prompt. `RELOAD_ONTOLOGY=1` forces reload.
@@ -345,13 +345,13 @@ A coordinator pastes their JSON-LD endpoint URL, sees live validation feedback (
 ---
 
 ### Epic 4: Operator Observability Dashboard
-Nicolas (MOM operator) opens `/admin`, reads system health at a glance (Oxigraph status, ingestion process, spaces reachable count), scans the space registry table for failures, drills into any space for a raw/ingested/displayed side-by-side inspection panel. This is infrastructure observability for the pipeline operator — not a network coordinator view (Luca uses the public health map toggle, no auth required).
+Nicolas (MOM operator) opens `/admin`, reads system health at a glance (Oxigraph status, ingestion process, spaces reachable count), scans the space registry table for failures, drills into any space for a raw/ingested/displayed side-by-side inspection panel. This is infrastructure observability for the pipeline operator — not a network coordinator view (Luca uses the public health map toggle, no auth required). **Replanned 2026-05-28 against post-Epic-3.5 data sources** (`snapshot_store.db` + per-space Oxigraph graphs + browser-computed axes); supersedes the original Story 4.1–4.4 ACs that targeted the `urn:mak:status` graph and `/data/snapshots/*.json` disk artifacts (neither of which was ever built).
 
-**Depends on:** Epic 3's raw snapshot-to-disk output and status graph. Epic 4 is a consumer, not a builder, of the pipeline.
+**Depends on:** Epic 3.5's `snapshot_store.db` (Axis A + last payload), per-space `urn:mak:space/*` + `urn:mak:canary` Oxigraph graphs (Axes B & C), browser-side `computeAxisA/B/C/Marker` for derived state. Epic 4 is a consumer, not a builder, of the pipeline. **Blocked-by prep:** Story 4.0 (materializer consolidation + `mom:seededAt` verification + `pill_2_stalled_after_seconds` config).
 
 **FRs:** FR28–FR33b, FR43
 **NFRs:** NFR-S1, NFR-S4, NFR-S6, NFR-O1, NFR-O2, NFR-P5
-**ARs:** AR-INF2 (admin subdomain + auth), AR-METR1 (/metrics endpoint read), ADR-015 (raw snapshot disk path)
+**ARs:** AR-INF2 (admin subdomain + auth), AR-METR1 (/metrics endpoint read), ADR-A (ingestion-health signal), ADR-B (inspection-panel backend = DESCRIBE + snapshot blob + production renderer); supersedes ADR-015 (raw snapshot disk path — never built; snapshot blob lives in `snapshot_store.db`)
 
 ---
 
@@ -743,6 +743,15 @@ So that I can trust what the map shows me and know exactly what to improve in my
 ## Epic 3: Ingestion Pipeline + Endpoint Health + Stale Detection
 
 *(Prerequisite for Epic 4 — must ship before operator dashboard stories begin)*
+
+> ⚠️ **The shipped shape differs from the ACs below (Epic 3.5 correct-course, 2026-05-28).**
+> Stories 3.0–3.5 shipped roughly as specified. Stories 3.6–3.12 (Epic 3.5) replaced the rest:
+> - Raw snapshots live in **`infra/link_handler/snapshot_store.db`** (SQLite payload blob), not `/data/snapshots/{id}/latest.json` on disk.
+> - The fetch/transform entry point is **`space_pipeline.run_space_pipeline()`** (Story 3.11 unified path). **`tasks/heartbeat.py` is deleted.**
+> - There is no `<urn:mak:status>` materialized graph and no `mak:probeResult` predicate. Freshness lives in three tokens: `observed_at` (SQLite, Axis A), `mom:updatedAt` (Oxigraph, Axis B), `mom:lastOpenChange` (Oxigraph, Axis C).
+> - Derived state (endpoint health buckets, marker colour) is computed in the browser, not stored.
+>
+> Canonical post-3.5 contract: Epic 3.5 retro (`_bmad-output/implementation-artifacts/epic-3.5-retro-2026-05-28.md`) + Epic 4 §replan above. Treat ACs in 3.0–3.4 below as historical; do not use 3.0–3.4 ACs as the spec for new code touching the ingestion pipeline.
 
 The full ingestion pipeline becomes real: SpaceAPI JSON fetched from space endpoints, raw snapshot written to disk before any transformation, then transformed to MOM JSON-LD via the explicit ontology mapping layer (ADR-015), and ingested into Oxigraph. Heartbeat scheduler runs the full 6h cycle producing the status graph Epic 4 reads from. Magic-link coordinator recovery is a separate parallel epic (4b).
 
@@ -1186,17 +1195,47 @@ done-condition, demonstrated live to Nicolas.
 
 ## Epic 4: Operator Observability Dashboard
 
-Nicolas (MOM infrastructure operator) opens `/admin`, reads system health at a glance (Oxigraph status, ingestion process, reachable count), scans the space registry table for failures, and drills into any space for a raw/ingested/displayed inspection panel. This is pipeline observability — the tool that proves the system isn't lying. Luca (VOW) uses the public health map toggle; no admin access needed.
+Nicolas (MOM infrastructure operator) opens `/admin`, reads system health at a glance (Oxigraph live, ingestion cycling, spaces reachable), scans the space registry table for failures, and drills into any space for a RAW / INGESTED / DISPLAYED inspection panel that surfaces structural mismatches between layers. This is pipeline observability — the tool that proves the system isn't lying. Luca (VOW) uses the public health map toggle; no admin access needed.
 
-**Auth:** shared password from `.env` via nginx basic auth (FR43, NFR-S1). No login UI to build.
-**Depends on:** Epic 3 raw snapshots at `/data/snapshots/{id}/latest.json` and `<urn:mak:status>` graph.
+**Replanned 2026-05-28** against post-Epic-3.5 data sources. Original ACs targeted `<urn:mak:status>` + `mak:probeResult` + `/data/snapshots/{id}/latest.json` on disk + a heartbeat marker file — none of which were ever built. Epic 3.5 replaced them with `snapshot_store.db` (Axis A + last payload blob), per-space Oxigraph graphs carrying `mom:updatedAt` (Axis B) + `mom:lastOpenChange` (Axis C), and browser-side `computeAxisA/B/C/Marker` from a thresholds header. This Epic consumes those.
+
+**Auth:** shared password from `.env` via nginx basic auth (FR43, NFR-S1). No login UI to build. Admin nginx routing (Story 4.0-foundation) is already live.
+
+**Depends on:**
+- `snapshot_store.db` — Axis A (`observed_at`), `fetch_status`, raw payload blob via `read_snapshot(uid)` (`infra/link_handler/snapshot_store.py:78`).
+- Per-space Oxigraph graphs (`<urn:mak:space/{id}>`, `<urn:mak:canary/{id}>`) — Axes B & C, metadata.
+- Browser `computeAxisA/B/C/Marker` from `web/app.js` — production rendering path (Story 3.10 pattern).
+- `space_pipeline.run_space_pipeline()` (Story 3.11 unified path) — re-probe trigger. `tasks/heartbeat.py` is deleted.
+
+**Blocked by prep work (Story 4.0):** materializer consolidation; `mom:seededAt` write verification; `pill_2_stalled_after_seconds` config addition. See Story 4.0 below.
+
+**Locked principle (no PII filtering):** MoM is IPO over public coordinator endpoints. Per `[[feedback_no_pii_filtering]]` and Epic 3.5 hardening: the dashboard renders endpoint payloads verbatim. No redaction, no PII flags, no "sensitive" warnings. Coordinator authority is absolute. This is the foundation of Zone 3 trust.
+
+---
+
+### Story 4.0: Epic 4 Prep — Consolidate Materializers, Verify Seed Tokens, Add Stall Threshold
+
+As the MOM developer,
+I want the three blocking dependencies surfaced in the Epic 3.5 retro resolved before Story 4.1 begins,
+So that Stories 4.1–4.4 can be written against a clean substrate without conditional sub-columns or precursor patches.
+
+**Acceptance Criteria:**
+
+**Given** the Epic 3.5 retro's critical-path #2 and three blocking dependencies
+**When** Story 4.0 lands
+**Then** (a) **Materializer consolidation:** `_SPARQL_SELECT` (`infra/link_handler/main.py`) and `SPARQL_QUERY` (`scripts/materialize_geojson.py`) are extracted into one shared module exporting `build_select_sparql()`, `binding_to_feature()`, `bundle_field_set()`. Both call sites import from the shared module; `grep -rn "_SPARQL_SELECT\|SPARQL_QUERY" infra/ scripts/` returns exactly one definition site.
+**And** (b) **`mom:seededAt` verification:** the Story 3.12 seed pipeline (Paths A and B) writes `mom:seededAt` xsd:dateTime when seeding a space. Verified on a fresh `make publish` against `vow` and `rff` bundles by `ASK { GRAPH ?g { ?s mom:seededAt ?t } }` returning true for each seeded space. If missing, this AC adds it.
+**And** (c) **`pill_2_stalled_after_seconds` config:** `config.yaml.thresholds.pill_2_stalled_after_seconds` exists with a sensible default (e.g. `heartbeat_interval × 3`). Loaded by `_load_thresholds_from_config` and surfaced in the GeoJSON header.
+**And** the canary three-axis E2E test (`test_canary_three_axis_e2e`) still passes byte-identically after consolidation.
+
+**Out of scope:** the legacy `_build_sparql_update` error-path fallback in `main.py:787` (separate deferred-work item; not blocking Epic 4).
 
 ---
 
 ### Story 4.1: System Health Strip — Three Status Pills
 
 As the MOM operator,
-I want to open `/admin` and immediately see whether Oxigraph is up, the ingestion process is running, and how many spaces are reachable,
+I want to open `/admin` and immediately see whether Oxigraph is up, the ingestion process is cycling, and how many spaces are reachable,
 So that I can read the system state in under 5 seconds and know whether anything needs attention.
 
 **Acceptance Criteria:**
@@ -1204,41 +1243,52 @@ So that I can read the system state in under 5 seconds and know whether anything
 **Given** the admin subdomain is open and the shared password has been entered
 **When** `admin.html` loads
 **Then** a FastAPI endpoint `GET /admin/api/status` is called, assembling:
-  - Oxigraph health: `ASK {}` query via `sparql_client.run_select()` → LIVE (green) / DOWN (red)
-  - Ingestion heartbeat: last-modified timestamp on a heartbeat marker file written by the scheduler after each cycle → RUNNING (green) / IDLE Nh (amber, N = hours since last run) / STALLED (red, > configured threshold)
-  - Spaces reachable: count of spaces with `mak:probeResult "ok"` vs total in `<urn:mak:status>` → "603 / 606" (green if ratio above threshold, amber otherwise)
-**And** three status pills are rendered at the top of the page: `● Oxigraph LIVE · ● Ingestion IDLE (4h) · ● Spaces reachable 603/606`
+  - **Oxigraph live:** `ASK {}` query via `sparql_client.run_select()` → LIVE (green) / DOWN (red).
+  - **Ingestion cycling (ADR-A):** `MAX(observed_at)` over `snapshot_store.db` vs `now − config.yaml.thresholds.pill_2_stalled_after_seconds` → RUNNING (green) / IDLE Nm (amber) / STALLED (red). **No heartbeat marker file.** The snapshot store IS the heartbeat trace.
+  - **Spaces reachable:** `COUNT(fetch_status='ok') / COUNT(*)` over the latest snapshot per space in `snapshot_store.db` → "603 / 606" (green above threshold, amber otherwise). **No `urn:mak:status`, no `mak:probeResult`.** One SQL query serves Pill 2 and Pill 3.
+**And** three status pills are rendered at the top of the page: `● Oxigraph LIVE · ● Ingestion RUNNING · ● Spaces reachable 603/606`
 **And** a "Last checked: N minutes ago" timestamp shows when `/admin/api/status` last ran (auto-refreshes every 60s without full page reload)
-**And** if Oxigraph is DOWN, the pill is red and all other data on the page shows "— unavailable" rather than stale/incorrect data
-**And** all data is operational metrics only — no raw endpoint payloads, no coordinator identifiers beyond what's public on the map (NFR-S6)
+**And** if Oxigraph is DOWN, its pill is red and all other data on the page shows "— unavailable" rather than stale/incorrect data
+**And** all data is operational metrics only — no raw endpoint payloads (NFR-S6, aggregation-grounds defense — mass export across the registry enables surveillance the individual public endpoints don't)
+**And** **diagnostic disambiguation rendered inline** (per ADR-A consequences): if Pill 3 = 0/N AND Pill 2 STALLED → strip displays "scheduler dead"; if Pill 3 = 0/N AND Pill 2 fresh → strip displays "scheduler alive, network/upstream broken". Operator distinguishes without log-diving.
 
 ---
 
 ### Story 4.2: Space Registry Table
 
 As the MOM operator,
-I want a table of all registered spaces with their endpoint URL, last probe timestamp, and probe result,
+I want a table of all registered spaces showing freshness on two independent axes plus a combined worst-of-three badge, sortable by stalest first,
 So that I can scan for failures at a glance and click into any space that needs investigation.
 
 **Acceptance Criteria:**
 
-**Given** the system health strip is loaded (Story 4.1) and `<urn:mak:status>` contains space probe records
+**Given** the system health strip is loaded (Story 4.1) AND `snapshot_store.db` has snapshots AND per-space `urn:mak:space/{id}` graphs exist
 **When** the admin page renders below the health strip
-**Then** a SPARQL SELECT over `<urn:mak:status>` builds a table with columns: space name, endpoint URL, last probe timestamp, probe result (HTTP status or error category)
-**And** rows with non-200 probe results have a muted red background — the only colour used to signal failure
-**And** the table is sortable by last probe timestamp (default: most recently failed first) and by probe result
+**Then** a join of `snapshot_store.db` (latest snapshot per space) ⋈ per-space Oxigraph graphs builds a table with columns:
+  - Space name
+  - Endpoint URL
+  - `observed_at` (Axis A — last fetch time)
+  - `fetch_status` (`ok` / `not_modified` / `unreachable`)
+  - `updated_at` (Axis B — last content change)
+  - `open_now` / `last_open_change` (Axis C — dynamic state)
+  - **Browser-computed worst-of-three axis badge** per row (matches Story 3.10's `computeMarker()` pattern — single visual signal collapsing three axes)
+**And** rows whose worst-of-three axis badge is `aging` / `zombie` / `dead` have a muted red background — the only colour used to signal failure
+**And** **seeded-only rows** (no snapshot row exists; space entered the registry via Story 3.12 seed pipeline) show axis badge `seeded` (grey), **not** `unreachable` — these are first-class, not edge case (566+ VOW spaces and future bulk seeds)
+**And** the table is sortable by `observed_at` (default: stalest first), `updated_at`, `fetch_status`, and axis badge
 **And** a text filter input narrows rows by space name or endpoint URL substring (client-side, no re-query)
 **And** each row is clickable, opening the inspection panel (Story 4.3)
-**And** a "Re-probe now" button per row triggers an immediate `tasks/heartbeat.py` fetch for that space, shows a spinner, and refreshes the row result on completion (FR31)
+**And** a "Re-probe now" button per row triggers `space_pipeline.run_space_pipeline()` (Story 3.11 unified path; `tasks/heartbeat.py` is deleted), shows a spinner, and refreshes the row on completion (FR31)
 **And** the re-probe action is written to the operator action log: `{ action: "reprobe_triggered", space_uri, timestamp }` (FR33b)
 
 ---
 
-### Story 4.3: Per-Space Inspection Panel — Raw / Ingested / Displayed
+### Story 4.3: Per-Space Inspection Panel — RAW / INGESTED / DISPLAYED
 
 As the MOM operator,
-I want to click a space and see three columns side-by-side: the raw JSON from the last fetch, the ingested triples from Oxigraph, and what actually renders on the public card,
+I want to click a space and see three columns side-by-side — the raw snapshot payload, the ingested triples from Oxigraph, and what actually renders on the public card — with inline mismatch flags between layers,
 So that I can identify exactly where a discrepancy enters the pipeline without grepping logs.
+
+**Backend shape (ADR-B / B2):** RAW reads the snapshot store payload blob; INGESTED runs `SPARQL DESCRIBE`; DISPLAYED calls the production `_binding_to_feature()` from the consolidated materializer module (Story 4.0) plus browser `computeAxisA/B/C/Marker`. This is the only shape that gives production-rendering equivalence in DISPLAYED — the panel cannot prove the rendering pipeline isn't lying if DISPLAYED runs a parallel re-implementation.
 
 **Acceptance Criteria:**
 
@@ -1246,47 +1296,81 @@ So that I can identify exactly where a discrepancy enters the pipeline without g
 **When** the operator clicks a space row
 **Then** an inspection panel opens (right drawer or accordion below the row) with three columns:
 
-**Column 1 — RAW FETCH:**
-- Reads `/data/snapshots/{space_id}/latest.json` from disk (written by Epic 3 pipeline)
-- Displays raw JSON in a monospaced block with fetch timestamp and endpoint URL
-- Shows fetch status: "responded" or "unreachable (last known {timestamp})"
-- This is the Zone 3 source of truth — verbatim, unmodified
+**Column 1 — RAW:**
+- Reads `snapshot_store.db.payload` blob via `read_snapshot(uid)` (`infra/link_handler/snapshot_store.py:78`). **No disk artifact at `/data/snapshots/{id}/latest.json`** (never built).
+- Displays raw JSON in a monospaced block with `observed_at` and endpoint URL.
+- **RAW status — three first-class states:** (a) `responded`; (b) `unreachable (last known {observed_at})`; (c) **`seeded-only (bundle: {name}, seeded at: {mom:seededAt})`** — depends on Story 4.0 AC (b).
+- RAW renders the payload **byte-identical**. No redaction, no PII flags, no "sensitive" warnings. The panel is a window onto what the coordinator publishes. (Per `[[feedback_no_pii_filtering]]` — locked principle.)
+- This is the Zone 3 source of truth — verbatim, unmodified.
 
 **Column 2 — INGESTED:**
-- Runs `SPARQL DESCRIBE <urn:mak:space/{id}>` via `/sparql/query`
-- Displays the result as a readable key→value list (not raw Turtle): predicate label → value
-- Shows triple count and last-ingested timestamp
+- Runs `SPARQL DESCRIBE <urn:mak:space/{id}>` via `/sparql/query` (schema-agnostic; grows with the bundle).
+- Displays as a readable key→value list grouped by predicate prefix (`mom:` / `schema:` / `mak:` / `ext_fab:`); non-`mom:` groups collapsed by default behind a `<details>` toggle.
+- Shows triple count and last-ingested timestamp (`mom:updatedAt`).
 
-**Column 3 — CARD DISPLAY:**
-- Runs a SELECT query fetching the exact fields used by `app.js` to render a space card
-- Displays as a mini card preview: name, address, status, hours, specialties
-- Any field absent from the card but present in Column 1 is flagged with ⚠ "not displayed"
+**Column 3 — DISPLAYED:**
+- Calls production `_binding_to_feature()` from the consolidated materializer module (Story 4.0 critical-path #2) + browser `computeAxisA/B/C/Marker`. Production-rendering equivalence per ADR-B.
+- Renders as a mini card preview: name, address, status, hours, specialties — plus the computed three-axis badges.
 
-**And** mismatches between Column 1 and Column 2 (fields present in raw JSON but absent from ingested triples) are flagged with ⚠ inline — these signal transformation gaps in `tasks/ingest.py`
-**And** mismatches between Column 2 and Column 3 (triples ingested but not rendered) are flagged with ⚠ inline — these signal display mapping gaps in `app.js`
-**And** the panel is the primary diagnostic tool — no raw log access, no SSH required to diagnose a pipeline discrepancy
-**And** for spaces in terminal state (`operationalState = closed` or `dead`), the panel shows `mom:deathReason` with its value (`closed` = coordinator-declared, `dead` = auto-inferred from lifecycle) — this field is the prerequisite for the `mak:public_ledger` death event writer: the writer must emit `mom:deathReason` as part of the dag-json tombstone record pushed to IPFS (ledger writer is a dependency of this story, not in scope here — tracked as deferred work)
+**Mismatch detection (six structural classes, inline ⚠ flags):**
+- **(a) Serialization audit (Axis A):** snapshot row `observed_at` == GeoJSON feature `observed_at`. Catches materializer dropping/mangling the token.
+- **(b) Config audit:** GeoJSON header `thresholds` == `config.yaml.thresholds`. Catches stale-config-in-shipped-file.
+- **(c) Browser liveness:** displayed age tracks DB age within tolerance. The only real liveness check.
+- **(d) Cross-source temporal invariant:** `mom:updatedAt` ≤ `observed_at` (Story 3.8b guarantees `updated_at` only writes on 200-with-diff; the gap is the content-stale window). Catches transformer bugs that stamp `updated_at` outside the contract.
+- **(e) RAW → INGESTED gap:** payload field present, no triple in DESCRIBE → `spaceapi_extract` extractor bug (Story 3.11 unified library).
+- **(f) INGESTED → DISPLAYED gap:** triple in DESCRIBE, not in `_binding_to_feature()` output → materializer drift (depends on Story 4.0 critical-path #2).
+
+**And** the panel is the primary diagnostic tool — no raw log access, no SSH required to diagnose a pipeline discrepancy.
+**And** for spaces in terminal state (`closed` / `dead`), the panel **recomputes** death classification from `mom:lastOpenChange` + threshold breach (self-validating) and shows both the derived classification AND the triggering tokens so the operator can audit the derivation. `mom:deathReason` is rendered from DESCRIBE if present. (Ledger writer for `mak:public_ledger` dag-json tombstone records remains a separate dependency — out of scope here.)
+**And** **no "download as JSON" affordance** on the panel — read-only diagnostic surface (aggregation-defense + IPO principle; operators screenshot if needed).
+**And** **latency budget:** INGESTED + DISPLAYED ≤ 500ms combined; RAW bounded by payload size.
+**And** **seeded-only state is a first-class diagnostic surface:** when RAW state is `seeded-only`, INGESTED shows DESCRIBE of bundle metadata (no `mom:updatedAt`), DISPLAYED shows the seeded grey pin, and the panel cross-links to the Epic 4-b claim/registration flow ("awaiting claim"). Recorded as deferred-work link from Story 4.3 → Epic 4-b; B2 backend stays unchanged.
+**And** (conditional, only if Story 4.0 critical-path #2 lands partial) DISPLAYED has two sub-columns "as `main.py` renders" / "as `scripts/materialize_geojson.py` renders"; byte-identical post-consolidation (hide one); divergence becomes a seventh mismatch class. **Drop this AC once Story 4.0's grep-one-definition-site check passes.**
 
 ---
 
 ### Story 4.4: Export Registry + Operator Action Log
 
 As the MOM operator,
-I want to export the space registry and review a log of all operator actions taken through the dashboard,
-So that I can produce a dataset snapshot and audit what was done manually.
+I want to export the space registry against the three-token shape and review a log of all operator actions taken through the dashboard,
+So that I can produce a dataset snapshot a downstream consumer can replay axis computation against, and audit what was done manually.
 
 **Acceptance Criteria:**
 
 **Given** the admin dashboard is loaded
 **When** the operator clicks "Export registry"
-**Then** a SPARQL SELECT queries all spaces and returns: space name, URI, endpoint URL, status, last probe timestamp, probe result — exported as CSV and JSON download options (FR33)
-**And** the export excludes: raw endpoint payloads, coordinator contact details not already public on the map (NFR-S6)
+**Then** a join of `snapshot_store.db` ⋈ per-space Oxigraph graphs returns, per space: name, URI, endpoint URL, `observed_at`, `fetch_status`, `updated_at`, `last_open_change`, `open_now`, and the browser-computable axis-A/B/C states — exported as CSV and JSON download options (FR33). A downstream consumer carrying the thresholds header can replay axis computation deterministically.
+**And** the export excludes raw endpoint payloads on **aggregation grounds** (NFR-S6 — mass export across the registry enables surveillance that the individual public endpoints, accessed one at a time, don't). **This is not a PII defense.** The "coordinator contact details not already public on the map" clause is dropped: MoM does not edit what coordinators publish; coordinator authority is absolute.
 
 **Given** the operator action log section is open
 **When** the operator views it
-**Then** it displays a reverse-chronological list: timestamp, action type (reprobe_triggered / export_downloaded), space URI or "all", result (FR33b)
-**And** the log is append-only — no delete, no edit
+**Then** it displays a reverse-chronological list: timestamp, action type (`reprobe_triggered` / `export_downloaded`), space URI or "all", result (FR33b)
+**And** the log is append-only — no delete, no edit (matches `[[project_three_graph_model]]` ledger pattern)
 **And** the export action itself is recorded: `{ action: "export_downloaded", format, space_count, timestamp }`
+
+---
+
+### Story 4.5: Admin Delete Space
+
+As the MOM operator,
+I want a per-row "Delete" action in the space registry table that fully removes a space from Oxigraph and the snapshot store,
+So that test fixtures, broken self-registrations, and obsolete entries can be cleaned out without SSH or hand-written SPARQL. *(Deferred from Story 2.2 — test fixtures like `herberts-lab` accumulate in Oxigraph with no removal path.)*
+
+**Acceptance Criteria:**
+
+**Given** the space registry table is rendered (Story 4.2) and the operator is authenticated via the shared admin password
+**When** the operator clicks "Delete" on a row
+**Then** a confirmation dialog displays the space name, URI, endpoint URL, and `observed_at` so the operator confirms they're targeting the right row
+**And** confirming triggers `DELETE /api/admin/space/{slug}` on `mak-link-handler`, which:
+  - Runs `DROP GRAPH <urn:mak:space/{slug}>` against Oxigraph.
+  - Runs `DROP SILENT GRAPH <urn:mak:canary/{slug}>` (no-op for non-canary spaces; covers the Mother Sands cleanup case).
+  - Deletes all rows for `{slug}` from `snapshot_store.db`.
+  - Triggers a rematerialization so the public map no longer shows the pin.
+**And** the deletion is written to the operator action log: `{ action: "space_deleted", space_uri, space_name, observed_at_at_deletion, timestamp }` (FR33b) — append-only per Story 4.4 (no undo through the UI; restore requires re-seeding or re-registering)
+**And** **canary spaces** (Mother Sands / Unit M) are protected: the API returns `409 Conflict` if `{slug}` matches the configured canary slug, and the UI hides the Delete button for that row — the canary is operationally load-bearing
+**And** **seeded-only rows** can be deleted (566+ VOW spaces include some bad-data rows the operator may want to prune); the action log captures the bundle source from `mom:seededAt` provenance so a re-seed can restore intentionally
+**And** the endpoint is gated by the existing `/admin` nginx basic-auth (no separate auth layer)
+**And** rate-limiting: at most one delete per second per session (defensive — prevents an accidental click-storm from cascading)
 
 ---
 

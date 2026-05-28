@@ -20,6 +20,19 @@ editHistory:
 
 _This document builds collaboratively through step-by-step discovery. Sections are appended as we work through each architectural decision together._
 
+> ## ⚠️ EPIC 3.5 SUPERSEDES PARTS OF THIS DOCUMENT (2026-05-28)
+>
+> The Phase-2 pipeline described here (`tasks/heartbeat.py` writing raw JSON to `/data/snapshots/{id}/latest.json` on disk, materializing freshness triples into `<urn:mak:status>` with `mak:probeResult`, heartbeat marker file) **was never built and will not be**. Epic 3.5 (retro: `_bmad-output/implementation-artifacts/epic-3.5-retro-2026-05-28.md`) replaced it with a three-token contract:
+>
+> - **Axis A (`observed_at`)** lives in **`infra/link_handler/snapshot_store.db`** (SQLite). The snapshot store also holds the **raw payload blob** — there is no on-disk `/data/snapshots/*.json` artifact.
+> - **Axis B (`mom:updatedAt`)** + **Axis C (`mom:lastOpenChange`)** live in per-space Oxigraph graphs `<urn:mak:space/{id}>` / `<urn:mak:canary/{id}>`.
+> - **Ingestion entry point** is `space_pipeline.run_space_pipeline()` (Story 3.11 unified path). `tasks/heartbeat.py` is **deleted**.
+> - **Derived state** (`endpointHealth`, `operationalState`, marker colour) is computed **in the browser** from raw tokens + a `thresholds` block shipped in the GeoJSON header. Storage holds facts; consumption layers compute buckets.
+>
+> Affected stale sections below: L180 (axis vocabulary), L310 (`tasks/heartbeat.py`), L468/L513 (snapshot disk path), L631 (`<urn:mak:status>` in graph table), L921–922 (FR-mapping `tasks/heartbeat.py` / `/data/snapshots/`), L1000–1015 + L1042–1044 (stage diagrams). **ADR-015 (raw snapshot to disk) is superseded.**
+>
+> Canonical post-3.5 specs live in `epics.md` §Epic 4 (replanned 2026-05-28) and the Epic 3.5 retro. Treat sections below as historical context unless updated.
+
 ---
 
 ## Project Context Analysis

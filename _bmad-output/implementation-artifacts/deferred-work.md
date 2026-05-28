@@ -202,7 +202,7 @@ The space's declared specialties: AI systems, linked open data, geography/cartog
 
 ## Deferred from: Story 2.2 — Detail Drawer (2026-04-26)
 
-- **Admin: delete test/self-registered spaces** — No way to remove a space once registered. Test fixtures (e.g. `herberts-lab`) accumulate in Oxigraph. Cleanup requires `DROP GRAPH <urn:mak:space/{slug}>` plus `DROP SILENT` over snapshot graphs `urn:mak:space/{slug}/{YYYY-MM-DD}`, then rematerialize. Implement as admin row action: `DELETE /api/admin/space/{slug}` on `mak-link-handler`, gated by basic-auth at `/admin` (already wired in `infra/nginx/conf.d/app.conf:93`). → Story 4.5 (audit log) or new Story 4.6.
+- ~~**Admin: delete test/self-registered spaces**~~ → **Folded into Story 4.5 (Admin Delete Space), Epic 4 replan 2026-05-28.** ACs cover Oxigraph `DROP GRAPH` for space + canary, `snapshot_store.db` row delete, rematerialize, canary-slug protection, action-log entry. See `epics.md` §Story 4.5.
 
 ## Deferred from: SKILL.md dual-validator exercise (2026-04-28)
 
