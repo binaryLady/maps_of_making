@@ -81,6 +81,12 @@ def triples_for(subject_uri: str, fields: dict[str, Any]) -> list[str]:
                     )
             continue
 
+        if curie == "mom:sdgs":
+            items = val if isinstance(val, list) else [val]
+            for item in items:
+                out.append(f"<{subject_uri}> <{pred_uri}> {int(item)} .")
+            continue
+
         if curie == "schema:knowsAbout":
             items = val if isinstance(val, list) else [val]
             for item in items:

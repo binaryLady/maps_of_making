@@ -753,13 +753,13 @@ async def _rematerialize_geojson() -> None:
             feature["properties"]["last_fetch_status"] = snapshot["fetch_status"]
             feature["properties"]["last_fetch_error"] = snapshot.get("fetch_error")
 
-            # Story 3.10 B1: canary self-describes its demo mode via ext_mom.thresholdMode
+            # Story 3.10 B1: canary self-describes its demo mode via ext_canary.thresholdMode
             # in its own payload. When true, attach seconds-scale thresholds_override
             # so the aging→zombie→dead bucket walk is observable in ~minutes against
             # real mom:updatedAt. Source of truth lives in the canary endpoint itself.
             payload = snapshot.get("payload") or {}
-            ext_mom = payload.get("ext_mom") or {}
-            if ext_mom.get("thresholdMode") is True:
+            ext_canary = payload.get("ext_canary") or {}
+            if ext_canary.get("thresholdMode") is True:
                 feature["properties"]["thresholds_override"] = {
                     "operational_state": {
                         # fractional days = seconds (1/86400 ≈ 1 second)

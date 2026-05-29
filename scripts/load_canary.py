@@ -57,7 +57,7 @@ CANARY_ENDPOINT = os.environ.get(
 def _classify_lifecycle(simulated_age) -> str:
     """Minimal lifecycle classifier for the canary skeleton.
 
-    simulated_age is `ext_mom.simulatedAge`: None = never confirmed (seeded),
+    simulated_age is `ext_canary.simulatedAge`: None = never confirmed (seeded),
     otherwise an integer count of days since the last content change.
     """
     if simulated_age is None:
@@ -86,7 +86,7 @@ def build_canary_sparql(data: dict) -> str:
         raise ValueError("canary served.json missing location.lat / location.lon")
 
     now = datetime.now(timezone.utc).isoformat()
-    lifecycle = _classify_lifecycle(data.get("ext_mom", {}).get("simulatedAge"))
+    lifecycle = _classify_lifecycle(data.get("ext_canary", {}).get("simulatedAge"))
 
     # Loader-owned envelope — not extractable from the payload
     envelope = [
@@ -148,7 +148,7 @@ def main() -> int:
         logger.error("stage=oxigraph_write status=fail reason=%s", e)
         return 1
 
-    lifecycle = _classify_lifecycle(data.get("ext_mom", {}).get("simulatedAge"))
+    lifecycle = _classify_lifecycle(data.get("ext_canary", {}).get("simulatedAge"))
     logger.info("stage=oxigraph_write status=ok graph=%s operationalState=%s",
                 GRAPH_URI, lifecycle)
     logger.info("stage=done")

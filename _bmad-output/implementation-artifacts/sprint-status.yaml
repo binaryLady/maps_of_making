@@ -1,5 +1,5 @@
 # generated: 2026-05-01
-# last_updated: 2026-05-19 (Story 3.7 created — ready-for-dev)
+# last_updated: 2026-05-29 (Epic 9 Bernard's Workshop added; old Epic 9 → Epic 10; Story 4.0 + 4.5 added)
 # project: maps_of_making
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-01
-last_updated: "2026-05-28 (Epic 3.5 retrospective done — three-token model live, 3.10 closed, epic complete)"
+last_updated: "2026-05-29 (Epic 9 Bernard's Workshop added; old Epic 9 → Epic 10; Story 4.0 + 4.5 added; C.X ready-for-dev)"
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
@@ -138,14 +138,21 @@ development_status:
 # the underlying risk remains — main.py:_SPARQL_SELECT and scripts/materialize_geojson.py are still two hand-maintained copies of the same query.
 #  If that bites again, consolidating them into one shared module is the real fix.
 
+  # Cleanup C.X: Schema Namespace Pass (shared prereq — blocks Epic 9 + Epic 4 re-review)
+  # Must complete before Epic 9 kickoff AND before Epic 4 stories are re-reviewed.
+  cx-schema-namespace-pass: review
+
   # Epic 4: Operator Observability Dashboard
-  # Depends on Epic 3's snapshot output and status graph
+  # Depends on Epic 3.5 snapshot_store.db + per-space Oxigraph graphs + browser-computed axes.
+  # BLOCKED by C.X (schema namespace pass) before re-review of ACs.
   # NOTE: 4-0-admin-foundation-subdomain-auth-space-comparison.md is an orphaned draft — no corresponding story in epics.md; review before Epic 4 kickoff
   epic-4: backlog
+  4-0-epic-4-prep-consolidate-materializers-verify-seed-tokens-add-stall-threshold: backlog
   4-1-system-health-strip-three-status-pills: backlog
   4-2-space-registry-table: backlog
   4-3-per-space-inspection-panel-raw-ingested-displayed: backlog
   4-4-export-registry-operator-action-log: backlog
+  4-5-admin-delete-space: backlog
   epic-4-retrospective: optional
 
   # Epic 4b: Magic Link Coordinator Recovery (parallel non-blocking)
@@ -182,6 +189,24 @@ development_status:
   epic-8: backlog
   epic-8-retrospective: optional
 
-  # Epic 9: Multi-Network Schema — Bundles, Concept Commons & Emergent Ontologies (stub — no stories yet)
+  # Epic 9: Bernard's Workshop — Assisted SpaceAPI JSON Composer
+  # Depends on Story C.X (schema namespace pass). Parallel to Epic 4 re-review.
+  # M1 (must-ship): 9.1–9.5 | M2 (features + pedagogy): 9.6–9.8 | M3 (deferrable): 9.9–9.11
   epic-9: backlog
+  9-1-subdomain-infra-genjson-mapsofmaking-org-dns-nginx-static-scaffold: backlog
+  9-2-drawer-ux-on-mom-map-bernard-one-liner-url-input-cta: backlog
+  9-3-wizard-core-tiers-0-1-name-address-spaceapi-v15-core-localstorage-export: backlog
+  9-4-nominatim-proxy-endpoint-in-link-handler: backlog
+  9-5-bernard-voice-copy-pass-curated-voice-artifact: backlog
+  9-6-wizard-tier-2-mom-fields-opening-hours-memberof-mom-sdgs: backlog
+  9-7-wizard-state-open-fsm-cascading-questions-marker-mapping-opt-out: backlog
+  9-8-gitlab-tutorial-surface-embedded-guide-see-logo-on-card-success-moment-refresh-affordance: backlog
+  9-9-three-mode-unification-url-fetch-pre-fill-validator-mode-cache-resume-reconciliation: backlog  # M3 — deferrable
+  9-10-wizard-tier-3-ext-fab-fields-space-type-fuzzy-dropdown-equipment: backlog  # M3 — deferrable
+  9-11-validator-error-ux-inline-per-field-summary-report: backlog  # M3 — deferrable
   epic-9-retrospective: optional
+
+  # Epic 10: Multi-Network Schema — Bundles, Concept Commons & Emergent Ontologies (stub — no stories yet)
+  # Renamed from Epic 9 (2026-05-29). Depends on Story 3.5 (core.ttl, crosswalk.csv, ADR-016).
+  epic-10: backlog
+  epic-10-retrospective: optional

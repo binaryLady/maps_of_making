@@ -65,15 +65,15 @@ def extract_core(payload: dict) -> dict[str, Any]:
         if tags:
             fields["schema:knowsAbout"] = tags
 
-    # Top-level `memberOf` (preferred) or ext_mom.memberOf (canary convention).
+    # Top-level `memberOf` (preferred) or ext_canary.memberOf (canary convention).
     # Coordinators self-declare network affiliation via slugs ("spaceapi", "vow", ...).
     # Future deferred work: handshake verification against the declared network's
     # directory before honouring (e.g. spaceapi → cross-check directory.spaceapi.io).
     raw_member = payload.get("memberOf")
     if raw_member is None:
-        ext_mom = payload.get("ext_mom") or {}
-        if isinstance(ext_mom, dict):
-            raw_member = ext_mom.get("memberOf")
+        ext_canary = payload.get("ext_canary") or {}
+        if isinstance(ext_canary, dict):
+            raw_member = ext_canary.get("memberOf")
     if isinstance(raw_member, str):
         raw_member = [raw_member]
     if isinstance(raw_member, list):
@@ -84,5 +84,16 @@ def extract_core(payload: dict) -> dict[str, Any]:
                 s if (":" in s or s.startswith("urn:")) else f"urn:mak:network/{s}"
                 for s in slugs
             ]
+
+    # Tier-2 horizontal SDG field — prefer mom:sdgs; fallback to ext_fab.sdgs during transition.
+    sdgs = payload.get("mom:sdgs")
+    if sdgs is None:
+        ext_fab = payload.get("ext_fab") or {}
+        if isinstance(ext_fab, dict):
+            sdgs = ext_fab.get("sdgs")
+    if isinstance(sdgs, list):
+        cleaned = [int(s) for s in sdgs if isinstance(s, (int, float)) and 1 <= int(s) <= 17]
+        if cleaned:
+            fields["mom:sdgs"] = cleaned
 
     return fields

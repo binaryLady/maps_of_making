@@ -89,7 +89,7 @@ def scenario_b_seeded() -> tuple[dict, dict | None]:
     EXPECT CARD    seeded badge; no "updated X ago" shown
     """
     payload = _baseline()
-    payload["ext_mom"]["simulatedAge"] = None
+    payload["ext_canary"]["simulatedAge"] = None
     return payload, None
 
 
@@ -102,7 +102,7 @@ def scenario_b_confirmed() -> tuple[dict, dict | None]:
     EXPECT CARD    open pill; "updated just now"
     """
     payload = _baseline()
-    payload["ext_mom"]["simulatedAge"] = 0
+    payload["ext_canary"]["simulatedAge"] = 0
     return payload, None
 
 
@@ -115,7 +115,7 @@ def scenario_b_aging() -> tuple[dict, dict | None]:
     EXPECT CARD    "Going quiet" pill; "updated 45 days ago"
     """
     payload = _baseline()
-    payload["ext_mom"]["simulatedAge"] = 45
+    payload["ext_canary"]["simulatedAge"] = 45
     return payload, None
 
 
@@ -128,7 +128,7 @@ def scenario_b_zombie() -> tuple[dict, dict | None]:
     EXPECT CARD    "Unreachable" pill; "updated 120 days ago"
     """
     payload = _baseline()
-    payload["ext_mom"]["simulatedAge"] = 120
+    payload["ext_canary"]["simulatedAge"] = 120
     return payload, None
 
 
@@ -142,8 +142,8 @@ def scenario_b_closed() -> tuple[dict, dict | None]:
     EXPECT CARD    "Permanently closed" — operator declared, not inferred
     """
     payload = _baseline()
-    payload["ext_mom"]["simulatedAge"] = 999
-    payload["ext_mom"]["operatorDeclaredClosed"] = True
+    payload["ext_canary"]["simulatedAge"] = 999
+    payload["ext_canary"]["operatorDeclaredClosed"] = True
     return payload, None
 
 
@@ -163,7 +163,7 @@ def scenario_c_openclose_open() -> tuple[dict, dict | None]:
     """
     payload = _baseline()
     payload["state"]["open"] = True
-    payload["ext_mom"]["simulatedAge"] = 0
+    payload["ext_canary"]["simulatedAge"] = 0
     return payload, None
 
 
@@ -178,7 +178,7 @@ def scenario_c_openclose_shut() -> tuple[dict, dict | None]:
     """
     payload = _baseline()
     payload["state"]["open"] = False
-    payload["ext_mom"]["simulatedAge"] = 0
+    payload["ext_canary"]["simulatedAge"] = 0
     return payload, None
 
 
@@ -192,7 +192,7 @@ def scenario_c_no_open_field() -> tuple[dict, dict | None]:
     """
     payload = _baseline()
     del payload["state"]
-    payload["ext_mom"]["simulatedAge"] = 0
+    payload["ext_canary"]["simulatedAge"] = 0
     return payload, None
 
 
@@ -295,7 +295,7 @@ if __name__ == "__main__":
     default_db = str(Path(__file__).parent.parent / "data" / "tasks" / "heartbeat_log.db")
     db = os.environ.get("HEARTBEAT_DB_PATH", default_db)
 
-    # Story 3.10 B1: toggle ext_mom.thresholdMode in the served canary payload.
+    # Story 3.10 B1: toggle ext_canary.thresholdMode in the served canary payload.
     # Self-describing demo mode — the canary endpoint itself tells the link-handler
     # to emit a per-feature thresholds_override. No env var, no container restart.
     if name == "threshold-mode":
@@ -304,8 +304,8 @@ if __name__ == "__main__":
             sys.exit(1)
         new_value = sys.argv[2] == "on"
         payload = json.loads(served.read_text()) if served.exists() else _baseline()
-        payload.setdefault("ext_mom", {})
-        payload["ext_mom"]["thresholdMode"] = new_value
+        payload.setdefault("ext_canary", {})
+        payload["ext_canary"]["thresholdMode"] = new_value
         # Safe write — temp → fsync → atomic rename
         import tempfile as _tf
         with _tf.NamedTemporaryFile(mode="w", suffix=".json", dir=served.parent, delete=False) as tmp:
@@ -315,7 +315,7 @@ if __name__ == "__main__":
             tmp_path = tmp.name
         os.chmod(tmp_path, 0o644)
         os.rename(tmp_path, served)
-        print(f"[canary] ext_mom.thresholdMode = {new_value}")
+        print(f"[canary] ext_canary.thresholdMode = {new_value}")
         sys.exit(0)
 
     apply_scenario(name, served, db_path=db if Path(db).exists() else None)

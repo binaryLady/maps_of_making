@@ -24,7 +24,8 @@
     "lastchange": 1715000000,
     "message": "Canary nominal — all fishtems operational"
   },
-  "ext_mom": {
+  "mom:sdgs": [9, 11, 12, 14, 17],
+  "ext_canary": {
     "memberOf": ["canary","vulca"],
     "canary": true,
     "simulatedAge": null,
@@ -32,7 +33,6 @@
   },
   "ext_fab": {
     "space_type": "makerspace",
-    "equipment": ["tide-powered fabrication", "salt 3D-printer", "recycling metal-shop"],
-    "sdgs": [9, 11, 12, 14, 17]
+    "equipment": ["tide-powered fabrication", "salt 3D-printer", "recycling metal-shop"]
   }
 }
