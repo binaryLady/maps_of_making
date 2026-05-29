@@ -1,7 +1,7 @@
 ---
-stepsCompleted: ['step-01-validate-prerequisites', 'step-02-design-epics', 'step-03-create-stories', 'edit-2026-04-29']
-lastEdited: '2026-05-16'
-editSummary: '2026-05-16 reconciliation from the Story 3.3 planning roundtable (mom_handoff_2026-05-16.md): Story 3.3 reframed as the three-axis Mother Sands diagnostic canary; Story 3.2c added (pre-3.3 lifecycle vocabulary drift fix); Story 3.4 added (stuck-seeded root cause + regression test); ghost duplicate 3.3-original/3.4 entries removed from Epic 3 (real copies live in Epic 4b); Epic 8 stub added (Mother Sands broadcast rig); Story 3.5 added (core.ttl + crosswalk.csv, three-layer schema operationalization, per mom-schema-architecture-handoff.md). Prior: Epic 3 reframed as ingestion pipeline prerequisite; Epic 4 = operator observability dashboard; Epic 4b = parallel non-blocking magic-link recovery; critical path Epic 1 → 0 → 2 → 3 → 4'
+stepsCompleted: ['step-01-validate-prerequisites', 'step-02-design-epics', 'step-03-create-stories', 'edit-2026-04-29', 'step-e-01-discovery', 'step-e-02-review', 'step-e-03-edit']
+lastEdited: '2026-05-29'
+editSummary: '2026-05-29 sprint change proposal (sprint-change-proposal-2026-05-29.md): added Cleanup Story C.X (schema namespace pass: ext_mom→ext_canary, mom: horizontal fields, SDG migration); added Epic 9 — Bernard''s Workshop (assisted SpaceAPI JSON composer at genjson.mapsofmaking.org, Stories 9.1–9.11 full BDD-spec, M1/M2/M3 milestones); renamed old Epic 9 (Multi-Network Schema) to Epic 10; updated sequencing notes to reflect C.X→Epic 9→Epic 4 re-review track. Prior: 2026-05-16 reconciliation (Story 3.3 canary, 3.2c, 3.4, 3.5, Epic 8 stub).'
 inputDocuments:
   - _bmad-output/planning-artifacts/prd.md
   - _bmad-output/planning-artifacts/architecture.md
@@ -298,6 +298,8 @@ Phase 1 (map SPA, deployed at mapofmaking.debarquin.eu) is shipped. The epic/sto
 | FR43 | Epic 4 | Admin subdomain shared-password auth (PoC-grade) |
 | FR44 | Epic 1 | Public map + coordinator registration: no auth |
 
+**Epic 9 scope note:** Stories 9.1–9.11 implement the "LLM-assisted JSON generator" referenced in PRD §Vision (Post-PoC). No numbered FRs exist for this capability — approved via the 2026-05-29 sprint change proposal. The PRD requires a targeted update to add FRs for Epic 9 when it moves to active development (pre-Story 9.1 recommended).
+
 **AR coverage summary:**
 - AR-SEED1–4 → Epic 0
 - AR-INF1–5, AR-DATA1,4, AR-AGT1, AR-CONV1–5, AR-ST1 → Epic 1
@@ -306,6 +308,8 @@ Phase 1 (map SPA, deployed at mapofmaking.debarquin.eu) is shipped. The epic/sto
 - AR-INF2 (admin auth), AR-METR1 (/metrics read) → Epic 4
 - AR-DATA5, AR-AGT3–5 → Epic 6
 - AR-DATA3 (presence graph reserved) → Epic 1 (schema slot) + Epic 7 (implementation)
+- AR-INF1 (nginx subdomain pattern) → Epic 9 Story 9.1
+- Story C.X (schema namespace pass) → prerequisite for Epic 9 + Epic 4 re-review (no AR number — architectural cleanup)
 
 ## Epic List
 
@@ -402,6 +406,9 @@ Originally a webhook-driven presence layer. As of Story 3.2, the heartbeat polls
 ### Epic 8: MOM as a Living Space — Mother Sands Broadcast Rig *(parallel, non-blocking; post-demo)*
 Mother Sands stops being only a diagnostic canary (Story 3.3) and becomes MOM's self-representation on its own map: a public website at `mom.mapsofmaking.org`, a wiki/lore page, Bernard the hermit-crab admin persona, a curated changelog/feature "broadcast", and relocation/fort-rotation as ambient narrative. Parallel to Epic 5 polish; not on the demo critical path. Stub only — stories created post-demo. Design seeds: `mom_handoff_2026-05-16.md`, `mom_handoff_2026-05-15.md` (Bernard character bible, lore skeleton).
 
+### Epic 9: Bernard's Workshop — Assisted SpaceAPI JSON Composer *(parallel, post-C.X; post-demo non-blocker)*
+Assisted SpaceAPI JSON composer at `genjson.mapsofmaking.org` with Bernard's voice as the UX anchor. Goal: convincing, inclusive, effortless onboarding for non-technical coordinators, with data sovereignty and GitLab Pages self-hosting as the end state. M1 (Stories 9.1–9.5): subdomain infra, drawer UX, wizard Tiers 0+1, Nominatim proxy, voice copy. M2 (9.6–9.8): `mom:` fields, `state.open` FSM, GitLab tutorial. M3 (9.9–9.11, deferrable): URL pre-fill / validator mode, Tier 3 `ext_fab`, error UX. **Depends on:** Story C.X. **Defers Epic 4 re-review** until M1+ in flight.
+
 ---
 
 **Testing discipline (baked into all Epic 2–4 ACs):**
@@ -412,8 +419,9 @@ Mother Sands stops being only a diagnostic canary (Story 3.3) and becomes MOM's 
 **Demo critical path:** Epic 1 → Epic 0 → Epic 2 → Epic 3 → Epic 4 (+ Epic 5 as rolling polish)
 **Parallel non-blocking:** Epic 4b (magic link) // Epic 6 (NL bot) // Epic 8 (Mother Sands broadcast rig) — none block demo
 **Reserved post-demo side quest:** Epic 7 (🟢 open-now presence layer)
+**Post-C.X parallel track:** `Story C.X → Epic 9 (Bernard's Workshop) → Epic 4 re-review`. Epic 9 is expected to surface small schema course-corrections; Epic 4 AC re-review is deferred until Epic 9 M1+ is in flight.
 
-**Key dependency:** Epic 4 (operator dashboard) requires Epic 3's raw snapshot files (`/data/snapshots/{id}/latest.json`) and status graph (`<urn:mak:status>`). Story sequencing within Epic 3 must deliver these before Epic 4 stories begin.
+**Key dependency:** Epic 4 (operator dashboard) requires Epic 3.5's `snapshot_store.db` (Axis A), per-space Oxigraph graphs (Axes B & C), and browser-side `computeAxisA/B/C/Marker`. Story sequencing within Epic 3.5 must deliver these before Epic 4 stories begin. (Note: the original dependency on `/data/snapshots/{id}/latest.json` and `<urn:mak:status>` is superseded — those were never built.)
 
 ---
 
@@ -781,7 +789,7 @@ So that the boundary between "what the space published" and "what we store" is a
 **And** `mom:extended` fields present in the JSON are mapped to their MOM predicates; absent fields are silently skipped (they're optional)
 **And** the resulting MOM JSON-LD is written to `<urn:mak:space/{id}>` (current) and `<urn:mak:space/{id}/{date}>` (append-only snapshot) via SPARQL UPDATE
 **And** every fetch decision is logged to `heartbeat_log`: `space_uri`, `checked_at`, `outcome` (`ok` / `changed` / `no_change` / `schema_invalid` / `error` / `timeout`) — never silently dropped
-**And** the snapshot path convention is exactly `/data/snapshots/{space_id}/latest.json` — this path is pinned here and referenced in Epic 4 stories
+**And** ~~the snapshot path convention is exactly `/data/snapshots/{space_id}/latest.json` — this path is pinned here and referenced in Epic 4 stories~~ **Superseded by Epic 3.5: snapshots live in `snapshot_store.db` (see Epic 4 Story 4.3). Disk path never built.**
 
 ---
 
@@ -1190,6 +1198,58 @@ render correctly and independently. **+ operator visual confirmation** — this 
 done-condition, demonstrated live to Nicolas.
 
 **Dependencies:** 3.6 (skeleton) → 3.7 → 3.8 → 3.8b → 3.9 → 3.10. Blocks Epic 4.
+
+---
+
+## Cleanup Stories
+
+Shared prerequisite stories that gate multiple epics. These are not part of any single epic's feature scope — they resolve cross-cutting schema drift or infrastructure prerequisites that would otherwise require conditional sub-columns in downstream ACs.
+
+---
+
+### Story C.X: Schema Namespace Pass — `ext_mom` → `ext_canary`, `mom:` horizontal fields, SDG migration
+
+> **Added 2026-05-29** from the sprint change proposal (`_bmad-output/planning-artifacts/sprint-change-proposal-2026-05-29.md`). **Blocks Epic 9 AND Epic 4 re-review.** Pattern: same split-out shape as the pre-Story-3.3 drift-fix cleanup Story 3.2c.
+
+As the MOM developer,
+I want the schema namespace model aligned with the four-tier architecture before Epic 9 and Epic 4 re-review begin,
+So that both tracks build against a stable, correctly-partitioned vocabulary and neither accumulates `ext_mom` debt that would need a second cleanup pass.
+
+**Context:** The current `ext_mom` namespace contains Mother-Sands-only canary fields — it should be `ext_canary`. Cross-network horizontal fields (`opening_hours`, `memberOf`, SDGs) belong in `mom:` (Tier 2), not in `ext_fab` (Tier 3 vertical). `ext_fab.sdgs` in particular is transversal across network types and must move up. The four-tier schema (locked in the 2026-05-29 sprint change proposal):
+
+| Tier | Namespace | Scope |
+|---|---|---|
+| 0 | core subset | Floor: name + address → derived geolocation |
+| 1 | SpaceAPI v15 core | Common to all SpaceAPI apps |
+| 2 | `mom:` | Horizontal — most/all networks |
+| 3 | `ext_X` | Vertical — silo-specific |
+
+**Acceptance Criteria:**
+
+**Given** `ontology/mom.ttl` currently defines `ext_mom:` fields used only by the Mother Sands canary
+**When** Story C.X lands
+**Then** `ext_mom:` is renamed to `ext_canary:` throughout `mom.ttl`, `transformer.py`, `ingest.py`, `baseline.json`, and all SPARQL strings — `grep -rn "ext_mom" infra/ scripts/ ontology/ data/` returns zero results outside `CHANGELOG` or historical comments
+**And** `rdfs:comment` on the `ext_canary:` namespace reads: "Namespace for Mother Sands canary-specific fields. Not for production spaces."
+
+**Given** `opening_hours`, `memberOf`, and `sdgs` are currently in `ext_fab:` or absent
+**When** Story C.X lands
+**Then** `mom:opening_hours`, `mom:memberOf`, and `mom:sdgs` are declared in `mom.ttl` as Tier 2 properties with `rdfs:domain mom:MakerSpace` and a one-line `rdfs:comment` citing the transversal rationale
+**And** `ext_fab.sdgs` is removed from `mom.ttl` and from the transformer mapping table; references in `crosswalk.csv` (Story 3.5) are updated from `ext_fab.sdgs` to `mom:sdgs`
+**And** the transformer maps SpaceAPI v15 source fields → `mom:opening_hours`, `mom:memberOf`, `mom:sdgs` following the same field-mapping pattern used in `ingest.py` for existing `mom:` properties
+
+**Given** the `data/canary/baseline.json` file uses `ext_mom:` fields
+**When** Story C.X lands
+**Then** `baseline.json` is updated to use `ext_canary:` keys; `make canary-reset` restores correctly from the updated baseline; `test_canary_three_axis_e2e` still passes byte-identically
+
+**Given** the existing VOW + RFF seed data in Oxigraph and `snapshot_store.db`
+**When** `make wipe && make reseed` (or equivalent Makefile targets) runs after the rename
+**Then** the public map renders unchanged (same pin count, same marker colours); the canary diagnostic cycle (`make canary-demo-cycle`) completes without errors
+**And** the gating test `test_namespace_pass` (live Oxigraph + real snapshot store) passes: seed at least one VOW space and run one canary heartbeat cycle; assert `ext_canary:` triples exist in `<urn:mak:canary>` and zero `ext_mom:` triples exist anywhere; assert `mom:sdgs` triple present for any seeded space that had `ext_fab.sdgs` in source JSON
+
+**+ operator visual confirmation:** map renders unchanged post-wipe-reseed.
+
+**Dependencies:** none — this is the cleanup blocker. **Blocks Epic 9 AND Epic 4 re-review.**
+Not demo-blocking on its own, but Epic 9 Story 9.2+ and Epic 4 ACs reference `mom:opening_hours` / `mom:sdgs` — must land before those stories begin.
 
 ---
 
@@ -1727,7 +1787,366 @@ Story 3.3 builds Mother Sands as a **diagnostic canary**. This epic gives it its
 
 ---
 
-## Epic 9: Multi-Network Schema — Bundles, Concept Commons & Emergent Ontologies *(stub — no stories yet; post-demo)*
+## Epic 9: Bernard's Workshop — Assisted SpaceAPI JSON Composer *(parallel, post-C.X; post-demo non-blocker)*
+
+> **Added 2026-05-29** from the sprint change proposal and brainstorming session (`_bmad-output/brainstorming/brainstorming-session-2026-05-29-1500.md`). **Depends on Cleanup Story C.X** (schema namespace pass). Parallel to Epic 4 re-review; not demo-blocking. Epic 9 is expected to surface small schema course-corrections before the Epic 4 re-review is finalised — defer Epic 4 re-review until Epic 9 M1+ is in flight.
+
+An assisted SpaceAPI JSON composer at `genjson.mapsofmaking.org`, with Bernard's voice as the UX anchor. **Goal:** convincing, inclusive, effortless onboarding for non-technical space coordinators, with data sovereignty and GitLab Pages self-hosting as the end state. UX over features; minimal cognitive load.
+
+**Bernard voice rules (locked — source: `_bmad-output/planning-artifacts/sprint-change-proposal-2026-05-29.md`):**
+- Bernard is the **voice of the copy only** — they/them, never character imagery, no silhouette, no crab, no fort.
+- Bernard names themselves **only on the wizard path**, briefly. Never in the drawer. Never in the URL shortcut.
+- Forbidden patterns: "most spaces leave this blank," "keep it simple," any nudge that comforts mediocrity OR shames.
+- Register: Pyramid-of-Greatness (frankness, sovereignty of choice) with a grain of salt.
+
+**Milestone structure:**
+- **M1 — Floor & Core (must-ship):** Stories 9.1–9.5
+- **M2 — MoM features & pedagogy:** Stories 9.6–9.8
+- **M3 — Modes & extensibility (deferrable):** Stories 9.9–9.11
+
+**Depends on:** Story C.X (namespace pass). Parallel to Epics 5–8 and Epic 4 re-review.
+
+---
+
+### Story 9.1: Subdomain & Infra — `genjson.mapsofmaking.org` DNS + Nginx + Static Scaffold
+
+As a space coordinator arriving at `genjson.mapsofmaking.org`,
+I want a fast-loading, mobile-friendly page with no tracking and no login,
+So that the wizard is reachable and trustworthy before any content is entered.
+
+**Acceptance Criteria:**
+
+**Given** the hetzner-gateway nginx config and existing cert infrastructure (see `[[infra_gateway_nginx]]`)
+**When** Story 9.1 lands
+**Then** DNS A-record for `genjson.mapsofmaking.org` points to the hetzner gateway IP
+**And** the nginx-gateway config includes a `server` block for `genjson.mapsofmaking.org` with:
+  - `ssl_certificate` / `ssl_certificate_key` paths matching the existing cert pattern (Let's Encrypt)
+  - `proxy_pass` to `maps-nginx:80` (or equivalent static-file service)
+  - `add_header X-Frame-Options SAMEORIGIN` and `add_header Content-Security-Policy "default-src 'self' 'unsafe-inline'"` — no third-party script CDNs
+**And** a minimal `web/genjson/index.html` scaffold exists: correct `<title>` ("Bernard's Workshop — MoM"), `<meta charset>`, `<meta viewport>`, a single `<div id="wizard-root">` and a `<script src="genjson.js">` reference
+**And** `GET https://genjson.mapsofmaking.org/` returns HTTP 200 with `Content-Type: text/html`
+**And** `GET https://genjson.mapsofmaking.org/` over plain HTTP redirects to HTTPS (301)
+**And** the page loads with no console errors and no external network requests (CSP enforced)
+
+**Gating test** — manual: `curl -I https://genjson.mapsofmaking.org/` returns 200; `curl -I http://genjson.mapsofmaking.org/` returns 301. **+ operator visual confirmation** page loads in browser, no console errors.
+
+**Dependencies:** hetzner-gateway nginx access (distrobox-host-exec pattern per `[[infra_gateway_nginx]]`).
+
+---
+
+### Story 9.2: Drawer UX on MoM Map — Bernard One-Liner + URL Input + CTA
+
+As a space coordinator browsing the MoM map,
+I want a low-friction entry point into the wizard that respects my time and doesn't assume I have a JSON endpoint already,
+So that I can choose my path — paste a URL I already have, or start from scratch — in four seconds or less.
+
+**Acceptance Criteria (locked UX decisions from sprint-change-proposal-2026-05-29.md):**
+
+**Given** the "Add your URL" drawer is open (Epic 2 wired path)
+**When** Story 9.2 lands
+**Then** the drawer contains exactly three elements in order:
+  1. Bernard's one-liner (copy from Story 9.5 voice artifact): *"Two ways through. [Tell me about your space]. Or paste a URL if you already have one. Either is fine."* — plain text, no character imagery
+  2. An inline URL input: `placeholder="https://yourspace.org/status.json"`, `type="url"`, `id="existing-url-input"` — activates the "fetch & validate" path (Epic 2 Story 2.1 flow)
+  3. A CTA button: "Tell me about your space →" — opens `genjson.mapsofmaking.org` in a new tab (or same-tab modal, see note below)
+**And** every other element currently in the drawer that does not serve the "decide in 4 seconds" test is removed or moved: no instructional paragraphs, no "how it works" expansion, no sample URLs in body text
+**And** the URL input + "Fetch & validate" button remain from Story 2.1 — they are not duplicated; the one-liner replaces the existing copy above them
+**And** `localStorage.getItem('genjson_draft')` is checked on CTA click: if a draft exists, the tab opens to `genjson.mapsofmaking.org/?resume=1`; if not, to `genjson.mapsofmaking.org/`
+**And** on mobile (`< 768px`) the drawer renders both elements without horizontal overflow and the CTA button is full-width (matches Story 2.6 mobile contract)
+
+**Note:** Modal vs new-tab is a product decision deferred to Story 9.3 implementation; for 9.2 the CTA opens a new tab (`target="_blank" rel="noopener"`). If Story 9.3 implements a modal, 9.2 is updated accordingly.
+
+**Gating test** — axe-core on the updated drawer HTML: zero WCAG 2.1 AA violations. **+ operator visual confirmation** drawer renders correctly on desktop and mobile with no layout overflow.
+
+**Dependencies:** Story 2.1 (drawer exists and is wired); Story 9.5 (voice copy — draft text acceptable for 9.2 if 9.5 not yet done); Story C.X (namespace pass — for `mom:` field labels in future tiers).
+
+---
+
+### Story 9.3: Wizard Core — Tiers 0 + 1 (Name + Address → SpaceAPI v15 Core; localStorage; Export)
+
+As a space coordinator using the wizard,
+I want to enter my space name and address and walk through the SpaceAPI core fields at my own pace, with my progress saved automatically in the browser,
+So that I can produce a valid SpaceAPI v15 JSON file without understanding the schema — and stop and resume without losing work.
+
+**Acceptance Criteria:**
+
+**Given** the wizard page at `genjson.mapsofmaking.org`
+**When** Story 9.3 lands
+**Then** the wizard renders as a single-page flow with two tier gates visible in the UI: **Tier 0** (floor) and **Tier 1** (SpaceAPI core)
+
+**Tier 0 — Floor gate:**
+**Given** the wizard is freshly loaded (no draft)
+**When** the coordinator fills `space` (name) and the address block (`address`, `city`, `postcode`, `country_code`)
+**Then** coordinates (`lat` / `lon`) are derived automatically via the Nominatim proxy (Story 9.4) and displayed as a preview on a mini-map tile or inline `{lat}, {lon}` string
+**And** the "Continue →" button to Tier 1 is disabled until `space` + address + derived coordinates are present; if Nominatim returns no result, the coordinator can enter `lat`/`lon` manually and the floor gate still passes
+**And** the Bernard floor-gate copy renders: *"Name and address. That's the floor. Everything else, I'll derive."*
+
+**Tier 1 — SpaceAPI core:**
+**Given** the floor gate has passed
+**When** the coordinator is on Tier 1
+**Then** the wizard presents the following SpaceAPI v15 core fields as optional progressive inputs: `logo` (URL), `url` (space website), `description`, `contact.email`, `contact.website`, `contact.mastodon`, `state.open` (deferred to Story 9.7 — renders as "skip for now" in 9.3)
+**And** each field has a one-line label and a two-line hint (sourced from Story 9.5 voice artifact); no long paragraphs
+**And** the Tier 1 exit banner renders: *"Core's in. Other SpaceAPI apps can read this file as-is."*
+**And** an "Export JSON" button is available at any point after the floor gate passes; it produces a valid SpaceAPI v15 JSON file containing all filled fields and derived coordinates, downloadable as `{space_name_slug}.json`
+**And** the export passes SpaceAPI v15 schema validation (JSON Schema, bundled client-side) — if it fails, a non-blocking inline warning lists the invalid fields; export is not blocked
+
+**localStorage auto-save:**
+**Given** the coordinator has entered any field
+**When** any field value changes
+**Then** `localStorage.setItem('genjson_draft', JSON.stringify(draftObject))` is called; the draft is keyed by `genjson_draft` (single slot — one wizard at a time)
+**And** on page load, if `localStorage.getItem('genjson_draft')` is non-null, the wizard pre-fills all fields from the draft and shows the Bernard warning: *"Your progress is saved in this browser. Hard-refresh or clearing site data wipes it. Export at any point if you want a copy outside the browser."*
+**And** a "Clear & start over" link resets the draft and the form; confirmation dialog: "This will erase your saved progress. Continue?" — no accidental wipes
+**And** if `?resume=1` is present in the URL but `localStorage.getItem('genjson_draft')` is null (draft cleared or cross-device), the wizard loads at Tier 0 with no pre-fill and no error — `?resume=1` is a hint, not a requirement
+
+**Gating test** — `test_wizard_tier0_tier1_export` (browser E2E — Playwright or Cypress; **new test infra dependency, must be set up as part of Story 9.1 or 9.3 before this test can run**): fill name + address → Nominatim call → lat/lon derived → fill two Tier 1 fields → click Export → validate downloaded JSON against SpaceAPI v15 schema → reload page → assert fields pre-filled from localStorage. **+ operator visual confirmation** export JSON validates and map registers correctly via Epic 2 Story 2.1 flow.
+
+**Dependencies:** Story 9.1 (subdomain up); Story 9.4 (Nominatim proxy).
+
+---
+
+### Story 9.4: Nominatim Proxy Endpoint in `link_handler`
+
+As the wizard front-end,
+I want a server-side Nominatim geocoding proxy at `POST /api/geocode`,
+So that geocoding requests from the wizard respect Nominatim's rate-limit policy (1 req/s, identified User-Agent) without exposing coordinator IP addresses to a third-party geocoding service.
+
+**Acceptance Criteria:**
+
+**Given** `mak-link-handler` (FastAPI, `infra/link_handler/main.py`)
+**When** Story 9.4 lands
+**Then** a `POST /api/geocode` endpoint exists accepting `{ "address": str, "city": str, "postcode": str, "country_code": str }`
+**And** the handler calls `geopy.Nominatim` with `user_agent="mapsofmaking-genjson/1.0 (contact: nicolas.de.barquin@gmail.com)"`, rate-limited to 1 request/second via a module-level `RateLimiter` (geopy's built-in `RateLimiter` wrapper)
+**And** on success it returns `{ "lat": float, "lon": float, "display_name": str }` with HTTP 200
+**And** on no-result it returns `{ "lat": null, "lon": null, "display_name": null }` with HTTP 200 (not an error — the wizard handles the null case by showing a manual lat/lon input)
+**And** on Nominatim timeout or network error it returns HTTP 503 with `{ "error": "geocoding_unavailable" }` — the wizard shows "Geocoding temporarily unavailable — enter coordinates manually"
+**And** the endpoint is rate-limited at the nginx level: max 2 req/s per IP (`limit_req_zone` in nginx config), returning 429 on excess — prevents wizard abuse
+**And** the `geopy` dependency is added to `infra/link_handler/requirements.txt`
+**And** an existing pattern (`scripts/normalize_vow.py`) uses `geopy.Nominatim` — the proxy follows the same User-Agent and rate-limit pattern (do not diverge)
+
+**Gating test** — `test_geocode_proxy` (live endpoint, real Nominatim): POST `{ address: "Rue Royale 1", city: "Brussels", postcode: "1000", country_code: "BE" }` → assert `lat` ≈ 50.85, `lon` ≈ 4.36. POST an unmatchable address → assert `lat: null`. **+ rate-limit test:** 3 rapid POSTs → third returns 429.
+
+**Dependencies:** Story 9.1 (subdomain infrastructure); `geopy` available in Python environment.
+
+---
+
+### Story 9.5: Bernard Voice Copy Pass — Curated Voice Artifact
+
+As the MoM product,
+I want all wizard copy (intro, tier gates, validation messages, sovereignty disclosure) authored in a single curated artifact before any UI story lands its final text,
+So that Bernard's voice is consistent across Stories 9.2–9.8 and individual story ACs reference the artifact rather than each containing their own ad-hoc copy.
+
+**Context:** Bernard's voice is the primary UX differentiator of the wizard — it is the mechanism by which a non-technical coordinator trusts the tool and understands what their data will unlock. Getting it wrong in individual stories creates inconsistent register and costly retro edits. This story ships the artifact first; it is a prerequisite for the final copy of Stories 9.2, 9.3, 9.6, 9.7, 9.8.
+
+**Voice rules (locked — see sprint-change-proposal-2026-05-29.md §"Key UX decisions"):**
+- Register: Pyramid-of-Greatness (frankness, sovereignty of choice) with a grain of salt
+- Forbidden: "most spaces leave this blank," "keep it simple," any nudge that comforts mediocrity OR shames
+- Bernard names themselves (they/them) **only on the wizard intro**, briefly
+- Bernard **never appears as character imagery** — no silhouette, no crab, no fort
+
+**Acceptance Criteria:**
+
+**Given** the calibrated lines in the sprint change proposal and the Bernard character bible (`_bmad-output/planning-artifacts/mom_handoff_2026-05-15.md`)
+**When** Story 9.5 lands
+**Then** `web/genjson/bernard_copy.yaml` exists as the single source of truth for all wizard copy, structured as a YAML map keyed by moment:
+
+```yaml
+drawer_one_liner: "Two ways through. [Tell me about your space]. Or paste a URL if you already have one. Either is fine."
+wizard_intro: "Hi, I'm Bernard (they/them) from 'Mother Sands'. Let's get your space on the map."
+floor_gate: "Name and address. That's the floor. Everything else, I'll derive."
+tier_1_exit: "Core's in. Other SpaceAPI apps can read this file as-is."
+tier_2_exit: "MoM fields filled. Network features unlocked: membership, opening hours, SDGs."
+tier_3_exit: "Silo fields in. Your space's vertical features active."
+sovereignty_disclosure: "You publish, we make it legible. The rest is history."
+localstorage_warning: "Your progress is saved in this browser. Hard-refresh or clearing site data wipes it. Export at any point if you want a copy outside the browser."
+field_hints:
+  space: "The name your community knows you by."
+  logo: "A square image URL. Shows on your map card."
+  url: "Your space's main web page."
+  description: "One or two sentences. What kind of space is this?"
+  contact_email: "A contact address for the space — not a personal inbox."
+  opening_hours: "When are you open? We use OSM opening_hours format."
+  memberOf: "Which network(s) is this space part of? URL preferred."
+  sdgs: "Which UN Sustainable Development Goals does your space contribute to? Numbers only."
+validation_messages:
+  schema_invalid: "Something's off. Check the fields marked in red — the file isn't valid yet."
+  nominatim_unavailable: "Geocoding temporarily unavailable — enter coordinates manually."
+  localstorage_resume: "Continuing from where you left off."
+  clear_confirm: "This will erase your saved progress. Continue?"
+```
+
+**And** `bernard_copy.yaml` is imported by the wizard JS bundle at build time (or fetched once at load and cached) — no copy is hardcoded in HTML or JS except as fallback if the YAML fetch fails
+**And** Stories 9.2, 9.3, 9.6, 9.7, 9.8 ACs that reference specific copy lines cite `bernard_copy.yaml` key names rather than quoting strings inline
+**And** a `test_bernard_voice_completeness` test asserts that every key referenced in the wizard JS bundle has a corresponding entry in `bernard_copy.yaml`
+
+**Gating test** — `test_bernard_voice_completeness` passes; Nicolas reads the full artifact and approves the register (no forbidden patterns, consistent tone). **No automated tone testing** — tone approval is operator judgement, documented in Story 9.5 completion notes.
+
+**Dependencies:** none — can land in parallel with 9.1–9.4; is a prerequisite for final copy of 9.2, 9.3, 9.6, 9.7, 9.8.
+
+---
+
+### Story 9.6: Wizard Tier 2 — `mom:` Fields (opening_hours, memberOf, mom:sdgs)
+
+As a space coordinator who has completed Tiers 0 + 1,
+I want to fill in the MoM-specific horizontal fields that unlock network features (membership, opening hours, SDGs),
+So that my space appears correctly in network filters and benefits from the cross-network features MoM provides.
+
+**Context:** These fields are Tier 2 (`mom:` namespace) — unlocked only after SpaceAPI v15 core (Tier 1) is complete. They require Story C.X (namespace pass) to have landed, as `mom:opening_hours`, `mom:memberOf`, and `mom:sdgs` must be declared in `mom.ttl` before the transformer maps them.
+
+**Acceptance Criteria:**
+
+**Given** the coordinator has exported or saved a Tier 1 draft and opens Tier 2
+**When** Story 9.6 lands
+**Then** the Tier 2 section presents three fields in order, with copy from `bernard_copy.yaml`:
+  1. **`mom:opening_hours`** — text input, placeholder `Mo-Fr 10:00-18:00`, hint: *"When are you open? We use OSM opening_hours format."* A "validate hours format" inline check highlights invalid OSM format strings without blocking
+  2. **`mom:memberOf`** — URL input (or comma-separated URLs), hint: *"Which network(s) is this space part of? URL preferred."* Accepts free text if URL validation fails — logs as `mom:OntologyGap` on ingestion
+  3. **`mom:sdgs`** — multi-select of SDG numbers 1–17 with short labels (e.g. "4 — Quality Education"), hint: *"Which UN Sustainable Development Goals does your space contribute to?"* Renders as a compact chip grid, not a dropdown
+**And** the Tier 2 exit banner renders: *"MoM fields filled. Network features unlocked: membership, opening hours, SDGs."* (from `bernard_copy.yaml`)
+**And** the export at any point after Tier 1 passes now includes `mom:opening_hours`, `mom:memberOf`, `mom:sdgs` in the output JSON if filled; unfilled Tier 2 fields are omitted entirely (not `null`)
+**And** SDG chip selection state is persisted in localStorage alongside other fields
+
+**Gating test** — `test_wizard_tier2_export`: fill Tier 2 fields → export → validate exported JSON contains `mom:opening_hours`, `mom:memberOf`, `mom:sdgs` keys → submit via Story 2.1 registration → assert triples present in Oxigraph (`ASK { ?s mom:sdgs ?o }`). **+ operator visual confirmation** SDG chips render correctly on mobile without overflow.
+
+**Dependencies:** Story C.X (namespace pass); Stories 9.3 + 9.5.
+
+---
+
+### Story 9.7: Wizard `state.open` FSM — Cascading Questions + Marker Mapping + Opt-out
+
+As a space coordinator filling in the wizard,
+I want to express whether my space signals open/closed status — or choose not to — without encountering jargon,
+So that the map marker reflects my actual operational behaviour and Axis C (Story 3.3) propagates correctly.
+
+**Context:** `state.open` in SpaceAPI v15 is an object with `value` (boolean), `message` (optional string), and optionally `trigger` (string). Story 3.3 Axis C semantics: field **omission** = "no live signal" (not false); presence of `value: false` = explicitly closed; presence of `value: true` = open. Opt-out is omission, not a sentinel. The wizard must not coerce the coordinator into a false open/closed signal.
+
+**Acceptance Criteria:**
+
+**Given** the coordinator reaches the `state.open` section of the wizard (Tier 1, after `contact.*` fields)
+**When** Story 9.7 lands
+**Then** the wizard presents a three-option radio group with plain-language labels — no JSON field names shown:
+  - **"Yes — my space is currently open"** → sets `state.open.value = true`
+  - **"No — my space is currently closed"** → sets `state.open.value = false`
+  - **"Skip — I'd rather not signal this"** → omits `state.open` from the exported JSON entirely (opt-out = field omission per Axis C contract)
+**And** selecting "Yes" or "No" reveals an optional `state.open.message` textarea: placeholder "e.g. Open Wednesdays for drop-in. Closed for August." — Bernard hint: *"Optional. If you add a message, it shows on your map card."*
+**And** the marker preview (a small coloured dot beside the section header) updates live:
+  - `value: true` → 🟢 green dot
+  - `value: false` → ⚫ black dot
+  - omitted → 🔵 blue dot (confirmed, no live signal)
+**And** the "Skip" option is the **default** (no pre-selection of Yes/No) — the coordinator must affirmatively choose to signal open or closed; the wizard never assumes
+**And** the SpaceAPI v15 `state` block in the exported JSON reflects exactly the coordinator's choice — no coercion, no defaults injected for omitted fields
+**And** the `state.open` FSM propagates correctly end-to-end: a wizard export submitted via Story 2.1 registration, with `state.open.value = true`, results in `mom:openNow "true"^^xsd:boolean` in Oxigraph and a 🟢 badge on the map pin (if the space is `confirmed`)
+
+**Gating test** — three paths: (a) select Yes → export → submit → assert `mom:openNow true` in Oxigraph; (b) select No → export → assert `mom:openNow false` in Oxigraph; (c) select Skip → export → assert `state.open` absent from JSON AND `mom:openNow` triple absent from Oxigraph. **+ operator visual confirmation** marker preview updates live on selection.
+
+**Dependencies:** Stories 9.3 + 9.5; Story C.X (for `mom:` fields consistency).
+
+---
+
+### Story 9.8: GitLab Tutorial Surface — Embedded Guide + "See Logo on Card" Success Moment + Refresh Affordance
+
+As a space coordinator who has exported their JSON file but has no hosting,
+I want a guided tutorial showing me how to publish the file on GitLab Pages,
+So that I complete the full loop — from filling the wizard to seeing my logo on my MoM card — without needing to ask anyone for help.
+
+**Context:** Many non-technical coordinators ("Maëlle") will export a valid JSON file but then stall because they don't know where to host it. GitLab Pages provides free, permanent, HTTPS-served static hosting — no credit card, no server, no command line required. The logo field is used as the "pedagogy payload": uploading a logo image alongside the JSON file teaches the full commit-push-deploy cycle in one gesture, and the "see it on your card" success moment closes the loop.
+
+**Acceptance Criteria:**
+
+**Given** the coordinator has exported a JSON file (Tier 0 or above)
+**When** Story 9.8 lands
+**Then** a "Publish your file" section appears below the Export button with the following expandable guide (collapsed by default, expands on click):
+
+  **Step 1 — Create a GitLab account and project** (with a link to `gitlab.com/projects/new` — the only external link in the wizard)
+  **Step 2 — Upload your JSON file** to the repository root (drag-and-drop screenshot or GIF — static asset in the repo)
+  **Step 3 — Enable GitLab Pages** (Settings → Pages → Use default domain) — one-sentence instruction per step, no terminal commands shown
+  **Step 4 — Your file URL is** `https://{username}.gitlab.io/{projectname}/status.json` — wizard renders this template with a fill-in-the-blank for `username` and `projectname`; the filled URL auto-populates the "paste your URL" input in the main drawer (Story 9.2 flow)
+  **Step 5 — Add your logo** alongside the JSON file and update `logo` in your JSON to point to `https://{username}.gitlab.io/{projectname}/logo.png` — the wizard highlights the `logo` field in the live preview
+
+**And** a "**Did it work? Refresh from URL →**" button appears after Step 4 is expanded — it calls `POST /api/validate-url` (Story 2.1) with the filled URL and shows a live checklist: reachable ✓, JSON-LD valid ✓, logo found ✓ / not yet ✗
+**And** if `logo` is reachable, a "**🎉 Your logo is live — it'll appear on your card**" success banner renders — this is the designed success moment; it proves the full loop works
+**And** the tutorial is static HTML/CSS — no framework, no JS required for the text steps; only the "Refresh from URL" button requires JS
+**And** the tutorial renders correctly on mobile (steps stacked, no horizontal overflow)
+
+**Gating test** — manual: Nicolas follows the tutorial with a real GitLab account, uploads a real JSON + logo, clicks "Refresh from URL", confirms logo appears on map card. **This is the M2 acceptance test.** Automated test: `test_gitlabpages_refresh_cta` — mock `POST /api/validate-url` returning logo-found, assert success banner renders.
+
+**Dependencies:** Stories 9.1, 9.3, 9.5; Story 2.1 (`/api/validate-url` endpoint).
+
+---
+
+### Story 9.9: Three-Mode Unification — URL Fetch Pre-fill, Validator Mode, Cache Resume Reconciliation *(M3 — deferrable)*
+
+> **M3 — deferrable.** Implement after M1 + M2 are validated with real coordinators.
+
+As a space coordinator returning to the wizard with an existing endpoint URL,
+I want the wizard to pre-fill from my live endpoint so I can see what MoM currently reads and update only what's changed,
+So that maintaining my data doesn't require re-entering everything from scratch.
+
+**Acceptance Criteria:**
+
+**Given** a coordinator opens `genjson.mapsofmaking.org/?url=https://myspace.org/status.json`
+**When** Story 9.9 lands
+**Then** the wizard fetches the URL via `POST /api/validate-url` (Story 2.1 endpoint), parses the response JSON, and pre-fills all matching wizard fields from the live endpoint payload
+**And** fields present in the live payload but not matching any wizard field are shown in a collapsible "Unrecognised fields (preserved)" section — they are included unchanged in the export
+**And** if `localStorage.getItem('genjson_draft')` also exists for this URL, the wizard shows a conflict-resolution prompt: "You have a saved draft from {date}. Use it, or start from the live endpoint?" — coordinator chooses; no silent override
+
+**Validator mode:** `GET genjson.mapsofmaking.org/?validate=https://myspace.org/status.json` shows a read-only validation report (checklist: reachable, schema, tiers unlocked, field-by-field annotations) without entering the edit flow.
+
+**Cache resume reconciliation:** if the wizard detects that `localStorage` draft differs from the current live endpoint (by content hash), it shows: "Your draft and your live endpoint differ. Review before exporting." — highlights differing fields in amber.
+
+**Gating test** — `test_url_prefill`: POST a known-valid endpoint URL → assert wizard fields pre-filled correctly; assert unrecognised fields appear in collapsed section. **+ operator visual confirmation** conflict-resolution prompt renders correctly.
+
+**Dependencies:** Stories 9.3, 9.4; Story 2.1.
+
+---
+
+### Story 9.10: Wizard Tier 3 — `ext_fab` Fields (space_type Fuzzy Dropdown, equipment) *(M3 — deferrable)*
+
+> **M3 — deferrable.** Implement after M2 is validated; requires `ext_fab.ttl` extraction (Epic 10).
+
+As a makerspace coordinator filling in silo-specific fields,
+I want a fuzzy-search dropdown for space type and an equipment multi-select,
+So that my space's vertical features (capabilities, equipment) are correctly tagged for maker-specific filtering.
+
+**Acceptance Criteria:**
+
+**Given** the coordinator has completed Tier 2 and advances to Tier 3
+**When** Story 9.10 lands
+**Then** the Tier 3 section presents:
+  1. **`ext_fab.space_type`** — fuzzy-search single-select dropdown populated from the canonical `space_type` vocabulary in `ext_fab.ttl`; typing filters the list; "not listed" is always an option, accepting free text
+  2. **`ext_fab.equipment`** — multi-select chip grid populated from the equipment vocabulary in `ext_fab.ttl`; chip selection is additive; a "custom equipment" text input appends items not in the vocabulary
+**And** the Tier 3 exit banner renders: *"Silo fields in. Your space's vertical features active."* (from `bernard_copy.yaml`)
+**And** selected `ext_fab.*` fields appear in the exported JSON under the `ext_fab` namespace key
+**And** the vocabulary lists are bundled as a static JSON file (`web/genjson/ext_fab_vocab.json`) — no runtime SPARQL query from the wizard
+
+**Gating test** — `test_wizard_tier3_export`: select a space type + two equipment items → export → validate exported JSON contains `ext_fab.space_type` and `ext_fab.equipment`. **+ operator visual confirmation** fuzzy search filters correctly.
+
+**Dependencies:** Stories 9.3, 9.5; Epic 10 (`ext_fab.ttl` extraction).
+
+---
+
+### Story 9.11: Validator Error UX — Inline Per-field + Summary Report *(M3 — deferrable)*
+
+> **M3 — deferrable.** Implement after M1 + M2 UX is stable; requires real coordinator usage to calibrate error messages.
+
+As a space coordinator whose JSON failed validation,
+I want inline per-field error messages and a summary report that tells me exactly what to fix and why,
+So that I can resolve validation failures without asking for help.
+
+**Acceptance Criteria:**
+
+**Given** the coordinator clicks "Export" or "Refresh from URL" and the validation fails
+**When** Story 9.11 lands
+**Then** each field with a validation error shows an inline red border + one-sentence plain-language explanation (from `bernard_copy.yaml.validation_messages` — add new keys as needed)
+**And** a collapsible "Validation summary" section at the bottom of the wizard lists all failing fields with their error category and a one-line fix instruction
+**And** the summary distinguishes between: (a) blocking errors (export disabled until resolved), (b) non-blocking warnings (export proceeds but with a banner), and (c) schema upgrade hints (fields that would unlock the next tier)
+**And** no raw JSON Schema error strings are shown to the coordinator — all errors are translated to plain language in `bernard_copy.yaml`
+**And** on "Refresh from URL" failure, the validation summary matches what `POST /api/validate-url` would return — the wizard and the endpoint are consistent in their error vocabulary
+
+**Gating test** — `test_validator_error_ux`: submit a JSON missing `space` (required) → assert inline error on `space` field + "Export" disabled; submit a JSON with invalid OSM hours format → assert non-blocking warning; assert no raw JSON Schema strings visible in DOM. **+ operator visual confirmation** error messages read naturally in Bernard's register.
+
+**Dependencies:** Stories 9.3, 9.5.
+
+---
+
+## Epic 10: Multi-Network Schema — Bundles, Concept Commons & Emergent Ontologies *(stub — no stories yet; post-demo)*
 
 > **Added 2026-05-18** from the schema role-play design dialogue around Story 3.5. **Stub only.** Design seeds: `schema-roleplay-personas.md`, `mom-schema-architecture-handoff.md`, ADR-016 (written in Story 3.5).
 
