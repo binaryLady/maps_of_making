@@ -1,5 +1,5 @@
 # generated: 2026-05-01
-# last_updated: 2026-05-29 (Epic 9 Bernard's Workshop added; old Epic 9 → Epic 10; Story 4.0 + 4.5 added)
+# last_updated: 2026-05-30 (Epic 9 Bernard's Workshop added; old Epic 9 → Epic 10; Story 4.0 + 4.5 added)
 # project: maps_of_making
 # project_key: NOKEY
 # tracking_system: file-system
@@ -192,8 +192,8 @@ development_status:
   # Epic 9: Bernard's Workshop — Assisted SpaceAPI JSON Composer
   # Depends on Story C.X (schema namespace pass). Parallel to Epic 4 re-review.
   # M1 (must-ship): 9.1–9.5 | M2 (features + pedagogy): 9.6–9.8 | M3 (deferrable): 9.9–9.11
-  epic-9: backlog
-  9-1-subdomain-infra-genjson-mapsofmaking-org-dns-nginx-static-scaffold: backlog
+  epic-9: in-progress
+  9-1-subdomain-infra-genjson-mapsofmaking-org-dns-nginx-static-scaffold: ready-for-dev
   9-2-drawer-ux-on-mom-map-bernard-one-liner-url-input-cta: backlog
   9-3-wizard-core-tiers-0-1-name-address-spaceapi-v15-core-localstorage-export: backlog
   9-4-nominatim-proxy-endpoint-in-link-handler: backlog
