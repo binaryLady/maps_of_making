@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-01
-last_updated: "2026-05-29 (Epic 9 Bernard's Workshop added; old Epic 9 → Epic 10; Story 4.0 + 4.5 added; C.X ready-for-dev)"
+last_updated: "2026-05-30 (C.X done — canary ops parity + dead code removal)"
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
@@ -140,7 +140,7 @@ development_status:
 
   # Cleanup C.X: Schema Namespace Pass (shared prereq — blocks Epic 9 + Epic 4 re-review)
   # Must complete before Epic 9 kickoff AND before Epic 4 stories are re-reviewed.
-  cx-schema-namespace-pass: review
+  cx-schema-namespace-pass: done
 
   # Epic 4: Operator Observability Dashboard
   # Depends on Epic 3.5 snapshot_store.db + per-space Oxigraph graphs + browser-computed axes.

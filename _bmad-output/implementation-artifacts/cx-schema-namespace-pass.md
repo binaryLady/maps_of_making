@@ -1,6 +1,6 @@
 # Story C.X: Schema Namespace Pass — ext_mom → ext_canary, Introduce mom: Horizontal Fields
 
-**Status:** review
+**Status:** done
 **Epic:** Cleanup (shared prereq)
 **Blocks:** Epic 9 (Bernard's Workshop) AND Epic 4 re-review
 **Source:** `_bmad-output/planning-artifacts/sprint-change-proposal-2026-05-29.md`
@@ -209,15 +209,22 @@ Execute in order, confirm each step before proceeding:
 
 ### Completion Notes
 
-All 7 ACs satisfied (2026-05-29):
+All 7 ACs satisfied. Additional post-review work completed 2026-05-30:
 
-- **AC-1:** `ext_mom` → `ext_canary`, `ext_fab.sdgs` → `mom:sdgs` in both `data/canary/baseline.json` and `web/canary/mother-sands.json`.
-- **AC-2:** All `ext_mom` references renamed in `load_canary.py` (×2 code + comment), `canary_scenarios.py` (×9 payload refs + setdefault + print + comment), `spaceapi_extract/core.py` (fallback + comment), `infra/link_handler/main.py` (×2 + comment).
-- **AC-3:** `mom:sdgs` extraction added to `extract_core()` with `ext_fab.sdgs` migration fallback; integer-list triple emission added to `triples_for()` in `sparql.py`.
-- **AC-4:** `mom:sdgs` and `mom:opening_hours` property declarations added to `ontology/mom.ttl`.
-- **AC-5:** `make c-reset` ran successfully. `load_canary.py` output: `count=23`, `stage=oxigraph_write status=ok`, no `ext_mom` errors.
-- **AC-6:** `canary_scenarios.py b-confirmed` applied; `load_canary.py` logged `lifecycle=confirmed`, `operationalState=confirmed`, no KeyError.
-- **AC-7:** Heartbeat fetched live canary endpoint, rematerialized 1 space. SDG triples verified in Oxigraph as `xsd:integer` (9, 11, 12, 14, 17).
+- **AC-1:** `ext_mom` → `ext_canary`, `ext_fab.sdgs` + `memberOf` → nested `"mom": { "sdgs": [...], "memberOf": [...] }` block in both JSON files.
+- **AC-2:** All `ext_mom` references renamed across all Python files.
+- **AC-3:** `mom:sdgs` extraction added; `core.py` reads from `mom_block` with fallbacks.
+- **AC-4:** Ontology updated.
+- **AC-5:** `make c-reset` verified — lands on `seeded` marker (not confirmed); count=23.
+- **AC-6:** `canary_scenarios.py b-confirmed` sets `state.open="opted-out"` (non-boolean opt-out mode); Axis C scenarios reset from baseline to preserve `simulatedAge` integrity.
+- **AC-7:** Full local canary lifecycle verified: seeded → confirmed → aging → zombie → dead → closed.
+
+**Additional scope completed (2026-05-30):**
+- Canary ops parity refactor: `scripts/canary_ops.py` (new) — single in-container mechanism for all Oxigraph/snapshot/API mutations; `vps-*` Makefile twins for every lifecycle target.
+- Dead code removal: `_classify_lifecycle()` + `mom:operationalState` removed from `load_canary.py` and all seed scripts; browser derives lifecycle from three freshness tokens exclusively.
+- `clear-endpoint` now also removes `updatedAt`/`observedAt` from Oxigraph so `c-reset` correctly lands on `seeded` marker.
+- `docker-compose.dev.yml`: full `../scripts` dir mount (eliminates stale-inode issue from single-file bind mounts).
+- 48 tests pass.
 
 ### File List
 
@@ -225,16 +232,25 @@ All 7 ACs satisfied (2026-05-29):
 - `web/canary/mother-sands.json`
 - `scripts/load_canary.py`
 - `scripts/canary_scenarios.py`
+- `scripts/canary_ops.py` (new)
 - `scripts/spaceapi_extract/core.py`
 - `scripts/spaceapi_extract/sparql.py`
+- `scripts/seed_spaceapi.py`
+- `scripts/seed_bundle.py`
+- `scripts/seed_import.py`
 - `infra/link_handler/main.py`
+- `infra/link_handler/pipeline.py`
+- `infra/docker-compose.dev.yml`
 - `ontology/mom.ttl`
+- `tests/test_load_canary.py`
+- `Makefile`
 - `_bmad-output/implementation-artifacts/cx-schema-namespace-pass.md`
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`
 
 ### Change Log
 
 - 2026-05-29: Rename `ext_mom` → `ext_canary` across all Python and JSON files; promote `ext_fab.sdgs` → `mom:sdgs`; add SDG extraction + integer triple emission; update ontology.
+- 2026-05-30: Nest `sdgs`+`memberOf` under `"mom":{}` block; canary ops parity refactor (`canary_ops.py` + Makefile `vps-*` twins); remove dead `mom:operationalState`/`_classify_lifecycle` code; fix `c-reset` → seeded marker; full scripts dir mount in dev compose; `cb-confirmed` sets opted-out mode; 48 tests pass.
 
 ---
 
