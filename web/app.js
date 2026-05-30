@@ -991,7 +991,7 @@
     if (_addUrlOriginalHTML === null) return;
     // Skip if form is already in initial state (avoid double-init on first open)
     const result = $('#url-result');
-    const input = $('#url-input');
+    const input = $('#existing-url-input');
     if (result && !result.innerHTML && input && !input.value) return;
     $('.addurl-body').innerHTML = _addUrlOriginalHTML;
     _wireAddUrlHandlers();
@@ -999,11 +999,35 @@
 
   function _wireAddUrlHandlers() {
     $('#btn-fetch-url').addEventListener('click', _onFetchUrl);
+    const revealBtn = $('#btn-reveal-url');
+    if (revealBtn) {
+      revealBtn.addEventListener('click', () => {
+        const fork = $('#url-fork');
+        if (!fork) return;
+        const opening = !fork.classList.contains('open');
+        fork.classList.toggle('open', opening);
+        revealBtn.setAttribute('aria-expanded', opening ? 'true' : 'false');
+        if (opening) {
+          // Focus after the reveal animation so the field is in place
+          setTimeout(() => { const inp = $('#existing-url-input'); if (inp) inp.focus(); }, 300);
+        }
+      });
+    }
+    const ctaBtn = $('#btn-wizard-cta');
+    if (ctaBtn) {
+      ctaBtn.addEventListener('click', () => {
+        const draft = localStorage.getItem('genjson_draft');
+        const url = draft
+          ? 'https://genjson.mapsofmaking.org/?resume=1'
+          : 'https://genjson.mapsofmaking.org/';
+        window.open(url, '_blank', 'noopener');
+      });
+    }
   }
 
   async function _onFetchUrl() {
     const out = $('#url-result');
-    const url = $('#url-input').value.trim();
+    const url = $('#existing-url-input').value.trim();
     if (!url) { out.innerHTML = ''; out.appendChild(el('span', { style: { color: 'var(--accent)' } }, ['✗ enter a URL first.'])); return; }
     // Basic URL validation
     if (!url.startsWith('http://') && !url.startsWith('https://')) { out.innerHTML = ''; out.appendChild(el('span', { style: { color: 'var(--accent)' } }, ['✗ URL must start with http:// or https://'])); return; }
@@ -1173,7 +1197,7 @@
     // Update preset code if opening preset
     if (name === 'preset') renderPresetPreview();
     // Reset addurl form when re-opening (clears post-confirmation screen)
-    if (name === 'addurl') { _resetAddUrlForm(); setTimeout(() => { const inp = $('#url-input'); if (inp) inp.focus(); }, 50); }
+    if (name === 'addurl') { _resetAddUrlForm(); }
   }
   function closeDrawer(name) {
     const id = ({

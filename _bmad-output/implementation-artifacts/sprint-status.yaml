@@ -194,7 +194,7 @@ development_status:
   # M1 (must-ship): 9.1–9.5 | M2 (features + pedagogy): 9.6–9.8 | M3 (deferrable): 9.9–9.11
   epic-9: in-progress
   9-1-subdomain-infra-genjson-mapsofmaking-org-dns-nginx-static-scaffold: done
-  9-2-drawer-ux-on-mom-map-bernard-one-liner-url-input-cta: backlog
+  9-2-drawer-ux-on-mom-map-bernard-one-liner-url-input-cta: done
   9-3-wizard-core-tiers-0-1-name-address-spaceapi-v15-core-localstorage-export: backlog
   9-4-nominatim-proxy-endpoint-in-link-handler: backlog
   9-5-bernard-voice-copy-pass-curated-voice-artifact: backlog
