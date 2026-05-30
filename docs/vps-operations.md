@@ -27,7 +27,8 @@ Internet ──► nginx-gateway (host: hetzner-gateway stack)
 | `mapsofmaking.org` | **Primary** | Serves the app |
 | `mapsofmaking.com` | Active | 301 → `mapsofmaking.org` |
 | `admin.mapsofmaking.org` | Active | Admin UI |
-| `mapofmaking.debarquin.eu` | **Deprecated 2026-05-27** | Removed from gateway conf; cert at `/etc/letsencrypt/live/mapofmaking.debarquin.eu/` is unreferenced (safe to `certbot delete` when convenient) |
+| `genjson.mapsofmaking.org` | Active | Bernard's Workshop JSON composer |
+| `mothersands.mapsofmaking.org` | Active | Mother Sands website |
 
 Wildcard cert lives at `/etc/letsencrypt/live/mapsofmaking.org/` and covers `.org` + `.com`.
 
