@@ -18,12 +18,12 @@ import pytest
 REPO_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
-from load_canary import _classify_lifecycle, build_canary_sparql, GRAPH_URI, SPACE_URI
+from load_canary import build_canary_sparql, GRAPH_URI, SPACE_URI
 
 
 # ── Fixtures ─────────────────────────────────────────────────────────────────
 
-def _baseline_payload(simulated_age=None) -> dict:
+def _baseline_payload() -> dict:
     return {
         "api": "0.13",
         "space": "Mother Sands",
@@ -38,24 +38,8 @@ def _baseline_payload(simulated_age=None) -> dict:
         },
         "contact": {"email": "bernard@mothersands.example.org"},
         "state": {"open": True, "lastchange": 1715000000, "message": "nominal"},
-        "ext_mom": {"simulatedAge": simulated_age, "canary": True},
+        "ext_canary": {"simulatedAge": None, "canary": True},
     }
-
-
-# ── Lifecycle classifier ─────────────────────────────────────────────────────
-
-@pytest.mark.parametrize("age,expected", [
-    (None, "seeded"),
-    (0, "confirmed"),
-    (14, "confirmed"),
-    (15, "aging"),
-    (60, "aging"),
-    (61, "zombie"),
-    (180, "zombie"),
-    (181, "dead"),
-])
-def test_classify_lifecycle(age, expected):
-    assert _classify_lifecycle(age) == expected
 
 
 # ── Triple contract ──────────────────────────────────────────────────────────
@@ -71,7 +55,7 @@ def test_required_triples_present():
 
 def test_new_payload_fields_present():
     """Story 3.11: address, countryCode, timeZone now extracted."""
-    sparql = build_canary_sparql(_baseline_payload(simulated_age=0))
+    sparql = build_canary_sparql(_baseline_payload())
     assert "Maunsell Fort, North Sea" in sparql
     assert "sol-3" in sparql
     assert "UTC+0" in sparql
@@ -79,8 +63,8 @@ def test_new_payload_fields_present():
 
 def test_optional_card_triples_present():
     """Optional triples the card renders from."""
-    sparql = build_canary_sparql(_baseline_payload(simulated_age=0))
-    for pred in ["operationalState", "endpointHealth", "lastFetched", "updatedAt", "source"]:
+    sparql = build_canary_sparql(_baseline_payload())
+    for pred in ["endpointHealth", "lastFetched", "source"]:
         assert pred in sparql, f"missing mom:{pred}"
     assert "schema.org/url>" in sparql
     assert "schema.org/logo>" in sparql
@@ -89,7 +73,7 @@ def test_optional_card_triples_present():
 
 def test_freshness_axis_predicates_absent():
     """Heartbeat pipeline owns observedAt/openNow/lastOpenChange — not in loader."""
-    sparql = build_canary_sparql(_baseline_payload(simulated_age=0))
+    sparql = build_canary_sparql(_baseline_payload())
     for pred in ["openNow", "lastOpenChange", "observedAt"]:
         assert pred not in sparql, f"freshness predicate leaked into canary loader: mom:{pred}"
 
@@ -103,17 +87,16 @@ def test_writes_only_canary_graph():
     assert "urn:mak:public_ledger" not in sparql
 
 
-def test_seeded_omits_updated_at():
-    """A seeded canary has no content-change history — no mom:updatedAt."""
-    sparql = build_canary_sparql(_baseline_payload(simulated_age=None))
+def test_operational_state_absent():
+    """mom:operationalState is no longer written — browser derives lifecycle from tokens."""
+    sparql = build_canary_sparql(_baseline_payload())
+    assert "operationalState" not in sparql
+
+
+def test_updated_at_absent():
+    """mom:updatedAt is heartbeat-owned — loader must not write it (would prevent seeded marker)."""
+    sparql = build_canary_sparql(_baseline_payload())
     assert "updatedAt" not in sparql
-    assert 'operationalState> "seeded"' in sparql
-
-
-def test_confirmed_includes_updated_at():
-    sparql = build_canary_sparql(_baseline_payload(simulated_age=0))
-    assert "updatedAt" in sparql
-    assert 'operationalState> "confirmed"' in sparql
 
 
 def test_missing_coordinates_raises():

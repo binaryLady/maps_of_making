@@ -40,7 +40,11 @@ from spaceapi_extract import escape_literal, extract_core, extract_mom, triples_
 logger = logging.getLogger("canary.loader")
 
 REPO_ROOT = Path(__file__).parent.parent
-CANARY_FILE = REPO_ROOT / "web" / "canary" / "mother-sands.json"
+# CANARY_FILE env override lets the loader run in-container (where the repo isn't at
+# REPO_ROOT) using the same mechanism as local host runs. Default = host repo path.
+CANARY_FILE = Path(
+    os.environ.get("CANARY_FILE", str(REPO_ROOT / "web" / "canary" / "mother-sands.json"))
+)
 OXIGRAPH_URL = os.environ.get("OXIGRAPH_URL", "http://localhost:7878").rstrip("/")
 
 MOM = "https://nicolasdb.github.io/mapsofmaking_ontology/ns#"
@@ -54,31 +58,13 @@ CANARY_ENDPOINT = os.environ.get(
 )
 
 
-def _classify_lifecycle(simulated_age) -> str:
-    """Minimal lifecycle classifier for the canary skeleton.
-
-    simulated_age is `ext_canary.simulatedAge`: None = never confirmed (seeded),
-    otherwise an integer count of days since the last content change.
-    """
-    if simulated_age is None:
-        return "seeded"
-    days = float(simulated_age)
-    if days <= 14:
-        return "confirmed"
-    if days <= 60:
-        return "aging"
-    if days <= 180:
-        return "zombie"
-    return "dead"
-
-
 def build_canary_sparql(data: dict) -> str:
     """Map a SpaceAPI document to the urn:mak:canary graph triples.
 
     Uses the bundle-aligned extractor for payload fields. Loader-owned
-    envelope triples (operationalState, source, endpointUrl, lastFetched)
-    are assembled separately. Freshness axis predicates (observedAt, updatedAt,
-    openNow, lastOpenChange) are the heartbeat pipeline's responsibility.
+    envelope triples (source, endpointUrl, lastFetched, updatedAt) are
+    assembled separately. Freshness axis predicates (observedAt, openNow,
+    lastOpenChange) are the heartbeat pipeline's responsibility.
     """
     loc = data.get("location", {})
     lat, lon = loc.get("lat"), loc.get("lon")
@@ -86,20 +72,15 @@ def build_canary_sparql(data: dict) -> str:
         raise ValueError("canary served.json missing location.lat / location.lon")
 
     now = datetime.now(timezone.utc).isoformat()
-    lifecycle = _classify_lifecycle(data.get("ext_canary", {}).get("simulatedAge"))
 
     # Loader-owned envelope — not extractable from the payload
     envelope = [
         f"<{SPACE_URI}> a <{MOM}Space> .",
-        f"<{SPACE_URI}> <{MOM}operationalState> {escape_literal(lifecycle)} .",
         f'<{SPACE_URI}> <{MOM}endpointHealth> "healthy" .',
         f'<{SPACE_URI}> <{MOM}source> "canary" .',
         f"<{SPACE_URI}> <{MOM}endpointUrl> <{CANARY_ENDPOINT}> .",
         f'<{SPACE_URI}> <{MOM}lastFetched> "{now}"^^<{XSD_DT}> .',
     ]
-    if lifecycle != "seeded":
-        # mom:updatedAt (Axis B) bootstrapped at load time; heartbeat overwrites on content change
-        envelope.append(f'<{SPACE_URI}> <{MOM}updatedAt> "{now}"^^<{XSD_DT}> .')
 
     # Payload fields via extractor (core + mom)
     core_fields = extract_core(data)
@@ -108,8 +89,8 @@ def build_canary_sparql(data: dict) -> str:
 
     all_triples = envelope + payload_triples
 
-    logger.info("stage=map_triples space=%s lifecycle=%s count=%d",
-                data.get("space", "Mother Sands"), lifecycle, len(all_triples))
+    logger.info("stage=map_triples space=%s count=%d",
+                data.get("space", "Mother Sands"), len(all_triples))
     for t in all_triples:
         logger.debug("triple: %s", t)
 
@@ -148,9 +129,7 @@ def main() -> int:
         logger.error("stage=oxigraph_write status=fail reason=%s", e)
         return 1
 
-    lifecycle = _classify_lifecycle(data.get("ext_canary", {}).get("simulatedAge"))
-    logger.info("stage=oxigraph_write status=ok graph=%s operationalState=%s",
-                GRAPH_URI, lifecycle)
+    logger.info("stage=oxigraph_write status=ok graph=%s", GRAPH_URI)
     logger.info("stage=done")
     return 0
 

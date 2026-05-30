@@ -119,7 +119,6 @@ def build_insert(name: str, endpoint_url: str, payload: dict, network: str) -> t
         f"<{subject_uri}> a <{MOM_NS}Space> .",
         f"<{subject_uri}> <{MOM_NS}endpointUrl> <{endpoint_url}> .",
         f"<{subject_uri}> <{MOM_NS}source> {escape_literal(source_tag(network))} .",
-        f'<{subject_uri}> <{MOM_NS}operationalState> "seeded" .',
         f"<{subject_uri}> <{MOM_NS}memberOf> <{network_uri(network)}> .",
     ]
 

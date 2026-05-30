@@ -159,7 +159,6 @@ def build_insert(r: dict, source: str, network: str) -> tuple[str, str]:
         f"<{SCHEMA_NS}longitude> {r['lon']} ] .",
         f"<{subj}> <{MOM_NS}source> {escape_literal(source)} .",
         f"<{subj}> <{MOM_NS}memberOf> <urn:mak:network/{network}> .",
-        f'<{subj}> <{MOM_NS}operationalState> "seeded" .',
     ]
     if r.get("street"):
         triples.append(f"<{subj}> <{SCHEMA_NS}streetAddress> {escape_literal(r['street'])} .")

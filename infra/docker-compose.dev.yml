@@ -22,8 +22,8 @@ services:
   mak-link-handler:
     volumes:
       - ../web/data:/app/web_data:z
-      - ../scripts/activity_map.yaml:/app/scripts/activity_map.yaml:ro,z
-      - ../scripts/spaceapi_extract:/app/scripts/spaceapi_extract:ro,z
+      - ../scripts:/app/scripts:ro,z  # full scripts dir — edits propagate without rebuild
+      - ../web/canary:/app/web/canary:ro,z  # served canary JSON for load_canary CANARY_FILE
       - ../data/tasks:/app/tasks:z  # persist heartbeat_log.db; :z for Fedora SELinux
       - ../data/canary:/app/data/canary:ro,z  # for Mother Sands canary diagnostic endpoint
     environment:

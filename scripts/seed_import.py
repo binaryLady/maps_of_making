@@ -96,7 +96,6 @@ def build_vow_insert(entry: dict) -> tuple[str, str]:
     profile_url = entry.get("mom:profileUrl")
     knows_about = entry.get("schema:knowsAbout", [])
     source = entry.get("mom:source", "scraped-vow")
-    operational_state = entry.get("mom:operationalState", "seeded")
     fidelity = entry.get("mom:geolocationFidelity", "")
 
     subject = f"<urn:mak:space/{sid}>"
@@ -131,7 +130,6 @@ def build_vow_insert(entry: dict) -> tuple[str, str]:
             triples += f" ;\n    schema:knowsAbout {sparql_str(item)}"
 
     triples += f" ;\n    mom:source {sparql_str(source)}"
-    triples += f" ;\n    mom:operationalState {sparql_str(operational_state)}"
 
     if fidelity:
         triples += f" ;\n    mom:geolocationFidelity {sparql_str(fidelity)}"
@@ -201,11 +199,7 @@ def build_rff_insert(entries: list) -> tuple[str, str]:
             for item in entry.get("schema:knowsAbout", []):
                 entry_triples += f" ;\n      schema:knowsAbout {sparql_str(item)}"
 
-        raw_state = entry.get("mom:operationalState") or entry.get("mom:freshnessStatus", "seeded")
-        # strip legacy URI prefix if present (e.g. "mak:confirmed" → "confirmed")
-        operational_state = raw_state.split(":")[-1] if ":" in raw_state else raw_state
         entry_triples += f" ;\n      mom:source {sparql_str(entry.get('mom:source', 'mock-rff'))}"
-        entry_triples += f" ;\n      mom:operationalState {sparql_str(operational_state)}"
 
         if "mom:confirmedAt" in entry:
             entry_triples += f" ;\n      mom:confirmedAt {sparql_str(entry['mom:confirmedAt'])}"

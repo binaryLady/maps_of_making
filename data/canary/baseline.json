@@ -24,9 +24,11 @@
     "lastchange": 1715000000,
     "message": "Canary nominal — all fishtems operational"
   },
-  "mom:sdgs": [9, 11, 12, 14, 17],
+  "mom": {
+    "sdgs": [9, 11, 12, 14, 17],
+    "memberOf": ["canary", "vulca"]
+  },
   "ext_canary": {
-    "memberOf": ["canary","vulca"],
     "canary": true,
     "simulatedAge": null,
     "thresholdMode": false

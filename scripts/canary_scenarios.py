@@ -83,7 +83,7 @@ def scenario_a_http_error() -> tuple[dict, dict | None]:
 def scenario_b_seeded() -> tuple[dict, dict | None]:
     """Axis B: space has never had a confirmed content update.
 
-    INJECT  simulatedAge=None → lifecycle clock not started → seeded state
+    INJECT  simulatedAge=None (human label only); seeded = no endpointUrl in Oxigraph
     STATE   (healthy, seeded, open)
     EXPECT MARKER  seeded
     EXPECT CARD    seeded badge; no "updated X ago" shown
@@ -94,22 +94,23 @@ def scenario_b_seeded() -> tuple[dict, dict | None]:
 
 
 def scenario_b_confirmed() -> tuple[dict, dict | None]:
-    """Axis B: content updated recently (0 days).
+    """Axis B: content updated recently, open/close opted out.
 
-    INJECT  simulatedAge=0 → classify_lifecycle(0) → confirmed
-    STATE   (healthy, confirmed, open)
-    EXPECT MARKER  open (confirmed + open_now=true → open wins)
-    EXPECT CARD    open pill; "updated just now"
+    INJECT  simulatedAge=0 (human label); state.open = "opted-out" (non-boolean → opt-out)
+    STATE   (healthy, confirmed, opted-out)
+    EXPECT MARKER  confirmed (no open/close pill — opted-out disables Axis C display)
+    EXPECT CARD    "Confirmed" status; no open/closed pill
     """
     payload = _baseline()
     payload["ext_canary"]["simulatedAge"] = 0
+    payload["state"]["open"] = "opted-out"
     return payload, None
 
 
 def scenario_b_aging() -> tuple[dict, dict | None]:
     """Axis B: content not updated for 30–90 days.
 
-    INJECT  simulatedAge=45 → classify_lifecycle(45) → aging
+    INJECT  simulatedAge=45 (human label); make cb-aging backdates mom:updatedAt 45d → browser computes aging
     STATE   (healthy, aging, open)
     EXPECT MARKER  aging
     EXPECT CARD    "Going quiet" pill; "updated 45 days ago"
@@ -122,7 +123,7 @@ def scenario_b_aging() -> tuple[dict, dict | None]:
 def scenario_b_zombie() -> tuple[dict, dict | None]:
     """Axis B: content not updated for 90–180 days.
 
-    INJECT  simulatedAge=120 → classify_lifecycle(120) → zombie
+    INJECT  simulatedAge=120 (human label); make cb-zombie backdates mom:updatedAt 120d → browser computes zombie
     STATE   (healthy, zombie, open)
     EXPECT MARKER  zombie
     EXPECT CARD    "Unreachable" pill; "updated 120 days ago"
@@ -135,8 +136,7 @@ def scenario_b_zombie() -> tuple[dict, dict | None]:
 def scenario_b_closed() -> tuple[dict, dict | None]:
     """Axis B: operator-declared retirement (terminal, authoritative).
 
-    INJECT  simulatedAge signals operator-declared closed state
-            (in live system: is_closed=1 set in heartbeat_log.db)
+    INJECT  simulatedAge=999 (human label); make cb-closed sets mom:operatorDeclaredClosed=true
     STATE   (healthy, closed, open)
     EXPECT MARKER  closed
     EXPECT CARD    "Permanently closed" — operator declared, not inferred
@@ -163,7 +163,6 @@ def scenario_c_openclose_open() -> tuple[dict, dict | None]:
     """
     payload = _baseline()
     payload["state"]["open"] = True
-    payload["ext_canary"]["simulatedAge"] = 0
     return payload, None
 
 
@@ -178,7 +177,6 @@ def scenario_c_openclose_shut() -> tuple[dict, dict | None]:
     """
     payload = _baseline()
     payload["state"]["open"] = False
-    payload["ext_canary"]["simulatedAge"] = 0
     return payload, None
 
 
@@ -192,7 +190,6 @@ def scenario_c_no_open_field() -> tuple[dict, dict | None]:
     """
     payload = _baseline()
     del payload["state"]
-    payload["ext_canary"]["simulatedAge"] = 0
     return payload, None
 
 

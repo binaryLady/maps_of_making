@@ -210,9 +210,8 @@ async def _space_is_claimed(
     graph_uri: str,
     subject: str,
 ) -> bool:
-    """Is mom:endpointUrl present on the subject? Mirrors the legacy
-    `mom:operationalState != 'dead'` gate — without an endpoint, the space is
-    seeded/unclaimed and the heartbeat skips it entirely."""
+    """Is mom:endpointUrl present on the subject? Without an endpoint the space is
+    unclaimed and the heartbeat skips it entirely."""
     sparql = f"""PREFIX mom: <{MOM_NS}>
 ASK {{ GRAPH <{graph_uri}> {{ <{subject}> mom:endpointUrl ?u }} }}"""
     async with httpx.AsyncClient(timeout=10.0) as client:
