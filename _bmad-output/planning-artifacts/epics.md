@@ -1905,6 +1905,11 @@ So that I can produce a valid SpaceAPI v15 JSON file without understanding the s
 
 ### Story 9.4: Nominatim Proxy Endpoint in `link_handler`
 
+> **MERGED into Story 9.3 (2026-05-30).** The wizard cannot E2E-pass or demo without geocoding
+> (9.3's gating test calls this proxy, and the CSP `/api/` same-origin seam lives between the two).
+> Folded into 9.3 as a single demoable vertical slice. ACs below are retained as the proxy spec
+> (now AC6/AC7 of Story 9.3); status `merged` in sprint-status.yaml.
+
 As the wizard front-end,
 I want a server-side Nominatim geocoding proxy at `POST /api/geocode`,
 So that geocoding requests from the wizard respect Nominatim's rate-limit policy (1 req/s, identified User-Agent) without exposing coordinator IP addresses to a third-party geocoding service.
