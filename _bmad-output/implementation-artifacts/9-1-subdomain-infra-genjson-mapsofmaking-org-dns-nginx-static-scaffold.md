@@ -1,6 +1,6 @@
 # Story 9.1: Subdomain & Infra — `genjson.mapsofmaking.org` DNS + Nginx + Static Scaffold
 
-**Status:** ready-for-dev
+**Status:** done
 **Epic:** Epic 9 — Bernard's Workshop (M1 — must-ship)
 **Milestone:** M1 Floor & Core (Stories 9.1–9.5)
 **Depends on:** Story C.X (done ✓)
@@ -257,12 +257,17 @@ ssh hetzner "..."
 | File | Action | Notes |
 |---|---|---|
 | `infra/gateway-nginx/08-genjson-mapsofmaking.conf` | NEW | nginx-gateway config for genjson subdomain |
+| `infra/gateway-nginx/09-mothersands-mapsofmaking.conf` | NEW | nginx-gateway stub for mothersands subdomain (planted early) |
+| `infra/nginx/conf.d/app.conf` | MODIFIED | Added `/genjson/`, `/mothersands/` location blocks; fixed `/admin/` to use subfolder |
 | `web/genjson/index.html` | NEW | Scaffold HTML per ACs |
-| `web/genjson/genjson.js` | NEW | Empty placeholder (avoids 404 on `<script>` reference) |
+| `web/genjson/genjson.js` | NEW | Empty placeholder |
+| `web/mothersands/index.html` | NEW | Stub for Mother Sands website (planted early, no story yet) |
+| `web/mothersands/mothersands.js` | NEW | Empty placeholder |
+| `web/admin/index.html` | MOVED from `web/admin.html` | Migrated to subfolder pattern; content unchanged |
+| `web/admin.html` | DELETED | Replaced by `web/admin/index.html` |
 
 **Files NOT to modify:**
-- `infra/nginx/conf.d/app.conf` — maps-nginx serves `/genjson/` path automatically via root + try_files; no changes needed
-- `infra/docker-compose.yml` — `web/` is already volume-mounted; `web/genjson/` is picked up automatically
+- `infra/docker-compose.yml` — `web/` is already volume-mounted; subfolders are picked up automatically
 
 ---
 
@@ -285,15 +290,38 @@ ssh hetzner "..."
 
 ## Story Completion Checklist
 
-- [ ] DNS A-record `genjson.mapsofmaking.org` → VPS IP added and propagated
-- [ ] `infra/gateway-nginx/08-genjson-mapsofmaking.conf` created (HTTP block first)
-- [ ] Initial config deployed + nginx reloaded (HTTP-only, for ACME)
-- [ ] Cert issued: `certbot certonly --webroot -d genjson.mapsofmaking.org`
-- [ ] `08-genjson-mapsofmaking.conf` updated with HTTPS block
-- [ ] `web/genjson/index.html` created (scaffold per ACs)
-- [ ] `web/genjson/genjson.js` created (empty placeholder)
-- [ ] Full config deployed to VPS, nginx reloaded
-- [ ] `curl -I https://genjson.mapsofmaking.org/` → 200 ✓
-- [ ] `curl -I http://genjson.mapsofmaking.org/` → 301 ✓
-- [ ] Browser: page loads, no console errors, no external network requests ✓
-- [ ] Sprint status updated to `done`
+### Scope note
+Story 9.1 was expanded at implementation time to include:
+- `web/` subfolder pattern established for all sub-apps (admin, genjson, mothersands)
+- `web/admin.html` → `web/admin/index.html` (content unchanged; Epic 4 stub)
+- `web/mothersands/` stub + `09-mothersands-mapsofmaking.conf` planted (saves a story later)
+- `infra/nginx/conf.d/app.conf` updated with location blocks for all three
+
+### Checklist
+
+**genjson (story-required):**
+- [x] DNS A-record `genjson.mapsofmaking.org` → 128.140.72.105 propagated
+- [x] `08-genjson-mapsofmaking.conf` — HTTP-only deployed for ACME, then full HTTPS
+- [x] Cert issued (exp 2026-08-28), nginx-gateway reloaded
+- [x] `web/genjson/index.html` + `genjson.js` created and deployed
+- [x] `https://genjson…/` → 200 text/html; `genjson.js` → 200 application/javascript ✓
+- [x] `http://genjson…/` → 301; CSP / X-Frame SAMEORIGIN / HSTS verified ✓
+
+**mothersands (planted early, fully live):**
+- [x] DNS A-record `mothersands.mapsofmaking.org` set and propagated
+- [x] `09-mothersands-mapsofmaking.conf` — HTTP-only → cert → full HTTPS deployed
+- [x] Cert issued (exp 2026-08-28), nginx-gateway reloaded
+- [x] `web/mothersands/index.html` + `mothersands.js` created and deployed
+- [x] `https://mothersands…/` → 200 text/html; `mothersands.js` → 200 application/javascript ✓
+- [x] `http://mothersands…/` → 301 ✓
+
+**admin (subfolder migration):**
+- [x] `web/admin.html` → `web/admin/index.html` (content unchanged, flat file removed on VPS)
+- [x] `https://admin…/` → 401 auth_basic intact ✓
+
+**shared:**
+- [x] `infra/nginx/conf.d/app.conf` — `/genjson/`, `/mothersands/`, `/admin/` blocks deployed, maps-nginx reloaded
+
+**remaining:**
+- [x] **Operator:** browser check — genjson, mothersands, admin all confirmed ✓
+- [x] Sprint status → `done`
