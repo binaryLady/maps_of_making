@@ -308,3 +308,7 @@ Generating a real openfab.jsonld against the `space-jsonld-generator` skill expo
 - Multiple gunicorn workers multiply effective Nominatim request rate — each worker has its own RateLimiter (1 req/s), so N workers = N req/s to Nominatim. Fix: shared inter-process rate limiter or single-worker constraint in deploy config.
 - 429 from nginx geocode rate-limit shows same message as outage ("Geocoding temporarily unavailable") with no retry hint. Deferred to Story 9.5 Bernard copy pass.
 - validateAgainstSchema() in genjson.js only checks top-level schema required fields; nested required (location.lat, location.lon) are not validated. Shallow check gives false confidence.
+
+## Deferred from: code review of 9-5-bernard-voice-copy-pass-curated-voice-artifact (2026-05-31)
+
+- Existing localStorage drafts with `contact_mastodon` key silently orphaned after mastodon→matrix field swap — `loadDraft()` merges all saved keys; mastodon value stored in draft object but never rendered or exported; low impact

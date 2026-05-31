@@ -1,6 +1,6 @@
 # Story 9.5: Bernard Voice Copy Pass — Curated Voice Artifact
 
-Status: review
+Status: done
 
 ## Story
 
@@ -36,7 +36,7 @@ field_hints:
   url: "Your space's main web page."
   description: "One or two sentences. What kind of space is this?"
   contact_email: "A contact address for the space — not a personal inbox."
-  contact_mastodon: "e.g. @space@chaos.social"
+  contact_matrix: "Your space's room, not a personal account."
   opening_hours: "When are you open? We use OSM opening_hours format."
   memberOf: "Which network(s) is this space part of? URL preferred."
   sdgs: "Which UN Sustainable Development Goals does your space contribute to? Numbers only."
@@ -47,6 +47,7 @@ validation_messages:
   nominatim_rate_limit: "Too many requests — wait a moment and try again."
   clear_confirm: "This will erase your saved progress. Continue?"
   url_scheme_added: "Added https:// — update if wrong."
+  matrix_sigil_added: "Added # for a room — change to + if it's a community."
 fork_stub:
   tier2_teaser: "Tier 2 is on the way. Network features land in a later step."
   tutorial_teaser: "Self-hosting walkthrough is on the way. Export your file and keep it warm for now."
@@ -149,6 +150,13 @@ fork_stub:
 - [x] **Operator tone review** (AC6)
   - [x] Nicolas reads full `bernard_copy.yaml` and approves or requests edits
   - [x] Document approval in Completion Notes
+
+### Review Findings
+
+- [x] [Review][Decision] AC1 spec lists `contact_mastodon` but impl uses `contact_matrix` — resolved: AC1 amended to `contact_matrix` + `matrix_sigil_added` key (operator-directed change 2026-05-31)
+- [x] [Review][Patch] COPY_FALLBACK missing field_hints causes TypeError when fetch fails [web/genjson/genjson.js:17-25, ~532] — fixed: full fallback mirrors all YAML values
+- [x] [Review][Patch] COPY_FALLBACK.floor_gate diverges from approved copy [web/genjson/genjson.js:17] — fixed: "the floor" → "the bedrock"
+- [x] [Review][Defer] Existing localStorage drafts with contact_mastodon key silently orphaned [web/genjson/genjson.js:282] — loadDraft merges saved keys into draft; mastodon value stored but never shown or exported; low impact, pre-existing merge behaviour — deferred, pre-existing
 
 ## Dev Notes
 
