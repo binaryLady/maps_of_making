@@ -2151,6 +2151,28 @@ So that I can resolve validation failures without asking for help.
 
 ---
 
+### Story 9.12: Wizard Visual Design Pass — Color, Layout & Contrast *(stub)*
+
+> **Added 2026-05-31.** Picks up the styling half of the Story 9.3 deferral (*"fine styling + tone deferred to Story 9.5"*) — Story 9.5 took the **tone + font**; this story owns the **visual design** of the wizard so it ships as its own reviewable slice. Distinct from 9.5 (voice/copy) and 9.11 (validator error UX).
+
+As a space coordinator using the wizard at `genjson.mapsofmaking.org`,
+I want the wizard to look finished and legible — coherent color scheme, comfortable spacing, clear tier hierarchy, accessible contrast,
+So that the tool feels trustworthy and effortless, matching the polish of the MoM map drawer.
+
+**Scope sketch (to be detailed at story-creation time):**
+- **Color scheme** — align the wizard palette with the MoM map's semantic conventions: blue (`--accent-2`) for links/positive/confirmed, red (`--accent`) reserved for errors/broken only (mirrors the drawer `.inline-link` fix, 2026-05-31). No error-red on neutral CTAs.
+- **Tier hierarchy** — Tier 0 / Tier 1 / Tier 2 gates visually distinct; hierarchy via size + color contrast, **not** font-weight (Special Elite is single-weight — see bernard-bible §4).
+- **Spacing & layout** — field-row rhythm, section separation, the post-export fork-stub buttons, breathing room.
+- **Contrast / accessibility** — surface/border/text/placeholder contrast meets WCAG AA; carries forward the 9.3 contrast pass and finishes it.
+- **Mobile** — wizard usable on small screens (the map is already mobile-responsive per Story 2.6).
+- **Consistency with drawer** — same font (Special Elite, self-hosted), same link treatment (blue + underline), so the drawer→wizard handoff feels continuous.
+
+**Dependencies:** Stories 9.3 (wizard exists), 9.5 (font locked, `.bernard-voice` canonical, copy artifact in place). Should land after 9.5 so styling targets final copy.
+
+**Notes:** Operator (Nicolas) reviews visually, one change at a time (per `memory/feedback_ui_iteration.md`). No automated visual testing.
+
+---
+
 ## Epic 10: Multi-Network Schema — Bundles, Concept Commons & Emergent Ontologies *(stub — no stories yet; post-demo)*
 
 > **Added 2026-05-18** from the schema role-play design dialogue around Story 3.5. **Stub only.** Design seeds: `schema-roleplay-personas.md`, `mom-schema-architecture-handoff.md`, ADR-016 (written in Story 3.5).

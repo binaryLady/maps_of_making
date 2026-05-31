@@ -66,18 +66,28 @@ supersedes the scattered notes in `mom_handoff_2026-05-15.md` §Bernard, `mom_ha
 
 ---
 
-## 4. Typography (test phase — canon locked in Story 9.5)
+## 4. Typography (CANON — locked Story 9.5, 2026-05-31)
 
 - **Register → typeface:** maintenance-log / salvaged-typewriter voice points to a
   **typewriter/monospace**, NOT handwriting. (Caveat handwriting reads whimsical/personal —
   wrong for Bernard's weathered terseness.)
-- **Current test (2026-05-30, Story 9.2 drawer):** `Special Elite` (worn typewriter) on a
-  `.bernard-voice` class, fallback `JetBrains Mono`. Confirmed on-vibe — "rough like the sea."
+- **Canonical font: `Special Elite`** (worn typewriter) — confirmed on-vibe ("rough like the
+  sea") in Story 9.2 and locked in Story 9.5. **Self-hosted** (`SpecialElite-Regular.woff2`,
+  Apache 2.0) in `web/genjson/fonts/` and `web/fonts/` — NOT loaded from Google Fonts CDN
+  (the genjson CSP `'self'` blocks CDN). Both drawer and wizard use the self-hosted face;
+  no surface loads it from a CDN.
+- **Canonical `.bernard-voice` declaration:**
+  ```css
+  .bernard-voice { font-family: 'Special Elite', var(--font-mono), monospace; font-size: 17px; line-height: 1.55; }
+  ```
+  `--font-mono` = system stack `'Courier New', 'Lucida Console', monospace` (loading/fallback face).
+- **Single-weight gotcha:** Special Elite ships **one weight only** — `font-weight: bold` is a
+  no-op. Bernard's hierarchy comes from **size + color contrast** (muted-tombstone pattern),
+  never boldness. Do not add `font-weight` rules to `.bernard-voice`.
 - **Dialogue convention:** Bernard's spoken lines open with an **em-dash (`—`)**, the
-  literary/Dredge convention for opening speech. No quotation marks needed.
-- **Decision deferred to 9.5:** lock the canonical font (Special Elite vs. a cleaner mono vs.
-  another typewriter) and apply it *consistently* across drawer + wizard + lore so surfaces
-  don't drift. Do not let each surface pick its own font.
+  literary/Dredge convention for opening speech. No quotation marks needed. (In `bernard_copy.yaml`
+  the em-dash is NOT stored in values — the JS prepends it to spoken lines only, not to field
+  hints or validation messages.)
 
 ---
 
@@ -223,7 +233,7 @@ What carries into Bernard:
 
 ## 10. Open threads (deferred, documented)
 
-- **Canonical Bernard font** — lock in Story 9.5; apply consistently across all surfaces.
+- ~~**Canonical Bernard font**~~ — RESOLVED Story 9.5 (2026-05-31): self-hosted Special Elite, see §4.
 - **3–4 sample changelog posts** in-character to fully lock the voice (after lore page exists).
 - **Bernard's species** — sets relocation temperament.
 - **`mom_lore.md`** — repo-as-source, website-as-rendered skeleton (Epic 8 scaffold).

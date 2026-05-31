@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-01
-last_updated: "2026-05-31 (Story 9.3 done — review patches applied)"
+last_updated: "2026-05-31 (Story 9.5 ready-for-dev)"
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
@@ -197,13 +197,14 @@ development_status:
   9-2-drawer-ux-on-mom-map-bernard-one-liner-url-input-cta: done
   9-3-wizard-core-tiers-0-1-name-address-spaceapi-v15-core-localstorage-export: done  # 9.4 merged in (geocode proxy) — one demoable vertical slice
   9-4-nominatim-proxy-endpoint-in-link-handler: merged  # 2026-05-30: merged into 9.3; 9.3 cannot E2E-pass without geocode
-  9-5-bernard-voice-copy-pass-curated-voice-artifact: backlog
+  9-5-bernard-voice-copy-pass-curated-voice-artifact: ready-for-dev
   9-6-wizard-tier-2-mom-fields-opening-hours-memberof-mom-sdgs: backlog
   9-7-wizard-state-open-fsm-cascading-questions-marker-mapping-opt-out: backlog
   9-8-gitlab-tutorial-surface-embedded-guide-see-logo-on-card-success-moment-refresh-affordance: backlog
   9-9-three-mode-unification-url-fetch-pre-fill-validator-mode-cache-resume-reconciliation: backlog  # M3 — deferrable
   9-10-wizard-tier-3-ext-fab-fields-space-type-fuzzy-dropdown-equipment: backlog  # M3 — deferrable
   9-11-validator-error-ux-inline-per-field-summary-report: backlog  # M3 — deferrable
+  9-12-wizard-visual-design-pass-color-layout-contrast: backlog  # stub (2026-05-31) — styling half of 9.3 deferral; 9.5 took tone+font
   epic-9-retrospective: optional
 
   # Epic 10: Multi-Network Schema — Bundles, Concept Commons & Emergent Ontologies (stub — no stories yet)
