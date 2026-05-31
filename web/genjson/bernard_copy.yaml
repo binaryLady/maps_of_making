@@ -1,6 +1,42 @@
+# ============================================================================
+# bernard_copy.yaml — Bernard's voice artifact (SOURCE OF TRUTH)
+# ============================================================================
+# This YAML is the hand-edited source. The runtime consumes the GENERATED
+# JSON, never this file:
+#   - genjson.js does `fetch('/bernard_copy.json')` at startup.
+#   - Regenerate after every edit:  make bernard-copy
+#   - deploy-genjson runs `make bernard-copy` before rsync (JSON always fresh).
+# Edit here, never edit bernard_copy.json by hand — it gets overwritten.
+#
+# Why a separate YAML when JSON is legible? This file can carry the comments
+# below (voice rules, conventions) that JSON can't, and is the natural home
+# for richer copy as the wizard form gives way to the planned chatbot — same
+# keyed utterances, room to grow per-key metadata the runtime JSON won't need.
+#
+# ---- VOICE RULES (bernard-bible.md §3 — cross-check before editing) --------
+# Register: "Ron Swanson on a North Sea fort, with notes of Dredge."
+#   maintenance-log voice, salvaged-typewriter — weathered, dry, terse.
+#   DO:  short sentences; no exclamation marks; observation over explanation;
+#        state what's valid, state what's broken, name consequences.
+#   DON'T (forbidden patterns — test_bernard_voice_completeness.py enforces):
+#        "most spaces leave this blank", "keep it simple", "you can do better",
+#        any nudge that comforts mediocrity OR shames, any ranking of choices.
+#
+# ---- CONVENTIONS -----------------------------------------------------------
+# Em-dash (—): Bernard's SPOKEN lines open with an em-dash (Dredge convention).
+#   It is NOT stored here — the JS prepends it to spoken lines only
+#   (wizard_intro, floor_gate, tier_*_exit, localstorage_warning). Field hints
+#   and validation_messages are NOT Bernard speaking → no em-dash, flat/system
+#   voice.
+# Field hints: don't restate the label (the label already says "Logo URL" etc.).
+# drawer_one_liner: documentation only — the drawer (maps-of-making.html) is
+#   static and hardcodes its own copy; it does NOT fetch this artifact. Kept
+#   here so all Bernard copy lives in one place.
+# ============================================================================
+
 drawer_one_liner: "Two ways onto the map. Tell me about your space, or paste your endpoint URL if you've got one. Either's fine."
 wizard_intro: "Hi, I'm Bernard (they/them) from 'Mother Sands'. Let's get your space on the map."
-floor_gate: "Name and address. That's the bedrock. Everything else, I'll derive."
+floor_gate: "Name and address. That's the bedrock. I'll derive the geolocation."
 tier_1_exit: "Core's in. Other SpaceAPI apps can read this file as-is."
 tier_2_exit: "MoM fields in. Now the world can see your membership, your hours, the goals you work toward."
 tier_3_exit: "Silo fields in. The bits only your kind of space needs are switched on."
