@@ -5,7 +5,7 @@ typography, and the UX rules that govern how they appear in MoM tooling. Consoli
 supersedes the scattered notes in `mom_handoff_2026-05-15.md` §Bernard, `mom_handoff_2026-05-16.md`,
 `sprint-change-proposal-2026-05-29.md`, and `memory/project_bernard_character.md`.
 
-**Last updated:** 2026-05-30 (during Story 9.2 drawer UX iteration).
+**Last updated:** 2026-05-31 (added Jacques/SDG-14 compulsive-cleaning trait + UX-spec cross-ref; + hermit-crab vision palette & workshop-as-threshold, Story 9.12).
 
 > **How to use this file:** Any copy, typography, or interaction that involves Bernard's
 > voice — wizard, drawer, validation messages, export confirmations, changelog, lore page —
@@ -20,6 +20,14 @@ supersedes the scattered notes in `mom_handoff_2026-05-15.md` §Bernard, `mom_ha
   *themselves*," never "himself."
 - **Species:** hermit crab (specific species TBD — could set default shell-change cadence;
   see §7). Keeper of **Mother Sands**.
+- **Vision (in-world canon, 2026-05-31):** like a hermit crab, Bernard sees **blue, yellow,
+  green, and UV — but not red.** This grounds the tooling palette: the workshop lives in the
+  colors Bernard sees — lamplit **amber/brass** (yellow = Lagavulin, lamplight; Bernard's voice
+  + primary CTA), **blue** (links/water), **green** (valid/confirmed/alive) — and **red is
+  reserved for errors only**: the one signal *outside* Bernard's spectrum, so it reads as the
+  alien, must-look note. **UV** is the band only Bernard perceives — a faint cool shimmer for the
+  things humans barely notice (curiosity hooks, hover/focus glow); use sparingly. See the wizard
+  UX spec §3b.
 - **Gender-play tension:** "Bernard" (commonly a male name) + "**Mother** Sands" — intentional,
   **do not resolve**. The friction is the point.
 - **Home:** Mother Sands — the **8th Maunsell sea-fort that was never planned and never built**.
@@ -42,6 +50,14 @@ supersedes the scattered notes in `mom_handoff_2026-05-15.md` §Bernard, `mom_ha
 - **Claw puns: rationed**, earned by surrounding terseness.
 - Imagery touchstone (2026-05-30): *Bernard typing with their claws on an old typewriter
   scavenged from a sunk ship.* This is the felt register — salt-rough, salvaged, deliberate.
+- **Compulsive cleaning — the Jacques trait (2026-05-31).** Like *Jacques* (the shrimp in
+  *Finding Nemo*), Bernard cleans and tidies what passes through their claws — **not only as a
+  maker who builds, but as a compulsion they can't switch off, and as a duty.** This is the
+  in-character root of the wizard's **normalization OCD**: malformed input gets scrubbed into
+  valid shape (URL scheme, Matrix sigil, country-code case) reflexively, visibly. The dredging
+  is the same gesture — Bernard cleans the sea. This makes **SDG 14 (life below water)** Bernard's
+  own goal: they don't just *ask* coordinators which SDGs they serve (`mom:sdgs`, Tier 2), they
+  *embody* one. Compulsion + craft + mission, fused.
 
 ---
 
@@ -108,6 +124,13 @@ supersedes the scattered notes in `mom_handoff_2026-05-15.md` §Bernard, `mom_ha
   never in the URL shortcut.
 - **Curiosity hooks** (Mother Sands, they/them) are embedded **without links** — the user must
   navigate away on their own.
+- **The workshop is a threshold, not the lair (2026-05-31).** `genjson.mapsofmaking.org` is
+  full-*voice* Bernard but **not** Mother Sands itself — it's the **border crossing** between the
+  bright public MoM map and Bernard's real lair. Visually a **liminal dusk** (deep blue-green
+  dark): clearly left the paper-light map, not yet the deep lamplit fort. The full Mother Sands
+  world (the lair) is reserved for the lore page / Epic 8. You step through a door into an
+  antechamber, not the inner sanctum. (This keeps the progressive bleed honest: drawer 20% →
+  workshop full-voice/partial-world → lore full-world.)
 
 **Intentional jargon polarization (Story 9.2 fork):**
 - The drawer is a deliberate **fork serving two publics**. The expert branch uses precise
@@ -186,6 +209,9 @@ or stubbornly.
   isolation; offshore platform home base; upgrades from dredged materials.
 - **WWII Maunsell forts** — military leftovers, anti-aircraft platforms; the seven that exist.
 - **Hermit-crab biology** — shell-changing, molting, lifecycle stages.
+- **Jacques** (*Finding Nemo*, Pixar) — the French cleaner shrimp who compulsively tidies the
+  tank. Source of Bernard's compulsive-cleaning trait (§2) — normalization-as-OCD,
+  dredging-as-duty, and the SDG-14 (life below water) mission embodiment.
 - **Pass the Salt** (pass-the-salt.org) — security/privacy hacker con; Bernard is a follower;
   the name fits the salt/sea theme.
 
