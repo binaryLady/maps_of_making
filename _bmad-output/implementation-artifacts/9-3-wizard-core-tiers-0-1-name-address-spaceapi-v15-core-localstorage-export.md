@@ -1,6 +1,6 @@
 # Story 9.3: Wizard Core — Tiers 0 + 1 (Name + Address → SpaceAPI v15 Core; localStorage; Export) + Nominatim Proxy
 
-Status: review
+Status: done
 
 <!-- Scope note (2026-05-30): per operator decision, former Story 9.4 (Nominatim proxy) is MERGED
      into this story so the wizard ships as one demoable vertical slice. Former Story 9.5 (Bernard
@@ -191,3 +191,13 @@ claude-sonnet-4-6
 ### Change Log
 - 2026-05-31: Story 9.3 implemented — wizard core (Tier 0 + Tier 1), geocode proxy, nginx rate-limit, SpaceAPI v15 schema vendored, localStorage, export, test_geocode_proxy
 - 2026-05-31: Operator-review iterations — exact-match export, tier-ordered keys, `state.open` opted-out sentinel, `mom:memberOf` seed, fork stub, URL scheme normalization, contrast pass, gateway→maps-nginx `/api/` routing fix, `make deploy-genjson`. localStorage save/resume confirmed working by operator.
+
+### Review Findings
+
+- [x] [Review][Decision] `state.open: "opted-out"` → changed to `null` (valid v15; pipeline still treats null as opted-out) [web/genjson/genjson.js:371]
+- [x] [Review][Patch] `asyncio.get_event_loop()` → `asyncio.get_running_loop()` [infra/link_handler/main.py:1105]
+- [x] [Review][Patch] `render()` `tier0Passed` condition now includes `city`/`country_code` — matches `updateContinueButton()` [web/genjson/genjson.js:412]
+- [x] [Review][Patch] Manual lat/lon input handlers now call `clearTimeout(geocodeDebounceTimer)` [web/genjson/genjson.js:595]
+- [x] [Review][Defer] Multiple gunicorn workers multiply effective Nominatim request rate (1 RateLimiter per process) — deployment concern, deferred
+- [x] [Review][Defer] 429 from nginx surfaces as "Geocoding temporarily unavailable" (no retry hint) — UX improvement, deferred to Story 9.5 copy pass
+- [x] [Review][Defer] `validateAgainstSchema()` only checks top-level required fields; nested required (location.lat/lon) not validated — deferred

@@ -362,13 +362,10 @@ function assemblev15Doc() {
   if (draft.contact_mastodon) contact.mastodon = draft.contact_mastodon;
   if (Object.keys(contact).length) doc.contact = contact;
 
-  // state.open = "opted-out" sentinel (a Tier 1 SpaceAPI field, NOT mom:).
-  // The pipeline already handles non-boolean state.open: pipeline_helpers.py:97-100
-  // returns None for any non-bool → pipeline.py:173 treats open_now=None as
-  // "operator opted out" → space resolves to `confirmed` (no live open/closed
-  // broadcast). The full open/closed FSM is still Story 9.7; this is the
-  // privacy-respecting default until the coordinator opts in.
-  doc.state = { open: 'opted-out' };
+  // state.open = null (valid v15 boolean/null; pipeline treats null as "opted out").
+  // pipeline_helpers.py:97-100 returns None for any non-bool → pipeline.py:173
+  // "operator opted out" → space resolves to `confirmed`. Full FSM in Story 9.7.
+  doc.state = { open: null };
 
   // ── Tier 2 — mom: (last; seeds the next frontier) ──
   // mom:memberOf hints Tier 2 network membership (Story 9.6). additionalProperties
@@ -409,7 +406,8 @@ function render() {
 
   // ?resume=1 with no draft → load at Tier 0 with no pre-fill and no error (AC5)
   if (hasDraft) {
-    tier0Passed = !!(draft.lat !== null && draft.lon !== null && draft.space && draft.address);
+    tier0Passed = !!(draft.lat !== null && draft.lon !== null && draft.space && draft.address &&
+      draft.city && draft.country_code);
   }
 
   root.innerHTML = '';
@@ -588,11 +586,12 @@ function wireEvents() {
     });
   });
 
-  // Manual lat/lon
+  // Manual lat/lon — cancel any pending geocode debounce so it doesn't overwrite manual input
   ['f-lat', 'f-lon'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     el.addEventListener('input', () => {
+      clearTimeout(geocodeDebounceTimer);
       const val = parseFloat(el.value);
       if (id === 'f-lat') draft.lat = isNaN(val) ? null : val;
       else draft.lon = isNaN(val) ? null : val;
@@ -655,7 +654,7 @@ function wireEvents() {
   });
   document.getElementById('fork-live')?.addEventListener('click', () => {
     const n = forkNote();
-    if (n) { n.textContent = '— Self-hosting walkthrough is on the way. Export your file and keep it safe for now.'; n.style.display = 'block'; }
+    if (n) { n.textContent = '— Self-hosting walkthrough is on the way. Export your file and keep it warm for now.'; n.style.display = 'block'; }
   });
 
   // Clear & start over

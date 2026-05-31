@@ -1102,7 +1102,7 @@ async def geocode(req: GeocodeRequest):
     """
     query = f"{req.address}, {req.city}, {req.postcode}, {req.country_code}"
     try:
-        location = await asyncio.get_event_loop().run_in_executor(
+        location = await asyncio.get_running_loop().run_in_executor(
             None, lambda: _geocode(query)
         )
     except (GeocoderTimedOut, GeocoderUnavailable, GeocoderServiceError) as exc:
