@@ -1,20 +1,44 @@
 /**
- * genjson.js — Bernard's Workshop wizard (Story 9.3)
+ * genjson.js — Bernard's Workshop wizard (Story 9.3 / 9.5)
  * Renders into #wizard-root. Vanilla JS, no framework, no build step.
- * CSP: default-src 'self' 'unsafe-inline' — no external fonts, no CDN fetches.
- *
- * Font note (Story 9.5 will lock canonical font):
- * Using system-mono stack for .bernard-voice — Special Elite cannot load over CDN
- * due to CSP. Self-hosted woff2 is the upgrade path once font is locked.
+ * CSP: default-src 'self' 'unsafe-inline' — fonts self-hosted, no CDN.
  */
 
 'use strict';
 
 const DRAFT_KEY = 'genjson_draft';  // must match Story 9.2 drawer contract
 
+// ── Copy artifact ─────────────────────────────────────────────────────────────
+
+let COPY = null;
+
+const COPY_FALLBACK = {
+  wizard_intro: "Hi, I'm Bernard (they/them) from 'Mother Sands'. Let's get your space on the map.",
+  floor_gate: "Name and address. That's the floor. Everything else, I'll derive.",
+  localstorage_warning: "Your progress is saved in this browser. Hard-refresh or clearing site data wipes it. Export at any point if you want a copy outside the browser.",
+  localstorage_resume: "Continuing from where you left off.",
+  validation_messages: { clear_confirm: "This will erase your saved progress. Continue?" }
+};
+
+async function fetchCopy() {
+  try {
+    const resp = await fetch('/bernard_copy.json');
+    if (!resp.ok) throw new Error('copy fetch failed');
+    COPY = await resp.json();
+  } catch {
+    COPY = COPY_FALLBACK;
+  }
+}
+
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const CSS = `
+  @font-face {
+    font-family: 'Special Elite';
+    src: url('fonts/SpecialElite-Regular.woff2') format('woff2');
+    font-display: swap;
+  }
+
   :root {
     --bg: #1a1a1a;
     --surface: #2e2e2e;
@@ -24,7 +48,8 @@ const CSS = `
     --placeholder: #777;
     --accent: #d4a843;
     --warn: #e07a5f;
-    --mono: 'Courier New', 'Lucida Console', monospace;
+    --font-mono: 'Courier New', 'Lucida Console', monospace;
+    --mono: var(--font-mono);
   }
 
   #wizard-root * { box-sizing: border-box; }
@@ -43,12 +68,13 @@ const CSS = `
   }
 
   .bernard-voice {
-    font-family: var(--mono);
+    font-family: 'Special Elite', var(--font-mono), monospace;
+    font-size: 17px;
+    line-height: 1.55;
     color: var(--accent);
     border-left: 3px solid var(--accent);
     padding: 0.6rem 1rem;
     margin: 1rem 0;
-    font-style: italic;
   }
 
   .tier-block {
@@ -240,7 +266,7 @@ let draft = {
   url: '',
   description: '',
   contact_email: '',
-  contact_mastodon: '',
+  contact_matrix: '',
 };
 
 let tier0Passed = false;
@@ -271,7 +297,7 @@ function clearDraft() {
     space: '', address: '', city: '', postcode: '', country_code: '',
     lat: null, lon: null,
     logo: '', url: '', description: '',
-    contact_email: '', contact_mastodon: '',
+    contact_email: '', contact_matrix: '',
   };
   tier0Passed = false;
 }
@@ -332,6 +358,18 @@ function normalizeUrl(value) {
   return `https://${v}`;
 }
 
+// SpaceAPI contact.matrix is a room/community, not a personal MXID
+// (examples: "#room:server.org", "+community:server.org"). When the value has
+// the "name:server" shape but no leading sigil, prepend "#" (the room default).
+// Leave existing sigils (# + ! @) untouched. Visible, not silent — same as URL.
+function normalizeMatrix(value) {
+  const v = (value || '').trim();
+  if (!v) return v;
+  if (/^[#+!@]/.test(v)) return v;
+  if (v.includes(':')) return `#${v}`;
+  return v;
+}
+
 function assemblev15Doc() {
   // Key order mirrors the wizard tier blocks top-to-bottom so the file builds
   // Maëlle's mental model: meta → Tier 0 → Tier 1 → Tier 2 (mom:) last.
@@ -359,7 +397,7 @@ function assemblev15Doc() {
 
   const contact = {};
   if (draft.contact_email) contact.email = draft.contact_email;
-  if (draft.contact_mastodon) contact.mastodon = draft.contact_mastodon;
+  if (draft.contact_matrix) contact.matrix = normalizeMatrix(draft.contact_matrix);
   if (Object.keys(contact).length) doc.contact = contact;
 
   // state.open = null (valid v15 boolean/null; pipeline treats null as "opted out").
@@ -397,7 +435,8 @@ async function exportJSON(warnEl) {
 
 // ── Render ────────────────────────────────────────────────────────────────────
 
-function render() {
+async function render() {
+  await fetchCopy();
   const root = document.getElementById('wizard-root');
   if (!root) return;
 
@@ -424,14 +463,14 @@ function render() {
   // Bernard intro — once on entry (bible §5, §9); no imagery
   const intro = document.createElement('div');
   intro.className = 'bernard-voice';
-  intro.textContent = "— Hi, I'm Bernard (they/them) from 'Mother Sands'. Let's get your space on the map.";
+  intro.textContent = `— ${COPY.wizard_intro}`;
   container.appendChild(intro);
 
   // localStorage resume warning (AC5)
   if (hasDraft) {
     const resumeWarn = document.createElement('div');
     resumeWarn.className = 'warn-banner';
-    resumeWarn.innerHTML = `— Your progress is saved in this browser. Hard-refresh or clearing site data wipes it. Export at any point if you want a copy outside the browser.
+    resumeWarn.innerHTML = `— ${COPY.localstorage_warning}
       <div style="margin-top:0.6rem">
         <button class="clear-link" id="clear-btn">Clear &amp; start over</button>
       </div>`;
@@ -443,7 +482,7 @@ function render() {
   tier0.className = 'tier-block';
   tier0.innerHTML = `
     <div class="tier-label">Tier 0 — Floor</div>
-    <div class="bernard-voice">— Name and address. That's the floor. Everything else, I'll derive.</div>
+    <div class="bernard-voice">— ${COPY.floor_gate}</div>
 
     <div class="field-row">
       <label for="f-space">Space name</label>
@@ -493,33 +532,33 @@ function render() {
 
     <div class="field-row">
       <label for="f-logo">Logo URL</label>
-      <div class="hint">A direct URL to your space logo image.</div>
+      <div class="hint">${COPY.field_hints.logo}</div>
       <input id="f-logo" type="url" placeholder="https://example.org/logo.png" value="${esc(draft.logo)}" />
     </div>
     <div class="field-row">
       <label for="f-url">Space website</label>
-      <div class="hint">Your space's main URL.</div>
+      <div class="hint">${COPY.field_hints.url}</div>
       <input id="f-url" type="url" placeholder="https://example.org" value="${esc(draft.url)}" />
     </div>
     <div class="field-row">
       <label for="f-description">Description</label>
-      <div class="hint">One or two sentences about your space.</div>
+      <div class="hint">${COPY.field_hints.description}</div>
       <input id="f-description" type="text" placeholder="A hackerspace in the basement of the world." value="${esc(draft.description)}" />
     </div>
     <div class="field-row">
       <label for="f-email">Contact email</label>
-      <div class="hint">Public contact address for your space.</div>
+      <div class="hint">${COPY.field_hints.contact_email}</div>
       <input id="f-email" type="email" placeholder="hello@example.org" value="${esc(draft.contact_email)}" />
     </div>
     <div class="field-row">
-      <label for="f-mastodon">Mastodon</label>
-      <div class="hint">e.g. @space@chaos.social</div>
-      <input id="f-mastodon" type="text" placeholder="@space@instance.social" value="${esc(draft.contact_mastodon)}" />
+      <label for="f-matrix">Matrix</label>
+      <div class="hint">${COPY.field_hints.contact_matrix}</div>
+      <input id="f-matrix" type="text" placeholder="#yourspace:matrix.org" value="${esc(draft.contact_matrix)}" />
     </div>
     <div class="field-row">
       <span class="skip-note">open/closed status — deferred to a later step</span>
     </div>
-    <div class="bernard-voice">— Core's in. Other SpaceAPI apps can read this file as-is.</div>
+    <div class="bernard-voice">— ${COPY.tier_1_exit}</div>
     <div class="btn-row">
       <button class="btn btn-primary" id="export-btn-t1">Export JSON</button>
     </div>
@@ -607,23 +646,35 @@ function wireEvents() {
     'f-url': 'url',
     'f-description': 'description',
     'f-email': 'contact_email',
-    'f-mastodon': 'contact_mastodon',
+    'f-matrix': 'contact_matrix',
   };
-  const urlKeys = new Set(['logo', 'url']);
+  // On-blur normalizers: fill the prefix the format requires, visibly (not
+  // silent) so Maëlle's mental model builds. URL → https:// ; Matrix → # room
+  // sigil. Each carries its own feedback message key.
+  const normalizers = {
+    logo: { fn: normalizeUrl, msg: 'url_scheme_added' },
+    url: { fn: normalizeUrl, msg: 'url_scheme_added' },
+    contact_matrix: { fn: normalizeMatrix, msg: 'matrix_sigil_added' },
+  };
   Object.entries(t1Map).forEach(([id, key]) => {
     const el = document.getElementById(id);
     if (!el) return;
     el.addEventListener('input', () => { draft[key] = el.value; saveDraft(); });
-    // URL fields: normalize scheme on blur so Maëlle sees the full URL the
-    // system expects (e.g. "openfab.be" → "https://openfab.be"). Visible, not
-    // silent — builds the mental model. www/redirect canonicalization is Story 9.9.
-    if (urlKeys.has(key)) {
+    const norm = normalizers[key];
+    if (norm) {
       el.addEventListener('blur', () => {
-        const normalized = normalizeUrl(el.value);
+        const normalized = norm.fn(el.value);
         if (normalized !== el.value) {
           el.value = normalized;
           draft[key] = normalized;
           saveDraft();
+          const hint = el.closest('.field-row')?.querySelector('.hint');
+          if (hint) {
+            const prev = hint.textContent;
+            hint.textContent = COPY.validation_messages[norm.msg];
+            hint.style.color = 'var(--accent)';
+            setTimeout(() => { hint.textContent = prev; hint.style.color = ''; }, 3000);
+          }
         }
       });
     }
@@ -650,16 +701,16 @@ function wireEvents() {
   const forkNote = () => document.getElementById('fork-note');
   document.getElementById('fork-deeper')?.addEventListener('click', () => {
     const n = forkNote();
-    if (n) { n.textContent = '— Tier 2 is on the way. Network features land in a later step.'; n.style.display = 'block'; }
+    if (n) { n.textContent = `— ${COPY.fork_stub.tier2_teaser}`; n.style.display = 'block'; }
   });
   document.getElementById('fork-live')?.addEventListener('click', () => {
     const n = forkNote();
-    if (n) { n.textContent = '— Self-hosting walkthrough is on the way. Export your file and keep it warm for now.'; n.style.display = 'block'; }
+    if (n) { n.textContent = `— ${COPY.fork_stub.tutorial_teaser}`; n.style.display = 'block'; }
   });
 
   // Clear & start over
   document.getElementById('clear-btn')?.addEventListener('click', () => {
-    if (confirm('This will erase your saved progress. Continue?')) {
+    if (confirm(COPY.validation_messages.clear_confirm)) {
       clearDraft();
       render();
     }
@@ -689,12 +740,12 @@ function triggerGeocodeDebounce() {
     if (result.error === 'unavailable') {
       draft.lat = null;
       draft.lon = null;
-      updateCoordsPreview('Geocoding temporarily unavailable — enter coordinates manually', true);
+      updateCoordsPreview(COPY.validation_messages.nominatim_unavailable, true);
       showManualCoords(true);
     } else if (result.lat === null) {
       draft.lat = null;
       draft.lon = null;
-      updateCoordsPreview('No result — enter coordinates manually', true);
+      updateCoordsPreview(COPY.validation_messages.nominatim_no_result, true);
       showManualCoords(true);
     } else {
       draft.lat = result.lat;

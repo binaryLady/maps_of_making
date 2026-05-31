@@ -20,7 +20,7 @@ RSYNC_EXCLUDE := \
 	--exclude='.pytest_cache/' \
 	--exclude='data/'
 
-.PHONY: sync sync-app sync-gateway publish startdev rebuild seed seed-spaceapi heartbeat devdeploy reset vps-rebuild vps-seed vps-reset help endpoint deploy-genjson
+.PHONY: sync sync-app sync-gateway publish startdev rebuild seed seed-spaceapi heartbeat devdeploy reset vps-rebuild vps-seed vps-reset help endpoint deploy-genjson bernard-copy
 .PHONY: c-reset c-activate c-demo c-all endpoint
 .PHONY: ca-reachable ca-timeout ca-dns-fail ca-http-error caxis-a
 .PHONY: cb-seeded cb-confirmed cb-aging cb-zombie cb-dead cb-closed caxis-b c-demo-on c-demo-off
@@ -472,7 +472,11 @@ sync-gateway:
 
 ## Push only web/genjson/ static files to VPS + reload nginx — fast wizard dev loop
 ## Does NOT rebuild containers; use make publish when backend (link_handler) changes.
-deploy-genjson:
+bernard-copy:
+	python3 -c "import yaml, json, sys; json.dump(yaml.safe_load(open('web/genjson/bernard_copy.yaml')), open('web/genjson/bernard_copy.json','w'), ensure_ascii=False, indent=2)"
+	@echo "✓ bernard_copy.json regenerated"
+
+deploy-genjson: bernard-copy
 	rsync -avz web/genjson/ $(REMOTE):$(REMOTE_APP)/web/genjson/
 	ssh $(REMOTE) 'docker exec nginx-gateway nginx -s reload'
 	@echo "✓ genjson deployed → https://genjson.mapsofmaking.org"

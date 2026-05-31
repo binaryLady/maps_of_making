@@ -6,13 +6,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Caveat:wght@600;700&family=Special+Elite&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Caveat:wght@600;700&display=swap" rel="stylesheet" />
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
 <link rel="icon" type="image/svg+xml" href="favicon.svg" />
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png" />
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
 <style>
+  @font-face {
+    font-family: 'Special Elite';
+    src: url('fonts/SpecialElite-Regular.woff2') format('woff2');
+    font-display: swap;
+  }
+
   :root {
     --paper: #f7f2e7;
     --paper-2: #efe9d9;
@@ -30,6 +36,7 @@
     --status-bg: #f1ebd9;
     --radius: 2px;
     --btn-h: 36px;
+    --font-mono: 'Courier New', 'Lucida Console', monospace;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; height: 100%; background: var(--paper); color: var(--ink);
@@ -317,8 +324,8 @@
     font-family: 'JetBrains Mono', monospace; font-size: 12px; border-radius: 2px; }
   .addurl-body .btn-row { display: flex; gap: 8px; margin-top: 14px; }
   .addurl-body .intro { margin: 0; font-size: 14px; line-height: 1.6; }
-  /* Bernard's voice — typewriter/logbook register (test ahead of Story 9.5 font canon) */
-  .bernard-voice { font-family: 'Special Elite', 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.75; }
+  /* Bernard's voice — typewriter/logbook register (canonical font, Story 9.5) */
+  .bernard-voice { font-family: 'Special Elite', var(--font-mono), monospace; font-size: 17px; line-height: 1.55; }
   /* RPG inline-navigation choices — real buttons styled as inline text links */
   .inline-link { font: inherit; color: var(--accent-2); background: none; border: 0; padding: 0;
     cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }

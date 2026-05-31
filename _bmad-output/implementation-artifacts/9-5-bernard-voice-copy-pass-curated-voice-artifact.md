@@ -1,6 +1,6 @@
 # Story 9.5: Bernard Voice Copy Pass — Curated Voice Artifact
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -120,35 +120,35 @@ fork_stub:
 
 ## Tasks / Subtasks
 
-- [ ] **Font: self-host Special Elite** (AC3 — decision locked by operator)
-  - [ ] Download `SpecialElite-Regular.woff2` (Apache 2.0) into `web/genjson/fonts/` and `web/fonts/`
-  - [ ] Add `@font-face` in both `web/genjson/genjson.js` CSS block and `web/maps-of-making.html`, pointing to the self-hosted woff2 (served from `'self'`)
-  - [ ] Set canonical `.bernard-voice` declaration in both surfaces (size 17px, line-height 1.55, `'Special Elite', var(--font-mono), monospace`); define `--font-mono` if absent
-  - [ ] Replace the Google Fonts `<link>` in `maps-of-making.html` with the self-hosted face; update the `:321` comment from "test" to "canonical"
-  - [ ] Confirm **no `font-weight`** rule on `.bernard-voice` (single-weight font — hierarchy via size/color only)
+- [x] **Font: self-host Special Elite** (AC3 — decision locked by operator)
+  - [x] Download `SpecialElite-Regular.woff2` (Apache 2.0) into `web/genjson/fonts/` and `web/fonts/`
+  - [x] Add `@font-face` in both `web/genjson/genjson.js` CSS block and `web/maps-of-making.html`, pointing to the self-hosted woff2 (served from `'self'`)
+  - [x] Set canonical `.bernard-voice` declaration in both surfaces (size 17px, line-height 1.55, `'Special Elite', var(--font-mono), monospace`); define `--font-mono` if absent
+  - [x] Replace the Google Fonts `<link>` in `maps-of-making.html` with the self-hosted face; update the `:321` comment from "test" to "canonical"
+  - [x] Confirm **no `font-weight`** rule on `.bernard-voice` (single-weight font — hierarchy via size/color only)
 
-- [ ] **Author `bernard_copy.yaml`** (AC1) — curate all copy per bernard-bible; verify no forbidden patterns
-  - [ ] Cross-check every string against bernard-bible §3 (voice guide) and §9 (calibrated lines)
+- [x] **Author `bernard_copy.yaml`** (AC1) — curate all copy per bernard-bible; verify no forbidden patterns
+  - [x] Cross-check every string against bernard-bible §3 (voice guide) and §9 (calibrated lines)
 
-- [ ] **Generate `bernard_copy.json`** (AC4) — YAML → JSON via Makefile target
-  - [ ] Add `bernard-copy` target to Makefile
-  - [ ] Update `deploy-genjson` to run `make bernard-copy` before rsync
-  - [ ] Commit both `bernard_copy.yaml` and `bernard_copy.json`
+- [x] **Generate `bernard_copy.json`** (AC4) — YAML → JSON via Makefile target
+  - [x] Add `bernard-copy` target to Makefile
+  - [x] Update `deploy-genjson` to run `make bernard-copy` before rsync
+  - [x] Commit both `bernard_copy.yaml` and `bernard_copy.json`
 
-- [ ] **Wire `genjson.js` to use the artifact** (AC2)
-  - [ ] Add `fetchCopy()` at top of init — `fetch('/bernard_copy.json')`, cache in `COPY`
-  - [ ] Add minimal inline fallback object (Tier 0 strings only)
-  - [ ] Replace each hardcoded string with `COPY.<key>` lookup (use `grep` on the strings identified in Dev Notes below)
-  - [ ] Confirm em-dash is prepended by JS, not in YAML values
+- [x] **Wire `genjson.js` to use the artifact** (AC2)
+  - [x] Add `fetchCopy()` at top of init — `fetch('/bernard_copy.json')`, cache in `COPY`
+  - [x] Add minimal inline fallback object (Tier 0 strings only)
+  - [x] Replace each hardcoded string with `COPY.<key>` lookup (use `grep` on the strings identified in Dev Notes below)
+  - [x] Confirm em-dash is prepended by JS, not in YAML values
 
-- [ ] **Write `test_bernard_voice_completeness`** (AC5)
-  - [ ] Add `tests/test_bernard_voice_completeness.py`
-  - [ ] YAML leaf-key extraction + JS reference scan + forbidden-phrase check
-  - [ ] `pytest tests/test_bernard_voice_completeness.py` passes
+- [x] **Write `test_bernard_voice_completeness`** (AC5)
+  - [x] Add `tests/test_bernard_voice_completeness.py`
+  - [x] YAML leaf-key extraction + JS reference scan + forbidden-phrase check
+  - [x] `pytest tests/test_bernard_voice_completeness.py` passes
 
-- [ ] **Operator tone review** (AC6)
-  - [ ] Nicolas reads full `bernard_copy.yaml` and approves or requests edits
-  - [ ] Document approval in Completion Notes
+- [x] **Operator tone review** (AC6)
+  - [x] Nicolas reads full `bernard_copy.yaml` and approves or requests edits
+  - [x] Document approval in Completion Notes
 
 ## Dev Notes
 
@@ -329,8 +329,41 @@ From 9.3 completion notes (operator-review iterations, 2026-05-31):
 
 ### Agent Model Used
 
+claude-sonnet-4-6 (Amelia / bmad-dev-story)
+
 ### Debug Log References
+
+- Initial `curl` of Google Fonts static woff2 URL returned an HTML redirect (1.6K). Resolved by querying `fonts.googleapis.com/css2` with a Chrome UA to extract the real `gstatic.com` woff2 URL (latin subset, 53K).
+- Full suite: 9 pre-existing failures (ontology load, normalize_vow geocode, geocode_proxy live, materializer three-tokens) confirmed present on clean stash — **not** introduced by this story. New `test_bernard_voice_completeness.py` passes (2/2).
 
 ### Completion Notes List
 
+- **AC1** — `web/genjson/bernard_copy.yaml` authored with the exact key structure specified. No forbidden patterns (verified by test). Em-dash convention kept out of YAML values.
+- **AC2** — `genjson.js`: added module-level `COPY`, `COPY_FALLBACK` (Tier 0 essentials only), and `async fetchCopy()`; `render()` made async and awaits `fetchCopy()` before DOM build. All hardcoded Bernard strings replaced with `COPY.*` lookups: `wizard_intro`, `floor_gate`, `localstorage_warning`, `tier_1_exit`, `field_hints.{logo,url,description,contact_email,contact_mastodon}`, `fork_stub.{tier2_teaser,tutorial_teaser}`, `validation_messages.{clear_confirm,nominatim_unavailable,nominatim_no_result,url_scheme_added}`. Em-dash prepended in JS for spoken lines only.
+- **AC3** — Special Elite self-hosted to `web/genjson/fonts/` and `web/fonts/`. `@font-face` added in both surfaces; canonical `.bernard-voice` (17px / 1.55 / `'Special Elite', var(--font-mono), monospace`) set in both. `--font-mono` defined in `maps-of-making.html` `:root` (genjson aliases existing `--mono`). Google Fonts `<link>` in drawer stripped of `Special+Elite`; comment updated test→canonical. No `font-weight` rule on `.bernard-voice` in either surface (single-weight font).
+- **AC4** — `make bernard-copy` target added; `deploy-genjson` now depends on it. Both `bernard_copy.yaml` and generated `bernard_copy.json` committed.
+- **AC5** — `tests/test_bernard_voice_completeness.py` passes (forbidden-phrase check + JS reference scan; unreferenced keys reported as warnings only).
+- **AC6** — Operator (Nicolas) approved tone 2026-05-31: *"current is good enough for the moment."* In-character review flagged two non-blocking lines for later refinement once walked in the UX narrative: `tier_2_exit` ("unlocked" — gamified register) and `tier_3_exit` ("vertical features active" — PM-speak; placeholder for 9.6+ regardless). Validation messages correctly kept flat (machine voice, not Bernard). Em-dash JS-prepend convention confirmed.
+- **License note** — `CREDITS.md` created recording Special Elite / Astigmatic / Apache 2.0 (no UI attribution required).
+
 ### File List
+
+- `web/genjson/bernard_copy.yaml` — NEW (voice artifact SSOT)
+- `web/genjson/bernard_copy.json` — NEW (generated runtime artifact, committed)
+- `web/genjson/genjson.js` — UPDATE (fetchCopy + COPY lookups + @font-face + canonical .bernard-voice)
+- `web/maps-of-making.html` — UPDATE (@font-face, --font-mono, canonical .bernard-voice, drop Special Elite CDN link)
+- `web/genjson/fonts/SpecialElite-Regular.woff2` — NEW (self-hosted, Apache 2.0)
+- `web/fonts/SpecialElite-Regular.woff2` — NEW (self-hosted, shared with drawer)
+- `Makefile` — UPDATE (bernard-copy target; deploy-genjson dependency)
+- `tests/test_bernard_voice_completeness.py` — NEW
+- `CREDITS.md` — NEW (font license attribution)
+
+## Change Log
+
+| Date | Change |
+|---|---|
+| 2026-05-31 | Story 9.5 implemented: `bernard_copy.yaml`/`.json` voice artifact, `genjson.js` wired to COPY lookups with Tier 0 fallback, Special Elite self-hosted across both surfaces, `make bernard-copy` target, `test_bernard_voice_completeness`, CREDITS.md. Operator tone approved (AC6). Status → review. |
+| 2026-05-31 | Operator-directed copy revision (in-character review): `floor_gate` "the floor"→"the bedrock" (Mother Sands world register); `tier_2_exit` dropped "unlocked"/"network" → "the world can see…" (network was overloaded); `tier_3_exit` translated "vertical features active" → "the bits only your kind of space needs are switched on" (vertical=internal silo jargon, kept out of horizontal user-facing register). System/validation messages confirmed to stay in flat system voice, not Bernard's. |
+| 2026-05-31 | `field_hints.logo` revised: dropped "square image" (logos scale by max-height respecting ratio, not square); added transparent-PNG guidance. Phrased to avoid forbidden "keep it simple" pattern. |
+| 2026-05-31 | Field-hint redundancy sweep (don't restate the label): `logo` trimmed to "We scale by height and keep your ratio — transparent PNG works best." (label already says "Logo URL"); `contact_email` → "Not a personal inbox — somewhere the space can be reached." (label already says "Contact email"). |
+| 2026-05-31 | Operator-directed contact field swap (data-shape, beyond original 9.5 copy scope): replaced `contact_mastodon` → `contact_matrix` throughout `genjson.js` (draft model, field row, t1Map, SpaceAPI `contact.matrix` output). Telegram/Discord rejected — not valid SpaceAPI v15 contact fields (would break the "readable as-is" guarantee). Added `normalizeMatrix()` (prepends `#` room sigil when no sigil + has `:`), generalized blur-normalizer wiring to carry per-field feedback message. YAML: `field_hints.contact_matrix` + new `validation_messages.matrix_sigil_added`. SpaceAPI `matrix` is the space's room/community (`#room:server`/`+community:server`), not a personal MXID — hint and example reflect this. |
