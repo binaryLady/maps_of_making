@@ -13,6 +13,9 @@ import yaml
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from fastapi import FastAPI, HTTPException
+from geopy.geocoders import Nominatim
+from geopy.extra.rate_limiter import RateLimiter
+from geopy.exc import GeocoderServiceError, GeocoderTimedOut, GeocoderUnavailable
 from pydantic import BaseModel, Field, ConfigDict
 
 import asyncio
@@ -44,6 +47,12 @@ GEOJSON_OUTPUT = os.getenv("GEOJSON_OUTPUT", "/app/web_data/spaces.geojson")
 _TOKEN_RE = re.compile(r'^[A-Za-z0-9_\-]{8,255}$')
 
 _scheduler = AsyncIOScheduler()
+
+# Geocode proxy — module-level geocoder + 1 req/s rate limiter (mirrors normalize_vow.py pattern)
+# Nominatim policy: max 1 req/s; descriptive user_agent required (see geopy docs)
+_USER_AGENT = "mapsofmaking-genjson/1.0 (contact: nicolas.de.barquin@gmail.com)"
+_geolocator = Nominatim(user_agent=_USER_AGENT)
+_geocode = RateLimiter(_geolocator.geocode, min_delay_seconds=1, max_retries=1, swallow_exceptions=False)
 
 async def _heartbeat_job():
     global _last_heartbeat_completed
@@ -1072,4 +1081,42 @@ async def get_space_raw(space_id: str):
     return {
         "raw": snap["payload"],
         "snapshotDate": snap.get("observed_at", ""),
+    }
+
+
+# ── Geocode proxy (Story 9.3 / AC6) ─────────────────────────────────────────
+
+class GeocodeRequest(BaseModel):
+    address: str
+    city: str
+    postcode: str
+    country_code: str
+
+
+@app.post("/api/geocode")
+async def geocode(req: GeocodeRequest):
+    """Proxy Nominatim geocoding for the wizard — 1 req/s rate-limited (RateLimiter).
+
+    Returns {lat, lon, display_name} on success, nulls on no-result, 503 on error.
+    nginx enforces an additional 2 req/s/IP hard cap (limit_req_zone) upstream.
+    """
+    query = f"{req.address}, {req.city}, {req.postcode}, {req.country_code}"
+    try:
+        location = await asyncio.get_event_loop().run_in_executor(
+            None, lambda: _geocode(query)
+        )
+    except (GeocoderTimedOut, GeocoderUnavailable, GeocoderServiceError) as exc:
+        logger.warning("Nominatim unavailable for query %r: %s", query, exc)
+        raise HTTPException(status_code=503, detail={"error": "geocoding_unavailable"})
+    except Exception as exc:
+        logger.warning("Nominatim unexpected error for query %r: %s", query, exc)
+        raise HTTPException(status_code=503, detail={"error": "geocoding_unavailable"})
+
+    if location is None:
+        return {"lat": None, "lon": None, "display_name": None}
+
+    return {
+        "lat": location.latitude,
+        "lon": location.longitude,
+        "display_name": location.address,
     }

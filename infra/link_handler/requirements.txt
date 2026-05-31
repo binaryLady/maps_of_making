@@ -4,5 +4,6 @@ httpx
 pydantic
 pyyaml
 apscheduler>=3.10
+geopy
 pytest-asyncio
 pytest-httpserver

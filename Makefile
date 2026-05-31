@@ -20,7 +20,7 @@ RSYNC_EXCLUDE := \
 	--exclude='.pytest_cache/' \
 	--exclude='data/'
 
-.PHONY: sync sync-app sync-gateway publish startdev rebuild seed seed-spaceapi heartbeat devdeploy reset vps-rebuild vps-seed vps-reset help endpoint
+.PHONY: sync sync-app sync-gateway publish startdev rebuild seed seed-spaceapi heartbeat devdeploy reset vps-rebuild vps-seed vps-reset help endpoint deploy-genjson
 .PHONY: c-reset c-activate c-demo c-all endpoint
 .PHONY: ca-reachable ca-timeout ca-dns-fail ca-http-error caxis-a
 .PHONY: cb-seeded cb-confirmed cb-aging cb-zombie cb-dead cb-closed caxis-b c-demo-on c-demo-off
@@ -61,6 +61,7 @@ help:
 	@echo "make sync          — sync everything (app + gateway confs)"
 	@echo "make sync-app      — sync project root (excl. dev artifacts) to VPS"
 	@echo "make sync-gateway  — sync gateway nginx confs (manual reload needed)"
+	@echo "make deploy-genjson — push web/genjson/ only + nginx reload (fast wizard dev loop)"
 	@echo "make vps-rebuild   — rebuild containers on VPS (no sync — code must be current)"
 	@echo "make vps-seed [LIST=… NETWORK=…] — seed SpaceAPI list on VPS (default: directory.spaceapi.io, network=spaceapi)"
 	@echo "make vps-seed-bundle BUNDLE=… NETWORK=… [SOURCE=…] — seed Path B bundle (grey/claimable pins, no endpoint)"
@@ -468,3 +469,10 @@ sync-gateway:
 		$(REMOTE):$(REMOTE_GW)/
 	@echo "✓ gateway confs synced to $(REMOTE):$(REMOTE_GW)"
 	@echo "  → reload nginx manually if conf changed: ssh $(REMOTE) 'docker exec nginx-gateway nginx -s reload'"
+
+## Push only web/genjson/ static files to VPS + reload nginx — fast wizard dev loop
+## Does NOT rebuild containers; use make publish when backend (link_handler) changes.
+deploy-genjson:
+	rsync -avz web/genjson/ $(REMOTE):$(REMOTE_APP)/web/genjson/
+	ssh $(REMOTE) 'docker exec nginx-gateway nginx -s reload'
+	@echo "✓ genjson deployed → https://genjson.mapsofmaking.org"

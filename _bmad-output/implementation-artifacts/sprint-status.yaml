@@ -195,7 +195,7 @@ development_status:
   epic-9: in-progress
   9-1-subdomain-infra-genjson-mapsofmaking-org-dns-nginx-static-scaffold: done
   9-2-drawer-ux-on-mom-map-bernard-one-liner-url-input-cta: done
-  9-3-wizard-core-tiers-0-1-name-address-spaceapi-v15-core-localstorage-export: ready-for-dev  # 9.4 merged in (geocode proxy) — one demoable vertical slice
+  9-3-wizard-core-tiers-0-1-name-address-spaceapi-v15-core-localstorage-export: review  # 9.4 merged in (geocode proxy) — one demoable vertical slice
   9-4-nominatim-proxy-endpoint-in-link-handler: merged  # 2026-05-30: merged into 9.3; 9.3 cannot E2E-pass without geocode
   9-5-bernard-voice-copy-pass-curated-voice-artifact: backlog
   9-6-wizard-tier-2-mom-fields-opening-hours-memberof-mom-sdgs: backlog

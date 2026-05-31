@@ -1,6 +1,6 @@
 # Story 9.3: Wizard Core — Tiers 0 + 1 (Name + Address → SpaceAPI v15 Core; localStorage; Export) + Nominatim Proxy
 
-Status: ready-for-dev
+Status: review
 
 <!-- Scope note (2026-05-30): per operator decision, former Story 9.4 (Nominatim proxy) is MERGED
      into this story so the wizard ships as one demoable vertical slice. Former Story 9.5 (Bernard
@@ -85,21 +85,20 @@ so that I can produce a valid SpaceAPI v15 JSON file without understanding the s
 
 ## Tasks / Subtasks
 
-- [ ] **Geocode proxy backend** (AC6, AC7)
-  - [ ] Add `geopy` to `infra/link_handler/requirements.txt`
-  - [ ] Add `POST /api/geocode` to `infra/link_handler/main.py` mirroring `scripts/normalize_vow.py` Nominatim usage (module-level `RateLimiter`, identical User-Agent)
-  - [ ] Add `limit_req_zone` (2 req/s/IP) + `location /api/` proxy block routing genjson → `mak-link-handler` in nginx config
-  - [ ] Write `test_geocode_proxy` (live Nominatim + rate-limit assertion)
-- [ ] **Test infra** (AC8)
-  - [ ] Add Playwright as devDependency in `package.json`; create `playwright.config.*`; document `npx playwright test` in story isolation notes
-- [ ] **Bundle SpaceAPI v15 schema** (AC4) — obtain the official v15 JSON Schema, vendor it into `web/genjson/` (e.g. `spaceapi-v15.schema.json`), load it locally (no CDN)
-- [ ] **Wizard shell + Bernard intro** (AC1) — render two-tier flow into `#wizard-root`; one-time Bernard self-intro; no imagery
-- [ ] **Tier 0 floor gate** (AC2) — name + address inputs; debounced `fetch('/api/geocode')`; inline `{lat},{lon}` preview; manual fallback on null/503; gated Continue button
-- [ ] **Tier 1 core fields** (AC3) — optional progressive inputs incl. nested `contact.*`; `state.open` = "skip for now" stub only; one-line labels + ≤2-line hints; exit banner
-- [ ] **Export** (AC4) — assemble v15 doc (`api_compatibility:["15"]`); client-side schema validation; non-blocking warning on fail; download `{slug}.json`
-- [ ] **localStorage** (AC5) — write on change (key `genjson_draft`); pre-fill + warning on load; Clear-&-start-over with confirm; `?resume=1` graceful null handling
-- [ ] **Font handling under CSP** (see Dev Notes) — self-host or system-mono fallback for the `.bernard-voice` register; do NOT add a Google Fonts `<link>` (CSP will block it)
-- [ ] **E2E gating test** `test_wizard_tier0_tier1_export` (AC8) + operator visual confirmation via Story 2.1 flow
+- [x] **Geocode proxy backend** (AC6, AC7)
+  - [x] Add `geopy` to `infra/link_handler/requirements.txt`
+  - [x] Add `POST /api/geocode` to `infra/link_handler/main.py` mirroring `scripts/normalize_vow.py` Nominatim usage (module-level `RateLimiter`, identical User-Agent)
+  - [x] Add `limit_req_zone` (2 req/s/IP) + `location /api/` proxy block routing genjson → `mak-link-handler` in nginx config
+  - [x] Write `test_geocode_proxy` (live Nominatim + rate-limit assertion)
+- [x] **Test infra** (AC8) — operator manual E2E (no Playwright; operator decision; wizard UX review done by Nicolas)
+- [x] **Bundle SpaceAPI v15 schema** (AC4) — vendored from https://raw.githubusercontent.com/SpaceApi/schema/refs/heads/master/15.json into `web/genjson/spaceapi-v15.schema.json`
+- [x] **Wizard shell + Bernard intro** (AC1) — two-tier flow in `genjson.js`; Bernard self-intro verbatim from bible §9; no imagery
+- [x] **Tier 0 floor gate** (AC2) — name + address inputs; debounced geocode; inline coords preview; manual fallback on null/503; gated Continue button
+- [x] **Tier 1 core fields** (AC3) — optional inputs: logo, url, description, contact.email, contact.mastodon; state.open stub "skip for now"; one-line labels + ≤2-line hints; Tier 1 exit banner
+- [x] **Export** (AC4) — v15 doc assembled (api_compatibility:["15"]); client-side schema validation against bundled schema; non-blocking warning on fail; download {slug}.json
+- [x] **localStorage** (AC5) — saveDraft on every input; loadDraft + Bernard warning on page load; Clear-&-start-over with confirm; ?resume=1 graceful null handling
+- [x] **Font handling under CSP** — system-mono stack (`'Courier New', 'Lucida Console', monospace`); no Google Fonts link; canonical font locked in Story 9.5
+- [x] **E2E gating test** — operator visual confirmation (Nicolas); `test_geocode_proxy` automated in `tests/test_geocode_proxy.py`
 
 ## Dev Notes
 
@@ -155,9 +154,40 @@ Per `bernard-bible.md` §5: the wizard is **full Bernard** (vs. the drawer's ~20
 ## Dev Agent Record
 
 ### Agent Model Used
+claude-sonnet-4-6
 
 ### Debug Log References
+- SpaceAPI v15 schema: `contact.website` not in v15 — field removed; `url` is top-level for space website. `location.address` is a single flat string per schema; wizard assembles it from parts at export time. `location.country_code` is a separate field inside `location`.
+- Playwright dropped by operator decision (Nicolas does E2E manually); `test_geocode_proxy.py` covers backend.
+- geopy context7 lookup confirmed: Nominatim policy = 1 req/s; `GeocoderTimedOut`, `GeocoderUnavailable`, `GeocoderServiceError` caught specifically.
+- nginx rate-limit zone (`geocode_limit`) added to `08-genjson-mapsofmaking.conf` (gateway nginx), not app.conf — AC7 requires same-origin from genjson subdomain.
 
 ### Completion Notes List
+- `POST /api/geocode` in `mak-link-handler`: module-level `RateLimiter(min_delay_seconds=1)`, User-Agent matches `normalize_vow.py`, specific geopy exceptions caught → 503.
+- nginx: `limit_req_zone geocode_limit rate=2r/s`, `location /api/` with `limit_req burst=5 nodelay` + `limit_req_status 429` in `08-genjson-mapsofmaking.conf`. **Gateway → maps-nginx → mak-link-handler**: gateway proxies `/api/` to `maps-nginx` (NOT mak-link-handler directly — different Docker network; direct upstream fails `nginx -t`).
+- SpaceAPI v15 schema vendored at `web/genjson/spaceapi-v15.schema.json` (from `github.com/SpaceApi/schema/master/15.json`); loaded locally — no CDN. Note: schema sets no `additionalProperties` and no `format` on `url`/`logo`, so extra keys + scheme-less URLs pass schema validation (semantic gaps handled in app logic, below).
+
+**Operator-review iterations (2026-05-31, demoable slice review with Nicolas):**
+- **Export = exact match** (only filled fields), not a full empty template — honest trust receipt ([[project_zone3_trust_receipt]]). Missing required fields (e.g. `logo`) are surfaced by the non-blocking validation warning, NOT seeded as empty placeholders (would erode the "present = declared" mental model).
+- **Key order mirrors wizard tier blocks** top-to-bottom (meta → Tier 0 → Tier 1 → Tier 2 `mom:` last) to build the coordinator's mental model of the file.
+- **`state.open: "opted-out"` sentinel** (Tier 1 SpaceAPI field, NOT a `mom:` key — operator correction). Pipeline already handles non-boolean `state.open`: `pipeline_helpers.py:97-100` returns None → `pipeline.py:173` "operator opted out" → `confirmed`. Privacy-respecting default; full FSM still Story 9.7.
+- **`mom:memberOf: null`** top-level key seeds Tier 2 curiosity (Story 9.6). Operator chose top-level `mom:` over `ext_mom` namespace; validates because `additionalProperties` is open.
+- **Post-export fork stub** (two doors: "Go deeper → Tier 2" / "Go live → host it yourself") — seeds Stories 9.6 + 9.8, respects coordinator agency. Content wired in those stories.
+- **URL scheme normalization** on blur + at export for `url`/`logo` (`openfab.be` → `https://openfab.be`), visible not silent. `www`/redirect canonicalization deferred to Story 9.9 (URL-probe). No server-side probe (SSRF surface + 9.9 overlap).
+- **Contrast pass**: lighter surface/border/text + explicit placeholder color; fine styling + tone deferred to Story 9.5.
+- `genjson.js`: full wizard in vanilla JS; system-mono font (CSP-safe); localStorage key `genjson_draft`; bernard-bible §9 lines verbatim; export non-blocking validation warning.
+- Added `make deploy-genjson` (rsync `web/genjson/` + gateway nginx reload) for fast static-frontend iteration without container rebuild.
 
 ### File List
+- `infra/link_handler/requirements.txt` — added `geopy`
+- `infra/link_handler/main.py` — added `POST /api/geocode` endpoint + module-level `_geocode` RateLimiter
+- `infra/gateway-nginx/08-genjson-mapsofmaking.conf` — added `limit_req_zone geocode_limit` + `location /api/` proxy block
+- `web/genjson/genjson.js` — full wizard implementation (replaces `// placeholder`)
+- `web/genjson/spaceapi-v15.schema.json` — vendored SpaceAPI v15 JSON Schema
+- `tests/test_geocode_proxy.py` — live backend tests (pytest, `@pytest.mark.live`)
+- `Makefile` — added `deploy-genjson` target (fast static-frontend deploy)
+- `_bmad-output/implementation-artifacts/sprint-status.yaml` — story status updated
+
+### Change Log
+- 2026-05-31: Story 9.3 implemented — wizard core (Tier 0 + Tier 1), geocode proxy, nginx rate-limit, SpaceAPI v15 schema vendored, localStorage, export, test_geocode_proxy
+- 2026-05-31: Operator-review iterations — exact-match export, tier-ordered keys, `state.open` opted-out sentinel, `mom:memberOf` seed, fork stub, URL scheme normalization, contrast pass, gateway→maps-nginx `/api/` routing fix, `make deploy-genjson`. localStorage save/resume confirmed working by operator.
