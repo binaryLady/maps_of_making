@@ -756,6 +756,7 @@ async function render() {
       introWrap.classList.add('receding');
       revealBeat('tier0-beat');
       revealBeat('beat-name');
+      requestAnimationFrame(() => document.getElementById('f-space')?.focus());
     }, 4000);
   }
 
@@ -978,7 +979,7 @@ function wireEvents(container, hasDraft) {
       draft[key] = id === 'f-country' ? el.value.toUpperCase() : el.value;
       saveDraft();
       updateContinueButton();
-      if (id === 'f-space' || id === 'f-city') updateStrip();
+      if (id === 'f-space' || id === 'f-city' || id === 'f-country') updateStrip();
     });
   });
 
@@ -1331,7 +1332,7 @@ function updateStrip() {
   const fill = document.getElementById('strip-fill');
   if (!fill) return;
   const hasBedrock = tier0Passed ||
-    !!(draft.lat !== null && draft.lon !== null && draft.space && draft.address && draft.city && draft.country_code);
+    !!(draft.lat !== null && draft.lon !== null && draft.space && draft.address && draft.city);
   if (hasBedrock) {
     fill.style.width = '100%';
     fill.style.background = 'var(--green)';
