@@ -1089,21 +1089,26 @@ async def get_space_raw(space_id: str):
 class GeocodeRequest(BaseModel):
     address: str
     city: str
-    postcode: str
-    country_code: str
+    postcode: str = ""
+    # country_code is now DERIVED, not demanded (Story 9.12 §2): the wizard no
+    # longer sends it. Kept optional so it still sharpens the query when present.
+    country_code: str = ""
 
 
 @app.post("/api/geocode")
 async def geocode(req: GeocodeRequest):
     """Proxy Nominatim geocoding for the wizard — 1 req/s rate-limited (RateLimiter).
 
-    Returns {lat, lon, display_name} on success, nulls on no-result, 503 on error.
+    Returns {lat, lon, country_code, display_name} on success, nulls on no-result,
+    503 on error. country_code is DERIVED from Nominatim address components (Story
+    9.12 §2: "ask the address, derive the rest") so the wizard need not demand it.
     nginx enforces an additional 2 req/s/IP hard cap (limit_req_zone) upstream.
     """
-    query = f"{req.address}, {req.city}, {req.postcode}, {req.country_code}"
+    # Drop empty parts so a missing postcode/country doesn't poison the query.
+    query = ", ".join(p for p in (req.address, req.city, req.postcode, req.country_code) if p)
     try:
         location = await asyncio.get_running_loop().run_in_executor(
-            None, lambda: _geocode(query)
+            None, lambda: _geocode(query, addressdetails=True)
         )
     except (GeocoderTimedOut, GeocoderUnavailable, GeocoderServiceError) as exc:
         logger.warning("Nominatim unavailable for query %r: %s", query, exc)
@@ -1113,10 +1118,18 @@ async def geocode(req: GeocodeRequest):
         raise HTTPException(status_code=503, detail={"error": "geocoding_unavailable"})
 
     if location is None:
-        return {"lat": None, "lon": None, "display_name": None}
+        return {"lat": None, "lon": None, "country_code": None, "postcode": None, "display_name": None}
 
+    # Derive what Bernard pulls from the address (Story 9.12 §2): ISO country code
+    # (uppercased to match the wizard) and postcode. Either may be absent for some
+    # results → None, and the wizard handles the gap (manual country fallback;
+    # postcode simply stays empty).
+    addr = location.raw.get("address", {}) or {}
+    cc = addr.get("country_code", "")
     return {
         "lat": location.latitude,
         "lon": location.longitude,
+        "country_code": cc.upper() if cc else None,
+        "postcode": addr.get("postcode") or None,
         "display_name": location.address,
     }

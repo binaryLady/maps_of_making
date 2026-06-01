@@ -1,7 +1,7 @@
 # UX Spec — Bernard's Workshop Wizard
 
 **Status:** Locked principles (v1) — interaction grammar for Epic 9 (Stories 9.6–9.12).
-**Author:** Sally (UX) with Nicolas, 2026-05-31.
+**Author:** Sally (UX) with Nicolas, 2026-05-31. **Updated 2026-06-01** after Story 9.12 shipped (Tier 0+1 now the *built* reference for the grammar — see callouts marked **BUILT (9.12)**).
 **Companion to:** `bernard-bible.md` (voice/character SSOT), `9-5-bernard-voice-copy-pass-*.md` (`bernard_copy.yaml`), `schema-roleplay-personas.md`.
 **Governs:** `web/genjson/genjson.js` and the map drawer fork in `web/maps-of-making.html`.
 
@@ -59,6 +59,15 @@ step is a line of Bernard's; the input is your reply. **The intro is transient**
 like the map's loading phase, then gives way to the first real step. It does not permanently
 occupy the top of the screen (see §3, current-state critique).
 
+**BUILT (9.12) — the reveal is structural and the advance grammar is locked:**
+- Each step is a `.beat` (`grid-rows 0fr→1fr` + opacity, `inert` until revealed) — **not** a
+  hidden-but-present box. Intro recedes *before* Tier 0 appears; Tier 0 reveals field-by-field;
+  Tier 1 is hidden until Continue. **9.6/9.10 must be beats too — not stacked boxes.**
+- **Commit-to-advance grammar (Tab / Enter / blur).** Reveals and field-advance fire on *commit*,
+  never per keystroke (mid-typing motion is jarring; mid-typing geocode is wrong). Enter advances
+  focus field-to-field within a cluster; the last field commits in place. A quiet
+  `keyboard_nav_hint` surfaces the affordance. This is the one keyboard contract across all tiers.
+
 ### P3 — Bedrock is the only gate; Bernard does the location math
 Name + address is the only thing ever *required*. Everything above bedrock is invitation, never
 demand (*Tesler's Law* — Bernard absorbs complexity: he derives, you don't supply). The
@@ -93,58 +102,69 @@ flow points at).
 Bernard derives **location facts**, nothing else. The wizard should ask for the address and
 *derive* the rest rather than asking for it:
 
-| User gives | Bernard derives |
-|---|---|
-| Full address | lat/lon · **country code** · **timezone** |
-| Street | postcode |
-| City alone | centered lat/lon · country code |
+| User gives | Bernard derives | Status |
+|---|---|---|
+| Street + city | lat/lon · **country code** · **postcode** | **BUILT (9.12)** |
+| (any of the above) | **timezone** | **deferred — own story** (Nominatim doesn't return tz; needs `timezonefinder`) |
 
 Bernard's bedrock line must stay inside this truth (he does **not** derive description, logo,
 network, etc.). Candidate copy:
 > *— Name, and where you are. That's your bedrock. The coordinates, the country, the timezone —
 > those I pull myself.*
 
-**Fog-of-war / dev note:** the geocode proxy returns **lat/lon only today** (`/api/geocode`).
-Country-code derivation (Nominatim address components) and timezone derivation (lat/lon → tz
-lookup) are **new work** to be surfaced in the geocode story — flagged here, not designed here.
-If unbuilt, the country-code field remains a (still-derivable-later) manual input; the principle
-("ask address, derive the rest") is the target.
+**BUILT (9.12) — "automated but not automatic":** the wizard asks **street + city only** and
+derives lat/lon + country + postcode via Nominatim `addressdetails`. The postcode and manual
+country *fields are gone*; derived values are narrated next to the pin (`· 94110 · US`) and a
+manual-country fallback surfaces only when Nominatim returns no country. Geocode fires on
+**commit** (Tab/Enter/blur of street or city), guarded + deduped so it never fires mid-typing.
+
+**Still fog-of-war:** **timezone** derivation. Nominatim does not return a timezone, so it needs a
+separate lat/lon→tz lookup (`timezonefinder`, a new dependency) — its own story. Until then the
+bedrock copy should *not* promise timezone (the worked example below keeps it out of what's shown).
 
 ---
 
 ## 3. Tier 0, reframed (the worked example)
 
-**Current state (`genjson.js` render, screenshot 2026-05-31):** intro + tier label + bedrock
-line + five labelled boxes + two buttons all fire at once. That is a form shouting — too much,
-violates P2.
+**Original critique (`genjson.js` render, screenshot 2026-05-31):** intro + tier label + bedrock
+line + five labelled boxes + two buttons all fired at once. That was a form shouting — too much,
+violated P2. **This is now fixed (9.12).**
 
-**Target — Bernard discovers your space with you:**
+**BUILT (9.12) — Bernard discovers your space with you:**
 
 ```
-   — Hi, I'm Bernard (they/them) from 'Mother Sands'.        ← loads like the loader,
-     Let's get your space on the map.                           then recedes
+   — Hi, I'm Bernard (they/them) from 'Mother Sands'.        ← shows ~2s, then recedes
+     Let's get your space on the map.                           and Tier 0 slides in
    ─────────────────────────────────────────────────────
 
-   — What does your community call this place?
+   — Let's define your bedrock. What does your community call this place?
      [ ______________________ ]
+       Tab or Enter to move on.                              ← keyboard affordance
 
-   — Noisebridge. Fine. And where do I find it?
-     [ 272 Capp St, San Francisco ____ ]
-       …dropping the pin here… 37.76, −122.42 · US · CET    ← narration, not a map
-
+   — Okay, and where do I find it?                           ← reveals on commit
+     [ 272 Capp St ____ ]
+     [ San Francisco ____ ]
+       Dropping the pin here: 37.76, −122.42 · 94110 · US    ← narration, not a map
+                                                                (postcode + country derived)
    — That's your bedrock. The rest is yours to give, or not.
 
-                                          [ Continue → ]
+                                          [ Continue → ]     ← hides itself once clicked
   ───────────────────────────────────────────────────────
-  noisebridge-san-francisco-2026-05-31.json   ▱▱▰ bedrock   export ⌄
+  noisebridge-san-francisco-2026-06-01.json   ▰▰▰▰▰▰ green   Export JSON
+   (strip appears once the name has content)
 ```
 
-Behavioural spec:
-- Intro is **transient** (loader-phase → recede), not permanent chrome.
-- Steps reveal **one beat at a time**; Bernard *reacts* to the prior answer before asking the next.
-- Geocode fires in the **background** once enough address is present; result is **narrated**
-  (pin-as-word), country/postcode/timezone **derived and shown**, never separately asked.
+Behavioural spec (all **BUILT (9.12)**):
+- Intro is **transient** — shows ~2s, then recedes as Tier 0 reveals in the same breath (a
+  handoff, not two walls). The recede duration is a single value in `render()`.
+- Steps reveal **one beat at a time on commit** (Tab/Enter/blur); Bernard *reacts* to the prior
+  answer before the next reveals.
+- Geocode fires on commit once street + city are present; result is **narrated** (pin-as-word),
+  **country + postcode derived and shown** inline, never separately asked. **Timezone is not yet
+  shown** (deferred — see §2).
 - Bedrock confirmation enforces ownership: **"That's *your* bedrock."**
+- Bernard's spoken lines are Special Elite + amber + leading em-dash, **no quote-bar** (he
+  narrates, isn't quoted). System/affordance copy (kbd-hint, Export) is flat mono, no em-dash.
 
 ---
 
@@ -166,8 +186,14 @@ red** — bernard-bible §1):
   **sparingly** — the secret layer.
 
 It keeps the drawer's shared grammar: Special Elite, underline links, `2px` radius, shadow language
-(*Jakob's Law* — P5). Exact hues are an operator-visual call at implementation (one change at a
-time); the **direction** is locked, not re-litigated. Implemented by Story 9.12.
+(*Jakob's Law* — P5). The **direction** is locked, not re-litigated.
+
+**BUILT (9.12):** hues resolved as `oklch()` custom props (`--bg` deep blue-green dusk, `--amber`
+voice/CTA, `--blue` links, `--green` valid, `--error` red, `--uv` Bernard's labor). All accents
+verified **WCAG AA on the dusk base** — *higher contrast is acceptable, lower is not* (operator
+rule). UV is a `filter: drop-shadow` glow reserved for Bernard's *labor* (acts with a duration,
+e.g. the geocode "working" pulse), **never** on the green result — green = valid, UV = he acted;
+conflating them is wrong. See the story's Final decision record + `bernard-bible.md §1`.
 
 ## 4. The ownership strip (persistent bottom line)
 
@@ -193,6 +219,12 @@ One shy, ever-present line — the literal home of P1's "always able to walk wit
 3. **Export ⌄** — always present, quiet, never gating anything; available before bedrock too
    (the file is yours even half-built).
 
+**BUILT (9.12):** static footer (operator chose static over sticky). The strip is the **single
+export affordance** — the old per-tier "Export JSON" buttons were removed (no duplicate paths).
+Progress is a 2px bar with one threshold: dim partial before bedrock, **full green** after — never
+a %, never red. The strip **appears only once `draft.space` has content** (no point on an empty
+cache). Filename + `exportJSON()` both use `<space>-<city>-<date>.json` (city omitted if empty).
+
 ---
 
 ## 5. Deliberately NOT designed here (fog of war)
@@ -214,16 +246,22 @@ ownership strip — but their specific shapes are intentionally open.
 
 ## 6. Relationship to the backlog
 
-- **Re-scopes 9.12**: from "visual design pass (colour/layout/contrast)" to **"lock the visual +
-  interaction frame the next stories inherit,"** implementing §3 (transient intro, beat-by-beat
-  reveal) and §4 (ownership strip). Visual styling still lives here; it now has a grammar to dress.
-- **Feeds 9.6+**: every subsequent story references §1 principles and plugs into §4's strip.
+- **Re-scoped 9.12** (**DONE 2026-06-01**): from "visual design pass (colour/layout/contrast)" to
+  **"lock the visual + interaction frame the next stories inherit,"** implementing §3 (transient
+  intro, beat-by-beat reveal) and §4 (ownership strip), plus the expanded honest derivation (§2).
+  The 8 locked decisions are recorded in the story's *Final decision record*.
+- **Feeds 9.6+**: every subsequent story references §1 principles, builds steps as **beats** (§P2),
+  uses the **commit-to-advance** grammar, and plugs into §4's strip. Inherit, do not re-litigate.
 - **No new copy invented here** — calibrated lines belong in `bernard_copy.yaml` (Story 9.5 SSOT);
   candidate lines above are illustrative until curated there.
 
 ## 7. Open threads
 
-- Geocode proxy: add country-code + timezone derivation (§2 dev note) — needs a story.
+- ~~Geocode proxy: add country-code derivation~~ — **DONE (9.12):** country + postcode derived via
+  Nominatim `addressdetails`. **Still open: timezone derivation** — needs a separate lat/lon→tz
+  lookup (`timezonefinder`); its own story. Don't promise timezone in copy until it's built.
 - Progress-bar "full-state horizon": what counts as the soft end — all tiers? a richness score?
-  Resolve when Tier 2/3 shapes are known (fog of war).
-- Whether the transient intro recede is animation or instant (P5 — keep it cheap, no gimmick).
+  Resolve when Tier 2/3 shapes are known (fog of war). *(9.12 ships the one-threshold bedrock bar;
+  the post-bedrock "horizon" is currently just full-green — the richer soft-end is still open.)*
+- ~~Whether the transient intro recede is animation or instant~~ — **RESOLVED (9.12):** cheap CSS
+  `grid-rows` + opacity transition, `prefers-reduced-motion` honored (instant when set). No library.

@@ -36,7 +36,10 @@
 
 drawer_one_liner: "Two ways onto the map. Tell me about your space, or paste your endpoint URL if you've got one. Either's fine."
 wizard_intro: "Hi, I'm Bernard (they/them) from 'Mother Sands'. Let's get your space on the map."
-floor_gate: "Name and address. That's the bedrock. I'll derive the geolocation."
+floor_gate: "Let's define your bedrock. What does your community call this place?"  # TONE-REVIEW (Story 9.12): trimmed to a name-first opener — no longer pre-announces the address beat
+beat_name_ack: "Okay, and where do I find it?"  # TONE-REVIEW (Story 9.12): spoken, reveals with the location beat (P4 acknowledgment-not-congratulations)
+bedrock_confirm: "That's your bedrock. The rest is yours to give, or not."  # TONE-REVIEW (Story 9.12): spoken, reveals with the bedrock beat (P1 ownership)
+keyboard_nav_hint: "Tab or Enter to move on."  # TONE-REVIEW (Story 9.12): SYSTEM voice (no em-dash) — surfaces the commit-to-advance affordance so it's expected
 tier_1_exit: "Core's in. Other SpaceAPI apps can read this file as-is."
 tier_2_exit: "MoM fields in. Now the world can see your membership, your hours, the goals you work toward."
 tier_3_exit: "Silo fields in. The bits only your kind of space needs are switched on."
@@ -59,12 +62,15 @@ field_hints:
   sdgs: "Which UN Sustainable Development Goals does your space contribute to? Numbers only."
 validation_messages:
   schema_invalid: "Something's off. Check the fields marked in red — the file isn't valid yet."
+  geocoding_in_progress: "Working out where that is."  # TONE-REVIEW (Story 9.12): geocode "doing the math" beat
+  geocode_resolved: "Dropping the pin here:"           # TONE-REVIEW (Story 9.12): prefix before the green lat/long
   nominatim_unavailable: "Geocoding temporarily unavailable — enter coordinates manually."
   nominatim_no_result: "No result — enter coordinates manually."
   nominatim_rate_limit: "Too many requests — wait a moment and try again."
   clear_confirm: "This will erase your saved progress. Continue?"
   url_scheme_added: "Added https:// — update if wrong."
   matrix_sigil_added: "Added # for a room — change to + if it's a community."
+export_button: "Export JSON"  # TONE-REVIEW (Story 9.12): strip always-on export label — system voice, not Bernard
 fork_stub:
   tier2_teaser: "Tier 2 is on the way. Network features land in a later step."
   tutorial_teaser: "Self-hosting walkthrough is on the way. Export your file and keep it warm for now."

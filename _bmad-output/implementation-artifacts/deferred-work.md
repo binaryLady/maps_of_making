@@ -312,3 +312,6 @@ Generating a real openfab.jsonld against the `space-jsonld-generator` skill expo
 ## Deferred from: code review of 9-5-bernard-voice-copy-pass-curated-voice-artifact (2026-05-31)
 
 - Existing localStorage drafts with `contact_mastodon` key silently orphaned after mastodon→matrix field swap — `loadDraft()` merges all saved keys; mastodon value stored in draft object but never rendered or exported; low impact
+
+## Deferred from: 9.12 honest-derivation (Slice B, 2026-06-01)
+- **Timezone derivation (§2 table + §7 open thread) → own story.** §2 wants "Full address → derive lat/lon · country · **timezone**". Slice B derived country + postcode (Nominatim `addressdetails` returns both), but **timezone is NOT in Nominatim's response** — it needs a separate lat/lon→tz lookup (e.g. `timezonefinder`, offline; new dependency). Operator note (2026-06-01): timezone is a real **SpaceAPI field**, not yet used by MoM, but could soon inform location/visitor-aware features — so it has standalone value. Scope when picked up: add tz lookup to `/api/geocode` (or a derive step), return `timezone`, wizard fills it silently like country/postcode, narrate `· <tz>` next to the pin (§3 worked example shows `· CET`). → New Epic 9 geocode/derivation story.

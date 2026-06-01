@@ -15,7 +15,7 @@ BASE_URL = "http://localhost:8000"  # mak-link-handler direct; nginx on 80/443
 
 @pytest.mark.live
 def test_geocode_known_address():
-    """Brussels city hall → lat ≈ 50.85, lon ≈ 4.36."""
+    """Brussels city hall → lat ≈ 50.85, lon ≈ 4.36, country derived as BE (Story 9.12 §2)."""
     resp = httpx.post(
         f"{BASE_URL}/api/geocode",
         json={"address": "Rue Royale 1", "city": "Brussels", "postcode": "1000", "country_code": "BE"},
@@ -28,11 +28,29 @@ def test_geocode_known_address():
     assert abs(data["lat"] - 50.85) < 0.5, f"lat out of range: {data['lat']}"
     assert abs(data["lon"] - 4.36) < 0.5, f"lon out of range: {data['lon']}"
     assert data["display_name"] is not None
+    assert data["country_code"] == "BE", f"expected derived country BE, got {data['country_code']!r}"
+    assert data["postcode"] == "1000", f"expected derived postcode 1000, got {data['postcode']!r}"
+
+
+@pytest.mark.live
+def test_geocode_derives_country_and_postcode_without_input():
+    """country_code AND postcode are DERIVED: omit both from the request and the
+    proxy still returns them from the address (Story 9.12 §2)."""
+    resp = httpx.post(
+        f"{BASE_URL}/api/geocode",
+        json={"address": "Rue Royale 1", "city": "Brussels"},
+        timeout=15,
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["lat"] is not None
+    assert data["country_code"] == "BE", f"expected derived country BE, got {data['country_code']!r}"
+    assert data["postcode"] == "1000", f"expected derived postcode 1000, got {data['postcode']!r}"
 
 
 @pytest.mark.live
 def test_geocode_no_result():
-    """Unmatchable address → lat/lon/display_name all null (HTTP 200, not error)."""
+    """Unmatchable address → lat/lon/country_code/display_name all null (HTTP 200, not error)."""
     resp = httpx.post(
         f"{BASE_URL}/api/geocode",
         json={"address": "XXXXXXXXXNOTAREALPLACE99999", "city": "ZZZZZ", "postcode": "00000", "country_code": "XX"},
@@ -42,6 +60,8 @@ def test_geocode_no_result():
     data = resp.json()
     assert data["lat"] is None
     assert data["lon"] is None
+    assert data["country_code"] is None
+    assert data["postcode"] is None
     assert data["display_name"] is None
 
 

@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-01
-last_updated: "2026-05-31 (Story 9.12 ready-for-dev — wizard visual+interaction frame)"
+last_updated: "2026-06-01 (Story 9.12 done — wizard visual + interaction frame locked)"
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
@@ -204,7 +204,7 @@ development_status:
   9-9-three-mode-unification-url-fetch-pre-fill-validator-mode-cache-resume-reconciliation: backlog  # M3 — deferrable
   9-10-wizard-tier-3-ext-fab-fields-space-type-fuzzy-dropdown-equipment: backlog  # M3 — deferrable
   9-11-validator-error-ux-inline-per-field-summary-report: backlog  # M3 — deferrable
-  9-12-wizard-visual-design-pass-color-layout-contrast: ready-for-dev  # re-scoped per ux-bernard-wizard-spec.md: visual skin + transient intro (§3) + ownership strip (§4); locks the frame 9.6/9.10 inherit
+  9-12-wizard-visual-design-pass-color-layout-contrast: done  # operator-approved; locks the interaction+visual frame 9.6/9.10 inherit (see story Final decision record)
   epic-9-retrospective: optional
 
   # Epic 10: Multi-Network Schema — Bundles, Concept Commons & Emergent Ontologies (stub — no stories yet)

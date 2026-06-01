@@ -5,7 +5,7 @@ typography, and the UX rules that govern how they appear in MoM tooling. Consoli
 supersedes the scattered notes in `mom_handoff_2026-05-15.md` §Bernard, `mom_handoff_2026-05-16.md`,
 `sprint-change-proposal-2026-05-29.md`, and `memory/project_bernard_character.md`.
 
-**Last updated:** 2026-05-31 (added Jacques/SDG-14 compulsive-cleaning trait + UX-spec cross-ref; + hermit-crab vision palette & workshop-as-threshold, Story 9.12).
+**Last updated:** 2026-06-01 (UV = Bernard's labor semantic locked, Story 9.12). Prior: 2026-05-31 (added Jacques/SDG-14 compulsive-cleaning trait + UX-spec cross-ref; + hermit-crab vision palette & workshop-as-threshold, Story 9.12).
 
 > **How to use this file:** Any copy, typography, or interaction that involves Bernard's
 > voice — wizard, drawer, validation messages, export confirmations, changelog, lore page —
@@ -25,9 +25,14 @@ supersedes the scattered notes in `mom_handoff_2026-05-15.md` §Bernard, `mom_ha
   colors Bernard sees — lamplit **amber/brass** (yellow = Lagavulin, lamplight; Bernard's voice
   + primary CTA), **blue** (links/water), **green** (valid/confirmed/alive) — and **red is
   reserved for errors only**: the one signal *outside* Bernard's spectrum, so it reads as the
-  alien, must-look note. **UV** is the band only Bernard perceives — a faint cool shimmer for the
-  things humans barely notice (curiosity hooks, hover/focus glow); use sparingly. See the wizard
-  UX spec §3b.
+  alien, must-look note. **UV** is the band **only Bernard perceives** — so it cannot be shared-
+  meaning decoration; it marks **Bernard's own labor, made briefly visible** (Story 9.12, locked
+  2026-06-01). Where **green = "this is valid"** (a state the coordinator owns), **UV = "Bernard
+  just did this *for* you"** (an act the coordinator didn't perform): the geocode resolving (P3 —
+  Bernard does the location math), the normalizers scrubbing input (§2 Jacques trait), the file
+  being assembled. A faint cool drop-shadow shimmer on those **derived moments only** — never plain
+  focus, never ambient. **Use rarely:** if UV is everywhere it stops meaning "Bernard acted" and
+  becomes noise. See the wizard UX spec §3b.
 - **Gender-play tension:** "Bernard" (commonly a male name) + "**Mother** Sands" — intentional,
   **do not resolve**. The friction is the point.
 - **Home:** Mother Sands — the **8th Maunsell sea-fort that was never planned and never built**.
