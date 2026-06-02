@@ -1253,18 +1253,29 @@ function wireEvents(container, hasDraft) {
   // (same commit-to-advance mental model as Tier 0 fields).
   document.getElementById('golive')?.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter') return;
-    const beat = e.target.closest('.beat.revealed');
+    // Scope to child beats only — the golive wrapper itself has class "beat" + "revealed"
+    // and must not be matched, or Enter on the video link would advance instead of navigate.
+    const beat = e.target.closest('[id^="golive-beat"].revealed');
     if (!beat) return;
     const btn = beat.querySelector('.beat-next:not(:disabled)');
     if (btn) { e.preventDefault(); advanceGolive(btn); }
   });
 
-  // Close: collapse #golive and re-enable "Go live →"
+  // Close: collapse #golive, reset all child beats, re-enable "Go live →"
   document.getElementById('golive')?.addEventListener('click', (e) => {
     if (!e.target.closest('#golive-close')) return;
     const golive = document.getElementById('golive');
     golive?.classList.remove('revealed');
     golive?.setAttribute('inert', '');
+    // Reset child beats so re-open always starts from the first beat
+    golive?.querySelectorAll('.beat').forEach((beat) => {
+      beat.classList.remove('revealed');
+      beat.setAttribute('inert', '');
+      beat.querySelectorAll('.beat-next').forEach((btn) => {
+        btn.disabled = false;
+        btn.style.opacity = '';
+      });
+    });
     const forkBtn = document.getElementById('fork-live');
     if (forkBtn) {
       forkBtn.disabled = false;

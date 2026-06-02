@@ -1,6 +1,6 @@
 # Story 9.8: GitLab Tutorial Surface — Embedded Guide + Raw URL Handoff to Register Flow
 
-Status: review
+Status: done
 
 ## Story
 
@@ -326,6 +326,12 @@ web/genjson/tuto/
 - "← close" affordance collapses #golive, re-enables "Go live →"
 - 4 individual screencaps → 5 per-beat panels derived from V2; added Step 5 (register); video link + downloadable cheat sheet
 - merged `endpoint_bridge` into step4 (removed key) — one Bernard utterance per beat
+
+### Review Findings
+
+- [x] [Review][Patch] Close handler doesn't reset child beats — re-open shows stale multi-beat state with disabled buttons [genjson.js:1262]
+- [x] [Review][Patch] Enter keydown on `#golive` matches wrapper itself via `.beat.revealed`, can prevent link navigation and advance wrong beat [genjson.js:1254]
+- [x] [Review][Defer] hasDraft resume: golive progress not persisted across page reload — deferred, pre-existing by design
 
 ### Change Log
 
