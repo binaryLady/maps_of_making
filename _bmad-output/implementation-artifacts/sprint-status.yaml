@@ -209,7 +209,7 @@ development_status:
   9-5-bernard-voice-copy-pass-curated-voice-artifact: done
   9-6-wizard-tier-2-mom-fields-opening-hours-memberof-mom-sdgs: ready-for-dev
   9-7-wizard-state-open-fsm-cascading-questions-marker-mapping-opt-out: backlog
-  9-8-gitlab-tutorial-surface-embedded-guide-raw-url-handoff-register-flow: ready-for-dev  # spec revised 2026-06-01: raw URL (not GitLab Pages), no logo step, CTA hands off to register flow
+  9-8-gitlab-tutorial-surface-embedded-guide-raw-url-handoff-register-flow: review  # spec revised 2026-06-01: raw URL (not GitLab Pages), no logo step, CTA hands off to register flow
   9-9-three-mode-unification-url-fetch-pre-fill-validator-mode-cache-resume-reconciliation: backlog  # M3 — deferrable
   9-10-wizard-tier-3-ext-fab-fields-space-type-fuzzy-dropdown-equipment: backlog  # M3 — deferrable
   9-11-validator-error-ux-inline-per-field-summary-report: backlog  # M3 — deferrable

@@ -10,61 +10,28 @@ const DRAFT_KEY = 'genjson_draft';  // must match Story 9.2 drawer contract
 
 // ── Copy artifact ─────────────────────────────────────────────────────────────
 
-let COPY = null;
+// Returns a proxy that yields '' for any leaf access and itself for any nested
+// access — so COPY.any.key always resolves to '' rather than throwing when the
+// bernard_copy.json fetch fails.
+function emptyProxy() {
+  return new Proxy({}, {
+    get(_, key) {
+      if (key === Symbol.toPrimitive || key === 'toString' || key === 'valueOf') return () => '';
+      return emptyProxy();
+    },
+  });
+}
 
-const COPY_FALLBACK = {
-  drawer_one_liner: "Two ways onto the map. Tell me about your space, or paste your endpoint URL if you've got one. Either's fine.",
-  wizard_intro: "Hi, I'm Bernard (they/them) from 'Mother Sands'. Let's get your space on the map.",
-  floor_gate: "Let's define your bedrock. What does your community call this place?",
-  beat_name_ack: "Okay, and where do I find it?",
-  bedrock_confirm: "That's your bedrock. The rest is yours to give, or not.",
-  keyboard_nav_hint: "Tab or Enter to move on.",
-  tier_1_exit: "Core's in. Other SpaceAPI apps can read this file as-is.",
-  tier_2_exit: "MoM fields in. Now the world can see your membership, your hours, the goals you work toward.",
-  tier_3_exit: "Silo fields in. The bits only your kind of space needs are switched on.",
-  sovereignty_disclosure: "You publish, we make it legible. The rest is history.",
-  localstorage_warning: "Your progress is saved in this browser. Hard-refresh or clearing site data wipes it. Export at any point if you want a copy outside the browser.",
-  localstorage_resume: "Continuing from where you left off.",
-  field_hints: {
-    space: "The name your community knows you by.",
-    address: "Street address — the part before city.",
-    city: "City or municipality.",
-    postcode: "Postal code.",
-    country_code: "Two-letter ISO country code. e.g. DE, FR, BE.",
-    logo: "We scale by height and keep your ratio — transparent PNG works best.",
-    url: "Your space's main web page.",
-    description: "One or two sentences. What kind of space is this?",
-    contact_email: "Not a personal inbox — somewhere the space can be reached.",
-    contact_matrix: "Your space's room, not a personal account.",
-    opening_hours: "When are you open? We use OSM opening_hours format.",
-    memberOf: "Which network(s) is this space part of? URL preferred.",
-    sdgs: "Which UN Sustainable Development Goals does your space contribute to? Numbers only.",
-  },
-  validation_messages: {
-    schema_invalid: "Something's off. Check the fields marked in red — the file isn't valid yet.",
-    geocoding_in_progress: "Working out where that is.",
-    geocode_resolved: "Dropping the pin here:",
-    nominatim_unavailable: "Geocoding temporarily unavailable — enter coordinates manually.",
-    nominatim_no_result: "No result — enter coordinates manually.",
-    nominatim_rate_limit: "Too many requests — wait a moment and try again.",
-    clear_confirm: "This will erase your saved progress. Continue?",
-    url_scheme_added: "Added https:// — update if wrong.",
-    matrix_sigil_added: "Added # for a room — change to + if it's a community.",
-  },
-  export_button: "Export JSON",
-  fork_stub: {
-    tier2_teaser: "Tier 2 is on the way. Network features land in a later step.",
-    tutorial_teaser: "Self-hosting walkthrough is on the way. Export your file and keep it warm for now.",
-  },
-};
+let COPY = emptyProxy();
 
 async function fetchCopy() {
   try {
     const resp = await fetch('/bernard_copy.json');
-    if (!resp.ok) throw new Error('copy fetch failed');
+    if (!resp.ok) throw new Error(`bernard_copy.json fetch failed: HTTP ${resp.status}`);
     COPY = await resp.json();
-  } catch {
-    COPY = COPY_FALLBACK;
+  } catch (err) {
+    console.error('[wizard] copy fetch failed — wizard will render with empty strings.', err);
+    COPY = emptyProxy();
   }
 }
 
@@ -514,6 +481,39 @@ const CSS = `
     font-size: 0.78rem;
     color: var(--muted);
   }
+
+  /* Tutorial beats (Story 9.8) — step separator + screencap styling */
+  #golive .beat {
+    margin-top: var(--space-3);
+    padding-left: var(--space-2);
+    border-left: 1px solid var(--border);
+  }
+  #golive .tuto-step-num {
+    font-size: 14px;
+    color: var(--muted);
+    font-family: 'Special Elite', var(--font-mono), monospace;
+    margin-bottom: var(--space-1);
+  }
+  #golive img {
+    display: block;
+    max-width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    margin-top: var(--space-2);
+  }
+  /* .beat-next: in-flow stepper — blue (navigation), subordinate to amber CTA */
+  #golive .beat-next {
+    margin-top: var(--space-2);
+    border-color: var(--blue);
+    color: var(--blue);
+  }
+  #golive .beat-next:hover:not(:disabled) {
+    background: oklch(76% 0.17 250 / 0.1);
+    border-color: var(--blue);
+  }
+  @media (max-width: 480px) {
+    #golive .beat-next { min-height: 44px; }
+  }
 `;
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -754,8 +754,8 @@ async function render() {
     // (handoff: both transitions run in parallel so one gives way as the other opens).
     setTimeout(() => {
       introWrap.classList.add('receding');
-      revealBeat('tier0-beat');
-      revealBeat('beat-name');
+      revealBeat('tier0');
+      revealBeat('tier0-beat-name');
       requestAnimationFrame(() => document.getElementById('f-space')?.focus());
     }, 4000);
   }
@@ -774,7 +774,7 @@ async function render() {
   // ── Tier 0 — hidden behind a beat on fresh entry (P2: intro gives way first) ──
   const tier0Beat = document.createElement('div');
   tier0Beat.className = 'beat';
-  tier0Beat.id = 'tier0-beat';
+  tier0Beat.id = 'tier0';
   if (!hasDraft) tier0Beat.setAttribute('inert', '');
   const tier0BeatInner = document.createElement('div');
   tier0BeatInner.className = 'beat-inner';
@@ -789,7 +789,7 @@ async function render() {
     <div class="bernard-voice">— ${COPY.floor_gate}</div>
 
     <!-- Beat 1 — name (always present on entry) -->
-    <div class="beat" id="beat-name">
+    <div class="beat" id="tier0-beat-name">
       <div class="beat-inner">
         <div class="field-row">
           <label for="f-space">Space name</label>
@@ -801,7 +801,7 @@ async function render() {
 
     <!-- Beat 2 — location (reveals on commit: Tab / Enter / leaving the name).
          inert until revealed so keyboard focus can't land in it early. -->
-    <div class="beat" id="beat-location" inert>
+    <div class="beat" id="tier0-beat-location" inert>
       <div class="beat-inner">
         <div class="bernard-voice beat-ack">— ${COPY.beat_name_ack}</div>
         <div class="field-row">
@@ -836,7 +836,7 @@ async function render() {
     </div>
 
     <!-- Beat 3 — bedrock (reveals once coordinates resolve). inert until then. -->
-    <div class="beat" id="beat-bedrock" inert>
+    <div class="beat" id="tier0-beat-bedrock" inert>
       <div class="beat-inner">
         <div class="bernard-voice beat-ack">— ${COPY.bedrock_confirm}</div>
         <div class="btn-row">
@@ -850,7 +850,7 @@ async function render() {
   // ── Tier 1 — hidden behind a beat until Tier 0 passes (P2: one beat at a time) ──
   const tier1Beat = document.createElement('div');
   tier1Beat.className = 'beat';
-  tier1Beat.id = 'tier1-beat';
+  tier1Beat.id = 'tier1';
   if (!tier0Passed) tier1Beat.setAttribute('inert', '');
   const tier1BeatInner = document.createElement('div');
   tier1BeatInner.className = 'beat-inner';
@@ -896,7 +896,6 @@ async function render() {
     <!-- Fork stub (Option B) — two doors, respecting coordinator agency.
          Wired content arrives in Story 9.6 (Tier 2) and Story 9.8 (tutorial). -->
     <div class="fork">
-      <div class="bernard-voice fork-label">— Two ways forward. Your call.</div>
       <div class="fork-doors">
         <button class="btn fork-door" id="fork-deeper">
           <span class="fork-door-title">Go deeper →</span>
@@ -911,6 +910,92 @@ async function render() {
     </div>
   `;
   tier1BeatInner.appendChild(tier1);
+
+  // ── #golive — beat-by-beat GitLab tutorial (Story 9.8, AC2/AC3) ─────────────
+  // Revealed when coordinator clicks "Go live →" (fork-live wired below).
+  // Five content beats + a system-voice trigger line above the first beat.
+  const goliveBeat = document.createElement('div');
+  goliveBeat.className = 'beat';
+  goliveBeat.id = 'golive';
+  goliveBeat.setAttribute('inert', '');
+  const goliveBeatInner = document.createElement('div');
+  goliveBeatInner.className = 'beat-inner';
+  goliveBeat.appendChild(goliveBeatInner);
+  container.appendChild(goliveBeat);
+
+  goliveBeatInner.innerHTML = `
+    <div class="bernard-voice" style="margin-top:var(--space-3)">— ${COPY.tutorial.trigger}</div>
+
+    <p style="margin-top:var(--space-2);font-size:0.8rem;color:var(--muted)">
+      Prefer video? <a href="https://youtu.be/5FAAAJdeQYc" target="_blank" rel="noopener" class="inline-link">7-min walkthrough →</a>
+      &nbsp;·&nbsp;
+      <a href="tuto/hosting-guide-hd.png" download="hosting-guide.png" class="inline-link">Download cheat sheet →</a>
+    </p>
+
+    <div class="beat" id="golive-beat-account" inert>
+      <div class="beat-inner">
+        <div class="tuto-step-num">Step 1 — Account</div>
+        <div class="bernard-voice">— ${COPY.tutorial.step1}</div>
+        <img src="tuto/panel-account.png" alt="GitLab sign-up: email or SSO, verify your address" loading="lazy">
+        <div class="btn-row">
+          <button class="btn beat-next" data-next="golive-beat-project">${COPY.tutorial.next}</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="beat" id="golive-beat-project" inert>
+      <div class="beat-inner">
+        <div class="tuto-step-num">Step 2 — Public project</div>
+        <div class="bernard-voice">— ${COPY.tutorial.step2}</div>
+        <img src="tuto/panel-project.png" alt="New project → Create blank project, Visibility Level set to Public" loading="lazy">
+        <div class="btn-row">
+          <button class="btn beat-next" data-next="golive-beat-upload">${COPY.tutorial.next}</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="beat" id="golive-beat-upload" inert>
+      <div class="beat-inner">
+        <div class="tuto-step-num">Step 3 — Upload</div>
+        <div class="bernard-voice">— ${COPY.tutorial.step3}</div>
+        <img src="tuto/panel-upload.png" alt="+ Upload file, drop in JSON, Commit changes" loading="lazy">
+        <div class="btn-row">
+          <button class="btn beat-next" data-next="golive-beat-rawurl">${COPY.tutorial.next}</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="beat" id="golive-beat-rawurl" inert>
+      <div class="beat-inner">
+        <div class="tuto-step-num">Step 4 — Raw URL</div>
+        <div class="bernard-voice">— ${COPY.tutorial.step4}</div>
+        <img src="tuto/panel-rawurl.png" alt="Open raw button — URL in address bar is your permanent endpoint" loading="lazy">
+        <div class="btn-row">
+          <button class="btn beat-next" data-next="golive-beat-register">${COPY.tutorial.next}</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="beat" id="golive-beat-register" inert>
+      <div class="beat-inner">
+        <div class="tuto-step-num">Step 5 — Register</div>
+        <div class="bernard-voice">— ${COPY.tutorial.step5}</div>
+        <img src="tuto/panel-register.png" alt="The map's Add your space drawer: paste endpoint URL, Fetch & validate, Confirm & register your space" loading="lazy">
+        <div class="btn-row">
+          <button class="btn beat-next" data-next="golive-beat-endpoint">${COPY.tutorial.next}</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="beat" id="golive-beat-endpoint" inert>
+      <div class="beat-inner" style="margin-top:var(--space-3)">
+        <div class="bernard-voice">— ${COPY.tutorial.closing}</div>
+        <div style="margin-top:var(--space-3)">
+          <button class="clear-link" id="golive-close">← close</button>
+        </div>
+      </div>
+    </div>
+  `;
 
   // ── Ownership strip (AC6, §4 P1) ─────────────────────────────────────────────
   const strip = document.createElement('div');
@@ -1013,7 +1098,7 @@ function wireEvents(container, hasDraft) {
   if (nameEl) {
     const commitName = (moveFocus) => {
       if (!nameEl.value.trim()) return;
-      revealBeat('beat-location');
+      revealBeat('tier0-beat-location');
       if (moveFocus) document.getElementById('f-address')?.focus();
     };
     nameEl.addEventListener('keydown', (e) => {
@@ -1115,7 +1200,7 @@ function wireEvents(container, hasDraft) {
   document.getElementById('continue-btn')?.addEventListener('click', () => {
     tier0Passed = true;
     document.getElementById('tier0-block')?.classList.remove('tier-active');  // settle
-    revealBeat('tier1-beat');
+    revealBeat('tier1');
     document.getElementById('tier1-block')?.classList.add('tier-active');     // frontier
     updateStrip();
     document.getElementById('continue-btn').style.display = 'none';
@@ -1126,15 +1211,67 @@ function wireEvents(container, hasDraft) {
     exportJSON(document.getElementById('strip-warn'));
   });
 
-  // Fork stub — content wired in Story 9.6 (Tier 2) and 9.8 (tutorial)
-  const forkNote = () => document.getElementById('fork-note');
+  // Fork doors — "Go deeper →" stub; "Go live →" expands the tutorial section.
+  // fork_stub.tutorial_teaser key is retained in YAML (test guard) — see Dev Notes.
   document.getElementById('fork-deeper')?.addEventListener('click', () => {
-    const n = forkNote();
+    const n = document.getElementById('fork-note');
     if (n) { n.textContent = `— ${COPY.fork_stub.tier2_teaser}`; n.style.display = 'block'; }
   });
-  document.getElementById('fork-live')?.addEventListener('click', () => {
-    const n = forkNote();
-    if (n) { n.textContent = `— ${COPY.fork_stub.tutorial_teaser}`; n.style.display = 'block'; }
+  const forkLiveBtn = document.getElementById('fork-live');
+  forkLiveBtn?.addEventListener('click', () => {
+    if (document.getElementById('golive')?.classList.contains('revealed')) return;  // open-only
+    revealBeat('golive');
+    revealBeat('golive-beat-account');
+    // Settle the button so it reads as a completed trigger, not a repeated CTA
+    forkLiveBtn.style.borderColor = 'var(--border)';
+    forkLiveBtn.style.color = 'var(--muted)';
+    forkLiveBtn.style.cursor = 'default';
+    forkLiveBtn.disabled = true;
+  });
+
+  // Beat steppers inside #golive — "Done →" buttons + Enter/Tab keyboard parity.
+  const advanceGolive = (btn) => {
+    if (!btn || btn.disabled) return;
+    const nextId = btn.dataset.next;
+    if (!nextId) return;
+    btn.disabled = true;
+    btn.style.opacity = '0.4';
+    revealBeat(nextId);
+    // Focus the next beat's button so Tab/Enter can continue immediately
+    requestAnimationFrame(() => {
+      document.getElementById(nextId)?.querySelector('.beat-next')?.focus();
+    });
+  };
+
+  document.getElementById('golive')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('.beat-next');
+    if (btn) advanceGolive(btn);
+  });
+
+  // Enter on a focused .beat-next is native button behavior.
+  // This catches Enter pressed anywhere inside a revealed golive beat
+  // (same commit-to-advance mental model as Tier 0 fields).
+  document.getElementById('golive')?.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    const beat = e.target.closest('.beat.revealed');
+    if (!beat) return;
+    const btn = beat.querySelector('.beat-next:not(:disabled)');
+    if (btn) { e.preventDefault(); advanceGolive(btn); }
+  });
+
+  // Close: collapse #golive and re-enable "Go live →"
+  document.getElementById('golive')?.addEventListener('click', (e) => {
+    if (!e.target.closest('#golive-close')) return;
+    const golive = document.getElementById('golive');
+    golive?.classList.remove('revealed');
+    golive?.setAttribute('inert', '');
+    const forkBtn = document.getElementById('fork-live');
+    if (forkBtn) {
+      forkBtn.disabled = false;
+      forkBtn.style.borderColor = '';
+      forkBtn.style.color = '';
+      forkBtn.style.cursor = '';
+    }
   });
 
   // Clear & start over
@@ -1161,14 +1298,14 @@ function wireEvents(container, hasDraft) {
   }
 
   // Initial reveal (AC10 + AC5): on resume, snap all earned beats open instantly.
-  // On fresh entry, beat-name is delayed (scheduled above in render() with the
-  // intro recede at t=2000ms) so the intro and Tier 0 don't wall up together.
+  // On fresh entry, tier0-beat-name is delayed (scheduled above in render() with the
+  // intro recede at t=4000ms) so the intro and Tier 0 don't wall up together.
   if (hasDraft) {
-    revealBeat('tier0-beat', true);
-    revealBeat('beat-name', true);
-    if (draft.space && draft.space.trim()) revealBeat('beat-location', true);
-    if (draft.lat !== null && draft.lon !== null) revealBeat('beat-bedrock', true);
-    if (tier0Passed) revealBeat('tier1-beat', true);
+    revealBeat('tier0', true);
+    revealBeat('tier0-beat-name', true);
+    if (draft.space && draft.space.trim()) revealBeat('tier0-beat-location', true);
+    if (draft.lat !== null && draft.lon !== null) revealBeat('tier0-beat-bedrock', true);
+    if (tier0Passed) revealBeat('tier1', true);
   }
 
   updateStrip();
@@ -1233,7 +1370,7 @@ function triggerGeocodeDebounce() {
       // lived on the meter (Bernard's labor) and clears here — no UV on the result.
       updateCoordsPreview(derivedNote, 'ok');
       showManualCoords(false);
-      revealBeat('beat-bedrock');  // Beat 2 → Beat 3: pin's dropped, bedrock's reachable
+      revealBeat('tier0-beat-bedrock');  // Beat 2 → Beat 3: pin's dropped, bedrock's reachable
     }
     updateContinueButton();
     updateStrip();
@@ -1301,7 +1438,7 @@ function showManualCoords(show) {
   // and keep Continue reachable via manual entry.
   if (show) {
     showManualCountry(true);
-    revealBeat('beat-bedrock');
+    revealBeat('tier0-beat-bedrock');
   }
 }
 

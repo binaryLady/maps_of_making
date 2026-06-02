@@ -73,4 +73,18 @@ validation_messages:
 export_button: "Export JSON"  # TONE-REVIEW (Story 9.12): strip always-on export label — system voice, not Bernard
 fork_stub:
   tier2_teaser: "Tier 2 is on the way. Network features land in a later step."
-  tutorial_teaser: "Self-hosting walkthrough is on the way. Export your file and keep it warm for now."
+  tutorial_teaser: "Self-hosting walkthrough is on the way. Export your file and keep it warm for now."  # Story 9.8: superseded by tutorial.* (fork-live now expands #golive); key retained — see Dev Notes "fork_stub.tutorial_teaser after Story 9.8"
+tutorial:
+  # Story 9.8 — GitLab go-live walkthrough. Revealed beat-by-beat under "Go live →".
+  # All lines Bernard spoken (em-dash prepended by JS). trigger orients above the
+  # first beat; steps 2-5 OPEN with a terse reaction to the step just completed
+  # (P4 acknowledgment, never congratulation), then state the next action — this
+  # is the "Bernard reacts before the next reveals" beat seam.
+  trigger: "You've got the file. Now it needs an address. GitLab will give you one, free, permanently, in about five minutes. No credit card. No server. No command line."
+  step1: "Create a free account at gitlab.com. Email or SSO — your call. Verify your address when they ask."
+  step2: "Account's yours. New project → Create blank project. Set the Visibility Level to Public — the map reads your file without a login. Any name works."
+  step3: "Project's up. Hit the + button → Upload file. Drop in your exported JSON, click Commit changes — that saves it to the repository."
+  step4: "It's hosted. Open the file, click Open raw (top-right). The URL in your browser's address bar is your permanent endpoint — copy it. That's the address the map reads."
+  step5: "Last move, back on the map: 'Add your space', then the endpoint URL path. Paste your raw URL into 'Your Endpoint URL', hit Fetch & validate. The map checks reachability, format, and coordinates."
+  closing: "That 'paste your endpoint URL' line back on the map? It's for you now."
+  next: "Done →"   # advance affordance — system voice, no em-dash

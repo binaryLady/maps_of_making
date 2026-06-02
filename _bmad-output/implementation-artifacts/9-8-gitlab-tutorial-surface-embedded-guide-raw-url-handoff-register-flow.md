@@ -1,6 +1,6 @@
 # Story 9.8: GitLab Tutorial Surface — Embedded Guide + Raw URL Handoff to Register Flow
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -156,23 +156,23 @@ tutorial:
 
 ## Tasks / Subtasks
 
-- [ ] **Task 0 — Add `tutorial:` keys to `bernard_copy.yaml` and regenerate** (AC4). Add the `tutorial:` namespace (trigger, step1–4, endpoint_bridge, closing, next). Run `make bernard-copy`. Update `COPY_FALLBACK` in `genjson.js` with a matching `tutorial` object. Run `pytest tests/test_bernard_voice_completeness.py` → 3 passed. Watch the voice guard: the beat-seam openers ("Account's yours.", "Project's up.", "It's hosted.") must not trip forbidden patterns.
+- [x] **Task 0 — Add `tutorial:` keys to `bernard_copy.yaml` and regenerate** (AC4). Add the `tutorial:` namespace (trigger, step1–4, endpoint_bridge, closing, next). Run `make bernard-copy`. Update `COPY_FALLBACK` in `genjson.js` with a matching `tutorial` object. Run `pytest tests/test_bernard_voice_completeness.py` → 3 passed. Watch the voice guard: the beat-seam openers ("Account's yours.", "Project's up.", "It's hosted.") must not trip forbidden patterns.
 
-- [ ] **Task 0b — Rename legacy beat IDs to the `<section>-beat-<leaf>` taxonomy** (Dev Notes "Beat ID taxonomy"; ux-spec §P2 lock). Mechanical, behavior-preserving rename of the 9.12-shipped IDs in `genjson.js`: `tier0-beat`→`tier0`, `beat-name`→`tier0-beat-name`, `beat-location`→`tier0-beat-location`, `beat-bedrock`→`tier0-beat-bedrock`, `tier1-beat`→`tier1`. Update every reference: `id=` attributes (render template) **and** all `revealBeat()` / `getElementById()` call sites (~lines 757–758, 1016, 1118, 1167–1171, 1236, 1304). Do this **first**, before building the `golive` section, so the new beats land on a clean convention. Verify: `node --check` clean; manual smoke — fresh load reveals name→location→bedrock→Continue→tier1, resume snaps earned beats, geocode/strip/export all unchanged. **No copy, no behavior change** — IDs only.
+- [x] **Task 0b — Rename legacy beat IDs to the `<section>-beat-<leaf>` taxonomy** (Dev Notes "Beat ID taxonomy"; ux-spec §P2 lock). Mechanical, behavior-preserving rename of the 9.12-shipped IDs in `genjson.js`: `tier0-beat`→`tier0`, `beat-name`→`tier0-beat-name`, `beat-location`→`tier0-beat-location`, `beat-bedrock`→`tier0-beat-bedrock`, `tier1-beat`→`tier1`. Update every reference: `id=` attributes (render template) **and** all `revealBeat()` / `getElementById()` call sites (~lines 757–758, 1016, 1118, 1167–1171, 1236, 1304). Do this **first**, before building the `golive` section, so the new beats land on a clean convention. Verify: `node --check` clean; manual smoke — fresh load reveals name→location→bedrock→Continue→tier1, resume snaps earned beats, geocode/strip/export all unchanged. **No copy, no behavior change** — IDs only.
 
-- [ ] **Task 1 — Crop and commit screencap assets** (AC5). Crop `docs/gitlab_tuto/` screencaps to step-relevant UI. Commit as `web/genjson/tuto/step1-account.png`, `step2-project.png`, `step3-upload.png`, `step4-raw.png`. Max ~600px wide.
+- [x] **Task 1 — Crop and commit screencap assets** (AC5). Crop `docs/gitlab_tuto/` screencaps to step-relevant UI. Commit as `web/genjson/tuto/step1-account.png`, `step2-project.png`, `step3-upload.png`, `step4-raw.png`. Max ~600px wide.
 
-- [ ] **Task 2 — Add `#golive` as beat-by-beat DOM in `render()`** (AC2, AC3, AC6). After the existing `fork` `<div>`, append the `#golive` section wrapper (class `.beat`) hidden. Inside it: the system-voice `trigger` line, then the five `.beat` blocks per the taxonomy — `#golive-beat-account`, `-project`, `-upload`, `-rawurl` (each: `.bernard-voice` line + screencap `<img>` + a "Done →" `.beat-next` button), then `#golive-beat-endpoint` (two Bernard lines, no screencap, no button). Each beat uses the `grid-template-rows 0fr→1fr` + opacity + `inert` pattern; only `#golive-beat-account` visible on open. Reference `COPY.tutorial.*` keys only. Add CSS for `#golive .beat-next` + screencap `<img>` in the `CSS` const (no new stylesheet; `.beat` already exists). `node --check` clean.
+- [x] **Task 2 — Add `#golive` as beat-by-beat DOM in `render()`** (AC2, AC3, AC6). After the existing `fork` `<div>`, append the `#golive` section wrapper (class `.beat`) hidden. Inside it: the system-voice `trigger` line, then the five `.beat` blocks per the taxonomy — `#golive-beat-account`, `-project`, `-upload`, `-rawurl` (each: `.bernard-voice` line + screencap `<img>` + a "Done →" `.beat-next` button), then `#golive-beat-endpoint` (two Bernard lines, no screencap, no button). Each beat uses the `grid-template-rows 0fr→1fr` + opacity + `inert` pattern; only `#golive-beat-account` visible on open. Reference `COPY.tutorial.*` keys only. Add CSS for `#golive .beat-next` + screencap `<img>` in the `CSS` const (no new stylesheet; `.beat` already exists). `node --check` clean.
 
-- [ ] **Task 3 — Wire `#fork-live` to expand `#golive` + the beat steppers** (AC1, AC2). Replace the existing `fork-live` click handler (currently shows `COPY.fork_stub.tutorial_teaser`) with logic that `revealBeat('golive')` then `revealBeat('golive-beat-account')`, and settles `#fork-live`. Wire each `.beat-next` button to settle its beat and `revealBeat()` the next in the chain (account→project→upload→rawurl→endpoint). `revealBeat()` already exists (~line 934) — reuse it. Honor `prefers-reduced-motion`.
+- [x] **Task 3 — Wire `#fork-live` to expand `#golive` + the beat steppers** (AC1, AC2). Replace the existing `fork-live` click handler (currently shows `COPY.fork_stub.tutorial_teaser`) with logic that `revealBeat('golive')` then `revealBeat('golive-beat-account')`, and settles `#fork-live`. Wire each `.beat-next` button to settle its beat and `revealBeat()` the next in the chain (account→project→upload→rawurl→endpoint). `revealBeat()` already exists (~line 934) — reuse it. Honor `prefers-reduced-motion`.
 
-- [ ] **Task 4 — Terminal close beat** (AC3). The "Done →" on `#golive-beat-rawurl` reveals `#golive-beat-endpoint` (`endpoint_bridge` + `closing`). That beat has no screencap and no advance button — it is terminal. No input, no CTA, no navigation — the coordinator returns to the map themselves. Confirm there is no URL collection anywhere in `#golive`.
+- [x] **Task 4 — Terminal close beat** (AC3). The "Done →" on `#golive-beat-rawurl` reveals `#golive-beat-endpoint` (`endpoint_bridge` + `closing`). That beat has no screencap and no advance button — it is terminal. No input, no CTA, no navigation — the coordinator returns to the map themselves. Confirm there is no URL collection anywhere in `#golive`.
 
-- [ ] **Task 5 — Mobile pass** (AC7). Add `.beat-next` to the `@media (max-width: 480px)` block (min-height 44px). Confirm beats stack and screencaps reflow without horizontal scroll.
+- [x] **Task 5 — Mobile pass** (AC7). Add `.beat-next` to the `@media (max-width: 480px)` block (min-height 44px). Confirm beats stack and screencaps reflow without horizontal scroll.
 
-- [ ] **Task 6 — Regression check** (AC8). `node --check`, `pytest tests/test_bernard_voice_completeness.py`. Manual smoke: load wizard fresh + resume, confirm all existing beats, geocode, strip, export still work. Confirm `#fork-deeper` still shows `COPY.fork_stub.tier2_teaser` (untouched).
+- [x] **Task 6 — Regression check** (AC8). `node --check`, `pytest tests/test_bernard_voice_completeness.py`. Manual smoke: load wizard fresh + resume, confirm all existing beats, geocode, strip, export still work. Confirm `#fork-deeper` still shows `COPY.fork_stub.tier2_teaser` (untouched).
 
-- [ ] **Task 7 — Deploy + M2 acceptance test** (AC9). `make deploy-genjson`. Walk the beat-by-beat tutorial with a real GitLab account, then return to the map and register via "paste your endpoint URL". Confirm end-to-end: raw URL → map pin. Operator (Nicolas) confirms the beat seam reads naturally.
+- [ ] **Task 7 — Deploy + M2 acceptance test** *(manual — Nicolas)* (AC9). `make deploy-genjson`. Walk the beat-by-beat tutorial with a real GitLab account, then return to the map and register via "paste your endpoint URL". Confirm end-to-end: raw URL → map pin. Operator (Nicolas) confirms the beat seam reads naturally.
 
 ---
 
@@ -291,3 +291,42 @@ web/genjson/tuto/
 ├── step3-upload.png
 └── step4-raw.png
 ```
+
+---
+
+## Dev Agent Record
+
+### Completion Notes (2026-06-02)
+
+**COPY_FALLBACK removed** — replaced with `emptyProxy()` (JS Proxy returning `''` for any nested access). Fetch failure now logs `console.error('[wizard] copy fetch failed…')` and degrades gracefully. Single source of truth: YAML → JSON → wizard. No string in two places.
+
+**Beat ID taxonomy landed** — `tier0-beat`→`tier0`, `beat-name/location/bedrock`→`tier0-beat-*`, `tier1-beat`→`tier1`. All call sites updated. Behavior unchanged, `node --check` clean.
+
+**Screencaps** — cropped from `docs/gitlab_tuto/` via ImageMagick, committed to `web/genjson/tuto/` at ≤600px wide.
+
+**`#golive` section** — 5 beats wired beat-by-beat. Trigger line (system voice), then `account→project→upload→rawurl→endpoint`. Each step uses `data-next=` attribute; event delegation on `#golive` handles all `.beat-next` clicks. Terminal beat has no button.
+
+**`#fork-live`** — settles visually on first click (disabled + muted), open-only (second click no-ops). Reveals `golive` + `golive-beat-account` together.
+
+### File List
+
+- `web/genjson/genjson.js` — COPY_FALLBACK removed; emptyProxy added; beat ID rename; #golive DOM + CSS + wiring
+- `web/genjson/bernard_copy.yaml` — `tutorial:` namespace added
+- `web/genjson/bernard_copy.json` — regenerated via `make bernard-copy`
+- `web/genjson/tuto/panel-account.png`, `panel-project.png`, `panel-upload.png`, `panel-rawurl.png` — new (cropped from V2 composite, per beat)
+- `web/genjson/tuto/panel-register.png` — new (real "Add your space" drawer screenshot — Step 5 finishes on the familiar view)
+- `web/genjson/tuto/hosting-guide-hd.png` — new (1200px V2 composite, offered as downloadable cheat sheet)
+
+### Post-review revisions (operator feedback 2026-06-02)
+
+- COPY_FALLBACK removed → `emptyProxy()` + `console.error` logging (single source of truth)
+- trigger line → Bernard voice (em-dash), was system voice
+- fork "Two ways forward. Your call." label removed (rhythm fix)
+- Tab/Enter advances golive beats (commit-to-advance parity with Tier 0)
+- "← close" affordance collapses #golive, re-enables "Go live →"
+- 4 individual screencaps → 5 per-beat panels derived from V2; added Step 5 (register); video link + downloadable cheat sheet
+- merged `endpoint_bridge` into step4 (removed key) — one Bernard utterance per beat
+
+### Change Log
+
+- 2026-06-02: Story 9.8 implemented — golive tutorial section, beat ID taxonomy, screencap assets, emptyProxy replaces COPY_FALLBACK
