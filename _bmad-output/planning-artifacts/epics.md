@@ -2045,34 +2045,35 @@ So that the map marker reflects my actual operational behaviour and Axis C (Stor
 
 ---
 
-### Story 9.8: GitLab Tutorial Surface — Embedded Guide + "See Logo on Card" Success Moment + Refresh Affordance
+### Story 9.8: GitLab Tutorial Surface — Embedded Guide + Raw URL Handoff to Register Flow
+
+> **Spec revised 2026-06-01:** Original spec used GitLab Pages + logo pedagogy. Revised to the minimal fast path: raw file URL is live on commit, no Pages enablement needed. Logo hosting is self-directed — coordinators return to Bernard's workshop on their own terms.
 
 As a space coordinator who has exported their JSON file but has no hosting,
-I want a guided tutorial showing me how to publish the file on GitLab Pages,
-So that I complete the full loop — from filling the wizard to seeing my logo on my MoM card — without needing to ask anyone for help.
+I want a compact tutorial showing me how to put my file on GitLab and get a raw URL,
+So that I can register as an advanced user without needing to ask anyone for help.
 
-**Context:** Many non-technical coordinators ("Maëlle") will export a valid JSON file but then stall because they don't know where to host it. GitLab Pages provides free, permanent, HTTPS-served static hosting — no credit card, no server, no command line required. The logo field is used as the "pedagogy payload": uploading a logo image alongside the JSON file teaches the full commit-push-deploy cycle in one gesture, and the "see it on your card" success moment closes the loop.
+**Context:** Many non-technical coordinators ("Maëlle") will export a valid JSON but stall on hosting. GitLab's public repository raw file URL (`gitlab.com/{user}/{project}/-/raw/main/file.json`) is live immediately on commit — no Pages, no deploy wait, no terminal. Four screens, ~2 minutes. The raw URL feeds directly back into the "add your space" register flow (Story 9.2), completing the loop.
 
 **Acceptance Criteria:**
 
 **Given** the coordinator has exported a JSON file (Tier 0 or above)
 **When** Story 9.8 lands
-**Then** a "Publish your file" section appears below the Export button with the following expandable guide (collapsed by default, expands on click):
+**Then** a "Publish your file" section appears below the Export button (collapsed by default, expands on click) containing:
 
-  **Step 1 — Create a GitLab account and project** (with a link to `gitlab.com/projects/new` — the only external link in the wizard)
-  **Step 2 — Upload your JSON file** to the repository root (drag-and-drop screenshot or GIF — static asset in the repo)
-  **Step 3 — Enable GitLab Pages** (Settings → Pages → Use default domain) — one-sentence instruction per step, no terminal commands shown
-  **Step 4 — Your file URL is** `https://{username}.gitlab.io/{projectname}/status.json` — wizard renders this template with a fill-in-the-blank for `username` and `projectname`; the filled URL auto-populates the "paste your URL" input in the main drawer (Story 9.2 flow)
-  **Step 5 — Add your logo** alongside the JSON file and update `logo` in your JSON to point to `https://{username}.gitlab.io/{projectname}/logo.png` — the wizard highlights the `logo` field in the live preview
+  **Step 1 — Create a GitLab account** — link to `gitlab.com/users/sign_up`; email/SSO + email verification; one sentence.
+  **Step 2 — Create a public project** — New project → Create blank project → Visibility: Public; one-sentence + screenshot from `docs/gitlab_tuto/`
+  **Step 3 — Upload your JSON file** — `+` button in the repository → Upload file → drag the exported JSON → Commit changes; one-sentence + screenshot
+  **Step 4 — Copy the raw URL** — open the file in GitLab → "Open raw" button → copy the URL from the browser; one-sentence + screenshot
 
-**And** a "**Did it work? Refresh from URL →**" button appears after Step 4 is expanded — it calls `POST /api/validate-url` (Story 2.1) with the filled URL and shows a live checklist: reachable ✓, JSON-LD valid ✓, logo found ✓ / not yet ✗
-**And** if `logo` is reachable, a "**🎉 Your logo is live — it'll appear on your card**" success banner renders — this is the designed success moment; it proves the full loop works
-**And** the tutorial is static HTML/CSS — no framework, no JS required for the text steps; only the "Refresh from URL" button requires JS
-**And** the tutorial renders correctly on mobile (steps stacked, no horizontal overflow)
+**And** below Step 4, a text input pre-filled with `https://gitlab.com/{username}/{project}/-/raw/main/{filename}.json` prompts the coordinator to paste their actual raw URL
+**And** a "**Register your space →**" CTA button submits the pasted URL to the "add your space" drawer flow (Story 9.2) — no intermediate validation step; the register flow validates on fetch as it does for any advanced user
+**And** the tutorial is static HTML/CSS; only the CTA button requires JS
+**And** the tutorial renders correctly on mobile
 
-**Gating test** — manual: Nicolas follows the tutorial with a real GitLab account, uploads a real JSON + logo, clicks "Refresh from URL", confirms logo appears on map card. **This is the M2 acceptance test.** Automated test: `test_gitlabpages_refresh_cta` — mock `POST /api/validate-url` returning logo-found, assert success banner renders.
+**Gating test** — manual (M2 acceptance test): Nicolas follows the tutorial with a real GitLab account, uploads a real JSON, copies the raw URL, clicks "Register your space →", confirms the space pin appears on the map. Automated test: `test_gitlabpages_register_cta` — assert CTA button passes the pasted URL into the register/drawer flow.
 
-**Dependencies:** Stories 9.1, 9.3, 9.5; Story 2.1 (`/api/validate-url` endpoint).
+**Dependencies:** Stories 9.1, 9.3, 9.5; Story 2.1 (`/api/validate-url` endpoint used by register flow).
 
 ---
 

@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-01
-last_updated: "2026-06-01 (Story 9.12 done — wizard visual + interaction frame locked)"
+last_updated: "2026-06-02 (Story 9.8 ready-for-dev: GitLab tutorial + raw URL handoff — M2 acceptance test path defined)"
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
@@ -192,6 +192,15 @@ development_status:
   # Epic 9: Bernard's Workshop — Assisted SpaceAPI JSON Composer
   # Depends on Story C.X (schema namespace pass). Parallel to Epic 4 re-review.
   # M1 (must-ship): 9.1–9.5 | M2 (features + pedagogy): 9.6–9.8 | M3 (deferrable): 9.9–9.11
+  # M2 SEQUENCING (2026-06-01): 9.8 (GitLab tutorial) pulled ahead of 9.6/9.7. RESEQUENCING, not a
+  #   course-correction — 9.8 deps (9.1,9.3,9.5,2.1) are all done; it does NOT depend on 9.6/9.7.
+  #   Rationale: 9.8 closes the full first-user vertical slice (export → host on GitLab Pages →
+  #   see logo on map card). 9.6 (Tier 2 mom: fields) + 9.7 (state.open FSM) are enrichment that
+  #   follows once the loop is proven with real coordinators. Milestone/epic/PRD scope unchanged.
+  # 9.12 FRAME LOCK: 9.8 adds new UI surface (publish section, success-moment banner, refresh
+  #   affordance) and MUST inherit the 9.12 locked interaction+visual frame (story Final decision
+  #   record). 9.6's story file predates the 9.12 lock (written 05-30) — REFRESH it against the
+  #   9.12 frame before dev when it is resumed.
   epic-9: in-progress
   9-1-subdomain-infra-genjson-mapsofmaking-org-dns-nginx-static-scaffold: done
   9-2-drawer-ux-on-mom-map-bernard-one-liner-url-input-cta: done
@@ -200,7 +209,7 @@ development_status:
   9-5-bernard-voice-copy-pass-curated-voice-artifact: done
   9-6-wizard-tier-2-mom-fields-opening-hours-memberof-mom-sdgs: ready-for-dev
   9-7-wizard-state-open-fsm-cascading-questions-marker-mapping-opt-out: backlog
-  9-8-gitlab-tutorial-surface-embedded-guide-see-logo-on-card-success-moment-refresh-affordance: backlog
+  9-8-gitlab-tutorial-surface-embedded-guide-raw-url-handoff-register-flow: ready-for-dev  # spec revised 2026-06-01: raw URL (not GitLab Pages), no logo step, CTA hands off to register flow
   9-9-three-mode-unification-url-fetch-pre-fill-validator-mode-cache-resume-reconciliation: backlog  # M3 — deferrable
   9-10-wizard-tier-3-ext-fab-fields-space-type-fuzzy-dropdown-equipment: backlog  # M3 — deferrable
   9-11-validator-error-ux-inline-per-field-summary-report: backlog  # M3 — deferrable

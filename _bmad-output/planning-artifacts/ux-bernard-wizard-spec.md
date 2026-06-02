@@ -68,6 +68,23 @@ occupy the top of the screen (see §3, current-state critique).
   focus field-to-field within a cluster; the last field commits in place. A quiet
   `keyboard_nav_hint` surfaces the affordance. This is the one keyboard contract across all tiers.
 
+**Beat ID taxonomy (LOCKED 2026-06-02, Story 9.8) — `<section>-beat-<leaf>`:**
+Sections own beats, never the reverse — so the **section is the namespace root**. Every beat ID
+reads like a nested JSON path (`tier0.beat.name`):
+- **Section wrapper** = the bare section name, itself a `.beat`: `tier0`, `tier1`, `tier2`, `tier3`,
+  `golive` (the "Go live" tutorial).
+- **Each beat inside** = `<section>-beat-<leaf>`, semantic leaf, **never numbered**:
+  `tier0-beat-name`, `tier0-beat-location`, `tier0-beat-bedrock`;
+  `golive-beat-account`, `golive-beat-project`, `golive-beat-upload`, `golive-beat-rawurl`,
+  `golive-beat-endpoint`.
+- **`.beat` is the shared reveal mechanism** (`grid-rows 0fr→1fr` + opacity + `inert`); `revealBeat(id)`
+  is ID-agnostic. Reuse it — never fork a parallel reveal path.
+- **Why:** `grep tier0` locates the whole Tier 0 context (wrapper + beats) in one shot; `grep golive`
+  the whole tutorial. Section-first means context-first. Extensible to depth-3 if a tier needs it
+  (`tier2-beat-hours-monday`). **9.6 (tier2), 9.7, 9.10 (tier3) inherit this taxonomy — do not
+  re-invent.** Story 9.8 renames the legacy 9.12 IDs (`tier0-beat`→`tier0`, `beat-name`→`tier0-beat-name`,
+  etc.) to align.
+
 ### P3 — Bedrock is the only gate; Bernard does the location math
 Name + address is the only thing ever *required*. Everything above bedrock is invitation, never
 demand (*Tesler's Law* — Bernard absorbs complexity: he derives, you don't supply). The
