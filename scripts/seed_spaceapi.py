@@ -16,7 +16,7 @@ PII rule: only public fields (name, geo, website, endpoint URL) are stored.
 contact.email / phone / etc. are discarded — same policy as Story 3.2b.
 
 Coordinator-registered graphs (mom:source = "self-registered") are protected
-from overwrite even with --force, mirroring seed_import.py behaviour.
+from overwrite even with --force.
 """
 
 from __future__ import annotations

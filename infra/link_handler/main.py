@@ -48,7 +48,7 @@ _TOKEN_RE = re.compile(r'^[A-Za-z0-9_\-]{8,255}$')
 
 _scheduler = AsyncIOScheduler()
 
-# Geocode proxy — module-level geocoder + 1 req/s rate limiter (mirrors normalize_vow.py pattern)
+# Geocode proxy — module-level geocoder + 1 req/s rate limiter
 # Nominatim policy: max 1 req/s; descriptive user_agent required (see geopy docs)
 _USER_AGENT = "mapsofmaking-genjson/1.0 (contact: nicolas.de.barquin@gmail.com)"
 _geolocator = Nominatim(user_agent=_USER_AGENT)
@@ -208,7 +208,6 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Maps of Making Link Handler", lifespan=lifespan)
 
 
-# Same SELECT query as scripts/materialize_geojson.py:SPARQL_QUERY — keep the two in sync
 _SPARQL_SELECT = """PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
 PREFIX schema: <https://schema.org/>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>

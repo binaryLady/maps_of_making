@@ -1,9 +1,11 @@
 # Field Traceability Matrix
 
-> The net-list at field resolution. One row per JSON field, traced across the body
-> (see [the payload lifecycle](01-walking-skeleton.md)): **JSON key → P1 validate → P2 map → P3 record → P4 emit → surface.**
+> The net-list at field resolution. One row per JSON field, traced across the
+> [main pipeline](01-walking-skeleton.md): **JSON key → fetch → transform → store → materialize → surface.**
 >
-> This first pass covers the fields in the sketch payload. Each cell is read from live code, not memory — refs point at the exact source.
+> Each cell is read from live code, not memory — refs point at the exact source.
+> Freshness-token *computation* (the A/B/C axes + marker allocation) lives in its
+> own doc: [03 · Freshness axes](03-freshness-axes.md).
 
 ## Sketch payload
 
@@ -47,7 +49,11 @@ Fields group by **who produces them**, which is the real structure of the pipeli
 | `classify_subset()` | `mom:subset` | `subset` | progressive-disclosure marker | `main.py:461,620` |
 | `classify_subset()` | `mom:nextUnlock` | `next_unlock` | "add X to unlock" nudge | `main.py:622` |
 
-### C · Freshness tokens — minted by heartbeat writers, never by extractors (P3, `pipeline.py`)
+### C · Freshness tokens — minted by heartbeat writers, never by extractors (`pipeline.py`)
+
+> These four are the **raw inputs** to freshness. How the browser turns them into
+> the three axes (reachability · lifecycle · open/close) and a map marker is
+> [03 · Freshness axes](03-freshness-axes.md) — not repeated here.
 
 | Token | Ontology term | Store | GeoJSON property | Ref |
 |---|---|---|---|---|
