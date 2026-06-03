@@ -1,0 +1,95 @@
+# View shell — the drawers
+
+> **The UI layer that wraps the map.** The pipeline ([01](01-walking-skeleton.md)) ends at two
+> outputs: `spaces.geojson` (the map source) and the raw-receipt API (`/api/space/{id}/raw`). This
+> doc covers what sits *on top* of those — the seven drawers and how they connect back to the trunk.
+> They are **features, not pipeline stages**: a presentation layer over in-memory `state`, not part
+> of the data flow. All anchors are in `web/app.js` + `web/maps-of-making.html`.
+
+## One slot, seven panels
+
+Every drawer is governed by a **single-slot state machine** (`setDrawer`, `app.js:1178`):
+
+```
+state.openDrawer ∈ { filters · search · preset · addurl · detail · bot · tweaks · null }
+```
+
+**Mutually exclusive by construction.** `setDrawer(name)` closes whatever was open before opening
+the next (`app.js:1181`); only one panel is ever visible. There is no z-order stack to manage — the
+slot *is* the stack, depth 1.
+
+Wiring is uniform across all seven:
+
+```
+#btn-<name>  ──click──▶  toggleDrawer(name)  ──▶  setDrawer / closeDrawer
+                                                    │
+                          ┌─────────────────────────┼──────────────────────────┐
+                          ▼                          ▼                          ▼
+                  node.classList            node.aria-hidden            syncTopbar()
+                  .add/remove('open')        true / false              (aria-pressed mirror)
+                  (CSS transform slide-in)
+```
+
+- The `.open` class drives a CSS `transform` slide-in per edge — `.drawer.left/right/bottom`
+  (`maps-of-making.html:104–110`); `search`/`addurl` dock from the top, `bot` from bottom-right.
+- `syncTopbar` (`app.js:1218`) keeps every `#btn-*`'s `aria-pressed` in sync and hides the bot FAB
+  while the bot drawer is open.
+- **Keyboard:** `Esc` closes the open drawer (`app.js:1304`); `/` opens search when focus isn't in
+  a field (`app.js:1308`).
+
+`detail` and `addurl` **share the right edge** — opening one force-closes the other (called out at
+`app.js:1179`). That's the only slot collision, and the state machine handles it for free.
+
+## The seven drawers and their trunk ties
+
+Only **three** drawers touch the pipeline. The other four are self-contained view utilities.
+
+| Drawer | Edge | Trunk tie | Anchor |
+|---|---|---|---|
+| **detail** | right | **reads OUTPUT** — renders the space profile + Zone 3 raw receipt | opened by marker click → `selectSpace` → `setDrawer('detail')` `app.js:365,370` |
+| **filters** | left | **filters OUTPUT** — narrows the rendered `spaces.geojson` features | `filteredSpaces()` `app.js:380` |
+| **addurl** | right | **feeds INPUT** — `/api/validate-url` + register (wizard CTA / paste-endpoint fork) | url-fork reveal `app.js:1007` |
+| search | top | — local | fuzzy find over `state.spaces` |
+| preset | bottom | — local | embed/iframe builder; re-renders on map `moveend` `app.js:1371` |
+| bot | bottom-right | — local | Bernard preview |
+| tweaks | (popover) | — local | render prefs (e.g. open-pulse toggle, see [04](04-design-rules.md)) |
+
+### The three touchpoints in detail
+
+- **detail ← OUTPUT.** A pin click calls `selectSpace(id)` (`app.js:365`): sets `selectedId`,
+  highlights, `renderDetail()`, then opens the drawer *unless* addurl is up (don't hijack a
+  registration in progress). The card is where the Zone 3 raw-receipt guarantee from
+  [01](01-walking-skeleton.md) surfaces to the reader.
+- **filters → OUTPUT.** `filteredSpaces()` (`app.js:380`) is the single predicate; the status facet
+  calls **`markerKind(s)`** — *the same marker computation documented in
+  [03](03-freshness-axes.md)*. So a status chip and a map pin can never disagree: one source, two
+  readers. Filter changes re-run `renderMarkers()` + `updateCounts()`.
+- **addurl → INPUT.** The only drawer that writes back into the pipeline — it's the front door for
+  the two onboarding paths (the wizard CTA and the paste-your-endpoint fork).
+
+## Mental model
+
+```
+   pipeline (01)                    view shell (this doc)
+   ─────────────                    ─────────────────────
+   INPUT  ◀───────────────────────  addurl   (feed)
+   PROCESS
+   OUTPUT ── spaces.geojson ──────▶  filters  (filter) ─▶ map markers
+          └─ /api/.../raw  ───────▶  detail   (read)
+                                     search · preset · bot · tweaks  (local only)
+```
+
+The pipeline doesn't know the drawers exist; the drawers read its two outputs and feed its one
+input, and otherwise manage their own `state`.
+
+## Design rules carried here
+
+- **Single-slot, mutually exclusive.** Adding an eighth drawer means adding one enum value + one
+  `#btn-`; the machine enforces exclusivity. Don't introduce a second concurrent slot without a
+  reason — the depth-1 invariant is what keeps focus and `Esc` unambiguous.
+- **Filter status ≡ marker kind.** Any new status facet must route through `markerKind` / the
+  axes in [03](03-freshness-axes.md) — never a parallel re-derivation.
+- **Palettes are surface-scoped.** The map's `:root` is not shared with `admin`/`genjson`/
+  `mothersands` (each owns its own; see [04](04-design-rules.md)). Don't merge them into one file
+  without renaming tokens — collisions would silently repaint. (Extraction to a shared `tokens.css`
+  is an Epic-4 task, when admin reuses the map palette.)
