@@ -86,7 +86,8 @@ trust a claim from a source we can't reach.
 | `seeded` | ⚪ | grey circle | known space, no tokens yet (never fetched) |
 
 Glyph/shape mapping: `createMarkerSVG` + `MARKER_GLYPH` (`app.js:207,227`). Circle
-colors come from the `.map-marker.<kind>` CSS classes. The filter drawer exposes a
+colors come from the `.map-marker.<kind>` CSS classes — *why* those glyphs and colours
+(circles-vs-emoji, the riso palette, the curated legend) is [04 · Design rules](04-design-rules.md). The filter drawer exposes a
 subset as status chips: `seeded · confirmed · open · shut · broken`
 (`buildFilterChips`, `app.js`). The decay markers (`aging`/`zombie`/`dead`) render on
 the map but are not yet filterable.
