@@ -147,7 +147,6 @@
   .pin-swatch.confirmed { background: var(--accent-2); }
   .pin-swatch.open { background: var(--green); }
   .pin-swatch.shut { background: var(--ink); }
-  .pin-swatch.unlinked { background: var(--paper); border-style: dashed; box-shadow: none; }
   .pin-swatch.aging { background: var(--paper); border-style: dashed; border-color: #c49a00; box-shadow: none; }
   .pin-swatch.zombie { background: var(--paper); border-style: dashed; border-color: var(--muted); box-shadow: none; opacity: 0.6; }
   .pin-swatch.dead { background: #666; border-color: #444; box-shadow: none; }
@@ -160,7 +159,6 @@
   .status-label.confirmed { color: var(--accent-2); border-color: var(--accent-2); }
   .status-label.open { color: var(--green); border-color: var(--green); }
   .status-label.shut { color: var(--ink); border-color: var(--ink); }
-  .status-label.unlinked { color: var(--muted); border-color: var(--rule); border-style: dashed; }
   .status-label.aging { color: #a37e00; border-color: #c49a00; background: #fff8d6; }
   .status-label.zombie { color: var(--muted); border-color: var(--muted); }
   .status-label.dead { color: #444; border-color: #444; background: #e8e8e8; }
@@ -168,9 +166,7 @@
 
   /* Map SVG markers — intrinsic SVG dimensions guarantee stable offsetWidth for MapLibre anchor math */
   .map-marker { cursor: pointer; filter: drop-shadow(1px 1px 0 var(--paper)); }
-  .map-marker.unlinked { filter: none; }
   .map-marker:hover { filter: drop-shadow(1px 1px 0 var(--paper)) brightness(1.1); }
-  .map-marker.unlinked:hover { filter: brightness(1.1); }
   .map-marker.selected { outline: 1px solid var(--accent); outline-offset: 1px; border-radius: 50%; }
 
   /* Per-kind fill colours */
@@ -179,7 +175,6 @@
   .map-marker.confirmed .marker-fill { fill: var(--accent-2); }
   .map-marker.open      .marker-fill { fill: var(--green); }
   .map-marker.shut      .marker-fill { fill: var(--ink); stroke: var(--paper); }
-  .map-marker.unlinked  .marker-fill { fill: var(--paper); stroke-dasharray: 3 2; }
   .map-marker.broken    .marker-fill { fill: var(--accent); }
 
   /* Broken ×  */
@@ -210,7 +205,6 @@
   .freshness { display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--paper-2);
     border-bottom: 1px dashed var(--rule); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
   .freshness .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 3px color-mix(in oklch, var(--green) 30%, transparent); }
-  .freshness.unlinked .dot { background: var(--faint); box-shadow: none; border: 1.5px dashed var(--rule); }
   .freshness.aging .dot { background: var(--yellow); box-shadow: 0 0 0 3px rgba(200,160,0,0.25); }
   .freshness.zombie .dot { background: var(--muted); box-shadow: none; opacity: 0.6; }
   .freshness.dead .dot { background: #555; box-shadow: none; }

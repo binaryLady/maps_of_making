@@ -79,16 +79,17 @@ trust a claim from a source we can't reach.
 | `dead` | 🪦 | emoji only | content silent past dead threshold |
 | `zombie` | 🧟 | emoji only | content silent past zombie threshold |
 | `aging` | ⚠️ | emoji only | content going stale |
-| `broken` | × | colored circle | endpoint unreachable / stale beyond broken |
-| `open` | — | colored circle + pulse ring | reachable, fresh, declared open |
-| `shut` | — | colored circle | reachable, fresh, declared closed-right-now |
-| `confirmed` | — | colored circle | reachable, fresh, opted out of open/close |
-| `seeded` | — | colored circle | known space, no tokens yet (never fetched) |
+| `broken` | ❌ | red circle + X| endpoint unreachable / stale beyond broken |
+| `open` | 🟢 | green circle + pulse ring | reachable, fresh, declared open |
+| `shut` | ⚫ | black circle | reachable, fresh, declared closed-right-now |
+| `confirmed` | 🔵 | blue circle | reachable, fresh, opted out of open/close |
+| `seeded` | ⚪ | grey circle | known space, no tokens yet (never fetched) |
 
 Glyph/shape mapping: `createMarkerSVG` + `MARKER_GLYPH` (`app.js:207,227`). Circle
 colors come from the `.map-marker.<kind>` CSS classes. The filter drawer exposes a
-subset as status chips: `seeded · confirmed · open · shut · unlinked · broken`
-(`buildFilterChips`, `app.js`).
+subset as status chips: `seeded · confirmed · open · shut · broken`
+(`buildFilterChips`, `app.js`). The decay markers (`aging`/`zombie`/`dead`) render on
+the map but are not yet filterable.
 
 ---
 

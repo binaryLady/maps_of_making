@@ -411,7 +411,7 @@
     const networks = unique(state.spaces.flatMap((s) => s.network_memberships))
       .map((n) => [n, n.split('/').pop().toUpperCase()]);
     const countries = unique(state.spaces.map((s) => s.country_code)).filter(Boolean);
-    const statuses = ['seeded', 'confirmed', 'open', 'shut', 'unlinked', 'broken'];
+    const statuses = ['seeded', 'confirmed', 'open', 'shut', 'broken'];
     const specialties = unique(state.spaces.flatMap((s) => s.specialties)).sort();
 
     renderChips('#chips-network', networks, state.filters.networks);
