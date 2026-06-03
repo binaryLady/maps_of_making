@@ -258,7 +258,7 @@
         console.warn('[renderMarkers] skipping space with invalid coords:', s.id, lat, lon);
         continue;
       }
-      const kind = markerKind(s);
+      const kind = computeMarker(s);
       const svg = createMarkerSVG(kind, size, pulseOff);
       svg.setAttribute('aria-label', `${s.name}, ${s.city}, ${s.country}, status ${kind}`);
       svg.setAttribute('role', 'button');
@@ -350,10 +350,6 @@
     return 'seeded';
   }
 
-  function markerKind(s) {
-    return computeMarker(s);
-  }
-
   function highlightSelected() {
     state.markers.forEach((m, id) => {
       const nd = m.getElement();
@@ -382,7 +378,7 @@
       if (f.networks.size && !(s.network_memberships || []).some((n) => f.networks.has(n))) return false;
       if (f.countries.size && !f.countries.has(s.country_code)) return false;
       if (f.statuses.size) {
-        const tag = markerKind(s);
+        const tag = computeMarker(s);
         if (!f.statuses.has(tag)) return false;
       }
       if (f.specialties.size && !(s.specialties || []).some((sp) => f.specialties.has(sp))) return false;
@@ -453,7 +449,7 @@
   function chipMatches(selector, s, val) {
     if (selector === '#chips-network') return (s.network_memberships || []).includes(val);
     if (selector === '#chips-country') return s.country_code === val;
-    if (selector === '#chips-status') return markerKind(s) === val;
+    if (selector === '#chips-status') return computeMarker(s) === val;
     if (selector === '#chips-spec') return (s.specialties || []).includes(val);
     return false;
   }
@@ -479,7 +475,7 @@
       return;
     }
     for (const s of visible.slice(0, 200)) {
-      const kind = markerKind(s);
+      const kind = computeMarker(s);
       const item = el('button', { class: 'result', role: 'option', 'aria-selected': state.selectedId === s.id ? 'true' : 'false', type: 'button' }, [
         el('span', { class: `pin-swatch ${kind}`, style: { marginTop: '2px' } }),
         el('div', { style: { flex: 1, minWidth: 0 } }, [
@@ -536,7 +532,7 @@
       body.appendChild(el('div', { style: { padding: '24px', color: 'var(--muted)' } }, ['Click a pin to see details.']));
       return;
     }
-    const kind = markerKind(s);
+    const kind = computeMarker(s);
     // Share CTA in drawer header (hidden on mobile via CSS)
     const drawerHead = document.querySelector('#drawer-detail .drawer-head');
     let shareBtn = drawerHead && drawerHead.querySelector('.share-cta');
@@ -859,23 +855,6 @@
 
       _loadZone3();
     }
-  }
-
-  function freshnessText(s) {
-    // Story 3.10: read live tokens, not stored buckets.
-    const kind = computeMarker(s);
-    if (kind === 'seeded') return 'Seeded by network — not yet confirmed by the space.';
-    if (kind === 'broken') {
-      const errorMsg = s.last_fetch_error || 'Endpoint unreachable';
-      const lastSeen = s.observed_at ? `last successful fetch: ${timeAgo(s.observed_at)} ago` : 'never observed';
-      return `🔴 ${errorMsg} · ${lastSeen}.`;
-    }
-    if (kind === 'aging')  return `Going quiet · last content update ${timeAgo(s.updated_at)} ago.`;
-    if (kind === 'zombie') return `Unreachable · last content update ${timeAgo(s.updated_at)} ago.`;
-    if (kind === 'dead')   return `Long inactive · last content update ${timeAgo(s.updated_at)} ago.`;
-    if (kind === 'open')   return `Open right now · last content update ${timeAgo(s.updated_at)} ago.`;
-    if (kind === 'shut')   return `Closed right now · last content update ${timeAgo(s.updated_at)} ago.`;
-    return `Confirmed · last content update ${timeAgo(s.updated_at)} ago.`;
   }
 
   function timeAgo(iso) {

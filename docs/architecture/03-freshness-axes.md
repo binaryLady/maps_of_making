@@ -40,7 +40,7 @@ From `observed_at` **age in minutes** (+ `last_fetch_status`). Answers *can we s
 
 Default thresholds: unresponsive 10 min · warning 30 min · broken 60 min.
 
-### Axis B — content lifecycle · `computeAxisB` (`app.js:309`)
+### Axis B — content lifecycle · `computeAxisB` (`app.js:312`)
 From `updated_at` **age in days**. Answers *how long since the content actually changed?*
 
 | Result | When |
@@ -53,7 +53,7 @@ From `updated_at` **age in days**. Answers *how long since the content actually 
 Default thresholds: aging 30 d · zombie 90 d · dead 180 d. Null `updated_at` → `dead`
 (per AC: do **not** crash, do **not** silently render `confirmed`).
 
-### Axis C — operational liveness (open/close) · `computeAxisC` (`app.js:329`)
+### Axis C — operational liveness (open/close) · `computeAxisC` (`app.js:331`)
 From `open_now`. Does **not** age — it's the current source claim.
 
 | Result | When |
@@ -62,7 +62,7 @@ From `open_now`. Does **not** age — it's the current source claim.
 | `shut` | `open_now === false` |
 | `opt-out` | `open_now` absent/null → C contributes nothing |
 
-## Marker allocation — combining the axes · `computeMarker` (`app.js:339`)
+## Marker allocation — combining the axes · `computeMarker` (`app.js:340`)
 
 One marker per space, by **precedence** (loudest signal wins):
 
