@@ -73,7 +73,6 @@ validation_messages:
 export_button: "Export JSON"  # TONE-REVIEW (Story 9.12): strip always-on export label — system voice, not Bernard
 fork_stub:
   tier2_teaser: "Tier 2 is on the way. Network features land in a later step."
-  tutorial_teaser: "Self-hosting walkthrough is on the way. Export your file and keep it warm for now."  # Story 9.8: superseded by tutorial.* (fork-live now expands #golive); key retained — see Dev Notes "fork_stub.tutorial_teaser after Story 9.8"
 tutorial:
   # Story 9.8 — GitLab go-live walkthrough. Revealed beat-by-beat under "Go live →".
   # All lines Bernard spoken (em-dash prepended by JS). trigger orients above the

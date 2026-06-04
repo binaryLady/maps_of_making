@@ -713,9 +713,9 @@ async function render() {
   if (!root) return;
 
   const hasDraft = loadDraft();
-  const resumeHint = new URLSearchParams(location.search).get('resume') === '1';
 
-  // ?resume=1 with no draft → load at Tier 0 with no pre-fill and no error (AC5)
+  // ?resume=1 with no draft falls through to the fresh-entry path (Tier 0, no
+  // pre-fill, no error — AC5); only a real saved draft pre-fills.
   if (hasDraft) {
     tier0Passed = !!(draft.lat !== null && draft.lon !== null && draft.space && draft.address &&
       draft.city && draft.country_code);
@@ -1212,7 +1212,6 @@ function wireEvents(container, hasDraft) {
   });
 
   // Fork doors — "Go deeper →" stub; "Go live →" expands the tutorial section.
-  // fork_stub.tutorial_teaser key is retained in YAML (test guard) — see Dev Notes.
   document.getElementById('fork-deeper')?.addEventListener('click', () => {
     const n = document.getElementById('fork-note');
     if (n) { n.textContent = `— ${COPY.fork_stub.tier2_teaser}`; n.style.display = 'block'; }
