@@ -20,7 +20,7 @@ RSYNC_EXCLUDE := \
 	--exclude='.pytest_cache/' \
 	--exclude='data/'
 
-.PHONY: sync sync-app sync-gateway publish startdev rebuild seed seed-spaceapi heartbeat devdeploy reset vps-rebuild vps-seed vps-reset help endpoint deploy-genjson bernard-copy
+.PHONY: sync sync-app sync-gateway publish startdev rebuild seed seed-spaceapi heartbeat devdeploy reset vps-rebuild vps-seed vps-reset help endpoint deploy-genjson bernard-copy load-ontology vps-load-ontology
 .PHONY: c-reset c-activate c-demo c-all endpoint
 .PHONY: ca-reachable ca-timeout ca-dns-fail ca-http-error caxis-a
 .PHONY: cb-seeded cb-confirmed cb-aging cb-zombie cb-dead cb-closed caxis-b c-demo-on c-demo-off
@@ -53,6 +53,7 @@ help:
 	@echo "make rebuild       — full local cycle: down → build → up + health wait"
 	@echo "make seed          — import seed datasets into local Oxigraph (:7878)"
 	@echo "make seed-spaceapi — import directory.spaceapi.io federation directory (~244 spaces)"
+	@echo "make load-ontology — load mom.ttl + iop.ttl into Oxigraph (auto-run by devdeploy)"
 	@echo "make heartbeat     — trigger immediate heartbeat cycle locally"
 	@echo "make devdeploy     — rebuild + seed + heartbeat (mirrors publish, locally)"
 	@echo "make reset         — DESTRUCTIVE: wipe Oxigraph + heartbeat DB, then devdeploy"
@@ -118,9 +119,23 @@ seed-spaceapi:
 	source venv/bin/activate && python scripts/seed_spaceapi.py --list "$(LIST)" --network "$(NETWORK)" --force
 	$(MAKE) heartbeat
 
-## Full local pipeline: rebuild + heartbeat (no bulk seed — Story 3.4b clean slate)
+## Load mom.ttl + iop.ttl into Oxigraph named graphs (urn:mak:ontology/{mom,iop}).
+## Idempotent (PUT replaces the graph). Dormant scaffold for the Epic 6 NL→SPARQL bot —
+## the live heartbeat/materialize path does NOT query these graphs yet. Folded into
+## devdeploy so a fresh stack always carries the vocabulary. See
+## docs/architecture/08-semantic-layer.md.
+load-ontology:
+	bash scripts/load_ontology.sh http://localhost:7878
+
+## Parity twin: load ontologies into the VPS Oxigraph. Runs the same script on the
+## VPS host against the published :7878 port. sync-app must have pushed scripts/ +
+## ontology/ first. NOT auto-run by `publish` (idempotent, but kept opt-in).
+vps-load-ontology:
+	ssh $(REMOTE) 'cd $(REMOTE_APP) && bash scripts/load_ontology.sh http://localhost:7878'
+
+## Full local pipeline: rebuild + load ontology + heartbeat (no bulk seed — Story 3.4b clean slate)
 ## Pre-seeded spaces load via coordinator URL onboarding or fresh canary injection.
-devdeploy: rebuild heartbeat
+devdeploy: rebuild load-ontology heartbeat
 	@echo "✓ local dev stack live — map at http://localhost:8080"
 
 ## DESTRUCTIVE: wipe Oxigraph triplestore + heartbeat DB, then full reseed via devdeploy.
@@ -201,7 +216,6 @@ vps-seed:
 ## pins that coordinators can later claim in place by registering a SpaceAPI URL.
 ## Examples:
 ##   make vps-seed-bundle BUNDLE=data/archive/moms_seed.json NETWORK=vow
-##   make vps-seed-bundle BUNDLE=data/archive/rff_mockup.json NETWORK=rff SOURCE=mock-rff
 BUNDLE  ?= data/archive/moms_seed.json
 SOURCE  ?=
 vps-seed-bundle:

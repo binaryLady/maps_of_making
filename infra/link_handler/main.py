@@ -258,41 +258,6 @@ WHERE {
   }
   UNION
   {
-    GRAPH <urn:mak:mock/rff-health> {
-      ?spaceUri a mom:Space ;
-        schema:name ?name ;
-        schema:geo [
-          schema:latitude ?latitude ;
-          schema:longitude ?longitude
-        ] .
-      OPTIONAL { ?spaceUri mom:geolocationFidelity ?geolocationFidelity }
-      OPTIONAL { ?spaceUri mom:geolocationNote ?geolocationNote }
-      OPTIONAL { ?spaceUri schema:streetAddress ?street }
-      OPTIONAL { ?spaceUri schema:postalCode ?postcode }
-      OPTIONAL { ?spaceUri schema:addressLocality ?city }
-      OPTIONAL { ?spaceUri schema:addressCountry ?country }
-      OPTIONAL { ?spaceUri mom:address ?address }
-      OPTIONAL { ?spaceUri mom:countryCode ?countryCode }
-      OPTIONAL { ?spaceUri mom:timeZone ?timeZone }
-      OPTIONAL { ?spaceUri schema:url ?website }
-      OPTIONAL { ?spaceUri mom:profileUrl ?profileUrl }
-      OPTIONAL { ?spaceUri mom:endpointUrl ?endpointUrl }
-      OPTIONAL { ?spaceUri schema:knowsAbout ?specialty }
-      OPTIONAL { ?spaceUri mom:memberOf ?memberOf }
-      OPTIONAL { ?spaceUri mom:source ?source }
-      OPTIONAL { ?spaceUri schema:openingHours ?openingHours }
-      OPTIONAL { ?spaceUri schema:description ?description }
-      OPTIONAL { ?spaceUri schema:logo ?logo }
-      OPTIONAL { ?spaceUri schema:contactJson ?contactJson }
-      OPTIONAL { ?spaceUri mom:updatedAt ?updatedAt }
-      OPTIONAL { ?spaceUri mom:openNow ?openNow }
-      OPTIONAL { ?spaceUri mom:lastOpenChange ?lastOpenChange }
-      OPTIONAL { ?spaceUri mom:subset ?subset }
-      OPTIONAL { ?spaceUri mom:nextUnlock ?nextUnlock }
-    }
-  }
-  UNION
-  {
     # Canary space (diagnostic instrument — isolated named graph, not on urn:mak:space/).
     GRAPH <urn:mak:canary> {
       ?spaceUri a mom:Space ;
