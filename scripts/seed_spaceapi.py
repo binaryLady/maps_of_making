@@ -46,7 +46,7 @@ MOM_NS = "https://nicolasdb.github.io/mapsofmaking_ontology/ns#"
 
 
 def network_uri(slug: str) -> str:
-    return f"urn:mak:network/{slug}"
+    return f"urn:mak:network/{slug.lower()}"
 
 
 def source_tag(slug: str) -> str:

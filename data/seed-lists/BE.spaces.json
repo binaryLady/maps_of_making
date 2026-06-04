@@ -1,0 +1,4015 @@
+{
+  "api": "merged-v1",
+  "source_datasets": [
+    {
+      "id": "fabnetdata",
+      "url": "https://gitlab.fabcloud.org/fl-management/fablab-network-data"
+    },
+    {
+      "id": "codeberg-trox-fablab-map",
+      "url": "https://codeberg.org/trox/fablab-map"
+    },
+    {
+      "id": "fabzero-openlabs",
+      "url": "https://fabzero.decreatievestem.be/open-labs"
+    },
+    {
+      "id": "maakbib",
+      "url": "https://maakbib.be/kaart",
+      "status": "stub"
+    },
+    {
+      "id": "ease-educators-map",
+      "url": "https://ease-educators.com/",
+      "status": "stub"
+    }
+  ],
+  "count": 117,
+  "spaces": [
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "ASTERTECHNICS",
+      "location": {
+        "address": "Diebeke 21, 9500 Geraardsbergen, BE",
+        "lat": 50.792115,
+        "lon": 3.8804481
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.astertechnics.be",
+      "contact": {
+        "email": "info@astertechnics.be",
+        "phone": "054/42.23.19"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:967",
+        "machine: 3D printer",
+        "machine: CNC mill",
+        "machine: laser cutter",
+        "machine: vinyl cutter",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:2031"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/astertechnics-be.json",
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/astertechnics-be.json"
+      ],
+      "_id": "astertechnics-be",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-967"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Bibliotheek Veenendaal",
+      "location": {
+        "address": "Kees Stipplein 74, 3901 TP Veenendaal, NL",
+        "lat": 52.0273134,
+        "lon": 5.559473
+      },
+      "state": {
+        "open": true
+      },
+      "url": "https://www.bibliotheekveenendaal.nl/leren/FabLab.html",
+      "contact": {
+        "email": "fablab@bibliotheekveenendaal.nl",
+        "phone": "+31 (0)318 582669"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:407"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/bibliotheek-veenendaal-nl.json"
+      ],
+      "_id": "bibliotheek-veenendaal-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-407"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Bouwkeet",
+      "location": {
+        "address": "Schiedamseweg 240-248, 3025 AP Rotterdam",
+        "lat": 51.9116338,
+        "lon": 4.4385983
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.bouwkeet.org",
+      "contact": {
+        "email": "info@BouwKeet.org"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:401"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/bouwkeet.json"
+      ],
+      "_id": "bouwkeet",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-401"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "BUDA::lab Kortrijk",
+      "location": {
+        "address": "Dam 2a, 5800 Kortrijk, BE",
+        "lat": 50.8313827,
+        "lon": 3.2631356
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.budalab.be",
+      "contact": {
+        "email": "info@budalab.be",
+        "phone": "+32 (0)56 51 91 83",
+        "facebook": "https://www.facebook.com/Budalab"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:412"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/buda-lab-kortrijk-be.json"
+      ],
+      "_id": "buda-lab-kortrijk-be",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-412"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "CODA FabLab",
+      "location": {
+        "address": "Vosselmanstraat 299, 7311 CL Apeldoorn, NL",
+        "lat": 52.2153522,
+        "lon": 5.9583653
+      },
+      "state": {
+        "open": true
+      },
+      "url": "https://www.coda-apeldoorn.nl/nl/locations/experiencelab",
+      "contact": {
+        "phone": "+31 (0)55 5268400"
+      },
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:358"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/coda-fablab-nl.json"
+      ],
+      "_id": "coda-fablab-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-358"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "De Factorij",
+      "location": {
+        "address": "Klokgebouw 151/145 Strijp-S, 5617 AB Eindhoven, NL",
+        "lat": 51.4481805,
+        "lon": 5.4575234
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.de-factorij.nl",
+      "contact": {
+        "email": "info@de-factorij.nl",
+        "phone": "+31 (0)6 16058378",
+        "facebook": "https://www.facebook.com/pages/De-Factorijnl/214150658604127"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:372"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/de-factorij-nl.json"
+      ],
+      "_id": "de-factorij-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-372"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "de Maakschappij",
+      "location": {
+        "address": " Hobbemaweg 9, 9761 HL Eelde, NL",
+        "lat": 53.140105,
+        "lon": 6.5602463
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.de-maakschappij.nl",
+      "contact": {
+        "email": "leen@de-maakschappij.nl",
+        "phone": "+31 (0)6 22000982",
+        "facebook": "https://www.facebook.com/DeMaakschappij"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:381"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/de-maakschappij-nl.json"
+      ],
+      "_id": "de-maakschappij-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-381"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "£dFix",
+      "location": {
+        "address": "Hoorn",
+        "lat": 52.653272,
+        "lon": 5.0735802
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.3dfix.nl",
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:383"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/dfix.json"
+      ],
+      "_id": "dfix",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-383"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Eco FabLab",
+      "location": {
+        "address": "Binnenweg 4, 8000 Brugge, BE",
+        "lat": 51.2261077,
+        "lon": 3.2257925
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://ecofablab.be",
+      "contact": {
+        "email": "info@ecofablab.be",
+        "phone": "+32 (0)491898789",
+        "facebook": "https://www.facebook.com/ecofablab"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:363"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/eco-fablab-be.json"
+      ],
+      "_id": "eco-fablab-be",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-363"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Extension L-XL of FabLab Luxemburg at the Creative Hub 1535",
+      "location": {
+        "address": "115 Rue Emile Mark, 4620 Differdange, LU",
+        "lat": 49.5221804,
+        "lon": 5.8992283
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.1535.lu/",
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:681"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/extension-l-xl-of-fablab-luxemburg-at-the-creative-hub-1535-lu.json"
+      ],
+      "_id": "extension-l-xl-of-fablab-luxemburg-at-the-creative-hub-1535-lu",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-681"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab Amersfoort",
+      "location": {
+        "address": "Kleine Koppel 40, 3812 PH Amersfoort, NL",
+        "lat": 52.1612,
+        "lon": 5.3809911
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.fablabamersfoort.nl",
+      "contact": {
+        "email": "info@fablabamersfoort.nl"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:354"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-amersfoort-nl.json"
+      ],
+      "_id": "fablab-amersfoort-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-354"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab Amsterdam",
+      "location": {
+        "address": "Nieuwmarkt 4, 1012 CR Amsterdam, NL",
+        "lat": 52.3727736,
+        "lon": 4.9003436
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.waag.org",
+      "contact": {
+        "phone": "31 (0)20 5579898",
+        "facebook": "https://www.facebook.com/waagsociety"
+      },
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:355"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-amsterdam-nl.json"
+      ],
+      "_id": "fablab-amsterdam-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-355",
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ]
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab Arnhem",
+      "location": {
+        "address": "Ruitenberglaan 26, 6926 CC Arnhem, NL",
+        "lat": 51.9878426,
+        "lon": 5.9501099
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.fablabarnhem.nl",
+      "contact": {
+        "email": "Fablab.Arnhem@han.nl",
+        "phone": "+31 (0)6 1142 9248",
+        "facebook": "https://www.facebook.com/FabLabArnhem"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:359"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-arnhem-nl.json"
+      ],
+      "_id": "fablab-arnhem-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-359"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab Artevelde Hogeschool",
+      "location": {
+        "address": "Voetweg 66, 9000 Gent, BE",
+        "lat": 51.0408827,
+        "lon": 3.7284211
+      },
+      "state": {
+        "open": true
+      },
+      "url": "https://www.arteveldehogeschool.be/fablab",
+      "contact": {
+        "email": "fablab@arteveldehs.be",
+        "phone": "+32 9 234 70 00"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:1507"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-artevelde-hogeschool-be.json"
+      ],
+      "_id": "fablab-artevelde-hogeschool-be",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-1507"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab",
+      "location": {
+        "address": "Kloosterstraat 31, 9420 Erpe-Mere, BE",
+        "lat": 50.9248006,
+        "lon": 3.9776005
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.fablaberpemere.be",
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:377",
+        "machine: 3D printer",
+        "machine: CNC mill",
+        "machine: laser cutter",
+        "machine: precision mill",
+        "machine: vinyl cutter",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:760"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-be.json",
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/fablab-be.json"
+      ],
+      "_id": "fablab-be",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-377",
+      "contact": {
+        "facebook": "https://www.facebook.com/fablaberpemere",
+        "email": "contact@fablabplus.be",
+        "phone": "003232121979"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ]
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab Bergen op Zoom",
+      "location": {
+        "address": "Doctor Ingenieur van Veenweg 10, 4612 PE Bergen op Zoom, NL",
+        "lat": 51.4928856,
+        "lon": 4.270373
+      },
+      "state": {
+        "open": true
+      },
+      "url": "https://fablabboz.nl/",
+      "contact": {
+        "email": "info@fablabboz.nl",
+        "facebook": "https://www.facebook.com/FabLabBergenopZoom"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:1663"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-bergen-op-zoom-nl.json"
+      ],
+      "_id": "fablab-bergen-op-zoom-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-1663"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab Bibliotheek Drachten",
+      "location": {
+        "address": "Museumplein 1, 9203DD Drachten, NL",
+        "lat": 53.1043266,
+        "lon": 6.0986397
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.bibliotheekdrachten.nl",
+      "contact": {
+        "phone": "+31(0)512 512680 (Albert Smeding)"
+      },
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:704",
+        "codeberg-entry-id:1384"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-bibliotheek-drachten-nl.json",
+        "spacemap/transform/out_codeberg/fablab-drachten-nl.json"
+      ],
+      "_id": "fablab-bibliotheek-drachten-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-704"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab Bieb Hilversum",
+      "location": {
+        "address": "'s-Gravelandseweg 55, 1217EH Hilversum, NL",
+        "lat": 52.2270996,
+        "lon": 5.1670606
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.bibliotheekhilversum.nl/",
+      "contact": {
+        "email": "informatie@bibliotheekhilversum.nl",
+        "phone": "+31(0)356212942"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:701"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-bieb-hilversum-nl.json"
+      ],
+      "_id": "fablab-bieb-hilversum-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-701"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab Brainport Eindhoven",
+      "location": {
+        "address": "Frederiklaan 60a, 5616 NJ Eindhoven, NL",
+        "lat": 51.4428819,
+        "lon": 5.4590815
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.fablabbrainport.nl",
+      "contact": {
+        "phone": "+31 (0)40 2695030"
+      },
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:373"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-brainport-eindhoven-nl.json"
+      ],
+      "_id": "fablab-brainport-eindhoven-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-373"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab Coevorden",
+      "location": {
+        "address": "Van Heekerenlaan 2, 7742 AB Coevorden, NL",
+        "lat": 52.6619021,
+        "lon": 6.7535682
+      },
+      "state": {
+        "open": true
+      },
+      "url": "https://www.fablabcoevorden.nl/",
+      "contact": {
+        "email": "welkom@fablabcoevorden.nl",
+        "phone": "+31 6 496 37 240"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:1605"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-coevorden-nl.json"
+      ],
+      "_id": "fablab-coevorden-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-1605"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Fablab De Loft",
+      "location": {
+        "address": "Brugsevaart 48, 8620 Nieuwpoort, BE",
+        "lat": 51.1384358,
+        "lon": 2.7719065
+      },
+      "state": {
+        "open": true
+      },
+      "url": "https://antopaso.be/",
+      "contact": {
+        "email": "info@antopasso.be"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:1376"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-de-loft-be.json"
+      ],
+      "_id": "fablab-de-loft-be",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-1376"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab de Nijverheid i.o.",
+      "location": {
+        "address": "Havikskruid 18, 3738TV Maartensdijk, NL",
+        "lat": 52.1524134,
+        "lon": 5.1703894
+      },
+      "state": {
+        "open": true
+      },
+      "contact": {
+        "email": "info@geertveldhuizen.nl"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:391"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-de-nijverheid-i-o-nl.json"
+      ],
+      "_id": "fablab-de-nijverheid-i-o-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-391"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab de Stookplaats i.o.",
+      "location": {
+        "address": "Hilversum",
+        "lat": 52.2241375,
+        "lon": 5.1719396
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.destookplaats.nl",
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:382"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-de-stookplaats-i-o.json"
+      ],
+      "_id": "fablab-de-stookplaats-i-o",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-382"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab Delft (closed)",
+      "location": {
+        "address": "Breestraat 24, 2611RG Delft, NL",
+        "lat": 52.0083011,
+        "lon": 4.3610062
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://plugnmake.com",
+      "contact": {
+        "email": "info@plugnmake.com",
+        "phone": "+31 645 420 324"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:672"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-delft-closed-nl.json"
+      ],
+      "_id": "fablab-delft-closed-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-672"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab Den Haag",
+      "location": {
+        "address": "Van Alphenstraat 63D, 2274NC Voorburg, NL",
+        "lat": 52.0775929,
+        "lon": 4.3426111
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.fablabdenhaag.nl",
+      "contact": {
+        "email": "info@fablabdenhaag.nl",
+        "phone": "+31 (0)70 3833188"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:368"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-den-haag-nl.json"
+      ],
+      "_id": "fablab-den-haag-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-368"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab Enschede",
+      "location": {
+        "address": "Van Galenstraat 20, 7511 JL Enschede, NL",
+        "lat": 52.2203125,
+        "lon": 6.8890398
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.fablabenschede.nl",
+      "contact": {
+        "email": "info@fablabenschede.nl",
+        "phone": "+31 (0)53 4871411"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:374"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-enschede-nl.json"
+      ],
+      "_id": "fablab-enschede-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-374"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab Flevoland 2.0",
+      "location": {
+        "address": "De Campus 9, 8233GA Lelystad, NL",
+        "lat": 52.4959937,
+        "lon": 5.4791701
+      },
+      "state": {
+        "open": true
+      },
+      "contact": {
+        "email": "hdevriestexel@gmail.com",
+        "phone": "0640440641"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:1585"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-flevoland-2-0-nl.json"
+      ],
+      "_id": "fablab-flevoland-2-0-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-1585"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab Flevoland Dronten",
+      "location": {
+        "address": "de Morinel 55, 8251 HT Dronten, NL",
+        "lat": 52.5315299,
+        "lon": 5.7294171
+      },
+      "state": {
+        "open": true
+      },
+      "url": "https://www.flevomeerbibliotheek.nl/activiteiten/bibliolab-stop-motion",
+      "contact": {
+        "email": "johanvrielink67@gmail.com",
+        "phone": "+31 (0)6 14563975",
+        "facebook": "https://www.facebook.com/bibliolablelystad"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:386"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-flevoland-dronten-nl.json"
+      ],
+      "_id": "fablab-flevoland-dronten-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-386"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab Geel",
+      "location": {
+        "address": "Vestiging Sint Jozef Geel, Technische Schoolstraat 52, 2440 Geel, BE",
+        "lat": 51.1664954,
+        "lon": 4.9847772
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.fablabgeel.be",
+      "contact": {
+        "email": "bram.vleugels@kogeka.be",
+        "phone": "0032 14 57 85 70"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:1018"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-geel-be.json"
+      ],
+      "_id": "fablab-geel-be",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-1018"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab Genk",
+      "location": {
+        "address": "Houtparklaan 1,, C-mine 5, 3600 Genk, BE",
+        "lat": 50.967153,
+        "lon": 5.4948504
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.fablabgenk.be",
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:378",
+        "machine: 3D printer",
+        "machine: CNC mill",
+        "machine: circuit production",
+        "machine: laser cutter",
+        "machine: precision mill",
+        "machine: vinyl cutter",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:7"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-genk-be.json",
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/fablab-genk-be.json"
+      ],
+      "_id": "fablab-genk-be",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-378",
+      "contact": {
+        "email": "danny@fablabgenk.be"
+      },
+      "issue_report_channels": [
+        "email"
+      ]
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab Groene Hart",
+      "location": {
+        "address": "Achttienkavels 8, 2421 LG Nieuwkoop, NL",
+        "lat": 52.1612983,
+        "lon": 4.7432936
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.lasersnijdenservice.nl",
+      "contact": {
+        "email": "info@fablabgroenehart.nl",
+        "phone": "+31 (0)172 572713",
+        "facebook": "https://www.facebook.com/fablabgroenehart"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:396"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-groene-hart-nl.json"
+      ],
+      "_id": "fablab-groene-hart-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-396"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Fablab Groningen",
+      "location": {
+        "address": "Verzetsstrijderslaan 2, 9727 CE Groningen, NL",
+        "lat": 53.2077637,
+        "lon": 6.5567913
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.fablabgroningen.nl",
+      "contact": {
+        "email": "info@fablabgroningen.nl",
+        "phone": "+31 (0)6 28128909",
+        "facebook": "https://www.facebook.com/FabLabGroningen"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:380"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-groningen-nl.json"
+      ],
+      "_id": "fablab-groningen-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-380"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Fablab Hardenberg",
+      "location": {
+        "address": "Parkweg 1a5, 7772 XP Hardenberg, NL",
+        "lat": 52.5759112,
+        "lon": 6.62415
+      },
+      "state": {
+        "open": true
+      },
+      "url": "https://www.fablabhardenberg.nl",
+      "contact": {
+        "email": "info@fablabhardenberg.nl",
+        "phone": "+31 (0) 523 - 208 098"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:1617"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-hardenberg-nl.json"
+      ],
+      "_id": "fablab-hardenberg-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-1617"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab Imal Brussel",
+      "location": {
+        "address": "30-34 Quai des Charbonnages Koolmijnenkaai, 1080 Brussel, BE",
+        "lat": 50.854321,
+        "lon": 4.3418317
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.imal.org/nl/fablab",
+      "contact": {
+        "phone": "+32 (0)24103093",
+        "facebook": "https://www.facebook.com/pages/iMAL/50564320935",
+        "email": "fablab@imal.org"
+      },
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:364",
+        "machine: 3D printer",
+        "machine: CNC mill",
+        "machine: circuit production",
+        "machine: laser cutter",
+        "machine: precision mill",
+        "machine: vinyl cutter",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:5"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-imal-brussel-be.json",
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/fablab-imal-be.json"
+      ],
+      "_id": "fablab-imal-brussel-be",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-364",
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ]
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab Leiden",
+      "location": {
+        "address": "Volmolengracht 13, 2312 PG Leiden, NL",
+        "lat": 52.1628323,
+        "lon": 4.493556
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.makerspaceleiden.nl/drupal/node/12",
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:411"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-leiden-nl.json"
+      ],
+      "_id": "fablab-leiden-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-411"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab Leuven",
+      "location": {
+        "address": "Celestijnenlaan 300A, 3001 Heverlee, BE",
+        "lat": 50.8710596,
+        "lon": 4.6752824
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.fablab-leuven.be",
+      "contact": {
+        "email": "FabLabLeuven@mech.kuleuven.be",
+        "phone": "+32 (0)16 328062",
+        "facebook": "https://www.facebook.com/pages/fab-lab-Leuven/"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:387",
+        "machine: 3D printer",
+        "machine: CNC mill",
+        "machine: circuit production",
+        "machine: laser cutter",
+        "machine: precision mill",
+        "machine: vinyl cutter",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:9"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-leuven-be.json",
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/fablab-leuven-be.json"
+      ],
+      "_id": "fablab-leuven-be",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-387"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Fablab Lier",
+      "location": {
+        "address": "Kannunik Davidlaan 15, 2500 Lier, BE",
+        "lat": 51.1183462,
+        "lon": 4.5738888
+      },
+      "state": {
+        "open": true
+      },
+      "url": "https://fablablier.be/",
+      "contact": {
+        "email": "info@fablablier.be",
+        "phone": "(03) 491 92 00"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:1664"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-lier-be.json"
+      ],
+      "_id": "fablab-lier-be",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-1664"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab Luxembourg",
+      "location": {
+        "address": "9 Avenue des Hauts-Fourneaux, 4362 Esch-sur-Alzette, LU",
+        "lat": 49.5024816,
+        "lon": 5.9492063
+      },
+      "state": {
+        "open": true
+      },
+      "url": "https://www.artsetmetiers.lu/fablab/",
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:390"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-luxembourg-lu.json"
+      ],
+      "_id": "fablab-luxembourg-lu",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-390"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab Maastricht",
+      "location": {
+        "address": "Herbenusstraat 89, 6211 RB Maastricht, NL",
+        "lat": 50.8507789,
+        "lon": 5.681292
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.fablabmaastricht.nl",
+      "contact": {
+        "email": "info@fablabmaastricht.nl",
+        "phone": "+31 (0)43 7110300",
+        "facebook": "https://www.facebook.com/fablab.maastricht"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:392"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-maastricht-nl.json"
+      ],
+      "_id": "fablab-maastricht-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-392"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab Mariahoeve",
+      "location": {
+        "address": "Zwedenburg 99, 2591 BC Den Haag, NL",
+        "lat": 52.0918307,
+        "lon": 4.3611178
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://fablabmariahoeve.nl",
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:783"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-mariahoeve-nl.json"
+      ],
+      "_id": "fablab-mariahoeve-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-783",
+      "contact": {
+        "facebook": "https://www.facebook.com/fablabmariahoeve/"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ]
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Fablab Midden Limburg",
+      "location": {
+        "address": "Vrijkenstraat 2, 6088 PA Roggel, NL",
+        "lat": 51.2633429,
+        "lon": 5.9088907
+      },
+      "state": {
+        "open": true
+      },
+      "contact": {
+        "email": "fablabmiddenlimburg@gmail.com",
+        "phone": "+31 6 16807569"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:1662"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-midden-limburg-nl.json"
+      ],
+      "_id": "fablab-midden-limburg-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-1662"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab Mons",
+      "location": {
+        "address": "Rue du Joncquois 53, 7000 Mons, BE",
+        "lat": 50.4455589,
+        "lon": 3.9578408
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.fablabmons.be",
+      "contact": {
+        "email": "contact@fablabmons.be",
+        "phone": "+32 (0)65 374574",
+        "facebook": "https://www.facebook.com/fablabmons"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:394",
+        "machine: 3D printer",
+        "machine: CNC mill",
+        "machine: laser cutter",
+        "machine: precision mill",
+        "machine: vinyl cutter",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:1385"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-mons-be.json",
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/fablab-mons-be.json"
+      ],
+      "_id": "fablab-mons-be",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-394"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab NoordBrabant",
+      "location": {
+        "address": "Almijstraat 10, 5061 PA Oisterwijk, NL",
+        "lat": 51.5811223,
+        "lon": 5.1861952
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.fablabnoordbrabant.nl",
+      "contact": {
+        "email": "sander@ekwc.nl",
+        "phone": "+31 (0)13 3031180",
+        "facebook": "https://www.facebook.com/cadcam.ekwc"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:397"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-noordbrabant-nl.json"
+      ],
+      "_id": "fablab-noordbrabant-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-397"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Fablab Oldenzaal",
+      "location": {
+        "address": "Parallelstraat 52, 7575 AN Oldenzaal, NL",
+        "lat": 52.3060314,
+        "lon": 6.9374885
+      },
+      "state": {
+        "open": true
+      },
+      "url": "https://fablaboldenzaal.nl",
+      "contact": {
+        "email": "info@fablaboldenzaal.nl",
+        "phone": "06 51754662"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:1525"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-oldenzaal-nl.json"
+      ],
+      "_id": "fablab-oldenzaal-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-1525"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab Thomas More",
+      "location": {
+        "address": "Zandpoortvest 16, 2800 Mechelen, BE",
+        "lat": 51.0250277,
+        "lon": 4.4876522
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://fablab.thomasmore.be",
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:677"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-thomas-more-be.json"
+      ],
+      "_id": "fablab-thomas-more-be",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-677"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Fablab Ugent",
+      "location": {
+        "address": "Tech Lane Ghent Science Park – Campus A Technologiepark 915, 9052 Zwijnaarde, BE",
+        "lat": 51.0040748,
+        "lon": 3.7093758
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.fablab.ugent.be/",
+      "contact": {
+        "email": "kurt.vanhoutte@ugent.be",
+        "phone": "GSM: 0032.477.710508"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:639",
+        "machine: 3D printer",
+        "machine: CNC mill",
+        "machine: laser cutter",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:1096"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-ugent-be.json",
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/fablab-ugent-be.json"
+      ],
+      "_id": "fablab-ugent-be",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-639"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab ULB",
+      "location": {
+        "address": "21 Rue de Belvedere, Brussel, BE",
+        "lat": 50.8467372,
+        "lon": 4.352493
+      },
+      "state": {
+        "open": true
+      },
+      "url": "https://www.ulb.be/fr/plans-et-acces/usquare",
+      "contact": {
+        "email": "fablab@ulb.ac.be",
+        "phone": "+32 (0) 476 31 99 94",
+        "facebook": "https://www.facebook.com/FabLabULB"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:367",
+        "machine: 3D printer",
+        "machine: CNC mill",
+        "machine: circuit production",
+        "machine: laser cutter",
+        "machine: precision mill",
+        "machine: vinyl cutter",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:778"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-ulb-be.json",
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/fablab-ulb-be.json"
+      ],
+      "_id": "fablab-ulb-be",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-367"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab Wageningen",
+      "location": {
+        "address": "Bronland 10, 6708 WH Wageningen, NL",
+        "lat": 51.9835343,
+        "lon": 5.6660664
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.fablabwag.nl",
+      "contact": {
+        "phone": "+31 (0)6 26552555",
+        "facebook": "https://www.facebook.com/FabLab-Wageningen"
+      },
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:408"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-wageningen-nl.json"
+      ],
+      "_id": "fablab-wageningen-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-408",
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ]
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab XL Brussel",
+      "location": {
+        "address": "Nijverheidskaai 170, 1070 Brussel (Anderlecht), BE",
+        "lat": 50.8411009,
+        "lon": 4.3237747
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.fablab-brussels.be",
+      "contact": {
+        "email": "lieven.standaert@vub.ac.be",
+        "phone": "+32 (0)2 5591511",
+        "facebook": "https://www.facebook.com/FabLabXL"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:365"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-xl-brussel-be.json"
+      ],
+      "_id": "fablab-xl-brussel-be",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-365"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab Zeeland",
+      "location": {
+        "address": "Kousteensedijk 7, 4331 JE Middelburg, NL",
+        "lat": 51.4963215,
+        "lon": 3.6157947
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.dezb.nl/wat-we-doen/fablabzeeland.html",
+      "contact": {
+        "email": "info@fablabzeeland.com",
+        "phone": "+31 (0)118 654281",
+        "facebook": "https://www.facebook.com/fablabzeeland"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:393"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-zeeland-nl.json"
+      ],
+      "_id": "fablab-zeeland-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-393"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab Zoetermeer",
+      "location": {
+        "address": "Duitslandlaan 440, 2711 BN Zoetermeer, NL",
+        "lat": 52.0627301,
+        "lon": 4.493732
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.fablab-zoetermeer.nl",
+      "contact": {
+        "email": "info@fablab-zoetermeer.nl",
+        "phone": "Bereikbaar: maandag t/m donderdag - zaterdag 1 Tel: 079-3438193 06-48509098",
+        "facebook": "https://www.facebook.com/fablabzoetermeer.nl"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:409"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-zoetermeer-nl.json"
+      ],
+      "_id": "fablab-zoetermeer-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-409"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab Zottegem",
+      "location": {
+        "address": "Wurmendries 44, 9620 Zottegem, BE",
+        "lat": 50.8652957,
+        "lon": 3.8069818
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://fablab-zottegem.be",
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:676"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-zottegem-be.json"
+      ],
+      "_id": "fablab-zottegem-be",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-676"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab Zwolle (closed)",
+      "location": {
+        "address": "Rieteweg 10, 8041 AK Zwolle, NL",
+        "lat": 52.514709,
+        "lon": 6.0745485
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.fablabzwolle.nl",
+      "contact": {
+        "phone": "+31 (0)6 17078767"
+      },
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:410"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab-zwolle-closed-nl.json"
+      ],
+      "_id": "fablab-zwolle-closed-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-410"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab013",
+      "location": {
+        "address": "Groenstraat 139 Hal 553, 5021 LL Tilburg, NL",
+        "lat": 51.5465321,
+        "lon": 5.0879336
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.fablab013.nl",
+      "contact": {
+        "email": "fablab013@gmail.com",
+        "phone": "+31 (0)6 37152543",
+        "facebook": "https://www.facebook.com/Fablab013"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:402"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab013-nl.json"
+      ],
+      "_id": "fablab013-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-402"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab2300",
+      "location": {
+        "address": "Druivenstraat 18, 2300 Turnhout, BE",
+        "lat": 51.3199192,
+        "lon": 4.9519353
+      },
+      "state": {
+        "open": true
+      },
+      "url": "https://www.rockpaperpencil.be/doe-mee/reserveren",
+      "contact": {
+        "email": "fablab@rockpaperpencil.be",
+        "facebook": "http://www.facebook.com/rockpaperpencil2300",
+        "phone": "+32497345194"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:1621",
+        "machine: 3D printer",
+        "machine: laser cutter",
+        "machine: vinyl cutter",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:2224"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fablab2300-be.json",
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/fablab-2300-be.json"
+      ],
+      "_id": "fablab2300-be",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-1621"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FluXus Verkadefabriek",
+      "location": {
+        "address": "Westzijde 168, 1506 EK Zaandam, NL",
+        "lat": 52.4462466,
+        "lon": 4.8192626
+      },
+      "state": {
+        "open": true
+      },
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:1416"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/fluxus-verkadefabriek-nl.json"
+      ],
+      "_id": "fluxus-verkadefabriek-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-1416"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Frysklab",
+      "location": {
+        "address": "Zuiderkruisweg 4, 8903 JM Leeuwarden, NL",
+        "lat": 53.1934684,
+        "lon": 5.8454642
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.frysklab.nl",
+      "contact": {
+        "phone": "+31 (0)6 10898358",
+        "facebook": "https://www.facebook.com/frysklab"
+      },
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:385"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/frysklab-nl.json"
+      ],
+      "_id": "frysklab-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-385",
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ]
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Healthhub-Roden",
+      "location": {
+        "address": "Ceintuurbaan Noord 180, 9301 NZ Roden, NL",
+        "lat": 53.1434252,
+        "lon": 6.4429351
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.healthhub-roden.nl",
+      "contact": {
+        "phone": "+31 (0)50-5952459"
+      },
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:513"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/healthhub-roden-nl.json"
+      ],
+      "_id": "healthhub-roden-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-513"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "HET LAB",
+      "location": {
+        "address": "Beukelsdijk 91a, 3021 AE Rotterdam, NL",
+        "lat": 51.9208644,
+        "lon": 4.4533477
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.hetlabrotterdam.nl",
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:400"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/het-lab-nl.json"
+      ],
+      "_id": "het-lab-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-400",
+      "contact": {
+        "facebook": "https://www.facebook.com/hetlab.nl"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ]
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "ICER-lab Ulft",
+      "location": {
+        "address": "Hutteweg 24, 7071 BV Ulft, NL",
+        "lat": 51.8951779,
+        "lon": 6.3839113
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.icer.nl",
+      "contact": {
+        "email": "info@icer.eu",
+        "phone": "+31 (0)6 44642417",
+        "facebook": "https://www.facebook.com/FabLab.ICER"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:403"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/icer-lab-ulft-nl.json"
+      ],
+      "_id": "icer-lab-ulft-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-403"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Ingegno Maker Space - De Creatieve STEM",
+      "location": {
+        "address": "Antoon Catriestraat 6, 9031 Drongen, BE",
+        "lat": 51.0503232,
+        "lon": 3.6573778
+      },
+      "state": {
+        "open": true
+      },
+      "url": "https://decreatievestem.be/",
+      "contact": {
+        "email": "info@decreatievestem.be",
+        "phone": "+32 470 03 73 78",
+        "facebook": "https://www.facebook.com/IngegnoMakerSpace"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:1583"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/ingegno-maker-space-de-creatieve-stem-be.json"
+      ],
+      "_id": "ingegno-maker-space-de-creatieve-stem-be",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-1583"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Jacklab",
+      "location": {
+        "address": "Weiersstraat 1C, 9401ET Assen, NL",
+        "lat": 52.9946959,
+        "lon": 6.5585685
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.bibliotheekassen.nl/welkomjack",
+      "contact": {
+        "email": "info@bibliotheekassen.nl",
+        "phone": "088-0128888"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:669"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/jacklab-nl.json"
+      ],
+      "_id": "jacklab-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-669"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Jeugdfablab",
+      "location": {
+        "address": "Koetebuurt 3a, 1794BN Oosterend Texel., NL",
+        "lat": 53.0838323,
+        "lon": 4.8749603
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.jeugdfablab.nl",
+      "contact": {
+        "email": "info@jeugdfablab.nl",
+        "phone": "31 (0) 630088789"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:370"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/jeugdfablab-nl.json"
+      ],
+      "_id": "jeugdfablab-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-370"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Kaasfabriek Fablab Alkmaar",
+      "location": {
+        "address": "Marconistraat 5, 1821 BX Alkmaar, NL",
+        "lat": 52.6260054,
+        "lon": 4.7665226
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.kaasfabriek.nl",
+      "contact": {
+        "email": "info@kaasfabriek.nl",
+        "phone": "+31 (0)72 3690554",
+        "facebook": "https://www.facebook.com/kaasfabriek"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:353"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/kaasfabriek-fablab-alkmaar-nl.json"
+      ],
+      "_id": "kaasfabriek-fablab-alkmaar-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-353"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "KinderFabLab",
+      "location": {
+        "address": "Stroinksbleekweg 2, 7523 ZL Enschede, NL",
+        "lat": 52.2317674,
+        "lon": 6.8944572
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.kinderfablab.nl",
+      "contact": {
+        "phone": "+31 (0)6 51754662"
+      },
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:375"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/kinderfablab-nl.json"
+      ],
+      "_id": "kinderfablab-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-375"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Makersbuzz",
+      "location": {
+        "address": "Statenlaan 4, 5042 RX Brabant, NL",
+        "lat": 51.5734358,
+        "lon": 5.0539463
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.facebook.com/MakersBuzz",
+      "contact": {
+        "phone": "+31 (0)13 4656700",
+        "facebook": "https://www.facebook.com/MakersBuzz"
+      },
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:361"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/makersbuzz-nl.json"
+      ],
+      "_id": "makersbuzz-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-361",
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ]
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "MakersDen",
+      "location": {
+        "address": "St Olafstraat 3, 7418 CG deventer, NL",
+        "lat": 52.2480329,
+        "lon": 6.1727055
+      },
+      "state": {
+        "open": true
+      },
+      "url": "https://www.makersden.nl/",
+      "contact": {
+        "email": "eric@makerden.nl",
+        "phone": "06 2459 4369",
+        "facebook": "https://www.facebook.com/makersden.deventer"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:1588"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/makersden-nl.json"
+      ],
+      "_id": "makersden-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-1588"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "MakersLab Ede",
+      "location": {
+        "address": "Ampèrestraat 6, 6716 BN Ede, NL",
+        "lat": 52.0276733,
+        "lon": 5.6190274
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.makerslab.nl",
+      "contact": {
+        "email": "info@makerslab.nl",
+        "phone": "31 (0) 318 767014",
+        "facebook": "https://www.facebook.com/MakersLabEde"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:371"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/makerslab-ede-nl.json"
+      ],
+      "_id": "makerslab-ede-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-371"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Makerspace Breda",
+      "location": {
+        "address": "Molenstraat 6, 4811 GS Breda, NL",
+        "lat": 51.587763,
+        "lon": 4.7789237
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.makersbase.nl",
+      "contact": {
+        "email": "karlijn@makersbase.nl",
+        "phone": "+31 (0)6-12999726"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:362"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/makerspace-breda-nl.json"
+      ],
+      "_id": "makerspace-breda-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-362"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Makilab",
+      "location": {
+        "address": "Avenue Georges Lemaitre, 2, 1348 Louvain-La-Neuve, BE",
+        "lat": 50.6698312,
+        "lon": 4.6230584
+      },
+      "state": {
+        "open": true
+      },
+      "url": "https://makilab.org",
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:1650",
+        "machine: 3D printer",
+        "machine: CNC mill",
+        "machine: circuit production",
+        "machine: laser cutter",
+        "machine: precision mill",
+        "machine: vinyl cutter",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:379"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/makilab-be.json",
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/makilab-be.json"
+      ],
+      "_id": "makilab-be",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-1650",
+      "contact": {
+        "facebook": "https://www.facebook.com/fablab.makilab/",
+        "email": "info@makilab.org",
+        "phone": "+32476732227"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ]
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "miniFabLab Utrecht",
+      "location": {
+        "address": "Nobeldwarsstraat 33, 3512 EW Utrecht, NL",
+        "lat": 52.0919856,
+        "lon": 5.1265315
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.minifablab.nl",
+      "contact": {
+        "email": "bart@fablab.nl",
+        "phone": "+31 (0)30 6925051"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:406"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/minifablab-utrecht-nl.json"
+      ],
+      "_id": "minifablab-utrecht-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-406"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "OpenFab",
+      "location": {
+        "address": "274 avenue de la Couronne, 1050 Brussel, BE",
+        "lat": 50.8258319,
+        "lon": 4.3841441
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.openfab.be",
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:366",
+        "machine: 3D printer",
+        "machine: CNC mill",
+        "machine: laser cutter",
+        "machine: vinyl cutter",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:524"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/openfab-be.json",
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/openfab-be.json"
+      ],
+      "_id": "openfab-be",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-366",
+      "contact": {
+        "facebook": "https://www.facebook.com/OpenFab",
+        "email": "contact@openfab.be",
+        "phone": "+32484303101"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ]
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Protospace (closed)",
+      "location": {
+        "address": "Padualaan 99 Ruimte 0.145, 3584 CH Utrecht, NL",
+        "lat": 52.0847899,
+        "lon": 5.169482
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.protospace.nl",
+      "contact": {
+        "email": "info@protospace.nl",
+        "phone": "+31 (0)30 2230875",
+        "facebook": "https://www.facebook.com/ProtoSpace"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:404"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/protospace-closed-nl.json"
+      ],
+      "_id": "protospace-closed-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-404"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "RElab Liege/Luik",
+      "location": {
+        "address": "Place Saint-Etienne, Rue Lambert Lombard 1, 4000 Liège, BE",
+        "lat": 50.6365586,
+        "lon": 5.5655417
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.relab.be",
+      "contact": {
+        "email": "ben@relab.be",
+        "phone": "+32 (0)487 019812"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:388"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/relab-liege-luik-be.json"
+      ],
+      "_id": "relab-liege-luik-be",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-388"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "SmartLab Deventer",
+      "location": {
+        "address": "Dorrestraat 1, 7415 LD Deventer, NL",
+        "lat": 52.2678497,
+        "lon": 6.1611111
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.smartlabdeventer.nl",
+      "contact": {
+        "email": "info@smartlabdeventer.nl",
+        "phone": "+31 (0)570 675719",
+        "facebook": "https://www.facebook.com/fablabdeventer"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:369"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/smartlab-deventer-nl.json"
+      ],
+      "_id": "smartlab-deventer-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-369"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "SPARK Lab",
+      "location": {
+        "address": "Graafsebaan 3, 5248 JR Rosmalen",
+        "lat": 51.7007348,
+        "lon": 5.3534097
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.sparkcampus.nl",
+      "contact": {
+        "email": "info@sparkcampus.nl",
+        "phone": "+31 (0)6 16431401",
+        "facebook": "https://www.facebook.com/sparkcampus/"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:398"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/spark-lab.json"
+      ],
+      "_id": "spark-lab",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-398"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Stadslab Rotterdam",
+      "location": {
+        "address": "Wijnhaven 101, 3011 WN Rotterdam, NL",
+        "lat": 51.9170588,
+        "lon": 4.4846126
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.stadslabrotterdam.nl",
+      "contact": {
+        "email": "info@stadslabrotterdam.nl"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:399"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/stadslab-rotterdam-nl.json"
+      ],
+      "_id": "stadslab-rotterdam-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-399"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Timelab Gent",
+      "location": {
+        "address": "Kogelstraat 34, 9000 Gent, BE",
+        "lat": 51.058832,
+        "lon": 3.7415207
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.timelab.org",
+      "contact": {
+        "email": "hello@timelab.org",
+        "phone": "00 32 9 391 96 10",
+        "facebook": "https://www.facebook.com/timelabgent"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:379"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/timelab-gent-be.json"
+      ],
+      "_id": "timelab-gent-be",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-379"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "TinkerinQ FabLab Houten",
+      "location": {
+        "address": "Dijkhoeve 1, 3992 XV Houten, NL",
+        "lat": 52.0349685,
+        "lon": 5.1638065
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.fablabhouten.nl",
+      "contact": {
+        "email": "info@tinkerinq.nl",
+        "phone": "+31 (0) 52494411",
+        "facebook": "https://www.facebook.com/tinkerinq"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:384"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/tinkerinq-fablab-houten-nl.json"
+      ],
+      "_id": "tinkerinq-fablab-houten-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-384"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "TRAKK",
+      "location": {
+        "address": "16 Avenue Reine Astrid, 5000 Namur, BE",
+        "lat": 50.4625258,
+        "lon": 4.8571595
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.trakk.be",
+      "contact": {
+        "email": "info@trakk.be",
+        "facebook": "https://www.facebook.com/trakknamur",
+        "phone": "0000000000"
+      },
+      "issue_report_channels": [
+        "email",
+        "facebook"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:395",
+        "machine: 3D printer",
+        "machine: CNC mill",
+        "machine: laser cutter",
+        "machine: precision mill",
+        "machine: vinyl cutter",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:641"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/trakk-be.json",
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/trakk-be.json"
+      ],
+      "_id": "trakk-be",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-395"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Unnamed",
+      "location": {
+        "address": "BE",
+        "lat": 50.6402809,
+        "lon": 4.6667145
+      },
+      "state": {
+        "open": true
+      },
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:1679"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/unnamed-be.json"
+      ],
+      "_id": "unnamed-be",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-1679"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "V-lab",
+      "location": {
+        "address": "Lepelstraat 2, 2290 Vorselaar, BE",
+        "lat": 51.2010273,
+        "lon": 4.772654
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.thomasmore.be/v-lab",
+      "contact": {
+        "email": "v-lab@thomasmore.be",
+        "phone": "+32 14 74 38 39"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:1574",
+        "machine: 3D printer",
+        "machine: laser cutter",
+        "machine: vinyl cutter",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:2807"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/v-lab-be.json",
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/v-lab-be.json"
+      ],
+      "_id": "v-lab-be",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-1574"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Wowlab",
+      "location": {
+        "address": "Stroinksbleekweg 4a, 7523 ZL Enschede, NL",
+        "lat": 52.2341042,
+        "lon": 6.8949416
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.woutzweers.nl/wowlab",
+      "contact": {
+        "email": "zweers@dds.nl",
+        "phone": "+31 (0)6 23020257"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:376"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/wowlab-nl.json"
+      ],
+      "_id": "wowlab-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-376"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "ZB45 Makerspace (closed) / FabLab Truck",
+      "location": {
+        "address": "Zeeburgerpad 45, 1019 AA Amsterdam, NL",
+        "lat": 52.3669766,
+        "lon": 4.93716
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.zb45.nl",
+      "contact": {
+        "email": "make@zb45.nl",
+        "phone": "31 (0)20-2620317"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "https://codeberg.org/trox/fablab-map",
+        "codeberg-entry-id:356"
+      ],
+      "source": [
+        "codeberg-trox-fablab-map",
+        "spacemap/transform/out_codeberg/zb45-makerspace-closed-fablab-truck-nl.json"
+      ],
+      "_id": "zb45-makerspace-closed-fablab-truck-nl",
+      "_source_record": "https://codeberg.org/trox/fablab-map#entry-356"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Comenius University STEAM Lab (placeholder)",
+      "location": {
+        "address": "Bratislava, Slovakia",
+        "lat": 48.1486,
+        "lon": 17.1077
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.fedu.uniba.sk/",
+      "projects": [
+        "https://ease-educators.com/",
+        "ease-source: stub"
+      ],
+      "source": [
+        "ease-educators-map",
+        "spacemap/transform/out_ease/comenius-university-steam-lab-placeholder.json"
+      ],
+      "_id": "comenius-university-steam-lab-placeholder",
+      "_note": "stub — awaiting EASE map export"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "DAISSy-HOU (placeholder)",
+      "location": {
+        "address": "Patras, Greece",
+        "lat": 38.2466,
+        "lon": 21.7346
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://daissy.eap.gr/en/",
+      "projects": [
+        "https://ease-educators.com/",
+        "ease-source: stub"
+      ],
+      "source": [
+        "ease-educators-map",
+        "spacemap/transform/out_ease/daissy-hou-placeholder.json"
+      ],
+      "_id": "daissy-hou-placeholder",
+      "_note": "stub — awaiting EASE map export"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Scuola di Robotica (placeholder)",
+      "location": {
+        "address": "Genova, Italy",
+        "lat": 44.4056,
+        "lon": 8.9463
+      },
+      "state": {
+        "open": true
+      },
+      "url": "http://www.scuoladirobotica.it/en",
+      "projects": [
+        "https://ease-educators.com/",
+        "ease-source: stub"
+      ],
+      "source": [
+        "ease-educators-map",
+        "spacemap/transform/out_ease/scuola-di-robotica-placeholder.json"
+      ],
+      "_id": "scuola-di-robotica-placeholder",
+      "_note": "stub — awaiting EASE map export"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "BUDA::lab",
+      "location": {
+        "address": "Dam 2a, 8500 Kortrijk, Belgium",
+        "lat": 50.83163889999999,
+        "lon": 3.264044188360571
+      },
+      "state": {
+        "open": true,
+        "message": "Status: unknown, Kind: fab_lab"
+      },
+      "logo": "https://www.fablabs.io/media/W1siZiIsIjIwMTcvMDEvMjgvMTEvMTMvNDAvZTA5NzY4MzEtN2U2My00ODQwLTgxMmEtNmVkNmQ4NDJjMGM5L0JVREE6OmxhYi5qcGciXSxbInAiLCJ0aHVtYiIsIjE1MHgxNTAjIl1d/BUDA%3A%3Alab.jpg?sha=3c0e5e564ab2087e",
+      "url": "[{'id': 478",
+      "projects": [
+        "machine: 3D printer",
+        "machine: CNC mill",
+        "machine: laser cutter",
+        "machine: vinyl cutter",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:253",
+        "machine: sawing",
+        "machine: hand tools",
+        "https://fabzero.decreatievestem.be/open-labs",
+        "fabzero-source: fabzero"
+      ],
+      "source": [
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/buda-lab-be.json",
+        "fabzero-openlabs",
+        "spacemap/transform/out_fabzero/buda-lab-be.json"
+      ],
+      "_id": "buda-lab-be",
+      "_source_record": "https://fablabs.io/labs/budalab",
+      "_membership": "Membership required"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "cityfab 2",
+      "location": {
+        "address": "Avenue Jules Bordet 13, 1140 Evere, Belgium",
+        "lat": 50.87296389999999,
+        "lon": 4.4156246
+      },
+      "state": {
+        "open": true,
+        "message": "Status: active, Kind: fab_lab"
+      },
+      "logo": "https://www.fablabs.io/media/W1siZiIsIjIwMjEvMDUvMDcvMTAvMTIvNDQvYmY2ZDZkYTktODYwNS00ODRjLTk5OTUtN2YwN2M0MzI2NjQ2L2dldGxvZ28ucG5nIl0sWyJwIiwidGh1bWIiLCIxNTB4MTUwIyJdXQ/getlogo.png?sha=bf554d201705ec19",
+      "url": "[{'id': 37024",
+      "contact": {
+        "email": "contact@cityfab2.brussels",
+        "phone": "+32 2 435 16 55"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "machine: 3D printer",
+        "machine: CNC mill",
+        "machine: circuit production",
+        "machine: laser cutter",
+        "machine: precision mill",
+        "machine: vinyl cutter",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:2419"
+      ],
+      "source": [
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/cityfab-2-be.json"
+      ],
+      "_id": "cityfab-2-be",
+      "_source_record": "https://fablabs.io/labs/cityfab2"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Cityfab 3",
+      "location": {
+        "address": "Rue des Veterinaires Veeartsen Straat 42, 1070 Anderlecht, Belgium",
+        "lat": 50.8342142,
+        "lon": 4.327495799999999
+      },
+      "state": {
+        "open": true,
+        "message": "Status: active, Kind: fab_lab"
+      },
+      "logo": "https://www.fablabs.io/media/W1siZiIsIjIwMjAvMDIvMTgvMTQvNDcvMTMvYzE2MTIxZjctZWI4MC00NGExLWIxYjAtMTcwOWM5YmFmMWFhL2xvZ28gY2YzLkpQRyJdLFsicCIsInRodW1iIiwiMTUweDE1MCMiXV0/logo%20cf3.JPG?sha=eabc9324f26e8986",
+      "url": "[{'id': 9129",
+      "contact": {
+        "email": "omar@microfactory.be",
+        "phone": "0471388151"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "machine: 3D printer",
+        "machine: CNC mill",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:2220"
+      ],
+      "source": [
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/cityfab-3-be.json"
+      ],
+      "_id": "cityfab-3-be",
+      "_source_record": "https://fablabs.io/labs/cityfab3"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "cityfab1",
+      "location": {
+        "address": "Rue Dieudonné Lefèvre 37, 1020 Bruxelles, Belgium",
+        "lat": 50.87093354775484,
+        "lon": 4.349889438622995
+      },
+      "state": {
+        "open": true,
+        "message": "Status: active, Kind: fab_lab"
+      },
+      "logo": "https://www.fablabs.io/media/W1siZiIsIjIwMTgvMDgvMDMvMTUvMDkvNTYvNmU1MTA3YWMtNjk4ZS00MzY1LTk0NzgtZDdkYjZjZTY5NjFiLzIwMTctMDUtMDhfQ0lUWUZBQjFfTG9nby1WZXJ0aWNhbC1SVkItd2ViLmpwZyJdLFsicCIsInRodW1iIiwiMTUweDE1MCMiXV0/2017-05-08_CITYFAB1_Logo-Vertical-RVB-web.jpg?sha=f85f98fb2da9045f",
+      "url": "[{'id': 5916",
+      "contact": {
+        "email": "contact@cityfab1.brussels",
+        "phone": "+32 2 233 81 33 "
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "machine: 3D printer",
+        "machine: CNC mill",
+        "machine: laser cutter",
+        "machine: vinyl cutter",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:1777"
+      ],
+      "source": [
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/cityfab1-be.json"
+      ],
+      "_id": "cityfab1-be",
+      "_source_record": "https://fablabs.io/labs/cityfab1"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Créalab",
+      "location": {
+        "address": "Rue Edmond de Selys-Longchamps 35, 4300 Waremme, Belgium",
+        "lat": 50.6929751,
+        "lon": 5.24549520000005
+      },
+      "state": {
+        "open": true,
+        "message": "Status: unknown, Kind: fab_lab"
+      },
+      "logo": "https://www.fablabs.io/media/W1siZiIsIjIwMTcvMDEvMjgvMTEvMzMvMjcvZjAwMWMxNGEtZmYxMS00MTM2LWJjYTItNTY4MDU2YzBhZGIyL0Nyw6lhbGFiLmpwZyJdLFsicCIsInRodW1iIiwiMTUweDE1MCMiXV0/Cr%C3%A9alab.jpg?sha=aad3cbb636c04d3d",
+      "url": "[{'id': 2260",
+      "contact": {
+        "email": "crealab@provincedeliege.be",
+        "phone": "0032 496 23 88 85"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "machine: 3D printer",
+        "machine: CNC mill",
+        "machine: laser cutter",
+        "machine: vinyl cutter",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:1264"
+      ],
+      "source": [
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/créalab-be.json"
+      ],
+      "_id": "créalab-be",
+      "_source_record": "https://fablabs.io/labs/crealab"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "DronesLab",
+      "location": {
+        "address": "avenue General Michel 1E, Be 23, Batiment 1 - Hangar 15, 6000 Charleroi, Belgium",
+        "lat": 50.41086098519998,
+        "lon": 4.451532260851991
+      },
+      "state": {
+        "open": true,
+        "message": "Status: active, Kind: fab_lab"
+      },
+      "logo": "https://www.fablabs.io/media/W1siZiIsIjIwMTgvMTAvMTYvMTMvNDgvMDIvYTBmYTM2YTMtNmFiMi00MzBhLThlMzEtNTk5OWRhZjczYjE1L0lUNC1Ecm9uZXNMYWItTG9nby0yMDE3LTE2LTkucG5nIl0sWyJwIiwidGh1bWIiLCIxNTB4MTUwIyJdXQ/IT4-DronesLab-Logo-2017-16-9.png?sha=39e3ba9e8a5fcfd6",
+      "url": "[{'id': 1728",
+      "contact": {
+        "email": "contact@droneslab.be"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "machine: 3D printer",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:983"
+      ],
+      "source": [
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/droneslab-be.json"
+      ],
+      "_id": "droneslab-be",
+      "_source_record": "https://fablabs.io/labs/droneslab"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "fab-c",
+      "location": {
+        "address": "square des martyrs ,2, 6000 charleroi, Belgium",
+        "lat": 50.4047853,
+        "lon": 4.438636199999999
+      },
+      "state": {
+        "open": true,
+        "message": "Status: active, Kind: fab_lab"
+      },
+      "logo": "https://www.fablabs.io/media/W1siZiIsIjIwMjIvMDkvMDcvMTAvMzUvMjUvMTQ3MWJmMjctN2M0ZS00OTk5LTk0NDItODA3ZTAyYWE4NThjL2xvZ28tRmFiLUMtc2Fucy1mb25kLnBuZyJdLFsicCIsInRodW1iIiwiMTUweDE1MCMiXV0/logo-Fab-C-sans-fond.png?sha=22ef68b03077c1b7",
+      "url": "[{'id': 39897",
+      "contact": {
+        "email": "sylvain.denis@ulb.be",
+        "phone": "+32499219802"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "machine: 3D printer",
+        "machine: CNC mill",
+        "machine: circuit production",
+        "machine: laser cutter",
+        "machine: precision mill",
+        "machine: vinyl cutter",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:2646"
+      ],
+      "source": [
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/fab-c-be.json"
+      ],
+      "_id": "fab-c-be",
+      "_source_record": "https://fablabs.io/labs/fabc"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab+ (Antwerpen)",
+      "location": {
+        "address": "Lange Klarenstraat 17, 2000 Antwerpen, Belgium",
+        "lat": 51.2189646,
+        "lon": 4.408352799999989
+      },
+      "state": {
+        "open": true,
+        "message": "Status: active, Kind: fab_lab"
+      },
+      "logo": "https://www.fablabs.io/media/W1siZiIsIjIwMTcvMDEvMjgvMTEvMjEvMTQvZjExNTdlMTAtZjA3Ny00OGM4LTg3ZjgtZDdkNWJhNjBkMmNiL0ZhYkxhYisgKEFudHdlcnBlbikuanBnIl0sWyJwIiwidGh1bWIiLCIxNTB4MTUwIyJdXQ/FabLab%2B%20%28Antwerpen%29.jpg?sha=9c0aa5324dd4ce6f",
+      "url": "[{'id': 1120",
+      "contact": {
+        "email": "contact@fablabplus.be",
+        "phone": "0032+32121979"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "machine: 3D printer",
+        "machine: CNC mill",
+        "machine: laser cutter",
+        "machine: precision mill",
+        "machine: vinyl cutter",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:662"
+      ],
+      "source": [
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/fablab-antwerpen-be.json"
+      ],
+      "_id": "fablab-antwerpen-be",
+      "_source_record": "https://fablabs.io/labs/fablabplus"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab B3",
+      "location": {
+        "address": "place des arts 1 liege belgique, 4020 -, Belgium",
+        "lat": 50.64486781691182,
+        "lon": 5.590545797216793
+      },
+      "state": {
+        "open": true,
+        "message": "Status: active, Kind: fab_lab"
+      },
+      "url": "[{'id': 43775",
+      "contact": {
+        "email": "exploratoire@leb3.be",
+        "phone": "003242325400"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "machine: 3D printer",
+        "machine: CNC mill",
+        "machine: laser cutter",
+        "machine: vinyl cutter",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:2889"
+      ],
+      "source": [
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/fablab-b3-be.json"
+      ],
+      "_id": "fablab-b3-be",
+      "_source_record": "https://fablabs.io/labs/fablabb3"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Fablab Brussels",
+      "location": {
+        "address": "Kroonlaan 227, Buildings G & F, 1050 Elsene, Belgium",
+        "lat": 50.82237292974632,
+        "lon": 4.386691248162833
+      },
+      "state": {
+        "open": true,
+        "message": "Status: active, Kind: fab_lab"
+      },
+      "logo": "https://www.fablabs.io/media/W1siZiIsIjIwMTgvMTEvMjcvMjIvMDkvMjYvYTE1NDA1MjMtYmVjYi00OWRiLTgyNjMtM2FkZDdjNWI5MmM1L0lNR18yMDE4MTAwNF8xNDE0NTM2MjEgLSBDb3B5LmpwZyJdLFsicCIsInRodW1iIiwiMTUweDE1MCMiXV0/IMG_20181004_141453621%20-%20Copy.jpg?sha=2976875ff1a6b824",
+      "url": "[{'id': 148",
+      "contact": {
+        "email": "fablab@vub.be",
+        "phone": " (+32) (0)486.945.529"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "machine: 3D printer",
+        "machine: CNC mill",
+        "machine: circuit production",
+        "machine: laser cutter",
+        "machine: precision mill",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:116"
+      ],
+      "source": [
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/fablab-brussels-be.json"
+      ],
+      "_id": "fablab-brussels-be",
+      "_source_record": "https://fablabs.io/labs/fablabbrussels"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Fablab Erpe-Mere",
+      "location": {
+        "address": "Kloosterstraat 31, 9420 Erpe-Mere, Belgium",
+        "lat": 50.9245724,
+        "lon": 3.978428500000063
+      },
+      "state": {
+        "open": true,
+        "message": "Status: active, Kind: fab_lab"
+      },
+      "logo": "https://www.fablabs.io/media/W1siZiIsIjIwMTcvMDEvMjgvMTEvMTkvNDEvYzAwZGQ5ZjEtMWQzZi00MjhhLWEzMTctOTVlYmU4MjE5MzZlL0ZhYmxhYiBFcnBlLU1lcmUuanBnIl0sWyJwIiwidGh1bWIiLCIxNTB4MTUwIyJdXQ/Fablab%20Erpe-Mere.jpg?sha=3d75ef92a25e979e",
+      "url": "[{'id': 1009",
+      "contact": {
+        "email": "info@fablaberpemere.be",
+        "phone": "0499/202133"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "machine: 3D printer",
+        "machine: CNC mill",
+        "machine: laser cutter",
+        "machine: vinyl cutter",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:579"
+      ],
+      "source": [
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/fablab-erpe-mere-be.json"
+      ],
+      "_id": "fablab-erpe-mere-be",
+      "_source_record": "https://fablabs.io/labs/fablaberpemere"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Fablab'ke",
+      "location": {
+        "address": "Rue Mommaerts 4, 1080 Molenbeek-Saint-Jean, Belgium",
+        "lat": 50.8578588,
+        "lon": 4.3382706
+      },
+      "state": {
+        "open": true,
+        "message": "Status: active, Kind: fab_lab"
+      },
+      "logo": "https://www.fablabs.io/media/W1siZiIsIjIwMTcvMDEvMjgvMTEvMzIvNTYvZDI5ZGRmMTQtMmZiMS00MmViLTlkMDMtNDFiYjczZTE5NzU0L2ZhYmxhYidrZS5qcGciXSxbInAiLCJ0aHVtYiIsIjE1MHgxNTAjIl1d/fablab%27ke.jpg?sha=208d1c7e8b930d91",
+      "url": "[{'id': 2204",
+      "contact": {
+        "email": "info@fablabke.be",
+        "phone": "02 415 86 03"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "machine: 3D printer",
+        "machine: CNC mill",
+        "machine: laser cutter",
+        "machine: vinyl cutter",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:1236"
+      ],
+      "source": [
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/fablab-ke-be.json"
+      ],
+      "_id": "fablab-ke-be",
+      "_source_record": "https://fablabs.io/labs/fablabke"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "FabLab Klein-Brabant",
+      "location": {
+        "address": "Forum 9, CC binder-Studio Lab, 2870 Puurs, Belgium",
+        "lat": 51.0755999,
+        "lon": 4.274544099999957
+      },
+      "state": {
+        "open": true,
+        "message": "Status: active, Kind: fab_lab"
+      },
+      "logo": "https://www.fablabs.io/media/W1siZiIsIjIwMTgvMDkvMTYvMjAvNTQvMzUvNzk0MmE5OGUtNzZmYi00YTg3LWI2OTEtYTQ2MTAzNjM1NjY2LzE4NTI3NzI2XzE5OTA5ODc0MTc3OTY2ODNfMzQ2MTM0MTk2NTgxMzQ3Nzg5MV9uLnBuZyJdLFsicCIsInRodW1iIiwiMTUweDE1MCMiXV0/18527726_1990987417796683_3461341965813477891_n.png?sha=00d5904391f29afd",
+      "url": "[{'id': 6085",
+      "contact": {
+        "email": "info@fablabkleinbrabant.com"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "machine: 3D printer",
+        "machine: CNC mill",
+        "machine: circuit production",
+        "machine: laser cutter",
+        "machine: precision mill",
+        "machine: vinyl cutter",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:1804"
+      ],
+      "source": [
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/fablab-klein-brabant-be.json"
+      ],
+      "_id": "fablab-klein-brabant-be",
+      "_source_record": "https://fablabs.io/labs/fablabkleinbrabant"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Fablab TaKeerbergen",
+      "location": {
+        "address": "Molenstraat 2, 3140 Keerbergen, Belgium",
+        "lat": 51.0041607,
+        "lon": 4.634513200000001
+      },
+      "state": {
+        "open": true,
+        "message": "Status: planned, Kind: fab_lab"
+      },
+      "logo": "https://www.fablabs.io/media/W1siZiIsIjIwMTgvMTIvMTUvMTIvNTYvNTAvMWYyZDkyOTMtYTU0Yy00YmQzLThhMjQtNzhjZGY4NDQ3MzdlL0dPISB0ZWNobmlzY2ggQXRoZW5ldW0gS2VlcmJlcmdlblJHQi5qcGciXSxbInAiLCJ0aHVtYiIsIjE1MHgxNTAjIl1d/GO%21%20technisch%20Atheneum%20KeerbergenRGB.jpg?sha=7188c5432dd14cab",
+      "url": "[{'id': 6537",
+      "contact": {
+        "email": "directie@takeerbergen.be",
+        "phone": "015/51.25.94"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "machine: 3D printer",
+        "machine: CNC mill",
+        "machine: laser cutter",
+        "machine: precision mill",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:1886"
+      ],
+      "source": [
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/fablab-takeerbergen-be.json"
+      ],
+      "_id": "fablab-takeerbergen-be",
+      "_source_record": "https://fablabs.io/labs/takeerbergen"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Ingegno Maker Space",
+      "location": {
+        "address": "Antoon Catriestraat 6, 9031 Drongen, Belgium",
+        "lat": 51.0503217,
+        "lon": 3.65724
+      },
+      "state": {
+        "open": true,
+        "message": "Status: active, Kind: fab_lab"
+      },
+      "logo": "https://www.fablabs.io/media/W1siZiIsIjIwMTcvMDkvMjYvMTkvMTUvNTgvMjJlNDQzNWQtZmEwMC00NGVmLTgxMTYtNDg4NGRjOWU5M2JiL2F2YXRhckluZ2Vnbm8ucG5nIl0sWyJwIiwidGh1bWIiLCIxNTB4MTUwIyJdXQ/avatarIngegno.png?sha=8fd0b86cec570f23",
+      "url": "[{'id': 4973",
+      "contact": {
+        "email": "info@decreatievestem.be",
+        "phone": "+32470037378"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "machine: 3D printer",
+        "machine: CNC mill",
+        "machine: circuit production",
+        "machine: laser cutter",
+        "machine: precision mill",
+        "machine: vinyl cutter",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:1542",
+        "machine: waterjet cutter",
+        "machine: digital embroidery",
+        "machine: digital knitting",
+        "machine: sewing machine",
+        "machine: overlock",
+        "machine: heat press",
+        "machine: soldering",
+        "machine: plastic shredder",
+        "machine: plastic press",
+        "machine: plexi bender",
+        "machine: sawing",
+        "machine: hand tools",
+        "https://fabzero.decreatievestem.be/open-labs",
+        "fabzero-source: fabzero"
+      ],
+      "source": [
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/ingegno-maker-space-be.json",
+        "fabzero-openlabs",
+        "spacemap/transform/out_fabzero/ingegno-maker-space-be.json"
+      ],
+      "_id": "ingegno-maker-space-be",
+      "_source_record": "https://fablabs.io/labs/IngegnoMakerSpace",
+      "_membership": "Open to everyone from age 6"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "KdG FabLab Hoboken",
+      "location": {
+        "address": "Salesianenlaan, 2660 Antwerpen, Belgium",
+        "lat": 51.17359781583271,
+        "lon": 4.370654327855618
+      },
+      "state": {
+        "open": true,
+        "message": "Status: planned, Kind: fab_lab"
+      },
+      "logo": "https://www.fablabs.io/media/W1siZiIsIjIwMTkvMDcvMTUvMDgvMzIvMDgvN2IyNmFhZWItNGRmNi00MDg5LWI3ZDgtMzhlNjRkMjQ1ZGFkL2tkZ2ZhYmxhYi1sb2dvLXNxdWFyZS13aGl0ZUAyeC5wbmciXSxbInAiLCJ0aHVtYiIsIjE1MHgxNTAjIl1d/kdgfablab-logo-square-white%402x.png?sha=b97b8ea73da4b31c",
+      "url": "[{'id': 7325",
+      "contact": {
+        "email": "fablab@kdg.be",
+        "phone": "+32 3 613 17 17"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "machine: 3D printer",
+        "machine: CNC mill",
+        "machine: circuit production",
+        "machine: laser cutter",
+        "machine: precision mill",
+        "machine: vinyl cutter",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:2062"
+      ],
+      "source": [
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/kdg-fablab-hoboken-be.json"
+      ],
+      "_id": "kdg-fablab-hoboken-be",
+      "_source_record": "https://fablabs.io/labs/kdgfablab"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Level21 Crealab Mechelen",
+      "location": {
+        "address": "Hoogstraat 4, 2800 Mechelen, Belgium",
+        "lat": 51.023974,
+        "lon": 4.475351
+      },
+      "state": {
+        "open": true,
+        "message": "Status: planned, Kind: fab_lab"
+      },
+      "logo": "https://www.fablabs.io/media/W1siZiIsIjIwMjAvMDcvMTcvMDcvNTQvMzQvNTAwNzEwM2YtOTM3MS00NjBlLTgzN2MtZjFlMDkyNGVhNDRmL0xldmVsLTIxX2xvZ29fMTUwMHgxODAwLmpwZyJdLFsicCIsInRodW1iIiwiMTUweDE1MCMiXV0/Level-21_logo_1500x1800.jpg?sha=6460242817db4e6b",
+      "url": "[{'id': 13350",
+      "contact": {
+        "email": "lies@level21.be",
+        "phone": "0472506281"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "machine: 3D printer",
+        "machine: laser cutter",
+        "machine: vinyl cutter",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:2275"
+      ],
+      "source": [
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/level21-crealab-mechelen-be.json"
+      ],
+      "_id": "level21-crealab-mechelen-be",
+      "_source_record": "https://fablabs.io/labs/level21crealabmechelen"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "MakeIT.lab @ Fyxxi",
+      "location": {
+        "address": "9052 Zwijnaarde, Belgium",
+        "lat": 51.01006,
+        "lon": 3.70937
+      },
+      "state": {
+        "open": true,
+        "message": "Status: active, Kind: fab_lab"
+      },
+      "logo": "https://www.fablabs.io/media/W1siZiIsIjIwMjQvMTIvMTYvMDcvMDIvMDAvY2ZhOGIzMzItOGM1Mi00MjI2LTk1ZTgtOTA5ZmMyMzIwNDNiLzkxMDAzNENFLURFNjEtNEZCNC05MjExLUJBN0NGQTk4NkJEM18xXzEwNV9jLmpwZWciXSxbInAiLCJ0aHVtYiIsIjE1MHgxNTAjIl1d/910034CE-DE61-4FB4-9211-BA7CFA986BD3_1_105_c.jpeg?sha=4c600969879fd68d",
+      "url": "[]",
+      "contact": {
+        "email": "info@fablabgent.be",
+        "phone": "/"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "machine: 3D printer",
+        "machine: CNC mill",
+        "machine: circuit production",
+        "machine: laser cutter",
+        "machine: precision mill",
+        "machine: vinyl cutter",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:1304"
+      ],
+      "source": [
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/makeit-lab-fyxxi-be.json"
+      ],
+      "_id": "makeit-lab-fyxxi-be",
+      "_source_record": "https://fablabs.io/labs/fyxxi"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Microfactory Fab Lab",
+      "location": {
+        "address": "Quai Fernand Demets 55, 1070 Anderlecht, Belgium",
+        "lat": 50.8448479,
+        "lon": 4.3244985
+      },
+      "state": {
+        "open": true,
+        "message": "Status: active, Kind: fab_lab"
+      },
+      "logo": "https://www.fablabs.io/media/W1siZiIsIjIwMjAvMDIvMTgvMTQvMTYvMzkvMjBkZDc2Y2MtMzRmZS00NDRjLWFmMWQtYmU2ZWYxMDllMWFmL2xvZ28uSlBHIl0sWyJwIiwidGh1bWIiLCIxNTB4MTUwIyJdXQ/logo.JPG?sha=b65cbb4fe891b5c8",
+      "url": "[{'id': 9127",
+      "contact": {
+        "email": "info@microfactory.be",
+        "phone": "0479593228"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "machine: 3D printer",
+        "machine: CNC mill",
+        "machine: laser cutter",
+        "machine: precision mill",
+        "machine: vinyl cutter",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:2219"
+      ],
+      "source": [
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/microfactory-fab-lab-be.json"
+      ],
+      "_id": "microfactory-fab-lab-be",
+      "_source_record": "https://fablabs.io/labs/microfactory"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Relab - Fablab de Liège",
+      "location": {
+        "address": "Rue Lambert Lombard, 1, (place Saint-Etienne), 4000 Liege, Belgium",
+        "lat": 50.643826,
+        "lon": 5.574176999999963
+      },
+      "state": {
+        "open": true,
+        "message": "Status: active, Kind: fab_lab"
+      },
+      "logo": "https://www.fablabs.io/media/W1siZiIsIjIwMTgvMDIvMDYvMTIvMDkvMDgvYzg3ZjhhMTktYmQ5Mi00ZGFlLThkNzMtOTg4NTNhZmZhMDFmL1JlbGFiIExvZ28gVmVjdG8ucG5nIl0sWyJwIiwidGh1bWIiLCIxNTB4MTUwIyJdXQ/Relab%20Logo%20Vecto.png?sha=a3d2c7265318b0cc",
+      "url": "[{'id': 635",
+      "contact": {
+        "email": "b.stepien@idcampus.be",
+        "phone": "04/2905625"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "machine: 3D printer",
+        "machine: CNC mill",
+        "machine: laser cutter",
+        "machine: precision mill",
+        "machine: vinyl cutter",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:327"
+      ],
+      "source": [
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/relab-fablab-de-liège-be.json"
+      ],
+      "_id": "relab-fablab-de-liège-be",
+      "_source_record": "https://fablabs.io/labs/relab"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Timelab",
+      "location": {
+        "address": "Kogelstraat 34, 9000 Ghent, Belgium",
+        "lat": 51.0534762,
+        "lon": 3.730968999999959
+      },
+      "state": {
+        "open": true,
+        "message": "Status: active, Kind: fab_lab"
+      },
+      "logo": "https://www.fablabs.io/media/W1siZiIsIjIwMTgvMDcvMDMvMDgvMTAvMTEvODBiNGZlMmQtYzIzNC00MzY0LTkxZTUtNmE0OWY0NzEyMDUyL01hZGUgSW4gVGltZWxhYi5qcGciXSxbInAiLCJ0aHVtYiIsIjE1MHgxNTAjIl1d/Made%20In%20Timelab.jpg?sha=af8b78c941d47406",
+      "url": "[{'id': 43",
+      "contact": {
+        "email": "hello@timelab.org",
+        "phone": " 00 32 9 391 96 10"
+      },
+      "issue_report_channels": [
+        "email"
+      ],
+      "projects": [
+        "machine: 3D printer",
+        "machine: CNC mill",
+        "machine: laser cutter",
+        "machine: vinyl cutter",
+        "https://gitlab.fabcloud.org/fl-management/fablab-network-data",
+        "fabnetdata-id:8"
+      ],
+      "source": [
+        "fabnetdata",
+        "spacemap/transform/out_fabnetdata/timelab-be.json"
+      ],
+      "_id": "timelab-be",
+      "_source_record": "https://fablabs.io/labs/timelab"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "GRNDBrekers (JC Bouckenborgh)",
+      "location": {
+        "address": "Bredabaan 559, 2170 Antwerpen, Belgium",
+        "lat": 51.2482,
+        "lon": 4.4186
+      },
+      "state": {
+        "open": true,
+        "message": "Wednesday 17:00-23:00; Friday 17:00-23:00; Saturday 14:00-23:00"
+      },
+      "url": "https://bouckenborgh.be/grnd-brekers/",
+      "projects": [
+        "machine: laser cutter",
+        "machine: 3D printer",
+        "machine: vinyl cutter",
+        "machine: digital embroidery",
+        "machine: heat press",
+        "machine: soldering",
+        "machine: hand tools",
+        "machine: sawing",
+        "https://fabzero.decreatievestem.be/open-labs",
+        "fabzero-source: fabzero"
+      ],
+      "source": [
+        "fabzero-openlabs",
+        "spacemap/transform/out_fabzero/grndbrekers-jc-bouckenborgh-be.json"
+      ],
+      "_id": "grndbrekers-jc-bouckenborgh-be",
+      "_membership": "Open to all"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "High Tech Lab",
+      "location": {
+        "address": "Stapelhuisstraat 13-15, 3000 Leuven, Belgium",
+        "lat": 50.8795,
+        "lon": 4.7005
+      },
+      "state": {
+        "open": true,
+        "message": "Thursday 18:00-22:00"
+      },
+      "url": "https://maakleerplekleuven.be/deelplekken/high-tech-lab/",
+      "projects": [
+        "machine: laser cutter",
+        "machine: 3D printer",
+        "machine: soldering",
+        "machine: Arduino",
+        "https://fabzero.decreatievestem.be/open-labs",
+        "fabzero-source: fabzero"
+      ],
+      "source": [
+        "fabzero-openlabs",
+        "spacemap/transform/out_fabzero/high-tech-lab-be.json"
+      ],
+      "_id": "high-tech-lab-be",
+      "_membership": "Membership required"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Makerspace PXL-Uhasselt",
+      "location": {
+        "address": "Agoralaan, Gebouw H, 3590 Diepenbeek, Belgium",
+        "lat": 50.9133,
+        "lon": 5.3826
+      },
+      "state": {
+        "open": true,
+        "message": "Weekdays 9:00-17:00"
+      },
+      "url": "https://makerspace.pxluhasselt.be/",
+      "projects": [
+        "machine: laser cutter",
+        "machine: 3D printer",
+        "machine: vinyl cutter",
+        "machine: digital embroidery",
+        "machine: sewing machine",
+        "machine: CNC mill",
+        "machine: waterjet cutter",
+        "machine: plastic shredder",
+        "machine: plastic press",
+        "machine: injection molding",
+        "machine: media studio",
+        "machine: vacuum former",
+        "machine: PCB mill",
+        "machine: overlock",
+        "machine: heat press",
+        "machine: soldering",
+        "machine: sawing",
+        "machine: hand tools",
+        "https://fabzero.decreatievestem.be/open-labs",
+        "fabzero-source: fabzero"
+      ],
+      "source": [
+        "fabzero-openlabs",
+        "spacemap/transform/out_fabzero/makerspace-pxl-uhasselt-be.json"
+      ],
+      "_id": "makerspace-pxl-uhasselt-be",
+      "_membership": "Open to young and old, weekdays"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Mind- and Makerspace",
+      "location": {
+        "address": "Spoorwegstraat 4, 8200 Brugge, Belgium",
+        "lat": 51.2082,
+        "lon": 3.2243
+      },
+      "state": {
+        "open": true,
+        "message": "Tuesday 8:30-12:00 & 13:00-17:00; Wednesday 13:30-22:00; Thursday 13:30-22:00"
+      },
+      "url": "https://mindandmakerspace.com/",
+      "projects": [
+        "machine: laser cutter",
+        "machine: 3D printer",
+        "machine: media studio",
+        "machine: vinyl cutter",
+        "machine: digital embroidery",
+        "machine: sewing machine",
+        "machine: overlock",
+        "machine: heat press",
+        "machine: plexi bender",
+        "machine: sawing",
+        "machine: CNC mill",
+        "machine: soldering",
+        "machine: hand tools",
+        "https://fabzero.decreatievestem.be/open-labs",
+        "fabzero-source: fabzero"
+      ],
+      "source": [
+        "fabzero-openlabs",
+        "spacemap/transform/out_fabzero/mind-and-makerspace-be.json"
+      ],
+      "_id": "mind-and-makerspace-be",
+      "_membership": "Open to everyone from age 6"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Nerdlab",
+      "location": {
+        "address": "Nieuwland 65, 9000 Gent, Belgium",
+        "lat": 51.0572,
+        "lon": 3.7222
+      },
+      "state": {
+        "open": true,
+        "message": "Tuesday 17:00-22:00; Thursday 18:00-21:00; Friday 14:00-22:00"
+      },
+      "url": "https://nerdlab.be/",
+      "projects": [
+        "machine: laser cutter",
+        "machine: 3D printer",
+        "machine: soldering",
+        "machine: vinyl cutter",
+        "machine: hand tools",
+        "machine: sawing",
+        "machine: sewing machine",
+        "https://fabzero.decreatievestem.be/open-labs",
+        "fabzero-source: fabzero"
+      ],
+      "source": [
+        "fabzero-openlabs",
+        "spacemap/transform/out_fabzero/nerdlab-be.json"
+      ],
+      "_id": "nerdlab-be",
+      "_membership": "Open makers collective"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Smarlab",
+      "location": {
+        "address": "Broelkaai 1B, 8500 Kortrijk, Belgium",
+        "lat": 50.829,
+        "lon": 3.2645
+      },
+      "state": {
+        "open": true,
+        "message": "Tuesday 16:00-21:00; Wednesday 13:00-21:00; Saturday 14:00-18:00"
+      },
+      "url": "https://www.quindo.be/community/smartlab",
+      "projects": [
+        "machine: media studio",
+        "machine: podcast studio",
+        "machine: VR",
+        "machine: soldering",
+        "machine: vinyl cutter",
+        "machine: Raspberry Pi",
+        "machine: Micro:bit",
+        "https://fabzero.decreatievestem.be/open-labs",
+        "fabzero-source: fabzero"
+      ],
+      "source": [
+        "fabzero-openlabs",
+        "spacemap/transform/out_fabzero/smarlab-be.json",
+        "spacemap/transform/out_fabzero/smartlab-be.json"
+      ],
+      "_id": "smarlab-be",
+      "_membership": "Open to all"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "Techniekschuur",
+      "location": {
+        "address": "Jan Van der Lindenstraat 100, 1750 Lennik, Belgium",
+        "lat": 50.8047,
+        "lon": 4.1644
+      },
+      "state": {
+        "open": true,
+        "message": "Tuesday 19:00-24:00"
+      },
+      "url": "https://techniekschuur.be/",
+      "projects": [
+        "machine: laser cutter",
+        "machine: 3D printer",
+        "machine: CNC mill",
+        "machine: lathe",
+        "machine: soldering",
+        "machine: hand tools",
+        "machine: Arduino",
+        "https://fabzero.decreatievestem.be/open-labs",
+        "fabzero-source: fabzero"
+      ],
+      "source": [
+        "fabzero-openlabs",
+        "spacemap/transform/out_fabzero/techniekschuur-be.json"
+      ],
+      "_id": "techniekschuur-be",
+      "_membership": "Open to anyone who wants to build, repair, learn"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "the IT garage",
+      "location": {
+        "address": "Nieuwland 42-44, 1000 Brussel, Belgium",
+        "lat": 50.8514,
+        "lon": 4.35
+      },
+      "state": {
+        "open": true,
+        "message": "Wednesday 13:30-15:30; Saturday 10:00-12:00"
+      },
+      "url": "https://www.the-it-garage.be/",
+      "projects": [
+        "machine: 3D printer",
+        "machine: laser cutter",
+        "machine: soldering",
+        "machine: hand tools",
+        "https://fabzero.decreatievestem.be/open-labs",
+        "fabzero-source: fabzero"
+      ],
+      "source": [
+        "fabzero-openlabs",
+        "spacemap/transform/out_fabzero/the-it-garage-be.json"
+      ],
+      "_id": "the-it-garage-be",
+      "_membership": "Family STEM open lab, all welcome"
+    },
+    {
+      "api_compatibility": [
+        "15"
+      ],
+      "space": "MaakBib Antwerpen (placeholder)",
+      "location": {
+        "address": "Antwerpen, Belgium",
+        "lat": 51.2194,
+        "lon": 4.4025
+      },
+      "state": {
+        "open": true
+      },
+      "url": "https://maakbib.be/kaart",
+      "projects": [
+        "machine: 3D printer",
+        "machine: vinyl cutter",
+        "machine: heat press",
+        "machine: vacuum former",
+        "https://maakbib.be/kaart",
+        "maakbib-source: stub",
+        "machine: Arduino",
+        "machine: laser cutter",
+        "machine: sewing machine",
+        "machine: digital embroidery"
+      ],
+      "source": [
+        "maakbib",
+        "spacemap/transform/out_maakbib/maakbib-antwerpen-placeholder-be.json",
+        "spacemap/transform/out_maakbib/maakbib-gent-placeholder-be.json"
+      ],
+      "_id": "maakbib-antwerpen-placeholder-be",
+      "_note": "stub — awaiting maakbib data export"
+    }
+  ]
+}

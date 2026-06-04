@@ -20,7 +20,7 @@ RSYNC_EXCLUDE := \
 	--exclude='.pytest_cache/' \
 	--exclude='data/'
 
-.PHONY: sync sync-app sync-gateway publish startdev rebuild seed seed-spaceapi heartbeat devdeploy reset vps-rebuild vps-seed vps-reset help endpoint deploy-genjson bernard-copy load-ontology vps-load-ontology
+.PHONY: sync sync-app sync-gateway publish startdev rebuild seed seed-spaceapi seed-bundle bundle-to-csv csv-to-bundle heartbeat devdeploy reset vps-rebuild vps-seed vps-reset help endpoint deploy-genjson bernard-copy load-ontology vps-load-ontology
 .PHONY: c-reset c-activate c-demo c-all endpoint
 .PHONY: ca-reachable ca-timeout ca-dns-fail ca-http-error caxis-a
 .PHONY: cb-seeded cb-confirmed cb-aging cb-zombie cb-dead cb-closed caxis-b c-demo-on c-demo-off
@@ -53,6 +53,9 @@ help:
 	@echo "make rebuild       — full local cycle: down → build → up + health wait"
 	@echo "make seed          — import seed datasets into local Oxigraph (:7878)"
 	@echo "make seed-spaceapi — import directory.spaceapi.io federation directory (~244 spaces)"
+	@echo "make seed-bundle BUNDLE=… NETWORK=… [SOURCE=…] — seed local Path B bundle (grey/claimable pins, no endpoint)"
+	@echo "make bundle-to-csv BUNDLE=… CSV=… — dump a messy bundle to a curation CSV"
+	@echo "make csv-to-bundle CSV=… BUNDLE=… — convert a curated CSV to a seed bundle"
 	@echo "make load-ontology — load mom.ttl + iop.ttl into Oxigraph (auto-run by devdeploy)"
 	@echo "make heartbeat     — trigger immediate heartbeat cycle locally"
 	@echo "make devdeploy     — rebuild + seed + heartbeat (mirrors publish, locally)"
@@ -118,6 +121,28 @@ heartbeat:
 seed-spaceapi:
 	source venv/bin/activate && python scripts/seed_spaceapi.py --list "$(LIST)" --network "$(NETWORK)" --force
 	$(MAKE) heartbeat
+
+## CSV pivot for batch imports (see docs/seed-import-runbook.md). Curate a clean CSV
+## by hand, then convert to a canonical bundle — we don't auto-parse messy sources.
+##   make bundle-to-csv BUNDLE=data/seed-lists/BE.spaces.json CSV=/tmp/be.csv  # dump to curate
+##   make csv-to-bundle CSV=/tmp/be-clean.csv BUNDLE=data/seed-lists/BE.bundle.json
+CSV ?= /tmp/seed.csv
+bundle-to-csv:
+	source venv/bin/activate && python scripts/seed_csv.py to-csv --bundle "$(BUNDLE)" --out "$(CSV)"
+csv-to-bundle:
+	source venv/bin/activate && python scripts/seed_csv.py to-bundle --csv "$(CSV)" --out "$(BUNDLE)"
+
+## Seed a bundle of mom:Space records into local Oxigraph (Path B — no endpoint).
+## BUNDLE = URL or local path (JSON array or {spaces:[…]} wrapper). NETWORK = filter
+## slug. SOURCE = mom:source tag (default: scraped-<NETWORK>). Records become grey/
+## seeded pins; coordinators claim them in place by registering a SpaceAPI URL.
+## Examples:
+##   make seed-bundle BUNDLE=data/seed-lists/BE.spaces.json NETWORK=be
+seed-bundle:
+	source venv/bin/activate && python scripts/seed_bundle.py --bundle "$(BUNDLE)" --network "$(NETWORK)" $(if $(SOURCE),--source "$(SOURCE)") --force
+	@echo "→ rematerializing GeoJSON..."
+	$(LOCAL_CEXEC) python3 -c "import httpx; r = httpx.post('http://localhost:8000/api/rematerialize', timeout=60); print('rematerialize:', r.status_code)"
+	@echo "✓ local bundle seeded (network=$(NETWORK))"
 
 ## Load mom.ttl + iop.ttl into Oxigraph named graphs (urn:mak:ontology/{mom,iop}).
 ## Idempotent (PUT replaces the graph). Dormant scaffold for the Epic 6 NL→SPARQL bot —

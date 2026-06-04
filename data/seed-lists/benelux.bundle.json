@@ -1,0 +1,2633 @@
+[
+  {
+    "@type": "mom:Space",
+    "schema:name": "FabLab B3",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 50.64486781691182,
+      "schema:longitude": 5.590545797216793
+    },
+    "schema:address": {
+      "schema:streetAddress": "place des arts 1 liege belgique",
+      "schema:postalCode": "4020",
+      "schema:addressLocality": "-",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "https://b3.provincedeliege.be/exploratoiredespossibles/fablab",
+    "mom:profileUrl": "https://www.fablabs.io/labs/fablabb3",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "laser",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Cityfab 3",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 50.8342142,
+      "schema:longitude": 4.327495799999999
+    },
+    "schema:address": {
+      "schema:streetAddress": "Rue des Veterinaires Veeartsen Straat 42",
+      "schema:postalCode": "1070",
+      "schema:addressLocality": "Anderlecht",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://microfactory.be/cityfab3/",
+    "mom:profileUrl": "https://www.fablabs.io/labs/cityfab3",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "laser",
+      "precision-milling",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata(1);aka:Microfactory Fab Lab"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "FabLab+",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.2189646,
+      "schema:longitude": 4.408352799999989
+    },
+    "schema:address": {
+      "schema:streetAddress": "Lange Klarenstraat 17",
+      "schema:postalCode": "2000",
+      "schema:addressLocality": "Antwerpen",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://Http://www.fablabplus.be",
+    "mom:profileUrl": "https://www.fablabs.io/labs/FabLabAntwerpen",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "laser",
+      "precision-milling",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2);aka:FabLab+ (Antwerpen)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "GRNDBrekers (JC Bouckenborgh)",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.245092,
+      "schema:longitude": 4.453129
+    },
+    "schema:address": {
+      "schema:streetAddress": "Bredabaan 559",
+      "schema:postalCode": "2170",
+      "schema:addressLocality": "Antwerpen",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "https://bouckenborgh.be/grnd-brekers/",
+    "mom:profileUrl": "https://fabzero.decreatievestem.be/open-labs",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "electronics",
+      "embroidery",
+      "laser",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabzero(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "KdG FabLab Hoboken",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.17359781583271,
+      "schema:longitude": 4.370654327855618
+    },
+    "schema:address": {
+      "schema:streetAddress": "Salesianenlaan",
+      "schema:postalCode": "2660",
+      "schema:addressLocality": "Antwerpen",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "https://fablabkdg.be/",
+    "mom:profileUrl": "https://www.fablabs.io/labs/kdgfablab",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "electronics",
+      "laser",
+      "precision-milling",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Eco FabLab",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.2261077,
+      "schema:longitude": 3.2257925
+    },
+    "schema:address": {
+      "schema:streetAddress": "Binnenweg 4",
+      "schema:postalCode": "8000",
+      "schema:addressLocality": "Brugge",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://ecofablab.be",
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:trox(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Mind- and Makerspace",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.195128,
+      "schema:longitude": 3.216469
+    },
+    "schema:address": {
+      "schema:streetAddress": "Spoorwegstraat 4",
+      "schema:postalCode": "8200",
+      "schema:addressLocality": "Brugge",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "https://mindandmakerspace.com",
+    "mom:profileUrl": "https://fabzero.decreatievestem.be/open-labs",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "electronics",
+      "embroidery",
+      "laser",
+      "media",
+      "textile",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabzero(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "the It garage",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 50.842292,
+      "schema:longitude": 4.34721
+    },
+    "schema:address": {
+      "schema:streetAddress": "Nieuwland 42-44",
+      "schema:postalCode": "1000",
+      "schema:addressLocality": "Brussel",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.the-it-garage.be",
+    "mom:profileUrl": "https://fabzero.decreatievestem.be/open-labs",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "electronics",
+      "laser"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabzero(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "FabLab ULB",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 50.8226474,
+      "schema:longitude": 4.3872472
+    },
+    "schema:address": {
+      "schema:streetAddress": "Avenue de la Couronne 227 Building G, 1st floor",
+      "schema:postalCode": "1050",
+      "schema:addressLocality": "Brussels",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "https://fablab.ulb.be/",
+    "mom:profileUrl": "https://www.fablabs.io/labs/fablabulb",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "electronics",
+      "laser",
+      "precision-milling",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2);aka:FabLab XL Brussel | Fablab Brussels"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "fablab iMAL",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 50.8552067,
+      "schema:longitude": 4.342470899999999
+    },
+    "schema:address": {
+      "schema:streetAddress": "30-34 Quai des Charbonnages Koolmijnenkaai",
+      "schema:postalCode": "1080",
+      "schema:addressLocality": "Brussels",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.imal.org/fablab",
+    "mom:profileUrl": "https://www.fablabs.io/labs/fablabimal",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "electronics",
+      "laser",
+      "precision-milling",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2);aka:FabLab Imal Brussel"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "cityfab1",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 50.87093354775484,
+      "schema:longitude": 4.349889438622995
+    },
+    "schema:address": {
+      "schema:streetAddress": "Rue Dieudonne Lefevre 37",
+      "schema:postalCode": "1020",
+      "schema:addressLocality": "Bruxelles",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://cityfab1.brussels/fr/",
+    "mom:profileUrl": "https://www.fablabs.io/labs/cityfab1",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "laser",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "DronesLab",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 50.41086098519998,
+      "schema:longitude": 4.451532260851991
+    },
+    "schema:address": {
+      "schema:streetAddress": "avenue General Michel 1E, Be 23 Batiment 1 - Hangar 15",
+      "schema:postalCode": "6000",
+      "schema:addressLocality": "Charleroi",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.droneslab.be",
+    "mom:profileUrl": "https://www.fablabs.io/labs/droneslab",
+    "schema:knowsAbout": [
+      "3d-printing"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Makerspace PXL-UHasselt",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 50.927927,
+      "schema:longitude": 5.384478
+    },
+    "schema:address": {
+      "schema:streetAddress": "Agoralaan Gebouw H",
+      "schema:postalCode": "3590",
+      "schema:addressLocality": "Diepenbeek",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "https://makerspace.pxluhasselt.be/",
+    "mom:profileUrl": "https://fabzero.decreatievestem.be/open-labs",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "electronics",
+      "embroidery",
+      "laser",
+      "textile",
+      "vacuum-forming",
+      "vinyl-cutting",
+      "waterjet"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabzero(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Ingegno Maker Space",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.0503217,
+      "schema:longitude": 3.65724
+    },
+    "schema:address": {
+      "schema:streetAddress": "Antoon Catriestraat 6",
+      "schema:postalCode": "9031",
+      "schema:addressLocality": "Drongen",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "https://decreatievestem.be/",
+    "mom:profileUrl": "https://www.fablabs.io/labs/IngegnoMakerSpace",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "electronics",
+      "embroidery",
+      "laser",
+      "precision-milling",
+      "textile",
+      "vinyl-cutting",
+      "waterjet"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+fabzero+trox(3);aka:Ingegno Maker Space - De Creatieve STEM"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Fablab Erpe-Mere",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 50.9245724,
+      "schema:longitude": 3.978428500000063
+    },
+    "schema:address": {
+      "schema:streetAddress": "Kloosterstraat 31",
+      "schema:postalCode": "9420",
+      "schema:addressLocality": "Erpe-Mere",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.fablaberpemere.be",
+    "mom:profileUrl": "https://www.fablabs.io/labs/fablaberpemere",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "laser",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2);aka:FabLab"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "cityfab 2",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 50.87296389999999,
+      "schema:longitude": 4.4156246
+    },
+    "schema:address": {
+      "schema:streetAddress": "Avenue Jules Bordet 13",
+      "schema:postalCode": "1140",
+      "schema:addressLocality": "Evere",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "https://www.cityfab2.brussels/",
+    "mom:profileUrl": "https://www.fablabs.io/labs/cityfab2",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "electronics",
+      "laser",
+      "precision-milling",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "FabLab Geel",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.1664954,
+      "schema:longitude": 4.9847772
+    },
+    "schema:address": {
+      "schema:streetAddress": "Vestiging Sint Jozef Geel, Technische Schoolstraat 52",
+      "schema:postalCode": "2440",
+      "schema:addressLocality": "Geel",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.fablabgeel.be",
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:trox(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "FabLab Genk",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 50.9824954,
+      "schema:longitude": 5.480810099999985
+    },
+    "schema:address": {
+      "schema:streetAddress": "Houtparklaan 1",
+      "schema:postalCode": "3600",
+      "schema:addressLocality": "Genk",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.fablabgenk.be",
+    "mom:profileUrl": "https://www.fablabs.io/labs/fablabgenk",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "electronics",
+      "laser",
+      "precision-milling",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "FabLab Artevelde Hogeschool",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.0408827,
+      "schema:longitude": 3.7284211
+    },
+    "schema:address": {
+      "schema:streetAddress": "Voetweg 66",
+      "schema:postalCode": "9000",
+      "schema:addressLocality": "Gent",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "https://www.arteveldehogeschool.be/fablab",
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:trox(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Nerdlab",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.06251,
+      "schema:longitude": 3.730327
+    },
+    "schema:address": {
+      "schema:streetAddress": "Nieuwland 65",
+      "schema:postalCode": "9000",
+      "schema:addressLocality": "Gent",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "https://nerdlab.be/",
+    "mom:profileUrl": "https://fabzero.decreatievestem.be/open-labs",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "electronics",
+      "laser",
+      "textile",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabzero(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Astertechnics",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 50.7914476,
+      "schema:longitude": 3.8768032
+    },
+    "schema:address": {
+      "schema:streetAddress": "Diebeke 21",
+      "schema:postalCode": "9500",
+      "schema:addressLocality": "Geraardsbergen",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "https://www.facebook.com/astertechnics/",
+    "mom:profileUrl": "https://www.fablabs.io/labs/astertechnics",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "laser",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2);aka:ASTERTECHNICS | Crealab | Makersbuzz"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Timelab",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.0534762,
+      "schema:longitude": 3.730968999999959
+    },
+    "schema:address": {
+      "schema:streetAddress": "Kogelstraat 34",
+      "schema:postalCode": "9000",
+      "schema:addressLocality": "Ghent",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.timelab.org",
+    "mom:profileUrl": "https://www.fablabs.io/labs/timelab",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "laser",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2);aka:Timelab Gent"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "OpenFab",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 50.8329032,
+      "schema:longitude": 4.3785979
+    },
+    "schema:address": {
+      "schema:streetAddress": "158, rue Gray",
+      "schema:postalCode": "1050",
+      "schema:addressLocality": "Ixelles",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://openfab.be",
+    "mom:profileUrl": "https://www.fablabs.io/labs/openfab",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "laser",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Fablab TaKeerbergen",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.0041607,
+      "schema:longitude": 4.634513200000001
+    },
+    "schema:address": {
+      "schema:streetAddress": "Molenstraat 2",
+      "schema:postalCode": "3140",
+      "schema:addressLocality": "Keerbergen",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.takeerbergen.be",
+    "mom:profileUrl": "https://www.fablabs.io/labs/takeerbergen",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "laser",
+      "precision-milling"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "BUDA::lab",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 50.83163889999999,
+      "schema:longitude": 3.264044188360571
+    },
+    "schema:address": {
+      "schema:streetAddress": "Dam 2a",
+      "schema:postalCode": "8500",
+      "schema:addressLocality": "Kortrijk",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.budalab.be",
+    "mom:profileUrl": "https://www.fablabs.io/labs/budalab",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "laser",
+      "metal",
+      "vinyl-cutting",
+      "wood"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+fabzero+trox(3);aka:BUDA::lab Kortrijk | Buda:lab"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "SmartLAB",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 50.830011,
+      "schema:longitude": 3.264697
+    },
+    "schema:address": {
+      "schema:streetAddress": "Broelkaai 1B",
+      "schema:postalCode": "8500",
+      "schema:addressLocality": "Kortrijk",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "https://www.quindo.be/community/open-medialab",
+    "mom:profileUrl": "https://fabzero.decreatievestem.be/open-labs",
+    "schema:knowsAbout": [
+      "electronics",
+      "media",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabzero(1);aka:Smarlab"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Techniekschuur",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 50.801462,
+      "schema:longitude": 4.15807
+    },
+    "schema:address": {
+      "schema:streetAddress": "Jan Baptist Van der Lindenstraat 100",
+      "schema:postalCode": "1750",
+      "schema:addressLocality": "Lennik",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "https://techniekschuur.be/",
+    "mom:profileUrl": "https://fabzero.decreatievestem.be/open-labs",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "electronics",
+      "laser",
+      "welding"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabzero(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Fablab-Leuven",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 50.861011,
+      "schema:longitude": 4.681655999999975
+    },
+    "schema:address": {
+      "schema:streetAddress": "Celestijnenlaan 300 Katholieke Universiteit Leuven",
+      "schema:postalCode": "3001",
+      "schema:addressLocality": "Leuven",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.fablab-leuven.be",
+    "mom:profileUrl": "https://www.fablabs.io/labs/fablableuven",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "electronics",
+      "laser",
+      "precision-milling",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2);aka:FabLab Leuven"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "HIGH TECH LAB",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 50.8868,
+      "schema:longitude": 4.705259
+    },
+    "schema:address": {
+      "schema:streetAddress": "Stapelhuisstraat 13-15",
+      "schema:postalCode": "3000",
+      "schema:addressLocality": "Leuven",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "https://maakleerplekleuven.be/deelplekken/high-tech-lab/",
+    "mom:profileUrl": "https://fabzero.decreatievestem.be/open-labs",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "electronics",
+      "laser"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabzero(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Relab - Fablab de Liege",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 50.643826,
+      "schema:longitude": 5.574176999999963
+    },
+    "schema:address": {
+      "schema:streetAddress": "Rue Lambert Lombard, 1 (place Saint-Etienne)",
+      "schema:postalCode": "4000",
+      "schema:addressLocality": "Liege",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.relab.be",
+    "mom:profileUrl": "https://www.fablabs.io/labs/relab",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "laser",
+      "precision-milling",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2);aka:RElab Liege/Luik"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Fablab Lier",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.1183462,
+      "schema:longitude": 4.5738888
+    },
+    "schema:address": {
+      "schema:streetAddress": "Kannunik Davidlaan 15",
+      "schema:postalCode": "2500",
+      "schema:addressLocality": "Lier",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "https://fablablier.be/",
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:trox(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "FabLab Thomas More",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.0250277,
+      "schema:longitude": 4.4876522
+    },
+    "schema:address": {
+      "schema:streetAddress": "Zandpoortvest 16",
+      "schema:postalCode": "2800",
+      "schema:addressLocality": "Mechelen",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://fablab.thomasmore.be",
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:trox(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Level21 Crealab Mechelen",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.023974,
+      "schema:longitude": 4.475351
+    },
+    "schema:address": {
+      "schema:streetAddress": "Hoogstraat 4",
+      "schema:postalCode": "2800",
+      "schema:addressLocality": "Mechelen",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.level21.be",
+    "mom:profileUrl": "https://www.fablabs.io/labs/level21crealabmechelen",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "laser",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Fablab'ke",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 50.8578588,
+      "schema:longitude": 4.3382706
+    },
+    "schema:address": {
+      "schema:streetAddress": "Rue Mommaerts 4",
+      "schema:postalCode": "1080",
+      "schema:addressLocality": "Molenbeek-Saint-Jean",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "https://fablabke.be",
+    "mom:profileUrl": "https://www.fablabs.io/labs/fablabke",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "laser",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "FabLab Mons",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 50.4460343,
+      "schema:longitude": 3.956023899999991
+    },
+    "schema:address": {
+      "schema:streetAddress": "Rue du Joncquois 53",
+      "schema:postalCode": "7000",
+      "schema:addressLocality": "Mons",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "https://fablabmons.be",
+    "mom:profileUrl": "https://www.fablabs.io/labs/fablabmons",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "laser",
+      "precision-milling",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "TRAKK",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 50.46375099999999,
+      "schema:longitude": 4.851157999999941
+    },
+    "schema:address": {
+      "schema:streetAddress": "Avenue Reine Astrid 16",
+      "schema:postalCode": "5000",
+      "schema:addressLocality": "Namur",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.trakk.be",
+    "mom:profileUrl": "https://www.fablabs.io/labs/trakk",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "laser",
+      "precision-milling",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Fablab De Loft",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.1384358,
+      "schema:longitude": 2.7719065
+    },
+    "schema:address": {
+      "schema:streetAddress": "Brugsevaart 48",
+      "schema:postalCode": "8620",
+      "schema:addressLocality": "Nieuwpoort",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "https://antopaso.be/",
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:trox(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "MAKILAB",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 50.6643146,
+      "schema:longitude": 4.6233114
+    },
+    "schema:address": {
+      "schema:streetAddress": "Louvain-la-Neuve avenue Georges Lemaitre, 2",
+      "schema:postalCode": "1348",
+      "schema:addressLocality": "Ottignies-Louvain-la-Neuve",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://makilab.org",
+    "mom:profileUrl": "https://www.fablabs.io/labs/makilab",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "electronics",
+      "laser",
+      "precision-milling",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2);aka:Makilab"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "FabLab Klein-Brabant",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.0755999,
+      "schema:longitude": 4.274544099999957
+    },
+    "schema:address": {
+      "schema:streetAddress": "Forum 9 CC binder-Studio Lab",
+      "schema:postalCode": "2870",
+      "schema:addressLocality": "Puurs",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.fablabkleinbrabant.be",
+    "mom:profileUrl": "https://www.fablabs.io/labs/fablabkleinbrabant",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "electronics",
+      "laser",
+      "precision-milling",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "FABLAB 2300",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.3201505,
+      "schema:longitude": 4.9518686
+    },
+    "schema:address": {
+      "schema:streetAddress": "Druivenstraat 2300",
+      "schema:postalCode": "2300",
+      "schema:addressLocality": "Turnhout",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.rockpaperpencil.be/fablab/",
+    "mom:profileUrl": "https://www.fablabs.io/labs/fablab2300",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "laser",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2);aka:FabLab2300"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "V-lab",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.2009426,
+      "schema:longitude": 4.7726644
+    },
+    "schema:address": {
+      "schema:streetAddress": "Lepelstraat 2",
+      "schema:postalCode": "2290",
+      "schema:addressLocality": "Vorselaar",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "https://www.thomasmore.be/v-lab",
+    "mom:profileUrl": "https://www.fablabs.io/labs/vlab",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "laser",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "FabLab Zottegem",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 50.8652957,
+      "schema:longitude": 3.8069818
+    },
+    "schema:address": {
+      "schema:streetAddress": "Wurmendries 44",
+      "schema:postalCode": "9620",
+      "schema:addressLocality": "Zottegem",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://fablab-zottegem.be",
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:trox(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Fablab Ugent",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.0040748,
+      "schema:longitude": 3.7093758
+    },
+    "schema:address": {
+      "schema:streetAddress": "Tech Lane Ghent Science Park Campus A Technologiepark 915",
+      "schema:postalCode": "9052",
+      "schema:addressLocality": "Zwijnaarde",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.fablab.ugent.be/",
+    "mom:profileUrl": "https://www.fablabs.io/labs/fablabugent",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "laser"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2);aka:fablab Ugent"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "MakeIT.lab @ Fyxxi",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.01006,
+      "schema:longitude": 3.70937
+    },
+    "schema:address": {
+      "schema:postalCode": "9052",
+      "schema:addressLocality": "Zwijnaarde",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "mom:profileUrl": "https://www.fablabs.io/labs/fyxxi",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "electronics",
+      "laser",
+      "precision-milling",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "medium",
+    "mom:geolocationNote": "sources:fabnetdata(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "fab-c",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 50.4047853,
+      "schema:longitude": 4.438636199999999
+    },
+    "schema:address": {
+      "schema:streetAddress": "square des martyrs ,2",
+      "schema:postalCode": "6000",
+      "schema:addressLocality": "charleroi",
+      "schema:addressCountry": "BE",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "https://www.fablab-charleroi.be/",
+    "mom:profileUrl": "https://www.fablabs.io/labs/fabc",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "electronics",
+      "laser",
+      "precision-milling",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Extension L-XL of FabLab Luxemburg at the Creative Hub 1535",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 49.5221804,
+      "schema:longitude": 5.8992283
+    },
+    "schema:address": {
+      "schema:streetAddress": "115 Rue Emile Mark",
+      "schema:postalCode": "4620",
+      "schema:addressLocality": "Differdange",
+      "schema:addressCountry": "LU",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.1535.lu/",
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:trox(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "FabLab Luxembourg",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 49.5024816,
+      "schema:longitude": 5.9492063
+    },
+    "schema:address": {
+      "schema:streetAddress": "9 Avenue des Hauts-Fourneaux",
+      "schema:postalCode": "4362",
+      "schema:addressLocality": "Esch-sur-Alzette",
+      "schema:addressCountry": "LU",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "https://www.artsetmetiers.lu/fablab/",
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:trox(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "fablab noord-brabant",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.68903004419999,
+      "schema:longitude": 5.313091450154161
+    },
+    "schema:address": {
+      "schema:streetAddress": "Zuid-Willemsvaart 215, 's-Hertogenbosch, the Netherlands",
+      "schema:postalCode": "5211 SG",
+      "schema:addressLocality": "'s-Hertogenbosch",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.fablabnoordbrabant.nl",
+    "mom:profileUrl": "https://www.fablabs.io/labs/fablabnoordbrabant",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "precision-milling"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2);aka:FabLab NoordBrabant"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Kaasfabriek - FabLab regio Alkmaar",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.63837437743461,
+      "schema:longitude": 4.750627176721196
+    },
+    "schema:address": {
+      "schema:streetAddress": "Pettemerstraat 15",
+      "schema:postalCode": "1823 CW",
+      "schema:addressLocality": "Alkmaar",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.kaasfabriek.nl",
+    "mom:profileUrl": "https://www.fablabs.io/labs/kaasfabriek",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "laser",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2);aka:Kaasfabriek Fablab Alkmaar"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "FabLab Amersfoort",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.15413123045801,
+      "schema:longitude": 5.397409511232389
+    },
+    "schema:address": {
+      "schema:streetAddress": "Heiligenbergerweg 34",
+      "schema:postalCode": "3816AK",
+      "schema:addressLocality": "Amersfoort",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.fablabamersfoort.nl",
+    "mom:profileUrl": "https://www.fablabs.io/labs/fablabamersfoort",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "laser",
+      "precision-milling",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "FabLab Truck",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.3669765,
+      "schema:longitude": 4.937145299999997
+    },
+    "schema:address": {
+      "schema:streetAddress": "Zeeburgerpad 45",
+      "schema:postalCode": "1019 AA",
+      "schema:addressLocality": "Amsterdam",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://fablabtruck.nl",
+    "mom:profileUrl": "https://www.fablabs.io/labs/fablabtruck",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "electronics",
+      "laser",
+      "precision-milling",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2);aka:ZB45 Makerspace | ZB45 Makerspace (closed) / FabLab Truck"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Fablab Amsterdam",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.372773,
+      "schema:longitude": 4.900313
+    },
+    "schema:address": {
+      "schema:streetAddress": "Nieuwmarkt 4",
+      "schema:postalCode": "1012 CR",
+      "schema:addressLocality": "Amsterdam",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://fablab.waag.org",
+    "mom:profileUrl": "https://www.fablabs.io/labs/waagsociety",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "electronics",
+      "laser",
+      "precision-milling",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2);aka:FabLab Amsterdam"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Makerversity",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.3739569,
+      "schema:longitude": 4.914505800000029
+    },
+    "schema:address": {
+      "schema:streetAddress": "Kattenburgerstraat 5",
+      "schema:postalCode": "1018ja",
+      "schema:addressLocality": "Amsterdam",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.makerversity.org",
+    "mom:profileUrl": "https://www.fablabs.io/labs/makerversityamsterdam",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "electronics",
+      "laser",
+      "precision-milling",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "CODA FabLab Apeldoorn",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.2155005,
+      "schema:longitude": 5.958426099999997
+    },
+    "schema:address": {
+      "schema:streetAddress": "Vosselmanstraat 299",
+      "schema:postalCode": "7311 CL",
+      "schema:addressLocality": "Apeldoorn",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.coda-apeldoorn.nl/educatie/fablab/",
+    "mom:profileUrl": "https://www.fablabs.io/labs/codafablabapeldoorn",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "laser",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2);aka:CODA FabLab"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "FabLab Arnhem",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.9874738,
+      "schema:longitude": 5.951954499999999
+    },
+    "schema:address": {
+      "schema:streetAddress": "Ruitenberglaan 26",
+      "schema:postalCode": "6926",
+      "schema:addressLocality": "Arnhem",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.fablabarnhem.nl",
+    "mom:profileUrl": "https://www.fablabs.io/labs/fablabarnhem",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "electronics",
+      "laser",
+      "precision-milling",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Jacklab",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.9946959,
+      "schema:longitude": 6.5585685
+    },
+    "schema:address": {
+      "schema:streetAddress": "Weiersstraat 1C",
+      "schema:postalCode": "9401ET",
+      "schema:addressLocality": "Assen",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.bibliotheekassen.nl/welkomjack",
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:trox(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "FabLab Bergen op Zoom",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.4951008,
+      "schema:longitude": 4.2888627
+    },
+    "schema:address": {
+      "schema:streetAddress": "Dr.Ir. van Veen weg 10",
+      "schema:postalCode": "4611PE",
+      "schema:addressLocality": "Bergen op Zoom",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.fablabboz.nl",
+    "mom:profileUrl": "https://www.fablabs.io/labs/fablabbergenopzoom",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "electronics",
+      "laser",
+      "precision-milling",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Makerspace Breda",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.587763,
+      "schema:longitude": 4.7789237
+    },
+    "schema:address": {
+      "schema:streetAddress": "Molenstraat 6",
+      "schema:postalCode": "4811 GS",
+      "schema:addressLocality": "Breda",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.makersbase.nl",
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:trox(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "FabLab Coevorden",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.6619021,
+      "schema:longitude": 6.7535682
+    },
+    "schema:address": {
+      "schema:streetAddress": "Van Heekerenlaan 2",
+      "schema:postalCode": "7742 AB",
+      "schema:addressLocality": "Coevorden",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "https://www.fablabcoevorden.nl/",
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:trox(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "FabLab Delft (closed)",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.0083011,
+      "schema:longitude": 4.3610062
+    },
+    "schema:address": {
+      "schema:streetAddress": "Breestraat 24",
+      "schema:postalCode": "2611RG",
+      "schema:addressLocality": "Delft",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://plugnmake.com",
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:trox(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "FabLab Mariahoeve",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.0918307,
+      "schema:longitude": 4.3611178
+    },
+    "schema:address": {
+      "schema:streetAddress": "Zwedenburg 99",
+      "schema:postalCode": "2591 BC",
+      "schema:addressLocality": "Den Haag",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://fablabmariahoeve.nl",
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:trox(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Smartlab",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.2515855,
+      "schema:longitude": 6.159471800000006
+    },
+    "schema:address": {
+      "schema:streetAddress": "Brink 70 (library) Dorrestraat 1 (techniekfabriek)",
+      "schema:addressLocality": "Deventer",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.smartlabdeventer.nl",
+    "mom:profileUrl": "https://www.fablabs.io/labs/smartlabdeventer",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "laser",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2);aka:SmartLab Deventer"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "FabLab Bibliotheek Drachten",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 53.1043266,
+      "schema:longitude": 6.0986397
+    },
+    "schema:address": {
+      "schema:streetAddress": "Museumplein 1",
+      "schema:postalCode": "9203DD",
+      "schema:addressLocality": "Drachten",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.bibliotheekdrachten.nl",
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:trox(1);aka:Fablab Drachten"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "MakersLab",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.02209080000001,
+      "schema:longitude": 5.6612347
+    },
+    "schema:address": {
+      "schema:streetAddress": "Bovenbuurtweg 7",
+      "schema:postalCode": "6717XA",
+      "schema:addressLocality": "Ede",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.makerslab.nl/",
+    "mom:profileUrl": "https://www.fablabs.io/labs/makerslab",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "electronics",
+      "laser",
+      "precision-milling",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2);aka:MakersLab Ede"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "de Maakschappij",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 53.140105,
+      "schema:longitude": 6.5602463
+    },
+    "schema:address": {
+      "schema:streetAddress": "Hobbemaweg 9",
+      "schema:postalCode": "9761 HL",
+      "schema:addressLocality": "Eelde",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.de-maakschappij.nl",
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:trox(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "De Factorij",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.4481805,
+      "schema:longitude": 5.4575234
+    },
+    "schema:address": {
+      "schema:streetAddress": "Klokgebouw 151/145 Strijp-S",
+      "schema:postalCode": "5617 AB",
+      "schema:addressLocality": "Eindhoven",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.de-factorij.nl",
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:trox(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "FabLab Brainport",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.441642,
+      "schema:longitude": 5.46972249999999
+    },
+    "schema:address": {
+      "schema:postalCode": "5616",
+      "schema:addressLocality": "Eindhoven",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.brainportdevelopment.nl/project/fablab-brainport",
+    "mom:profileUrl": "https://www.fablabs.io/labs/fablabbrainport",
+    "mom:geolocationFidelity": "medium",
+    "mom:geolocationNote": "sources:fabnetdata(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "FabLab Brainport Eindhoven",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.4428819,
+      "schema:longitude": 5.4590815
+    },
+    "schema:address": {
+      "schema:streetAddress": "Frederiklaan 60a",
+      "schema:postalCode": "5616 NJ",
+      "schema:addressLocality": "Eindhoven",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.fablabbrainport.nl",
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:trox(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Stadslab Eindhoven",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.43813429999999,
+      "schema:longitude": 5.4876593
+    },
+    "schema:address": {
+      "schema:streetAddress": "Gasfabriek 6 Erfgoedhuis NRE",
+      "schema:addressLocality": "Eindhoven",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://stadslabeindhoven.nl",
+    "mom:profileUrl": "https://www.fablabs.io/labs/StadslabEHV",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "laser",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "KinderFabLab",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.2317674,
+      "schema:longitude": 6.8944572
+    },
+    "schema:address": {
+      "schema:streetAddress": "Stroinksbleekweg 2",
+      "schema:postalCode": "7523 ZL",
+      "schema:addressLocality": "Enschede",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.kinderfablab.nl",
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:trox(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Mini FabLab MakerHousehold",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.22638416594697,
+      "schema:longitude": 6.922359588885456
+    },
+    "schema:address": {
+      "schema:streetAddress": "Amelinkhorst 4",
+      "schema:postalCode": "7531GN",
+      "schema:addressLocality": "Enschede",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "mom:profileUrl": "https://www.fablabs.io/labs/makerhousehold",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "laser"
+    ],
+    "mom:geolocationFidelity": "medium",
+    "mom:geolocationNote": "sources:fabnetdata(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Saxion FabLab Enschede",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.22023470000001,
+      "schema:longitude": 6.8886027
+    },
+    "schema:address": {
+      "schema:streetAddress": "Van Galenstraat 20",
+      "schema:postalCode": "7511 JL",
+      "schema:addressLocality": "Enschede",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.fablabenschede.nl",
+    "mom:profileUrl": "https://www.fablabs.io/labs/fablabenschede",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "electronics",
+      "laser",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2);aka:FabLab Enschede"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Tetem Lab",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.2339502,
+      "schema:longitude": 6.895397399999999
+    },
+    "schema:address": {
+      "schema:streetAddress": "Stroinksbleekweg 16",
+      "schema:postalCode": "7523 ZL",
+      "schema:addressLocality": "Enschede",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "https://tetem.nl/lab-en-research/",
+    "mom:profileUrl": "https://www.fablabs.io/labs/tetem",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "laser",
+      "precision-milling",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2);aka:Wowlab"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "FabLab Goes",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.507191,
+      "schema:longitude": 3.89166999999998
+    },
+    "schema:address": {
+      "schema:postalCode": "4461 BG",
+      "schema:addressLocality": "Goes",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://fablabgoes.nl/",
+    "mom:profileUrl": "https://www.fablabs.io/labs/fablabgoes",
+    "mom:geolocationFidelity": "medium",
+    "mom:geolocationNote": "sources:fabnetdata(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Fablab Groningen",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 53.2075291,
+      "schema:longitude": 6.5569822
+    },
+    "schema:address": {
+      "schema:streetAddress": "Edu-Lab: Verzetsstrijderslaan 2, 9727 CE Groningen Textile-Lab: Energieweg 7, 9743 AN Groningen",
+      "schema:addressLocality": "Groningen",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.fablabgroningen.nl",
+    "mom:profileUrl": "https://www.fablabs.io/labs/fablabgroningen",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "electronics",
+      "laser",
+      "precision-milling",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Fablab Hardenberg",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.5759112,
+      "schema:longitude": 6.62415
+    },
+    "schema:address": {
+      "schema:streetAddress": "Parkweg 1a5",
+      "schema:postalCode": "7772 XP",
+      "schema:addressLocality": "Hardenberg",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "https://www.fablabhardenberg.nl",
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:trox(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "FabLab de Stookplaats i.o.",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.2241375,
+      "schema:longitude": 5.1719396
+    },
+    "schema:address": {
+      "schema:addressLocality": "Hilversum",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.destookplaats.nl",
+    "mom:geolocationFidelity": "medium",
+    "mom:geolocationNote": "sources:trox(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Fablab Bieb Hilversum",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.2273289,
+      "schema:longitude": 5.16713290000007
+    },
+    "schema:address": {
+      "schema:streetAddress": "'s-Gravelandseweg 55",
+      "schema:postalCode": "1217 EH",
+      "schema:addressLocality": "Hilversum",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.bibliotheekhilversum.nl/fablab1.html",
+    "mom:profileUrl": "https://www.fablabs.io/labs/fablabbiebhilversum",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "laser"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2);aka:FabLab Bieb Hilversum"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "dFix",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.653272,
+      "schema:longitude": 5.0735802
+    },
+    "schema:address": {
+      "schema:addressLocality": "Hoorn",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.3dfix.nl",
+    "mom:geolocationFidelity": "medium",
+    "mom:geolocationNote": "sources:trox(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "tinkerinQ FabLab Houten",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.03508129999999,
+      "schema:longitude": 5.1638547
+    },
+    "schema:address": {
+      "schema:streetAddress": "Dijkhoeve 1",
+      "schema:postalCode": "3992 XV",
+      "schema:addressLocality": "Houten",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.tinkerinq.nl",
+    "mom:profileUrl": "https://www.fablabs.io/labs/tinkerinq",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "laser",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2);aka:TinkerinQ FabLab Houten"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "D'lab Leeuwarden",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 53.1997459,
+      "schema:longitude": 5.800718499999999
+    },
+    "schema:address": {
+      "schema:streetAddress": "Blokhuisplein 40",
+      "schema:postalCode": "8911 LJ",
+      "schema:addressLocality": "Leeuwarden",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "https://www.dlab.nl/",
+    "mom:profileUrl": "https://www.fablabs.io/labs/DlabLWD",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "electronics",
+      "laser",
+      "precision-milling",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Frysklab",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 53.1934684,
+      "schema:longitude": 5.8454642
+    },
+    "schema:address": {
+      "schema:streetAddress": "Zuiderkruisweg 4",
+      "schema:postalCode": "8903 JM",
+      "schema:addressLocality": "Leeuwarden",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.frysklab.nl",
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:trox(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "FabLab Leiden",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.1628323,
+      "schema:longitude": 4.493556
+    },
+    "schema:address": {
+      "schema:streetAddress": "Volmolengracht 13",
+      "schema:postalCode": "2312 PG",
+      "schema:addressLocality": "Leiden",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.makerspaceleiden.nl/drupal/node/12",
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:trox(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "BiblioLab Lelystad",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.5079747,
+      "schema:longitude": 5.473004899999978
+    },
+    "schema:address": {
+      "schema:streetAddress": "Lelystad Centrum De Promesse 4",
+      "schema:postalCode": "8232 VX",
+      "schema:addressLocality": "Lelystad",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.flevomeerbibliotheek.nl/footer/bibliolab.html",
+    "mom:profileUrl": "https://www.fablabs.io/labs/bibliolablelystad",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "electronics",
+      "laser",
+      "precision-milling",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2);aka:FabLab Flevoland Dronten | Fablab Dronten"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "FabLab Flevoland 2.0",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.4959937,
+      "schema:longitude": 5.4791701
+    },
+    "schema:address": {
+      "schema:streetAddress": "De Campus 9",
+      "schema:postalCode": "8233GA",
+      "schema:addressLocality": "Lelystad",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "mom:geolocationFidelity": "medium",
+    "mom:geolocationNote": "sources:trox(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Fablab de Nijverheid",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.1523937,
+      "schema:longitude": 5.17038070000001
+    },
+    "schema:address": {
+      "schema:streetAddress": "Havikskruid 18",
+      "schema:postalCode": "3738 TV",
+      "schema:addressLocality": "Maartensdijk",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.fablabdenijverheid.nl",
+    "mom:profileUrl": "https://www.fablabs.io/labs/fablabdenijverheid",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "laser",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2);aka:FabLab de Nijverheid i.o."
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Fab Lab Maastricht",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 50.8403436,
+      "schema:longitude": 5.669079399999987
+    },
+    "schema:address": {
+      "schema:streetAddress": "Gardelaan 7, 6213CV Maastricht",
+      "schema:postalCode": "6213 CV",
+      "schema:addressLocality": "Maastricht",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.fablabmaastricht.nl",
+    "mom:profileUrl": "https://www.fablabs.io/labs/fablabmaastricht",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "electronics",
+      "laser",
+      "precision-milling",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2);aka:FabLab Maastricht"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "FabLab Zeeland",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.49628790000001,
+      "schema:longitude": 3.61570729999994
+    },
+    "schema:address": {
+      "schema:streetAddress": "Kousteensedijk 7",
+      "schema:postalCode": "4331JE",
+      "schema:addressLocality": "Middelburg",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.fablabzeeland.com",
+    "mom:profileUrl": "https://www.fablabs.io/labs/fablabzeeland",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "laser",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "FabLab Groene Hart",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.16152207057592,
+      "schema:longitude": 4.743958787835709
+    },
+    "schema:address": {
+      "schema:streetAddress": "Achttienkavels 8",
+      "schema:postalCode": "2421 LG",
+      "schema:addressLocality": "Nieuwkoop",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.fablabgroenehart.nl",
+    "mom:profileUrl": "https://www.fablabs.io/labs/fablabgroenehart",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "laser"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Fablab Oldenzaal",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.3059812,
+      "schema:longitude": 6.9375426
+    },
+    "schema:address": {
+      "schema:streetAddress": "Parallelstraat 52",
+      "schema:postalCode": "7575 AM",
+      "schema:addressLocality": "Oldenzaal",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "https://www.fablaboldenzaal.nl/",
+    "mom:profileUrl": "https://www.fablabs.io/labs/fablaboldenzaal",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "electronics",
+      "laser",
+      "precision-milling",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "JeugdFabLab",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 53.083842,
+      "schema:longitude": 4.874539
+    },
+    "schema:address": {
+      "schema:streetAddress": "Koetebuurt 3a",
+      "schema:postalCode": "1794BN",
+      "schema:addressLocality": "Oosterend Nh",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.jeugdfablab.nl",
+    "mom:profileUrl": "https://www.fablabs.io/labs/jeugdfablab",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "laser",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2);aka:Jeugdfablab"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "FabLab Health Hub Roden",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 53.1418304,
+      "schema:longitude": 6.436385299999983
+    },
+    "schema:address": {
+      "schema:streetAddress": "1e Energieweg 13",
+      "schema:postalCode": "9301 LK",
+      "schema:addressLocality": "Roden",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.healthhub-roden.nl",
+    "mom:profileUrl": "https://www.fablabs.io/labs/healthhubroden",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "electronics",
+      "laser",
+      "precision-milling",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2);aka:Healthhub-Roden"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Fablab Midden Limburg",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.2633429,
+      "schema:longitude": 5.9088907
+    },
+    "schema:address": {
+      "schema:streetAddress": "Vrijkenstraat 2",
+      "schema:postalCode": "6088 PA",
+      "schema:addressLocality": "Roggel",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "mom:geolocationFidelity": "medium",
+    "mom:geolocationNote": "sources:trox(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "SPARK Lab",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.7007348,
+      "schema:longitude": 5.3534097
+    },
+    "schema:address": {
+      "schema:streetAddress": "Graafsebaan 3",
+      "schema:postalCode": "5248 JR",
+      "schema:addressLocality": "Rosmalen",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.sparkcampus.nl",
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:trox(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Bouwkeet",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.9116338,
+      "schema:longitude": 4.4385983
+    },
+    "schema:address": {
+      "schema:streetAddress": "Schiedamseweg 240-248",
+      "schema:postalCode": "3025 AP",
+      "schema:addressLocality": "Rotterdam",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.bouwkeet.org",
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:trox(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "HET LAB Rotterdam",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.9244201,
+      "schema:longitude": 4.477732500000002
+    },
+    "schema:address": {
+      "schema:streetAddress": "Rotterdam Schiemond 20",
+      "schema:postalCode": "3024 EE",
+      "schema:addressLocality": "Rotterdam",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.hetlabrotterdam.nl",
+    "mom:profileUrl": "https://www.fablabs.io/labs/hetlabrotterdam",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "laser",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2);aka:HET LAB"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Stadslab Rotterdam",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.9179227,
+      "schema:longitude": 4.487549
+    },
+    "schema:address": {
+      "schema:streetAddress": "Wijnhaven 99, 3011 WN",
+      "schema:postalCode": "3011 WN",
+      "schema:addressLocality": "Rotterdam",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.stadslabrotterdam.nl",
+    "mom:profileUrl": "https://www.fablabs.io/labs/stadslabrotterdam",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "electronics",
+      "laser",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "CabFabLab",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.0704978,
+      "schema:longitude": 4.30069990000004
+    },
+    "schema:address": {
+      "schema:addressLocality": "The Hague",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://cabfablab.nl",
+    "mom:profileUrl": "https://www.fablabs.io/labs/cabfablab",
+    "mom:geolocationFidelity": "medium",
+    "mom:geolocationNote": "sources:fabnetdata(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Makerspace Haagse Hout",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.0939862,
+      "schema:longitude": 4.3619927
+    },
+    "schema:address": {
+      "schema:streetAddress": "Het Kleine Loo 284",
+      "schema:postalCode": "2592 CK Den Haag",
+      "schema:addressLocality": "The Hague",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://spacehh.nl",
+    "mom:profileUrl": "https://www.fablabs.io/labs/makerspacehaagsehout",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "electronics",
+      "laser",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Fablab013 XL",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.5540122,
+      "schema:longitude": 5.099099700000011
+    },
+    "schema:address": {
+      "schema:streetAddress": "Galjoenstraat 37",
+      "schema:postalCode": "5017 CL",
+      "schema:addressLocality": "Tilburg",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://fablab013.nl",
+    "mom:profileUrl": "https://www.fablabs.io/labs/fablab013xl",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "electronics",
+      "laser",
+      "precision-milling",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2);aka:FabLab013 | made for arcade"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "ICER-lab Ulft",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.8951779,
+      "schema:longitude": 6.3839113
+    },
+    "schema:address": {
+      "schema:streetAddress": "Hutteweg 24",
+      "schema:postalCode": "7071 BV",
+      "schema:addressLocality": "Ulft",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.icer.nl",
+    "mom:profileUrl": "https://www.fablabs.io/labs/icerlab",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "laser",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2);aka:ICER-Lab"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "MiniFabLab Utrecht",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.0919506,
+      "schema:longitude": 5.126576699999987
+    },
+    "schema:address": {
+      "schema:streetAddress": "Nobeldwarsstraat 33",
+      "schema:postalCode": "3512EW",
+      "schema:addressLocality": "Utrecht",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.minifablab.nl",
+    "mom:profileUrl": "https://www.fablabs.io/labs/minifablabutrecht",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "laser",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2);aka:miniFabLab Utrecht"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Protospace (closed)",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.0847899,
+      "schema:longitude": 5.169482
+    },
+    "schema:address": {
+      "schema:streetAddress": "Padualaan 99 Ruimte 0.145",
+      "schema:postalCode": "3584 CH",
+      "schema:addressLocality": "Utrecht",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.protospace.nl",
+    "mom:profileUrl": "https://www.fablabs.io/labs/protospacefablabutrecht",
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2);aka:Protospace/FabLab Utrecht"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "Bibliotheek Veenendaal",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.0273134,
+      "schema:longitude": 5.559473
+    },
+    "schema:address": {
+      "schema:streetAddress": "Kees Stipplein 74",
+      "schema:postalCode": "3901 TP",
+      "schema:addressLocality": "Veenendaal",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "https://www.bibliotheekveenendaal.nl/leren/FabLab.html",
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:trox(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "FabLab Den Haag",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.0775929,
+      "schema:longitude": 4.3426111
+    },
+    "schema:address": {
+      "schema:streetAddress": "Van Alphenstraat 63D",
+      "schema:postalCode": "2274NC",
+      "schema:addressLocality": "Voorburg",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.fablabdenhaag.nl",
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:trox(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "FabLab Wageningen",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 51.9863475,
+      "schema:longitude": 5.668019
+    },
+    "schema:address": {
+      "schema:streetAddress": "Bronland 10 WUR 'Plus Ultra II' begane grond",
+      "schema:postalCode": "6708 WH",
+      "schema:addressLocality": "Wageningen",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.fablabwag.nl",
+    "mom:profileUrl": "https://www.fablabs.io/labs/fablabwag",
+    "schema:knowsAbout": [
+      "3d-printing",
+      "cnc",
+      "laser",
+      "vinyl-cutting"
+    ],
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:fabnetdata+trox(2)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "FluXus Verkadefabriek",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.4462466,
+      "schema:longitude": 4.8192626
+    },
+    "schema:address": {
+      "schema:streetAddress": "Westzijde 168",
+      "schema:postalCode": "1506 EK",
+      "schema:addressLocality": "Zaandam",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "mom:geolocationFidelity": "medium",
+    "mom:geolocationNote": "sources:trox(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "FabLab Zoetermeer",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.0627301,
+      "schema:longitude": 4.493732
+    },
+    "schema:address": {
+      "schema:streetAddress": "Duitslandlaan 440",
+      "schema:postalCode": "2711 BN",
+      "schema:addressLocality": "Zoetermeer",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.fablab-zoetermeer.nl",
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:trox(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "FabLab Zwolle (closed)",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.514709,
+      "schema:longitude": 6.0745485
+    },
+    "schema:address": {
+      "schema:streetAddress": "Rieteweg 10",
+      "schema:postalCode": "8041 AK",
+      "schema:addressLocality": "Zwolle",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "http://www.fablabzwolle.nl",
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:trox(1)"
+  },
+  {
+    "@type": "mom:Space",
+    "schema:name": "MakersDen",
+    "schema:geo": {
+      "@type": "schema:GeoCoordinates",
+      "schema:latitude": 52.2480329,
+      "schema:longitude": 6.1727055
+    },
+    "schema:address": {
+      "schema:streetAddress": "St Olafstraat 3",
+      "schema:postalCode": "7418 CG",
+      "schema:addressLocality": "deventer",
+      "schema:addressCountry": "NL",
+      "@type": "schema:PostalAddress"
+    },
+    "schema:url": "https://www.makersden.nl/",
+    "mom:geolocationFidelity": "high",
+    "mom:geolocationNote": "sources:trox(1)"
+  }
+]

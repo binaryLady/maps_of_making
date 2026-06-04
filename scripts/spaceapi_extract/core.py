@@ -76,7 +76,7 @@ def extract_core(payload: dict) -> dict[str, Any]:
         slugs = [str(s).strip() for s in raw_member if isinstance(s, str) and s.strip()]
         if slugs:
             fields["mom:memberOf"] = [
-                s if (":" in s or s.startswith("urn:")) else f"urn:mak:network/{s}"
+                s if (":" in s or s.startswith("urn:")) else f"urn:mak:network/{s.lower()}"
                 for s in slugs
             ]
 

@@ -1,0 +1,3 @@
+name,lat,lon,street,postcode,city,country,url,profile_url,tags,fidelity,note
+ASTERTECHNICS,50.792115,3.8804481,Diebeke 21,9500,Geraardsbergen,BE,http://www.astertechnics.be,,3d-printing;laser-cutting,exact,
+Example Maker Space,50.8503,4.3517,Rue de Exemple 1,1000,Bruxelles,BE,https://example.org,https://offene-werkstaetten.org/example,electronics;wood;textiles,exact,Coordinates from street address

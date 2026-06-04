@@ -318,3 +318,19 @@ Generating a real openfab.jsonld against the `space-jsonld-generator` skill expo
 
 ## Deferred from: code review of 9-8-gitlab-tutorial-surface-embedded-guide-raw-url-handoff-register-flow (2026-06-02)
 - **golive progress not persisted across page reload.** Tutorial progress (which beat the user reached) is never written to localStorage. On reload, `hasDraft` resume block has no golive references — user returns to fork stub with tutorial collapsed, no indication they were mid-tutorial. Low-impact UX gap; golive is a short 5-step flow. Deferred by design.
+
+## Deferred from: seed-import bundle/CSV-pivot pass (2026-06-04)
+- **Makefile detailed analysis + cleanup.** The Makefile has grown organically and
+  likely carries vestigial targets and local/VPS pairs that are no longer mirrored
+  (e.g. `seed-bundle` had no local twin until this pass; `seed` is a deprecated stub).
+  Do a full honest-inventory of every target: classify Live / Dormant / Vestigial,
+  check each VPS target has a local twin (and vice versa) where it makes sense, fold
+  into the docs/architecture trail. Same method as the scripts/web triage. → Own pass,
+  after batch-import work lands.
+- **`seed_bundle.py` does not harden bad fields by design.** A corrupt `url` (e.g.
+  merge-tool garbage like `"[{'id': 478"`) injected as an IRI causes a 400 and the whole
+  record is lost (observed: 21/117 write_failed on raw BE.spaces.json). Decision (Nicolas,
+  2026-06-04): do NOT grow the seeder to parse edge cases — clean upstream via the CSV
+  pivot (`scripts/seed_csv.py`, which blanks invalid URLs at conversion). Revisit only if
+  a real recurring need appears. The nudge philosophy (incomplete data = signal to the
+  space to publish a clean endpoint) makes lossy-but-honest acceptable.

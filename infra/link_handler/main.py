@@ -148,6 +148,38 @@ SELECT ?graph WHERE {{
     return rows[0]["graph"]["value"] if rows else None
 
 
+async def _find_graph_by_endpoint(oxigraph_endpoint: str, endpoint_url: str) -> Optional[str]:
+    """Return the graph URI of any existing space that already has this endpointUrl, or None.
+
+    Prevents double-registration when a coordinator registers an endpoint that is
+    already stored under a different slug (e.g. a bundle-seeded slug with a city suffix
+    was claimed before the original name-only slug was confirmed, or vice versa).
+    """
+    safe_url = endpoint_url.strip()
+    sparql = f"""PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
+SELECT ?graph WHERE {{
+  GRAPH ?graph {{
+    ?s mom:endpointUrl <{safe_url}> .
+  }}
+}} LIMIT 1"""
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(
+                f"{oxigraph_endpoint}/query",
+                content=sparql,
+                headers={
+                    "Content-Type": "application/sparql-query",
+                    "Accept": "application/sparql-results+json",
+                },
+            )
+            resp.raise_for_status()
+    except httpx.HTTPError as e:
+        logger.warning("[register] endpoint-dedup lookup failed for %r: %s", endpoint_url, e)
+        return None
+    rows = resp.json().get("results", {}).get("bindings", [])
+    return rows[0]["graph"]["value"] if rows else None
+
+
 async def run_heartbeat_tick(oxigraph_endpoint: str) -> int:
     """Unified single tick: fetch every claimed space concurrently, then rematerialize once.
 
@@ -904,18 +936,28 @@ async def register_url(req: UrlRequest):
     if not slug:
         raise HTTPException(status_code=422, detail={"error": "space name contains no ASCII-compatible characters; cannot generate a URI slug"})
 
-    # Claim-merge: if a bundle-seeded graph (mom:source starts with "scraped-")
-    # exists with the same name, claim it in place — same URI, drop+reinsert as
-    # self-registered. Handles the VOW/RFF Path B → coordinator flow without
-    # needing to parse a city out of the SpaceAPI address string.
-    claimed_uri = await _find_seeded_graph_by_name(OXIGRAPH_ENDPOINT, name)
-    if claimed_uri:
-        logger.info("[register] claim-merge: %r matches seeded graph %s", name, claimed_uri)
-        graph_uri = claimed_uri
-        space_uri = claimed_uri
+    # Dedup by endpointUrl first: if any existing graph (seeded OR confirmed) already
+    # carries this URL, reuse its URI. Prevents a duplicate graph when the same real
+    # space was seeded under a compound slug (name+city) and later self-registered
+    # under the name-only slug, or the coordinator registers twice.
+    existing_endpoint_uri = await _find_graph_by_endpoint(OXIGRAPH_ENDPOINT, req.url)
+    if existing_endpoint_uri:
+        logger.info("[register] endpoint-dedup: %r already exists as %s — reusing URI", req.url, existing_endpoint_uri)
+        graph_uri = existing_endpoint_uri
+        space_uri = existing_endpoint_uri
     else:
-        graph_uri = f"urn:mak:space/{slug}"
-        space_uri = f"urn:mak:space/{slug}"
+        # Claim-merge: if a bundle-seeded graph (mom:source starts with "scraped-")
+        # exists with the same name, claim it in place — same URI, drop+reinsert as
+        # self-registered. Handles the VOW/RFF Path B → coordinator flow without
+        # needing to parse a city out of the SpaceAPI address string.
+        claimed_uri = await _find_seeded_graph_by_name(OXIGRAPH_ENDPOINT, name)
+        if claimed_uri:
+            logger.info("[register] claim-merge: %r matches seeded graph %s", name, claimed_uri)
+            graph_uri = claimed_uri
+            space_uri = claimed_uri
+        else:
+            graph_uri = f"urn:mak:space/{slug}"
+            space_uri = f"urn:mak:space/{slug}"
 
     cls: dict = {}
     reg_observed_at = mint_observed_at()
