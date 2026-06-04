@@ -945,6 +945,20 @@ async def register_url(req: UrlRequest):
         logger.info("[register] endpoint-dedup: %r already exists as %s — reusing URI", req.url, existing_endpoint_uri)
         graph_uri = existing_endpoint_uri
         space_uri = existing_endpoint_uri
+        # Drop any orphaned seeded graph with the same name but a different URI
+        # (e.g. compound-slug seed openfab-ixelles alongside confirmed openfab).
+        orphan_uri = await _find_seeded_graph_by_name(OXIGRAPH_ENDPOINT, name)
+        if orphan_uri and orphan_uri != existing_endpoint_uri:
+            logger.info("[register] dropping orphaned seeded graph %s (same name, different slug)", orphan_uri)
+            try:
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    await client.post(
+                        f"{OXIGRAPH_ENDPOINT}/update",
+                        content=f"DROP GRAPH <{orphan_uri}>",
+                        headers={"Content-Type": "application/sparql-update"},
+                    )
+            except httpx.HTTPError as e:
+                logger.warning("[register] DROP orphan %s failed (non-fatal): %s", orphan_uri, e)
     else:
         # Claim-merge: if a bundle-seeded graph (mom:source starts with "scraped-")
         # exists with the same name, claim it in place — same URI, drop+reinsert as
