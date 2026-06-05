@@ -1,59 +1,72 @@
 # Mother Sands Canary — Setup Guide
 
-Mother Sands is MOM's diagnostic canary: a synthetic space we control to test our own data pipeline. This guide covers starting the endpoint and injecting scenarios.
+Mother Sands is MoM's diagnostic canary: a synthetic space we control to test our own data
+pipeline end to end. This guide covers the moving parts; `docs/canary-operator-runbook.md`
+covers driving it scenario by scenario.
 
 ## Quick Start
 
 ```bash
-# Restore baseline (healthy + confirmed + open)
-make canary-reset
-
-# Start the endpoint server (port 9191)
-python3 data/canary/mother-sands-endpoint.py &
-
-# In another terminal: run a scenario
-make canary-b-aging
-
-# Run the coherence report
-make canary-report
+make startdev          # local stack up
+make c-reset           # restore baseline → seeded, pushed to the public canary URL
+make cb-aging          # author + push the "going quiet" scenario, backdate the marker
+# reload the map and read the card to verify
 ```
+
+There is **no coherence-report command** — verification is reloading the map, reading the
+card, and (for graph leaks) the isolation SPARQL in the operator runbook.
 
 ## How It Works
 
-The endpoint (`data/canary/mother-sands-endpoint.py`) serves `data/canary/served.json`. Makefile targets mutate `served.json` via the **safe write protocol**:
+The canary is a **single public JSON file**, not a local server in the request path:
 
-1. Write new payload to a temp file
-2. `fsync` to disk
-3. Atomic `os.rename` over `served.json`
-4. Invalidate the ETag/Last-Modified entry in `heartbeat_log.db` for this URL (prevents stale 304)
+- `data/canary/baseline.json` — committed canonical baseline; never mutated.
+- `web/canary/mother-sands.json` — the served payload. `canary_scenarios.py` writes it via a
+  safe-write protocol (temp file → `fsync` → atomic `os.rename` → invalidate the
+  ETag/Last-Modified row in `heartbeat_log.db` so the next heartbeat doesn't get a stale 304).
+- `make endpoint` rsyncs that file to `https://mapsofmaking.org/canary/mother-sands.json`.
+- **Both** the local and VPS heartbeats fetch that one public URL (intended — it exercises
+  the real fetch pipeline). See `memory/project_canary_public_url_and_vps_parity.md`.
 
-The baseline (`data/canary/baseline.json`) is committed to git and never mutated. `make canary-reset` restores `served.json` from baseline.
+Graph mutations (set/clear endpoint, backdate, declare-closed, heartbeat, rematerialize) run
+*inside* the link-handler container via `scripts/canary_ops.py`. Authoring runs on the host
+venv via `scripts/canary_scenarios.py`. The `make c*` targets orchestrate both; the `vps-c*`
+twins redirect the in-container mutations to the VPS over ssh.
 
 ## HTTP Behaviour Injection (Axis A)
 
-The `MODE` env var controls the HTTP response:
+Because the heartbeat fetches the static public URL, a pushed payload cannot itself produce a
+TCP timeout or 503. To exercise a *real* reachability fault, point the heartbeat at the
+controllable local endpoint server, which honours a `MODE` env var:
 
 | MODE | Behaviour |
 |------|-----------|
 | `ok` (default) | 200 with JSON body + ETag |
-| `timeout` | Accepts connection, never replies |
+| `timeout` | accepts connection, never replies |
 | `404` | 404 Not Found |
 | `503` | 503 Service Unavailable |
 
 ```bash
-MODE=timeout python3 data/canary/mother-sands-endpoint.py
+MODE=timeout python3 data/canary/mother-sands-endpoint.py     # :9191
+# point the canary at it explicitly (host is host.containers.internal from in-container):
+podman exec maps-link-handler python3 /app/scripts/canary_ops.py \
+    set-endpoint http://host.containers.internal:9191/
+make heartbeat
 ```
+
+See the Axis A section of the operator runbook for the full caveat and the DNS-fail variant.
 
 ## File Roles
 
 | File | Role |
 |------|------|
-| `data/canary/baseline.json` | Committed canonical baseline — never mutated |
-| `data/canary/served.json` | Runtime served file — gitignored, mutated by scenarios |
-| `data/canary/mother-sands-endpoint.py` | Programmable HTTP server |
-| `scripts/canary_scenarios.py` | Pure scenario functions |
-| `scripts/canary_coherence_report.py` | Per-layer diagnostic report |
+| `data/canary/baseline.json` | committed canonical baseline — never mutated |
+| `web/canary/mother-sands.json` | served payload — written by scenarios, pushed to the public URL |
+| `data/canary/mother-sands-endpoint.py` | programmable local HTTP server (Axis A reachability faults only) |
+| `scripts/canary_scenarios.py` | pure scenario authoring functions (host venv) |
+| `scripts/canary_ops.py` | in-container mutation primitives (local + VPS) |
 
 ## Named Graph Isolation
 
-Canary data lives in `<urn:mak:canary>` — never in production `<urn:mak:space/*>` graphs. The coherence report verifies this on every run.
+Canary data lives only in `urn:mak:canary` (subject `urn:mak:canary/mother-sands`) — never in
+production `urn:mak:space/*` graphs. Verify with the isolation SPARQL in the operator runbook.
