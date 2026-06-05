@@ -295,7 +295,7 @@ harness/
 
 **Custom tasks in Nanobot:**
 ```python
-# tasks/heartbeat.py — invoked by Nanobot's HEARTBEAT.md scheduler
+# tasks/heartbeat.py — invoked by Nanobot's HEARTBEAT.md scheduler   # stale-ok: superseded ADR-008 sketch
 async def heartbeat_task(oxigraph_endpoint: str, space_uri: str) -> str:
     # Fetch space JSON-LD, diff against snapshot, write SPARQL UPDATE
     # Returns structured message for chat or silent execution
@@ -421,7 +421,7 @@ CREATE TABLE llm_cost_log (
 );
 ```
 
-**Access:** `/metrics` endpoint on `mak-scheduler` (internal Docker network) returns JSON summary. Admin dashboard queries it directly. No public exposure.
+**Access (superseded sketch — never built):** the original design exposed a `/metrics` endpoint on a `mak-scheduler` container. In the realised system the `link_handler` owns the SQLite store and serves diagnostics via `/api/*`; a dedicated metrics surface is Epic 4.
 
 ---
 
@@ -471,7 +471,7 @@ Stage 3 — INGEST  (pipeline.py)
 It is the audit trail and the space card's Zone-3 trust receipt (`/api/space/{id}/raw`). Keeping it out of the triplestore decouples the debugging surface from the thing being diagnosed. SQLite is boring and correct.
 
 **The ontology's role in transformation:**
-The `.ttl` is the specification; `tasks/ingest.py` is its implementation. They are coupled. If `mom.ttl` declares `mom:MakerSpace rdfs:subClassOf schema:LocalBusiness`, the transformation must emit `@type: ["mom:MakerSpace", "schema:LocalBusiness"]`. Drift between spec and implementation means silent data errors.
+The `.ttl` is the specification; `scripts/spaceapi_extract/` (`core`/`mom`) is its implementation. They are coupled. If `mom.ttl` declares `mom:MakerSpace rdfs:subClassOf schema:LocalBusiness`, the transformation must emit `@type: ["mom:MakerSpace", "schema:LocalBusiness"]`. Drift between spec and implementation means silent data errors.
 
 **SpaceAPI → MOM field mapping (explicit contract):**
 

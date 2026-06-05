@@ -25,7 +25,7 @@ RSYNC_EXCLUDE := \
 .PHONY: ca-reachable ca-timeout ca-dns-fail ca-http-error caxis-a
 .PHONY: cb-seeded cb-confirmed cb-aging cb-zombie cb-dead cb-closed caxis-b c-demo-on c-demo-off
 .PHONY: cc-open cc-shut caxis-c
-.PHONY: vps-stage-scripts _vps-push
+.PHONY: check-docs vps-stage-scripts _vps-push
 .PHONY: vps-c-reset vps-c-activate vps-cb-confirmed vps-cb-aging vps-cb-zombie vps-cb-dead vps-cb-closed
 .PHONY: vps-cc-open vps-cc-shut vps-c-demo-on vps-c-demo-off
 
@@ -47,7 +47,16 @@ VPS_OPS      := $(REMOTE_CEXEC) python3 /app/scripts/canary_ops.py
 # container and clear its ETag. See memory/project_canary_public_url_and_vps_parity.md.
 PUSH_STEP    ?= $(MAKE) endpoint
 
+# ── Docs staleness tripwire ──────────────────────────────────────────────────
+# Greps the LIVE planning + architecture docs for known-dead architecture facts
+# (Epic 3.5 supersessions, canonical-namespace migration). Pure stdlib python3,
+# no venv needed. Run before committing doc changes / in CI. See scripts/check_docs.py.
+check-docs:
+	@python3 scripts/check_docs.py
+
 help:
+	@echo "── DOCS ─────────────────────────────────────────────────────────────"
+	@echo "make check-docs    — fail if a superseded architecture fact reappears in live docs"
 	@echo "── LOCAL ────────────────────────────────────────────────────────────"
 	@echo "make startdev      — start local stack without rebuilding"
 	@echo "make rebuild       — full local cycle: down → build → up + health wait"
