@@ -74,3 +74,10 @@ Filling that row for **every** field is the **[Field Traceability Matrix](02-fie
 _🟢 on trunk · 🟡 parked ahead of need · 🔴 purpose lost · ❓ needs your intent_
 
 **Triage complete (2026-06-03):** every file in `scripts/` + `infra/` classified against the trunk. Seven cuts this pass (`seed_import`, `normalize_vow`+test+`category_map`, `materialize_geojson`, `canary_pipeline`, `validate_dual`) — each verified zero live producer/consumer before removal.
+
+---
+
+**Trail:** [09](09-seeding-model.md) seeding (how data enters) · **01 pipeline** (how it flows) ·
+[02](02-field-traceability.md) field net-list · [08](08-semantic-layer.md) triplestore ·
+[03](03-freshness-axes.md) freshness · [04](04-design-rules.md) map grammar ·
+[05](05-view-shell.md) drawers · [06](06-space-card.md) card · [07](07-wizard-shell.md) wizard.
