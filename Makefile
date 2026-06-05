@@ -20,8 +20,8 @@ RSYNC_EXCLUDE := \
 	--exclude='.pytest_cache/' \
 	--exclude='data/'
 
-.PHONY: sync sync-app sync-gateway publish startdev rebuild seed seed-spaceapi seed-bundle bundle-to-csv csv-to-bundle heartbeat devdeploy reset vps-rebuild vps-seed vps-reset help endpoint deploy-genjson bernard-copy load-ontology vps-load-ontology
-.PHONY: c-reset c-activate c-demo c-all endpoint
+.PHONY: sync sync-app sync-gateway publish startdev rebuild seed-spaceapi seed-bundle bundle-to-csv csv-to-bundle heartbeat devdeploy reset vps-rebuild vps-seed vps-reset help endpoint deploy-genjson bernard-copy load-ontology vps-load-ontology
+.PHONY: c-reset c-activate c-demo c-all
 .PHONY: ca-reachable ca-timeout ca-dns-fail ca-http-error caxis-a
 .PHONY: cb-seeded cb-confirmed cb-aging cb-zombie cb-dead cb-closed caxis-b c-demo-on c-demo-off
 .PHONY: cc-open cc-shut caxis-c
@@ -51,7 +51,6 @@ help:
 	@echo "── LOCAL ────────────────────────────────────────────────────────────"
 	@echo "make startdev      — start local stack without rebuilding"
 	@echo "make rebuild       — full local cycle: down → build → up + health wait"
-	@echo "make seed          — import seed datasets into local Oxigraph (:7878)"
 	@echo "make seed-spaceapi — import directory.spaceapi.io federation directory (~244 spaces)"
 	@echo "make seed-bundle BUNDLE=… NETWORK=… [SOURCE=…] — seed local Path B bundle (grey/claimable pins, no endpoint)"
 	@echo "make bundle-to-csv BUNDLE=… CSV=… — dump a messy bundle to a curation CSV"
@@ -100,13 +99,6 @@ rebuild:
 	podman compose -f infra/docker-compose.yml -f infra/docker-compose.dev.yml up -d --build
 	@echo "→ waiting for link-handler to be healthy..."
 	@timeout 60 sh -c 'until podman exec maps-link-handler python3 -c "import urllib.request; urllib.request.urlopen(\"http://localhost:8000/health\")" 2>/dev/null; do sleep 3; done' && echo ok || echo "warning: health check timed out"
-
-## DEPRECATED (Story 3.4b) — bulk seed data archived; use coordinator URL onboarding or fresh canary.
-seed:
-	@echo "❌ make seed is deprecated (Story 3.4b clean slate)"
-	@echo "   Bulk seed files archived to data/archive/"
-	@echo "   Use: make canary-reset, or register spaces via coordinator URL onboarding"
-	@exit 1
 
 ## Trigger an immediate heartbeat cycle locally — populates Zone 3, rematerializes GeoJSON
 heartbeat:

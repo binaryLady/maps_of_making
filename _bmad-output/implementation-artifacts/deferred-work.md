@@ -320,13 +320,26 @@ Generating a real openfab.jsonld against the `space-jsonld-generator` skill expo
 - **golive progress not persisted across page reload.** Tutorial progress (which beat the user reached) is never written to localStorage. On reload, `hasDraft` resume block has no golive references — user returns to fork stub with tutorial collapsed, no indication they were mid-tutorial. Low-impact UX gap; golive is a short 5-step flow. Deferred by design.
 
 ## Deferred from: seed-import bundle/CSV-pivot pass (2026-06-04)
-- **Makefile detailed analysis + cleanup.** The Makefile has grown organically and
-  likely carries vestigial targets and local/VPS pairs that are no longer mirrored
-  (e.g. `seed-bundle` had no local twin until this pass; `seed` is a deprecated stub).
-  Do a full honest-inventory of every target: classify Live / Dormant / Vestigial,
-  check each VPS target has a local twin (and vice versa) where it makes sense, fold
-  into the docs/architecture trail. Same method as the scripts/web triage. → Own pass,
-  after batch-import work lands.
+- **Makefile detailed analysis + cleanup.** ✅ **DONE (2026-06-05)** — full honest-
+  inventory completed; triage + local↔VPS mirror contract written to
+  `docs/vps-operations.md` ("Makefile inventory" section). Safe cuts applied: dead
+  `seed` deprecation stub removed, duplicate `endpoint` `.PHONY` deduped, stale help
+  line dropped. **Two follow-ups carried forward:**
+  - **Stack-twin recipe merge.** `seed-spaceapi`/`vps-seed`, `seed-bundle`/`vps-seed-bundle`,
+    `rebuild`/`vps-rebuild`, `reset`/`vps-reset` are still hand-written parallel twins.
+    Collapsible to the canary `CANARY_OPS`/`PUSH_STEP` variable-override pattern via a
+    single `EXEC` selector (dev compose already bind-mounts `scripts/`, so local can run
+    `podman exec` with no staging). ~100 lines removable. Touches deploy paths → needs a
+    live local+VPS test run before trusting. → infra hardening pass.
+  - **`docs/canary-operator-runbook.md` broken against the Makefile.** ✅ **DONE (2026-06-05)**
+    — rewrote the operator runbook AND `docs/canary-setup.md` against reality: correct target
+    names (`c-reset`/`cb-aging`/…), the single-public-URL architecture (no `:9191` server in
+    the request path; both heartbeats fetch `mapsofmaking.org/canary/mother-sands.json`),
+    `web/canary/mother-sands.json` (not `served.json`), and removed all references to the
+    non-existent `make canary-report` / `canary_coherence_report.py` coherence tool (verification
+    is now map-reload + card + isolation SPARQL). Axis A documented honestly as partial — the
+    targets author+push but a true timeout/503/DNS fault needs `canary_ops.py set-endpoint` at a
+    controllable endpoint. All referenced targets verified to exist.
 - **`seed_bundle.py` does not harden bad fields by design.** A corrupt `url` (e.g.
   merge-tool garbage like `"[{'id': 478"`) injected as an IRI causes a 400 and the whole
   record is lost (observed: 21/117 write_failed on raw BE.spaces.json). Decision (Nicolas,
