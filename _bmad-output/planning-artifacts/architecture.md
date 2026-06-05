@@ -3,7 +3,7 @@ stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 lastStep: 8
 status: 'complete'
 completedAt: '2026-04-22'
-lastEdited: '2026-04-29'
+lastEdited: '2026-06-05'
 inputDocuments: ['_bmad-output/planning-artifacts/prd.md', '_bmad-output/planning-artifacts/next-session.md', 'archive/docs/architecture/architecture.md', 'archive/docs/project-overview.md', 'archive/docs/index.md']
 workflowType: 'architecture'
 project_name: 'maps_of_making'
@@ -14,24 +14,28 @@ editHistory:
     changes: 'Added ADR-015 (SpaceAPI JSON → MOM JSON-LD transformation layer, raw snapshot to disk); updated Primary Users (3-way split: coordinator / network coordinator Luca / operator Nicolas); updated Data Flow (3-stage pipeline, operator inspection panel, Luca public toggle); updated FR mapping table; added /data/snapshots/ to project structure'
   - date: '2026-05-18'
     changes: 'Added ADR-016 (Layered Community Namespaces + Bundle-Loading Model) — four-layer schema, bundle = view config, schema:knowsAbout concept pivot, crosswalk.csv as living bridge registry; Story 3.5'
+  - date: '2026-06-05'
+    changes: 'Correct-course artifact-alignment pass. Reconciled in place to current state: ADR-004/006 rewritten to three-token computed-in-browser model; ADR-015 disk-snapshot stages removed (SpaceAPI→MOM mapping kept); ADR-008 marked superseded by ADR-013 (Nanobot); named-graph table, project structure tree, requirements map, and data-flow diagram corrected to the real runtime (infra/link_handler/, scripts/spaceapi_extract/, web/data/spaces.geojson); w3id.org IRIs corrected to canonical nicolasdb.github.io; stale superseding banners removed once their sections were corrected. Epic 6 (Nanobot/NL-bot), Epic 4b (magic link), Epic 7 (open-now) directions retained as planned-not-built.'
+lastReconciled: '2026-06-05'
 ---
 
 # Architecture Decision Document — maps_of_making
 
 _This document builds collaboratively through step-by-step discovery. Sections are appended as we work through each architectural decision together._
 
-> ## ⚠️ EPIC 3.5 SUPERSEDES PARTS OF THIS DOCUMENT (2026-05-28)
+> ## Status & canonical sources (reconciled 2026-06-05)
 >
-> The Phase-2 pipeline described here (`tasks/heartbeat.py` writing raw JSON to `/data/snapshots/{id}/latest.json` on disk, materializing freshness triples into `<urn:mak:status>` with `mak:probeResult`, heartbeat marker file) **was never built and will not be**. Epic 3.5 (retro: `_bmad-output/implementation-artifacts/epic-3.5-retro-2026-05-28.md`) replaced it with a three-token contract:
+> This file is the **BMAD-native detailed architecture record** — the authoritative store of architecture *decisions* for story creation. The companion onboarding abstraction (teammate-facing, diagram-level) lives in **`docs/architecture/01–09`** and must stay consistent with this file, not duplicate its depth.
 >
-> - **Axis A (`observed_at`)** lives in **`infra/link_handler/snapshot_store.db`** (SQLite). The snapshot store also holds the **raw payload blob** — there is no on-disk `/data/snapshots/*.json` artifact.
+> The Phase-2 freshness/ingestion design has been **updated in place** to the **three-token contract** (Epic 3.5, retro `_bmad-output/implementation-artifacts/epic-3.5-retro-2026-05-28.md`). Current runtime in one paragraph:
+>
+> - **Runtime engine:** `infra/link_handler/` — `main.py`, `pipeline.py`, `pipeline_helpers.py`, `snapshot_store.py`, `utils.py`. (Not a Discord-harness process; the NL bot in `harness/` is dormant Epic 6.)
+> - **Axis A (`observed_at`)** + the **raw payload blob** live in SQLite (`data/tasks/snapshot_store.db`). There is no on-disk `/data/snapshots/*.json` artifact.
 > - **Axis B (`mom:updatedAt`)** + **Axis C (`mom:lastOpenChange`)** live in per-space Oxigraph graphs `<urn:mak:space/{id}>` / `<urn:mak:canary/{id}>`.
-> - **Ingestion entry point** is `space_pipeline.run_space_pipeline()` (Story 3.11 unified path). `tasks/heartbeat.py` is **deleted**.
-> - **Derived state** (`endpointHealth`, `operationalState`, marker colour) is computed **in the browser** from raw tokens + a `thresholds` block shipped in the GeoJSON header. Storage holds facts; consumption layers compute buckets.
+> - **Transform** is `scripts/spaceapi_extract/` (`core`/`mom`/`sparql`) → idempotent `DELETE WHERE + INSERT DATA`, **only on a real content change**. **Materialize** is `_rematerialize_geojson` (`main.py`) → `web/data/spaces.geojson`, the map's only source.
+> - **Derived state** (`endpointHealth`, `operationalState`, marker colour) is computed **in the browser** from the raw tokens + a `thresholds` block shipped in the GeoJSON header. Storage holds facts; consumption layers compute buckets.
 >
-> Affected stale sections below: L180 (axis vocabulary), L310 (`tasks/heartbeat.py`), L468/L513 (snapshot disk path), L631 (`<urn:mak:status>` in graph table), L921–922 (FR-mapping `tasks/heartbeat.py` / `/data/snapshots/`), L1000–1015 + L1042–1044 (stage diagrams). **ADR-015 (raw snapshot to disk) is superseded.**
->
-> Canonical post-3.5 specs live in `epics.md` §Epic 4 (replanned 2026-05-28) and the Epic 3.5 retro. Treat sections below as historical context unless updated.
+> Planned-not-built directions retained below as design intent: **Epic 6** (Nanobot NL bot — ADR-008/009/013, harness patterns), **Epic 4b** (magic link — ADR-005/010/011), **Epic 7** (open-now presence — ADR-007).
 
 ---
 
@@ -155,12 +159,7 @@ services:
 One service per active adapter (`ADAPTER=telegram`, `ADAPTER=mattermost`). Heartbeat scheduler runs in the primary (Discord) service only.
 
 ### Backup Strategy
-Host cron daily — outside harness, no backup logic in application code:
-```bash
-curl -s "http://localhost:7878/dump?format=application/n-quads" \
-  > /var/backups/oxigraph/dump-$(date +%Y%m%d).nq
-find /var/backups/oxigraph -name "*.nq" -mtime +7 -delete
-```
+Host-level cron daily N-Quads dump, outside any application process — see **ADR-014** for the command and the IPFS/IPLD production direction.
 
 ---
 
@@ -168,33 +167,22 @@ find /var/backups/oxigraph -name "*.nq" -mtime +7 -delete
 
 ### ADR-004: Pin Visual Grammar
 
-**Decision:** Two-layer progressive disclosure model.
+**Decision:** Two-layer progressive disclosure. One marker per space, **allocated in the browser** by resolving three orthogonal axes — the map never reads a stored marker colour. Full axis spec + marker-allocation table: `docs/architecture/03-freshness-axes.md` and `04-design-rules.md`.
 
-**Default view (always visible):**
-- ⚪ Hollow grey circle — seeded, unconfirmed (from moms_seed.json bootstrap)
-- 🔵 Solid blue circle — confirmed (space-owned JSON-LD endpoint, successfully ingested)
-- 🟢 Green badge on blue pin — open right now (webhook/device ping, Phase 2 late feature)
-- 🔴 Solid red circle — error state (URL unresponsive, fetch failed)
+**The three axes (computed client-side from tokens + the GeoJSON `thresholds` header):**
+1. **Endpoint health** — derived from `observed_at` age vs thresholds (responsive / warning / unreachable).
+2. **Lifecycle freshness** — `seeded` (no `mom:endpointUrl`) vs `confirmed`, then content-staleness from `mom:updatedAt`. Two terminal states: **`closed`** (operator-declared retirement) and **`dead`** (auto-inferred after N failed cycles) — both render as a tombstone, provenance preserved.
+3. **Open/now** — from Axis-C `mom:lastOpenChange` / current open claim.
 
-**Health map toggle (admin/researcher layer):**
-- Reveals aging / zombie / dead states for unclaimed seeds
-- Never shown by default — diagnostic layer, not exploratory layer
-- In the space detail drawer: amber quiet banner ("Last confirmed 8 months ago. Details may be outdated.") visible even without the toggle
+**Default (exploratory) layer:** seeded vs confirmed, plus an open-now accent. Clean first look — trustworthy, never alarming.
 
-**Pin shape:** Circles only. No shape-based type differentiation for PoC or pilot. Type disambiguation handled by filter panel and bot queries (LOD approach). Shape grammar revisited post-pilot if needed.
+**Health (diagnostic) toggle:** overlays aging / zombie / dead and endpoint-health states for outreach triage. Never shown by default. The space detail drawer carries a quiet amber staleness banner ("Last confirmed N months ago…") even with the toggle off.
 
-**Freshness lifecycle:**
+**Pin shape:** Circles only. No shape-based type differentiation for PoC or pilot — filters and bot queries handle type disambiguation (LOD approach). Revisited post-pilot if needed.
 
-```
-⚪ seeded → confirmed → [aging] → [zombie] → 💀 dead  /  🪦 closed
-```
+Dead/closed spaces: removed from the default map view, retained in Oxigraph for admin query; significant life-events recorded in the append-only `<urn:mak:public_ledger>` graph.
 
-> ⚠ **Superseded — see Story 3.2's three-axis truth model (`epics.md`) and `mom_handoff_2026-05-16.md`.**
-> Lifecycle is no longer "unclaimed seeds only" — the heartbeat drives it for confirmed spaces too. The current model has **three orthogonal axes** resolved into one pin by `transformer.effective_marker()`: endpoint reachability (`healthy/unresponsive/warning/broken`), lifecycle freshness (`seeded/confirmed/aging/zombie` + two terminals), and the open/close boolean. Two terminal lifecycle states: **`closed`** (operator-declared retirement) and **`dead`** (auto-inferred after N failed cycles) — both render as a tombstone marker but preserve provenance.
-
-Dead/closed spaces: removed from default map view, retained in Oxigraph for admin query; significant life-events recorded in the append-only `<urn:mak:public_ledger>` graph.
-
-**Rationale:** Keeps the first-look map clean and trustworthy. Admin layer serves network coordinators who want to identify spaces needing outreach. Shape complexity deferred — filters and bot search solve type disambiguation more elegantly at scale.
+**Rationale:** Storage holds facts (tokens + source claims); the consumption layer computes buckets. Keeps the first-look map clean while the diagnostic layer serves coordinators identifying spaces needing outreach.
 
 ---
 
@@ -217,40 +205,25 @@ Dead/closed spaces: removed from default map view, retained in Oxigraph for admi
 
 ---
 
-### ADR-006: Freshness Status Model in Oxigraph
+### ADR-006: Freshness — store tokens, compute buckets
 
-> ⚠ **Partially superseded (2026-05-16).** The materialized-not-query-time decision still holds. The flat single-axis lifecycle below is superseded by Story 3.2's **three-axis truth model** (endpoint health / lifecycle freshness / open-close), the `mom:` predicate namespace (not `mak:` — drift fixed in Story 3.2c), and **two terminal states** `closed` (declared) + `dead` (inferred). Heartbeat cadence is 10 min, not 6 h. Authoritative model: `epics.md` Story 3.2 + `mom_handoff_2026-05-16.md`.
->
-> **LOD design note (Story 3.2c, 2026-05-16):** Lifecycle state values are `xsd:string` literals (`"confirmed"`, `"seeded"`, etc.) — a deliberate 4-star LOD choice for current scope. Earlier drafts used `mak:confirmed`, `mak:seeded` etc. as apparent RDF IRIs; this reflected a deferred 5-star LOD upgrade path (state values as dereferenceable `skos:Concept` resources). That upgrade is out of scope for the demo. Do not reintroduce IRI-style state values without first minting those concepts in `mom.ttl`.
+**Decision (three-token contract, Epic 3.5):** Storage holds **facts** — raw observations and source claims. Derived freshness *buckets* (`operationalState`, `endpointHealth`) are **never stored**; they are computed at consumption time (in the browser) from the three tokens + a `thresholds` block shipped in the GeoJSON header from `config.yaml`. The only "materialization" is the GeoJSON build (see Data Flow): every claimed space's tokens are flattened into `web/data/spaces.geojson`. Full axis math: `docs/architecture/03-freshness-axes.md`.
 
-**Decision:** Materialized status triples written by a scheduled job. Not computed at query time.
+**The three tokens:**
 
-**Status graph structure:**
-```turtle
-<seed:xyz> mom:healthStatus [
-  mom:visibility "public" ;          # ⚪🔵🟢🔴 — always rendered
-  mom:operationalState "aging" ;     # admin toggle layer
-  mom:lastChecked "2026-04-22T..."^^xsd:dateTime ;
-  mom:consecutiveFailures 3 ;
-] .
-```
+| Token | Minted by | Advances when | Home | Axis |
+|---|---|---|---|---|
+| `observed_at` (ISO-8601) | us | every responsive fetch (200 or 304) | SQLite `snapshot_store.db` ONLY | A — endpoint health |
+| `mom:updatedAt` (ISO-8601) | us, on content diff | content JSON meaningfully differs | Oxigraph | B — content maintenance |
+| `mom:lastOpenChange` (Unix s) | the source (SpaceAPI claim) | they flip open/closed | Oxigraph | C — operational liveness |
 
-**Status lifecycle (written by scheduler):**
+**Heartbeat cadence:** ~10 min cron fetch. Oxigraph is written **only on a real content change** (304 / identical-200 advance `observed_at` in SQLite and write nothing to Oxigraph).
 
-| Status | Written by | Trigger |
-|---|---|---|
-| `"seeded"` | Seed ingest | moms_seed.json import |
-| `"confirmed"` | Heartbeat agent | First successful JSON-LD fetch |
-| `"aging"` | Scheduler | 30d no fetch |
-| `"zombie"` | Scheduler | 90d no fetch |
-| `"dead"` | Scheduler | 180d no fetch |
-| `"error"` | Heartbeat agent | HTTP error / timeout |
+**Seed→confirmed transition:** a seeded graph has no `mom:endpointUrl`; the heartbeat skips it. On registration/claim the link handler writes `mom:endpointUrl` (claim-in-place reuses the same graph URI — see `docs/architecture/09-seeding-model.md`), and the first confirmed fetch begins minting tokens.
 
-**Map queries:** Base query filters on `mom:visibility = "public"`. Admin toggle fires a second SPARQL query overlaying `mom:operationalState` for aging/zombie/dead — no page reload, no separate endpoint.
+**Terminal states:** `closed` (operator-declared) and `dead` (auto-inferred after N failed cycles) — both render as a tombstone, computed client-side; provenance preserved; life-events appended to `<urn:mak:public_ledger>`.
 
-**Scheduler:** Single cron job every 6h, Python script against Oxigraph SPARQL update endpoint. Idempotent — only writes on status change. No new infrastructure.
-
-**Seed→claim transition:** On first successful fetch of a self-hosted JSON-LD, heartbeat agent overwrites seed triples in the space's named graph, sets `mom:operationalState` to "confirmed". Seed triples tagged `mom:source` as "seed" — preserved one cycle as diff baseline, then dropped.
+**LOD design note (still binding):** lifecycle state *values* are `xsd:string` literals (`"confirmed"`, `"seeded"`…), a deliberate 4-star LOD choice. Do not reintroduce IRI-style state values (`mak:confirmed`) without first minting those concepts in `mom.ttl` (deferred 5-star path). Predicate namespace is `mom:`, never `mak:`.
 
 ---
 
@@ -271,9 +244,11 @@ Heartbeat agent owns `<urn:mak:space>` graph. Webhook handler owns `<urn:mak:pre
 
 ---
 
-### ADR-008: LLM Harness — Custom Python over OpenRouter
+### ADR-008: LLM Harness — Custom Python over OpenRouter  ⚠️ SUPERSEDED by ADR-013
 
-**Decision:** Custom Python harness using `AsyncOpenAI` client pointed at OpenRouter. No third-party agent framework (NanoClaw disqualified on model lock-in; OpenClaw disqualified on complexity).
+> **Superseded by ADR-013 (Nanobot).** Epic 6 uses Nanobot as a separate compose project (confirmed in `sprint-status.yaml` cross-epic handoffs). This ADR is retained for the rationale trail (the cost/lock-in analysis that ruled out other frameworks still informs the model-routing config). The `tasks/` task-module pattern below carries forward — those tasks are now invoked *from Nanobot* rather than a hand-rolled `main.py`.
+
+**Decision (superseded):** Custom Python harness using `AsyncOpenAI` client pointed at OpenRouter. No third-party agent framework (NanoClaw disqualified on model lock-in; OpenClaw disqualified on complexity).
 
 **Rationale:**
 - NanoClaw: Anthropic SDK only — cannot use OpenRouter/Minimax/Kimi. Cost-disqualifying.
@@ -417,9 +392,11 @@ location /claim/ {
 
 ---
 
-### ADR-012: Operational Metrics — SQLite in Scheduler Container
+### ADR-012: Operational Metrics — SQLite, outside Oxigraph
 
-**Decision:** SQLite database at `./data/metrics.db` (mounted volume), written by `mak-scheduler`. Exposed via a simple `/metrics` REST endpoint on the scheduler service. **Not** stored in Oxigraph.
+> **Reconciliation (2026-06-05):** The *principle* holds and is realised — operational data lives in SQLite (`data/tasks/snapshot_store.db`), not Oxigraph. The specific `mak-scheduler` container, `metrics.db` filename, and `/metrics` REST endpoint below were **never built**; the link_handler owns the SQLite store and exposes diagnostics via `/api/*`. A dedicated metrics surface is **Epic 4** (operator dashboard) scope.
+
+**Decision (principle — realised via `snapshot_store.db` + `/api/*`):** Keep operational data (raw payloads, `observed_at`, fetch outcomes) in SQLite, **not** Oxigraph.
 
 **Rationale:** Storing operational metrics (heartbeat success/failure counts, response times, LLM cost per task) in Oxigraph creates a circular dependency: the heartbeat monitoring Oxigraph health cannot query Oxigraph if it's down. SQLite is a mounted file, survives container restarts, zero infrastructure overhead.
 
@@ -470,32 +447,28 @@ CREATE TABLE llm_cost_log (
 
 ### ADR-015: Ingestion Transformation Layer — SpaceAPI JSON → MOM JSON-LD
 
-**Decision:** Spaces publish flat SpaceAPI-compatible JSON. MOM provides an explicit transformation layer that converts this into MOM JSON-LD before writing to Oxigraph. The raw pre-transformation payload is written to disk before any transformation occurs.
+**Decision:** Spaces publish flat SpaceAPI-compatible JSON. MOM runs an explicit transformation layer (`scripts/spaceapi_extract/`) that converts it into MOM triples before writing to Oxigraph. The raw pre-transformation payload is persisted **first**, in SQLite (`snapshot_store.db`), as the trust receipt / Zone-3 source.
 
-**The pipeline — three explicit stages:**
+**The pipeline — three stages, content-gated:**
 
 ```
-Stage 1 — FETCH
+Stage 1 — FETCH  (pipeline.py / snapshot_store.py)
   Space publishes SpaceAPI JSON at their URL
-  Heartbeat does conditional GET (ETag / Last-Modified)
-  Raw JSON written to disk: /data/snapshots/{id}/latest.json
-  (with fetch timestamp — this is the Zone 3 source and audit trail)
+  ~10-min cron does conditional GET (ETag / Last-Modified)
+  Raw payload written to SQLite snapshot_store, minting observed_at
+  (Zone-3 source + audit trail — SQLite, never an on-disk JSON artifact)
 
-Stage 2 — TRANSFORM
-  SpaceAPI JSON → MOM JSON-LD mapping (ontology applied)
-  Explicit field-by-field mapping defined in tasks/ingest.py
-  Normalize before compare: strip ephemeral timestamps, sort arrays
-  If payload unchanged vs stored snapshot → update timestamp only, skip Stage 3
-  If changed → proceed to Stage 3
+Stage 2 — TRANSFORM  (scripts/spaceapi_extract/: core, mom)
+  Compare-gate: 304 or byte-identical content → advance observed_at only, STOP
+  On real content change → SpaceAPI JSON → MOM triples (ontology applied)
 
-Stage 3 — INGEST
-  MOM JSON-LD → Oxigraph triples
-  Write to <urn:mak:space/{id}> (current) + <urn:mak:space/{id}/{date}> (snapshot)
-  Write decision log: "ingested" | "no_change" | "error" — every fetch logged
+Stage 3 — INGEST  (pipeline.py)
+  Idempotent DELETE WHERE + INSERT DATA into <urn:mak:space/{id}>
+  Set mom:updatedAt = now; log decision ("ingested" | "no_change" | "error")
 ```
 
-**Why raw snapshot to disk, not Oxigraph:**
-The raw pre-transformation JSON is the audit trail and Zone 3 source. Storing it in Oxigraph would couple the debugging tool to the triplestore — fragile if Oxigraph is what's being diagnosed. Disk is boring and correct. The admin inspection panel reads raw from disk; transformed from Oxigraph.
+**Why the raw payload lives in SQLite, not Oxigraph:**
+It is the audit trail and the space card's Zone-3 trust receipt (`/api/space/{id}/raw`). Keeping it out of the triplestore decouples the debugging surface from the thing being diagnosed. SQLite is boring and correct.
 
 **The ontology's role in transformation:**
 The `.ttl` is the specification; `tasks/ingest.py` is its implementation. They are coupled. If `mom.ttl` declares `mom:MakerSpace rdfs:subClassOf schema:LocalBusiness`, the transformation must emit `@type: ["mom:MakerSpace", "schema:LocalBusiness"]`. Drift between spec and implementation means silent data errors.
@@ -521,13 +494,7 @@ The `.ttl` is the specification; `tasks/ingest.py` is its implementation. They a
 
 **Long-term ambition:** This transformation layer is MOM's core value-add. Spaces need zero knowledge of linked data. The bridge pattern at community scale is MOM's argument for SpaceAPI adopting JSON-LD natively — making this implementation the reference.
 
-**Snapshot file convention (pinned — Epic 3 must write this path):**
-```
-/data/snapshots/{space_id}/latest.json      # always the most recent raw fetch
-/data/snapshots/{space_id}/{timestamp}.json # append-only archive (optional, configurable)
-```
-
-> **[Transition note, 2026-05-19]:** This ADR describes the **legacy pipeline** (registered spaces → `heartbeat_log.db` → transformer → Oxigraph). Story 3.6 (Epic 3.5) builds a **new clean snapshot pipeline** alongside it, canary-only, implementing the snapshot-as-unit model (payload + observed_at + UID). Stories 3.7–3.10 migrate registered spaces onto the clean path and delete the legacy code wholesale. During transition, both pipelines run in parallel, isolated by named graph and GeoJSON features.
+**Raw payload storage:** SQLite `snapshot_store.db` holds the most recent raw fetch per space (keyed by graph URI), alongside `observed_at` and the conditional-GET validators (ETag / Last-Modified). No on-disk JSON artifacts; no per-date append-only file archive.
 
 ---
 
@@ -607,15 +574,15 @@ tokens + a `thresholds` block shipped in the GeoJSON header from `config.yaml`.
 Oxigraph written ONLY on a real content change. `build_state_only_update` (304→Oxigraph path) deleted.
 `state` block added to `_IGNORED` diff set — open/closed flips count toward Axis C, not Axis B.
 
-**Migration sequence (3.7 done; 3.8 done under old model; 3.8b–3.10 in progress):**
-- 3.7 ✅: Fetch seam — snapshot store + 304/unreachable rules; delete `heartbeat_log` noise columns
-- 3.8 ✅: Transform seam (old model) — wrote `mom:observedAt` to Oxigraph; superseded by 3.8b
-- 3.8b: Correct transformer — stop writing `mom:observedAt`; add `mom:updatedAt` on content-changed path only; delete `build_state_only_update`; remove derived bucket triples
-- 3.9: Materializer joins SQLite+Oxigraph — three tokens in each GeoJSON feature + `thresholds` block at file level
-- 3.10: Browser computes all three axes live from tokens + thresholds header
+**Migration sequence — COMPLETE (Epic 3.5 done, retro 2026-05-28):**
+- 3.7 ✅: Fetch seam — snapshot store + 304/unreachable rules; deleted `heartbeat_log` noise columns
+- 3.8 ✅: Transform seam (old model) — wrote `mom:observedAt`; superseded by 3.8b
+- 3.8b ✅: Correct transformer — stopped writing `mom:observedAt`; `mom:updatedAt` on content-changed path only; deleted `build_state_only_update` and derived bucket triples
+- 3.9 ✅: Materializer joins SQLite+Oxigraph — three tokens per GeoJSON feature + `thresholds` block at file level
+- 3.10 ✅: Browser computes all three axes live from tokens + thresholds header
 
-**End state (after 3.10):** One clean pipeline. `heartbeat_log.db` and legacy transformer code deleted.
-`mom:operationalState` and `mom:endpointHealth` absent from Oxigraph; computed live in browser.
+**End state (achieved):** One clean pipeline. `heartbeat_log.db` and legacy transformer code deleted.
+`mom:operationalState` and `mom:endpointHealth` are absent from Oxigraph — computed live in the browser. This is the live model, no longer a transition.
 
 ---
 
@@ -625,7 +592,7 @@ Oxigraph written ONLY on a real content change. `build_state_only_update` (304�
 
 **Critical (block implementation):**
 - MOM ontology strategy — align-and-extend (decided)
-- `@context` IRI stability — w3id.org + GitHub Pages (decided)
+- `@context` IRI stability — canonical `nicolasdb.github.io/mapsofmaking_ontology` GitHub Pages (decided)
 - IoP integration pattern — named graph + cached prompt slice (decided)
 - Logging — structlog from day one (decided)
 
@@ -637,25 +604,26 @@ Oxigraph written ONLY on a real content change. `build_state_only_update` (304�
 
 **Oxigraph named graph structure:**
 
+Three live graph families (`space`, `canary`, `public_ledger`) plus read-only ontology graphs. No materialized-status graph — derived buckets are computed in the browser, not stored.
+
 | Named graph | Owner | Contents |
 |---|---|---|
-| `<urn:mak:space/{id}>` | Heartbeat agent | Space triples (current version) |
-| `<urn:mak:space/{id}/{date}>` | Heartbeat agent | Dated snapshots (append-only) |
-| `<urn:mak:status>` | Scheduler job | Materialized status triples |
-| `<urn:mak:presence>` | Webhook handler | Ephemeral open-now signals |
-| `<urn:mak:notifications>` | Heartbeat agent | Pending notification queue |
-| `<urn:mak:canary>` | Canary scenario tools (Story 3.3) | Synthetic "Mother Sands" space — isolated from real-space graphs |
-| `<urn:mak:public_ledger>` | Ledger writer (future epic) | Append-only, immutable, IPFS/IPLD-anchored space life-events (registration, relocation, schema upgrade, `closed`, `dead`). Name + append-only principle locked 2026-05-16; event schema deferred. |
-| `<urn:mak:snapshot/{id}>` | *(reserved, not used)* | Snapshot data lives in SQLite `snapshot_store.db`, not Oxigraph. This named graph slot is reserved for future append-only archival if needed. `observed_at` (Axis A) is authoritative in SQLite only. |
-| `<urn:mak:ontology/iop>` | Init script | IoP ontology (read-only) |
-| `<urn:mak:ontology/mom>` | Init script | MOM vocabulary (read-only) |
+| `<urn:mak:space/{id}>` | Ingestion pipeline (`infra/link_handler`) | Current space triples + tokens `mom:updatedAt`, `mom:lastOpenChange`, `mom:endpointUrl`. `{id}` = `sha256(name\|endpoint)[:12]` (Path A) or `name-slug-city-slug` (Path B) |
+| `<urn:mak:canary/{id}>` | Canary tools (`scripts/canary_*.py`) | Synthetic "Mother Sands" diagnostic space — isolated from real-space graphs |
+| `<urn:mak:public_ledger>` | Ledger writer *(future epic)* | Append-only, immutable, IPFS/IPLD-anchored space life-events (registration, relocation, schema upgrade, `closed`, `dead`). Name + append-only principle locked 2026-05-16; event schema deferred. **Never DROP.** |
+| `<urn:mak:presence>` | Webhook handler *(Epic 7, parked)* | Ephemeral open-now signals — schema slot reserved, not implemented |
+| `<urn:mak:notifications>` | Dispatch worker *(Epic 4b, planned)* | Pending notification queue |
+| `<urn:mak:ontology/iop>` | Init script (`load_ontology.sh`) | IoP ontology (read-only) |
+| `<urn:mak:ontology/mom>` | Init script (`load_ontology.sh`) | MOM vocabulary (read-only) |
 
-**MOM ontology strategy — align-and-extend:**
+Note: `observed_at` (Axis A) and the raw payload are authoritative in **SQLite `snapshot_store.db`** only — never an Oxigraph graph.
+
+**MOM ontology strategy — align-and-extend** (authoritative layered model: **ADR-016**):
 - Base: `schema:LocalBusiness`, `schema:openingHours`, `schema:geo` (Schema.org)
 - Equipment/capabilities: `skos:closeMatch` to IoP classes — reference without hard dependency
-- Maker-specific: `mom:NetworkMembership`, `mom:HostingCapacity`, `mom:SpaceType`, `mom:freshnessStatus`
-- Canonical IRI: `https://w3id.org/maps-of-making/` (w3id.org registration) → redirects to GitHub Pages
-- File lives in repo at `ontology/mom.ttl`, served via GitHub Pages, w3id.org as stable redirect
+- Maker-specific: `mom:` classes/properties (e.g. `mom:memberOf`, `mom:operationalState`, `mom:endpointUrl`)
+- **Canonical namespace: `https://nicolasdb.github.io/mapsofmaking_ontology/ns#` (prefix `mom:`)** — `mom.ttl` is authoritative. The earlier `w3id.org/maps-of-making/` IRI is **not used** anywhere in code, queries, or `.ttl`.
+- Working copies live in repo at `ontology/mom.ttl` + `ontology/core.ttl`, manually synced to `github.com/nicolasdb/mapsofmaking_ontology` (GitHub Pages). Nothing git-pushes to the ontology repo automatically.
 
 **IoP integration in Oxigraph:**
 - Loaded at harness startup into `<urn:mak:ontology/iop>` via idempotent `ASK` check
@@ -795,117 +763,110 @@ Never build SPARQL strings with f-strings containing user input — always param
 ### Complete Project Directory Structure
 
 ```
-maps_of_making/
-├── .env.example                         # required env vars documented
-├── .gitignore                           # includes .env, harness/__pycache__
-├── docker-compose.yml                   # Phase 2 full stack (name: maps_of_making)
+maps_of_making/                          # 🟢 live · 🟡 dormant (planned) · 🔵 planned, not built
+├── Makefile                             # 🟢 dev + VPS ops: seed-*, vps-*, canary, clear-etag
+├── README.md
 │
-├── web/                                 # Phase 1 SPA — unchanged
-│   ├── maps-of-making.html              # main SPA entry point
-│   ├── app.js                           # map logic, filters, drawers, embed
-│   ├── test_embed.html                  # embed test harness
-│   └── data/
-│       ├── moms_seed.json               # bootstrap seed data (retire at pilot)
-│       └── vow_workshops.json           # VOW seed data
+├── web/                                 # 🟢 static front-ends (one index.html per sub-app)
+│   ├── maps-of-making.html              # main map SPA entry point
+│   ├── app.js                           # map logic, filters, drawers, freshness axes (browser-computed)
+│   ├── data/
+│   │   ├── spaces.geojson               # the map's ONLY data source — materialized from Oxigraph
+│   │   └── vow_workshops.json           # VOW seed reference
+│   ├── admin/index.html                 # operator dashboard (Epic 4)
+│   ├── genjson/                         # Bernard wizard / SpaceAPI composer (Epic 9) — index.html + genjson.js
+│   ├── mothersands/                     # MOM-as-a-space broadcast (Epic 8) — index.html + mothersands.js
+│   ├── canary/mother-sands.json         # served canary endpoint
+│   └── test-fixtures/                   # SpaceAPI/JSON-LD validation fixtures
 │
-├── admin.html                           # Phase 2 — admin landing page (auth-gated, served at /admin)
-├── admin.js                             # fleet health, per-space drill-down (Story 4.0+)
+├── infra/                               # 🟢 the deployed stack
+│   ├── docker-compose.yml               # base stack (name: maps_of_making; no :z)
+│   ├── docker-compose.dev.yml           # Fedora/local overrides (:z SELinux, port maps)
+│   ├── link_handler/                    # 🟢 THE RUNTIME ENGINE (FastAPI; ingestion + register + API)
+│   │   ├── main.py                      # routes, /api/*, _rematerialize_geojson → spaces.geojson
+│   │   ├── pipeline.py                  # fetch → transform → ingest (content-gated)
+│   │   ├── pipeline_helpers.py
+│   │   ├── snapshot_store.py            # SQLite raw payload + observed_at (Axis A)
+│   │   ├── utils.py
+│   │   ├── config.yaml                  # thresholds, cadence
+│   │   ├── Dockerfile · requirements.txt · conftest.py · test_*.py
+│   ├── nanobot-config/config.json       # 🟡 Nanobot agent config (Epic 6)
+│   ├── nginx/                           # 🟢 app-layer nginx (.htpasswd, conf.d)
+│   └── gateway-nginx/                   # 🟢 VPS gateway vhosts (06–09: map/admin/genjson/mothersands)
 │
-├── ontology/                            # MOM vocabulary + IoP reference
-│   ├── mom.ttl                          # MOM ontology (GitHub Pages hosted, w3id.org IRI)
-│   ├── context/
-│   │   └── space.jsonld                 # @context for space endpoint JSON-LD files
-│   └── iop/
-│       └── iop.ttl                      # IoP ontology snapshot (loaded into Oxigraph at init)
+├── ontology/                            # 🟢 MOM vocabulary + IoP reference (working copies)
+│   ├── mom.ttl                          # canonical: nicolasdb.github.io/mapsofmaking_ontology/ns#
+│   ├── core.ttl                         # portable identity layer (ADR-016)
+│   ├── crosswalk.csv · crosswalk.md     # living SpaceAPI↔mom bridge registry
+│   └── iop/iop.ttl                      # IoP ontology snapshot
 │
-├── nanobot-config/                      # Nanobot agent configuration
-│   └── config.json                      # channel adapters, LLM models, scheduling
+├── scripts/                             # 🟢 seeding, canary, ontology, transform lib
+│   ├── spaceapi_extract/                # 🟢 TRANSFORM lib: core.py, mom.py, sparql.py (imported by pipeline + seeders)
+│   ├── seed_spaceapi.py                 # Path A — live-endpoint seed from SpaceAPI directory
+│   ├── seed_csv.py · seed_bundle.py     # Path B — CSV-pivot bundle import
+│   ├── canary_ops.py · canary_scenarios.py · load_canary.py   # canary track
+│   ├── load_ontology.sh                 # POST mom.ttl + iop.ttl to Oxigraph (⚠️ manual, not wired into Makefile)
+│   └── validate_crosswalk.py            # crosswalk integrity DRC
 │
-├── data/
-│   └── snapshots/                       # Raw pre-transformation JSON, one dir per space
-│       └── {space_id}/
-│           ├── latest.json              # most recent raw fetch (Zone 3 source + audit trail)
-│           └── {timestamp}.json         # append-only archive (configurable retention)
+├── data/                               # 🟢 runtime data (gitkept dirs)
+│   ├── tasks/snapshot_store.db          # SQLite snapshot store (raw payload + observed_at)
+│   ├── oxigraph/                        # triplestore volume
+│   ├── seed-lists/                      # *.bundle.json + curation CSVs
+│   └── archive/moms_seed.json           # frozen Epic-0 VOW seed (still served via vps-seed-bundle)
 │
-├── tasks/                               # Custom task modules (invoked by Nanobot)
-│   ├── heartbeat.py                     # Stage 1: fetch URL, conditional GET, write snapshot to disk
-│   ├── ingest.py                        # Stage 2+3: SpaceAPI JSON → MOM JSON-LD → Oxigraph (ADR-015)
-│   ├── nl_to_sparql.py                  # NL → SPARQL string (temp=0.0, Sonnet)
-│   ├── answer_format.py                 # SPARQL result dict → plain language str
-│   ├── notify_dispatch.py               # read queue, fill template, send, mark dispatched
-│   ├── sparql_client.py                 # httpx async run_select() + run_update()
-│   ├── magic_link.py                    # token generation, validation, single-use + TTL
-│   ├── sparql/
-│   │   ├── queries.py                   # SELECT query constants (SCREAMING_SNAKE_CASE)
-│   │   └── updates.py                   # UPDATE/INSERT query constants
-│   └── tests/
-│       ├── test_heartbeat.py
-│       ├── test_nl_to_sparql.py
-│       ├── test_answer_format.py
-│       ├── test_notify_dispatch.py
-│       ├── test_sparql_client.py
-│       └── test_magic_link.py
+├── harness/                            # 🟡 Epic 6 NL bot baseline (Discord) — DORMANT
+│   ├── main.py · llm_client.py · sparql_client.py   # Epic 1 integration spike
+│   └── (Epic 6 target: Nanobot + tasks/ for nl_to_sparql, answer_format, notify_dispatch — ADR-009/010/013)
 │
-├── nginx/
-│   └── maps-of-making.conf              # routes: SPA, /sparql/query, deny /sparql/update
+├── tests/                              # 🟢 repo-level pytest (live e2e + unit; tests/archive/ = retired)
 │
-├── scripts/
-│   ├── load_ontology.sh                 # POST mom.ttl + iop.ttl to Oxigraph named graphs
-│   ├── backup_oxigraph.sh               # daily N-Quads dump → /var/backups/oxigraph/
-│   └── seed_import.py                   # moms_seed.json → JSON-LD → Oxigraph (⚪ seeded)
+├── docs/                               # 🟢 onboarding ABSTRACTION layer (teammate-facing)
+│   ├── architecture/01–09 + main-pipeline.png   # the high-altitude companion to THIS file
+│   └── *-runbook.md · host-your-space.md · gitlab_tuto/
 │
-├── link_handler/                            # Phase 2 — magic link HTTP service (ADR-011)
-│   ├── Dockerfile                           # python:3.12-slim, FastAPI
-│   ├── requirements.txt
-│   └── main.py                              # GET /claim/{token} → validate + SPARQL update
-│
-└── _bmad-output/planning-artifacts/
-    ├── prd.md
-    └── architecture.md
+└── _bmad-output/planning-artifacts/    # 🟢 BMAD-native DETAIL layer
+    ├── prd.md · epics.md · architecture.md (this file) · ux-bernard-wizard-spec.md
+    └── archive/                         # consumed handoffs + applied change-proposals
 ```
 
 ### Docker Compose — Full Service Topology
 
+Current stack (`infra/docker-compose.yml`, name `maps_of_making`) — three live services + one Epic-6 placeholder:
+
 ```yaml
 name: maps_of_making
-
 services:
-  oxigraph:
+  maps-nginx:          # 🟢 serves web/ static front-ends, proxies /sparql → oxigraph
+    image: nginx:alpine
+    networks: [gateway, internal]      # gateway = shared hetzner-gateway net (external)
+    volumes: [../web:…ro, ../web/data, ./nginx/conf.d:…ro, ./nginx/.htpasswd:…ro]
+
+  oxigraph:            # 🟢 SPARQL 1.1 triplestore
     image: ghcr.io/oxigraph/oxigraph:latest
-    command: ["--location", "/data", "--bind", "0.0.0.0:7878"]
-    volumes: [oxigraph_data:/data, ./data/metrics.db:/data/metrics.db]
-    expose: ["7878"]
+    command: serve --location /data --bind 0.0.0.0:7878
+    volumes: [../data/oxigraph:/data]
     networks: [internal]
 
-  mak-agent:                          # Nanobot agent (Discord + Telegram + tasks)
-    image: hkuds/nanobot:latest
-    environment:
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
-      - OXIGRAPH_ENDPOINT=http://oxigraph:7878
-    volumes:
-      - ./nanobot-config:/root/.nanobot
-      - ./tasks:/app/tasks
-    depends_on: [oxigraph]
-    networks: [internal]
-
-  mak-link-handler:                   # magic link HTTP endpoint (ADR-011)
+  mak-link-handler:    # 🟢 THE RUNTIME ENGINE — FastAPI ingestion + register + /api/*
     build: ./link_handler
     expose: ["8000"]
-    environment:
-      - OXIGRAPH_ENDPOINT=http://oxigraph:7878
-      - LINK_SECRET=${LINK_SECRET}
-    depends_on: [oxigraph]
+    volumes:
+      - ../web/data:/app/web_data              # writes spaces.geojson
+      - ../scripts/spaceapi_extract:…ro        # transform lib
+      - ../data/tasks:/app/tasks               # snapshot_store.db persists here
+    environment: [OXIGRAPH_ENDPOINT, LINK_SECRET, GEOJSON_OUTPUT, SCRIPTS_DIR]
     networks: [internal]
 
-volumes:
-  oxigraph_data:
+  # mak-agent:         # 🟡 Epic 6 — Nanobot NL bot, commented out. Built from
+  #   image: hkuds/nanobot:local                # HKUDS/nanobot; run as a SEPARATE
+  #   …                                          # compose project joining maps_of_making_internal
 
 networks:
-  internal:
-    driver: bridge
+  gateway: { external: true }          # shared with hetzner-gateway (see infra/gateway-nginx/)
+  internal: { driver: bridge }
 ```
 
-**Nanobot integration:** CronService runs alongside chat adapters in the same container. Nanobot's supervisor ensures both systems survive crashes — heartbeat.md tasks execute on schedule even if Discord connection drops.
+**Two-layer nginx:** `infra/nginx/` is the app-layer vhost inside this stack; `infra/gateway-nginx/` (06–09) are the VPS gateway vhosts for map/admin/genjson/mothersands. **Nanobot (Epic 6)** is deliberately a *separate* compose project (the `hkuds/nanobot` image is built from source, not embedded here) — kept isolated; its CronService + tasks join `maps_of_making_internal` when Epic 6 lands.
 
 ---
 
@@ -928,14 +889,14 @@ networks:
 
 | FR group | Location |
 |---|---|
-| FR1–11 Map display, filters, search | `web/app.js` |
-| FR12–14b Space detail drawer | `web/app.js` |
+| FR1–11 Map display, filters, search | `web/app.js` (freshness axes computed here) |
+| FR12–14b Space detail drawer | `web/app.js` + `/api/space/{id}/raw` (Zone-3 receipt) |
 | FR15–18 Embed & sharing | `web/app.js` + nginx iframe headers |
-| FR19–23 Coordinator registration | `tasks/heartbeat.py` + `link_handler/main.py` |
-| FR24–27b Endpoint health / ingestion | `tasks/heartbeat.py` (fetch+compare) + `tasks/ingest.py` (transform) + `tasks/notify_dispatch.py` + `/data/snapshots/` (raw disk store) |
-| FR28–33b Operator dashboard | `web/admin.html` + `web/admin.js` + FastAPI `/admin/api/status` endpoint in `infra/link_handler/main.py` |
+| FR19–23 Coordinator registration | `infra/link_handler/main.py` `register_url()` (claim/dedup — see seeding doc 09) |
+| FR24–27b Endpoint health / ingestion | `infra/link_handler/pipeline.py` (fetch+gate) + `scripts/spaceapi_extract/` (transform) + `snapshot_store.py` (raw + `observed_at`) |
+| FR28–33b Operator dashboard | `web/admin/index.html` + `/api/*` status endpoints in `infra/link_handler/main.py` |
 | FR34–36 SPARQL federated query | Oxigraph service + nginx routing |
-| FR37–42 NL bot | `harness/tasks/nl_to_sparql.py` + `harness/tasks/answer_format.py` + `harness/adapters/` |
+| FR37–42 NL bot | 🟡 Epic 6 — `harness/` (Nanobot + `tasks/nl_to_sparql`, `answer_format`; ADR-009/013) |
 | FR43–44 Auth | nginx (shared-password basic auth header) |
 
 ## External Schema References
@@ -1009,58 +970,42 @@ Note: `seeking_partners_for` is split into structured `grant_programme` + free `
 
 ```
 Space publishes SpaceAPI JSON at their URL
-  ↓ (scheduled heartbeat, conditional GET — ETag/Last-Modified)
-tasks/heartbeat.py — STAGE 1: FETCH
-  → raw JSON written to /data/snapshots/{id}/latest.json (with timestamp)
-  → normalize payload (strip ephemeral timestamps, sort arrays)
-  → compare with stored snapshot
-  → if UNCHANGED: update timestamp only, log "no_change", STOP
-  → if CHANGED: proceed to Stage 2
+  ↓ (~10-min cron, conditional GET — ETag/Last-Modified)
+infra/link_handler/pipeline.py — STAGE 1: FETCH
+  → raw payload + ETag/Last-Modified written to SQLite snapshot_store.db
+  → mint observed_at (Axis A — endpoint health, SQLite ONLY)
+  → content-gate:
+      304 or byte-identical 200 → advance observed_at, log "no_change", STOP
+      changed → proceed to Stage 2
 
-tasks/ingest.py — STAGE 2: TRANSFORM  (ADR-015)
-  → SpaceAPI JSON → MOM JSON-LD (ontology applied, field-by-field mapping)
-  → validate against mom:required subset (hard reject if missing)
-  → validate against mom:card / mom:extended subsets (warn + log if missing)
+scripts/spaceapi_extract/ (core, mom) — STAGE 2: TRANSFORM  (ADR-015)
+  → SpaceAPI JSON → MOM triples (ontology applied; mom:required hard-gate, mom:card warn)
 
-tasks/heartbeat.py — STAGE 3: INGEST
-  → SPARQL UPDATE → <urn:mak:space/{id}> (current triples)
-  → SPARQL UPDATE → <urn:mak:space/{id}/{date}> (append-only snapshot)
-  → SPARQL UPDATE → <urn:mak:status> (mom:operationalState = "confirmed" + mom:confirmedAt)
-  → log decision: "ingested" with diff summary
+infra/link_handler/pipeline.py — STAGE 3: INGEST
+  → idempotent DELETE WHERE + INSERT DATA → <urn:mak:space/{id}> (current triples)
+  → set mom:updatedAt = now (Axis B); mom:lastOpenChange from source claim (Axis C)
+  → log decision: "ingested" | "no_change" | "error"
 
-  ↓ (if stale/error threshold crossed)
-tasks/notify_dispatch.py
-  → read <urn:mak:notifications>
-  → fill template + generate magic link token
-  → send email / Discord DM
-  ↓ (on magic link YES click)
-link_handler/main.py
-  → validate token (single-use, 72h TTL)
-  → SPARQL UPDATE reset timer → mom:operationalState "confirmed"
+MATERIALIZE  (main.py: _rematerialize_geojson)
+  → SPARQL SELECT over claimed spaces → _binding_to_feature
+  → write web/data/spaces.geojson (3 tokens per feature + file-level `thresholds` header)
+  → this GeoJSON is the map's ONLY data source
 
-User query in Discord channel
+Registration / claim
+  ↓ (admin UI or POST /api/register)
+infra/link_handler/main.py — register_url()
+  → endpointUrl dedup → name-match claim-in-place → else mint new URI (seeding doc 09)
+  → write mom:endpointUrl; heartbeat begins minting tokens on next cycle
+
+Public map (network coordinator / maker)
   ↓
-adapters/discord_adapter.py
-  → defer(thinking=True)
-  → tasks/nl_to_sparql.py (OpenRouter Sonnet, temp=0)
-  → sparql_client.run_select(sparql)
-  → tasks/answer_format.py (OpenRouter Minimax)
-  → followup.send(answer)
+web/app.js
+  → fetch spaces.geojson
+  → compute all three axes + marker IN THE BROWSER from tokens + thresholds header
+  → health toggle overlays aging/zombie/dead — no auth, no admin access
+  → space card: GET /api/space/{id}/raw → SQLite raw payload (Zone-3 trust receipt)
 
-Operator opens /admin dashboard
+NL bot query  🟡 Epic 6 (dormant — harness/ + Nanobot)
   ↓
-admin.js → FastAPI /admin/api/status
-  → Oxigraph ping (ASK {}) → health pill: Oxigraph LIVE/DOWN
-  → ingestion heartbeat file mtime → health pill: Ingestion RUNNING/IDLE(Nh)
-  → SELECT on <urn:mak:status> → spaces reachable count + registry table
-  → operator clicks space row → inspection panel:
-      col 1: read /data/snapshots/{id}/latest.json (raw fetch, from disk)
-      col 2: SPARQL DESCRIBE <urn:mak:space/{id}> (ingested triples)
-      col 3: card display fields query (what public map renders)
-
-Network coordinator opens public map
-  ↓
-web/app.js → Tweaks panel health map toggle
-  → SELECT on mom:operationalState aging/zombie/dead (overlay layer)
-  → pin colour reflects freshness lifecycle — no auth, no admin access
+harness/ → Nanobot → tasks/nl_to_sparql → run_select → tasks/answer_format → reply
 ```

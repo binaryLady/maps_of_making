@@ -2,10 +2,12 @@
 stepsCompleted: ['step-01-init', 'step-02-discovery', 'step-02b-vision', 'step-02c-executive-summary', 'step-03-success', 'step-04-journeys', 'step-05-domain', 'step-06-innovation', 'step-07-project-type', 'step-08-scoping', 'step-09-functional', 'step-10-nonfunctional', 'step-11-polish', 'step-12-complete', 'step-e-01-discovery', 'step-e-02-review', 'step-e-03-edit']
 inputDocuments: ['maps_of_making-handoff.zip/Maps of Making.html', 'maps_of_making-handoff.zip/app.js', 'ndb_hugo/content/posts/map-of-making-locker/index.md']
 workflowType: 'prd'
-lastEdited: '2026-04-29'
+lastEdited: '2026-06-05'
 editHistory:
   - date: '2026-04-29'
     changes: 'Reframed MOM as semantic bridge/IPO service; split admin persona into Luca (public health map toggle) and Nicolas (operator dashboard); added Journey 3b; updated Success Criteria; FR13 Zone 3 as trust receipt; FR24-FR27 heartbeat pattern + aging/zombie/dead lifecycle; FR28-FR33 operator observability reframe; magic link flagged as parallel non-blocking; Innovation section updated with semantic bridge ambition'
+  - date: '2026-06-05'
+    changes: 'Correct-course drift pass against the reconciled architecture. Three-token contract (Epic 3.5): corrected the dated-snapshot storage model to SQLite raw receipt + Oxigraph DROP/INSERT-on-change (core principle, FR14b, FR24, FR27b, FR31); FR25 marker now computed in the browser (dropped transformer.effective_marker reference); FR25b vocabulary drift (Story 3.2c) marked resolved; NFR-R3 cadence 6h → 10min. Removed stray BMAD workflow Select: prompts. Planned-not-built requirements (Nanobot/NL bot, magic link, open-now) left intact.'
 briefCount: 0
 researchCount: 0
 brainstormingCount: 0
@@ -344,7 +346,7 @@ Multi-network beyond RFF/VOW; Matrix + Discord bot; 🟢 live-now tier via webho
 
 ## Functional Requirements
 
-**Core principle:** The map is a pure reader. We never edit records — we only ingest and display fresh data. The latest JSON at the registered URL is the truth; previous versions are kept as dated snapshots for historical record.
+**Core principle:** The map is a pure reader. We never edit records — we only ingest and display fresh data. The latest JSON at the registered URL is the truth. The most recent raw payload is kept verbatim in the SQLite snapshot store as a transparency receipt; semantic triples are rewritten in Oxigraph only when content changes (idempotent DROP/INSERT). Significant life-events (registration, closure, relocation) are the province of the append-only `public_ledger` (future epic) — not per-version dated snapshot graphs.
 
 ### Map Display & Navigation (Phase 1)
 - **FR1** Fullscreen MapLibre GL JS map with Protomaps PMTiles vector tiles
@@ -365,7 +367,7 @@ Multi-network beyond RFF/VOW; Matrix + Discord bot; 🟢 live-now tier via webho
 - **FR12** Click pin → detail drawer with space info, hours, machines, contact, links
 - **FR13** Detail drawer Zone 3 (desktop only) displays raw source JSON verbatim — unmodified payload from the registered endpoint — alongside the endpoint URL and last-fetch timestamp. This is a transparency receipt: proof that MOM has not altered the space's data. Fetch status shown: "responded" or "unreachable (last known)".
 - **FR14** Copy-to-clipboard for contact/address
-- **FR14b** Ingestion history visible: list of dated snapshots with diff summary
+- **FR14b** Ingestion freshness visible: last-fetch (`observed_at`) and last-content-change (`updated_at`) tokens surfaced per space. *(Per-version dated-snapshot history is not retained; life-event history is deferred to the `public_ledger`.)*
 
 ### Embed & Sharing (Phase 1 + 2)
 - **FR15** Iframe embed snippet generator for any space or filter state
@@ -381,22 +383,22 @@ Multi-network beyond RFF/VOW; Matrix + Discord bot; 🟢 live-now tier via webho
 - **FR23** No edit UI — coordinators update their data by editing their JSON at the URL
 
 ### Endpoint Health & Ingestion (Phase 2)
-- **FR24** Heartbeat fetch of all registered endpoints (10-minute cadence, configurable). Raw payload stored to disk with timestamp before transformation. If payload unchanged (normalized compare): update timestamp only, skip re-ingestion. If changed: store new snapshot + ingest update into Oxigraph.
-- **FR25** A space resolves **three orthogonal signal axes** into one public pin (via `transformer.effective_marker()`):
-  - **Endpoint reachability** — driven by HTTP behaviour (status, timeouts, time since last *successful* fetch): `healthy → unresponsive → warning → broken`. A fetch older than `heartbeat_period × multiplier` is itself a warning signal.
-  - **Lifecycle freshness** — driven by time since last *meaningful content change* (not fetch time; `sensors.*` churn does not count): `seeded → confirmed → aging → zombie`, with **two terminal states** — `closed` (operator-declared retirement) and `dead` (auto-inferred after N failed cycles). Both render as a tombstone marker but preserve declared-vs-inferred provenance.
-  - **Open/close** — the real-time `openNow` boolean (`mom:dynamicState`); presentational only.
-  > *Reframed 2026-05-16 (`mom_handoff_2026-05-16.md`). Supersedes the prior flat "freshness lifecycle driven by time since last successful fetch". Epic 7 (parked): webhook/device ping presence layer.*
-- **FR25b** Closure logic: JSON self-reports closed OR N consecutive fetch failures → PII removed, space marked closed-at-date, pin retained for historical record. *(Note: the `closed` token here vs. operator-declared retirement is a vocabulary drift flagged for Story 3.2c.)*
+- **FR24** Heartbeat fetch of all registered endpoints (10-minute cadence, configurable). Raw payload written to the SQLite snapshot store, minting `observed_at`, before transformation. If unchanged (304 or byte-identical): advance `observed_at` only, skip re-ingestion. If changed: transform and DROP/INSERT into Oxigraph, set `mom:updatedAt`.
+- **FR25** A space resolves **three orthogonal signal axes** into one public marker, **computed in the browser** from the three tokens + a `thresholds` header (storage holds facts, never derived buckets):
+  - **Endpoint reachability** — driven by `observed_at` age vs thresholds: `healthy → unresponsive → warning → broken`. A fetch older than `heartbeat_period × multiplier` is itself a warning signal.
+  - **Lifecycle freshness** — driven by time since last *meaningful content change* (`mom:updatedAt`, not fetch time; `sensors.*` churn does not count): `seeded → confirmed → aging → zombie`, with **two terminal states** — `closed` (operator-declared retirement) and `dead` (auto-inferred after N failed cycles). Both render as a tombstone marker but preserve declared-vs-inferred provenance.
+  - **Open/close** — the `openNow` signal from Axis-C `mom:lastOpenChange`; presentational only.
+  > *Three-token contract (Epic 3.5, done). Full axis math: `docs/architecture/03-freshness-axes.md`. Epic 7 (parked): webhook/device ping presence layer.*
+- **FR25b** Closure logic: JSON self-reports closed OR N consecutive fetch failures → PII removed, space marked closed-at-date, pin retained for historical record. (Terminal-state vocabulary `closed`/`dead` resolved in Story 3.2c.)
 - **FR26** Diff detection between snapshots flags meaningful changes (normalize before compare — strip ephemeral timestamps, sort arrays to avoid false positives)
 - **FR27** Ingestion failures logged with reason (timeout, 4xx, 5xx, schema invalid); every fetch decision logged (including "no change detected") for pipeline auditability
-- **FR27b** Append-only versioned snapshots — ingested data never overwritten, each fetch stored with timestamp
+- **FR27b** Raw payload retained verbatim in the SQLite snapshot store (latest per space) as the audit/transparency receipt; Oxigraph triples are rewritten (DROP/INSERT) only on a real content change. *(Immutable per-event history is the future `public_ledger`, not a per-fetch dated archive.)*
 
 ### Operator Dashboard (Phase 2)
 - **FR28** Operator dashboard at `admin.*` subdomain (basic auth, operator-only). Single-page tool for infrastructure observability — not a network coordinator view (Luca uses the public health map toggle).
 - **FR29** System health strip at page top: three status pills — Oxigraph (live/down), Ingestion process (running/idle + time since last run), Spaces reachable (count/total). Binary: green or amber/red. Last-checked timestamp.
 - **FR30** Space registry table: space name, endpoint URL, last probe timestamp, probe result (HTTP status). Sortable. Rows with failures highlighted. Each row clickable.
-- **FR31** Per-space inspection panel (opens on row click): three columns — (1) raw source JSON from last disk snapshot with fetch timestamp, (2) ingested triples from Oxigraph (`DESCRIBE urn:mak:space/{id}`), (3) card display fields as rendered on the public map. Enables git-diff-style pipeline diagnosis.
+- **FR31** Per-space inspection panel (opens on row click): three columns — (1) raw source JSON from the SQLite snapshot store with `observed_at` (via `/api/space/{id}/raw`), (2) ingested triples from Oxigraph (`DESCRIBE urn:mak:space/{id}`), (3) card display fields as rendered on the public map. Enables git-diff-style pipeline diagnosis.
 - **FR32** Manual re-fetch trigger per endpoint (resets heartbeat cycle for that space)
 - **FR33** Export space registry (CSV/JSON) with last-probe state
 - **FR33b** All operator actions (manual re-fetch, export) logged with timestamp
@@ -421,8 +423,6 @@ Multi-network beyond RFF/VOW; Matrix + Discord bot; 🟢 live-now tier via webho
 
 ---
 
-**Select:** [A] Advanced Elicitation  [P] Party Mode  [C] Continue to Non-Functional Requirements (Step 10 of 13)
-
 ## Non-Functional Requirements
 
 **Scale envelope:** PoC targets 10 spaces → RFF+VOW pilot ~500 spaces. Full Internet of Production horizon ~15k. NFRs below sized for PoC/pilot; scale-hardening notes flagged for future implementation.
@@ -437,7 +437,7 @@ Multi-network beyond RFF/VOW; Matrix + Discord bot; 🟢 live-now tier via webho
 ### Reliability & Ingestion
 - **NFR-R1** Endpoint fetch uses ETag / Last-Modified conditional requests — pull + ingest only when diff detected (fast trust signal when coordinator edits their JSON)
 - **NFR-R2** Fetch timeout 60s per endpoint with incremental backoff on failure
-- **NFR-R3** Fetch cadence (6h default), failure thresholds (stale/broken/closed), and retention policy are **config-file driven**, not hardcoded — tuned from real PoC data
+- **NFR-R3** Fetch cadence (~10min default), failure thresholds (stale/broken/closed), and retention policy are **config-file driven**, not hardcoded — tuned from real PoC data. Thresholds ship to the browser in the GeoJSON `thresholds` header so derived buckets are computed at consumption time.
 - **NFR-R4** Per-endpoint fetch latency logged (min/avg/max ms) and surfaced on admin dashboard
 - **NFR-R5** Map SPA remains functional when up to 50% of endpoints are unreachable — stale data served with explicit provenance timestamp; degrade-to-stale, never degrade-to-empty
 - **NFR-R6** Fetch worker failures never take down the public map — pipeline isolation (SPA serves last-good Oxigraph state; scheduler runs as isolated background service)
@@ -485,7 +485,3 @@ Multi-network beyond RFF/VOW; Matrix + Discord bot; 🟢 live-now tier via webho
 ### Observability (cross-cutting)
 - **NFR-O1** Admin dashboard exposes: fetch latency (min/avg/max per endpoint), success rate, diff-detection rate, Oxigraph sync lag, bot query latency + success rate, map load performance, quarantine queue depth
 - **NFR-O2** All "TBD" thresholds (cadence, failure counts, retention, bot latency SLO, perf SLAs) set in config **after real PoC telemetry** — no premature optimization
-
----
-
-**Select:** [A] Advanced Elicitation  [P] Party Mode  [C] Continue to Polish Document (Step 11 of 12)

@@ -39,7 +39,7 @@ Phase 1 (map SPA, deployed at mapofmaking.debarquin.eu) is shipped. The epic/sto
 - FR12: Click pin → detail drawer with space info, hours, machines, contact, links
 - FR13: Detail drawer shows data provenance: endpoint URL + last-ingested timestamp
 - FR14: Copy-to-clipboard for contact/address
-- FR14b: Ingestion history visible: list of dated snapshots with diff summary
+- FR14b: Ingestion freshness visible: `observed_at` (last fetch) + `updated_at` (last content change) tokens per space. *(Epic 3.5: no per-version dated-snapshot archive; life-event history deferred to `public_ledger`.)*
 
 **Embed & Sharing (Phase 1 shipped + Phase 2 polish)**
 - FR15: Iframe embed snippet generator for any space or filter state
@@ -168,12 +168,12 @@ Phase 1 (map SPA, deployed at mapofmaking.debarquin.eu) is shipped. The epic/sto
 - AR-DATA1: Oxigraph named graph topology — `<urn:mak:space/{id}>` (current per-space), `<urn:mak:canary/{id}>` (canary per-space), `<urn:mak:presence>` (webhook open-now, reserved), `<urn:mak:notifications>` (queue), `<urn:mak:ontology/iop>`, `<urn:mak:ontology/mom>`. **Epic 3.5 supersedes (2026-05-28):** `<urn:mak:status>` materialized-freshness graph was never built; freshness now lives in `snapshot_store.db` (Axis A) + per-space graphs (`mom:updatedAt` Axis B, `mom:lastOpenChange` Axis C); `<urn:mak:space/{id}/{date}>` per-date snapshot graphs were replaced by SQLite snapshot rows.
 - AR-DATA2: Freshness materialization — **Epic 3.5 supersedes (2026-05-28):** storage holds raw tokens only (three-token contract); derived state (`endpointHealth`, `operationalState`, marker colour, aging/zombie/dead bucket) is computed in the browser from a `thresholds` block in the GeoJSON header. Do not reintroduce stored derived columns. Lifecycle 30d/90d/180d thresholds still configurable, now in `config.yaml.thresholds`. **LOD note:** state values are `xsd:string` literals (`"confirmed"`, `"seeded"`, etc.) — deliberate 4-star LOD choice. Earlier drafts used `mak:confirmed` etc. as RDF IRIs (5-star upgrade path, deferred). Do not reintroduce IRI-style values without first defining them as `skos:Concept` entries in `mom.ttl`.
 - AR-DATA3: Presence graph reserved now for "open-now" webhook; handler implemented late Phase 2.
-- AR-DATA4: MOM ontology align-and-extend — Schema.org base + IoP `skos:closeMatch` + `mom:` extensions. Canonical IRI `https://w3id.org/maps-of-making/` → GitHub Pages.
+- AR-DATA4: MOM ontology align-and-extend — Schema.org base + IoP `skos:closeMatch` + `mom:` extensions. **Canonical namespace `https://nicolasdb.github.io/mapsofmaking_ontology/ns#` (prefix `mom:`); `mom.ttl` authoritative.** The earlier `w3id.org/maps-of-making/` IRI is not used anywhere. Layered schema model: ADR-016.
 - AR-DATA5: IoP ontology loaded at harness startup into dedicated named graph; ~15–20% subset extracted via CONSTRUCT, cached in memory, injected into every NL→SPARQL prompt. `RELOAD_ONTOLOGY=1` forces reload.
 
 **Agent Framework & Harness (ADR-008, ADR-009, ADR-013):**
 - AR-AGT1: Nanobot as agent framework — LiteLLM provider over OpenRouter; CronService + HEARTBEAT.md for scheduling; Discord + Telegram adapters built-in. **[Updated Epic 1 retro 2026-04-25: image NOT `FROM hkuds/nanobot:latest` (not public). Must clone github.com/HKUDS/nanobot and build locally. Runs as separate compose project. Not needed until Epic 6.]**
-- AR-AGT2: Custom `tasks/` modules (heartbeat, nl_to_sparql, answer_format, notify_dispatch, magic_link) invoked by Nanobot; one task = one file; all return `str`.
+- AR-AGT2: Custom `tasks/` modules invoked by Nanobot; one task = one file; all return `str`. **Note:** the *heartbeat/ingestion* is already built in the `infra/link_handler` runtime (Epic 3.5) — it is NOT a Nanobot task. Epic 6 tasks are the LLM ones: `nl_to_sparql`, `answer_format`; magic-link/`notify_dispatch` belong to Epic 4b.
 - AR-AGT3: Multi-model assignments via config: Haiku for heartbeat, Sonnet (temp=0) for NL→SPARQL, Minimax for answer formatting.
 - AR-AGT4: Discord defer pattern mandatory (`interaction.response.defer(thinking=True)`) on any LLM-involved command — bot timeout is 3s, LLM calls exceed this.
 - AR-AGT5: Protocol-agnostic ChannelAdapter protocol — Discord first, Telegram built-in, Mattermost as custom adapter post-pilot.
@@ -184,7 +184,7 @@ Phase 1 (map SPA, deployed at mapofmaking.debarquin.eu) is shipped. The epic/sto
 - AR-MLNK3: Notification dispatch is non-LLM for PoC — queue in Oxigraph (`<urn:mak:notifications>`), worker reads, fills template, sends, writes `mak:dispatched`. Retry 3× with backoff, escalate to network admins on failure.
 
 **Operational Metrics (ADR-012):**
-- AR-METR1: SQLite `./data/metrics.db` mounted into scheduler container. Tables: `heartbeat_log`, `llm_cost_log`. Exposed via internal `/metrics` JSON endpoint. **Not** in Oxigraph (breaks circular dependency when Oxigraph is down).
+- AR-METR1: Operational data lives in SQLite, **not** Oxigraph (breaks circular dependency when Oxigraph is down). **Epic 3.5 supersedes (2026-05-28):** realised as `data/tasks/snapshot_store.db` (raw payload + `observed_at`) owned by the `link_handler` runtime, surfaced via `/api/*`. The `metrics.db` / `mak-scheduler` / `/metrics` endpoint and `llm_cost_log` table were never built — a dedicated metrics surface is Epic 4 (operator dashboard) / Epic 6 (LLM cost) scope.
 
 **Conventions / Code Standards:**
 - AR-CONV1: Naming — `urn:mak:{type}/{id}` for named graphs; `mom:camelCase` properties / `mom:PascalCase` classes; `snake_case` Python; `verb_noun()` async functions; `mak-` prefix on Docker services.
@@ -262,7 +262,7 @@ Phase 1 (map SPA, deployed at mapofmaking.debarquin.eu) is shipped. The epic/sto
 | FR12 | Epic 5 | Pin click → detail drawer (real federated data) |
 | FR13 | Epic 2 | Detail drawer: provenance URL + last-ingested timestamp |
 | FR14 | Epic 5 | Copy-to-clipboard for contact/address |
-| FR14b | Epic 2 | Ingestion history + dated snapshot list in detail drawer |
+| FR14b | Epic 2 | Freshness tokens (`observed_at` / `updated_at`) surfaced in detail drawer |
 | FR15 | Epic 5 | Iframe embed snippet generator |
 | FR16 | Epic 5 | Web component `<maps-of-making>` |
 | FR17 | Epic 5 | Embeds carry attribution + last-confirmed caption |
@@ -1629,7 +1629,7 @@ So that queries are grounded in real schema vocabulary and the LLM never invents
 **When** `tasks/nl_to_sparql.py` is called with a natural-language question string
 **Then** it extracts a ~15–20% relevant subset of the IoP ontology via SPARQL CONSTRUCT, serializes it as a compact text block, and caches it in memory (AR-DATA5)
 **And** calls OpenRouter via `llm_client.py` using the `nl_to_sparql` model (Sonnet, `temperature=0.0`, `max_tokens=512`) with the ontology subset as system context
-**And** the prompt instructs the model to return only a SPARQL SELECT string targeting `<urn:mak:space/*>` and `<urn:mak:status>` named graphs, using only predicates present in the ontology context
+**And** the prompt instructs the model to return only a SPARQL SELECT string targeting `<urn:mak:space/*>` (and `<urn:mak:canary/*>`) named graphs, using only predicates present in the ontology context (there is no `<urn:mak:status>` graph — freshness buckets are browser-computed, not stored)
 **And** the returned SPARQL string is validated before use: checked for `DROP`, `INSERT`, `DELETE`, `UPDATE` keywords — any mutation attempt is rejected and logged as a security event (NFR-S5)
 **And** the task returns a plain `str` (the SPARQL query) — no structured object (AR-AGT2)
 **And** prompt cache hit-rate is logged per call to `llm_cost_log` SQLite table for admin dashboard tracking (NFR-L1)
