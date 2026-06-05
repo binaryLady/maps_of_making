@@ -46,6 +46,17 @@
     _lastMapStyle: 'dim',      // track last applied style to avoid redundant setStyle() calls
   };
 
+  // ───────────────────────────── embed mode
+  // Cross-origin-safe: window.frameElement throws SecurityError across origins (the real
+  // embed case), so detect via window.self !== window.top. `?embed=1` forces it for previews.
+  const IS_EMBED = (() => {
+    try {
+      const forced = new URLSearchParams(window.location.search).get('embed');
+      if (forced === '1' || forced === 'true') return true;
+    } catch {}
+    try { return window.self !== window.top; } catch { return true; }
+  })();
+
   // ───────────────────────────── dom helpers
   const $ = (sel, root = document) => root.querySelector(sel);
   const escHtml = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -69,7 +80,7 @@
 
   // ───────────────────────────── data
   async function loadData() {
-    const res = await fetch('/data/spaces.geojson');
+    const res = await fetch('/data/spaces.geojson?t=' + Date.now());
     if (!res.ok) {
       console.error(`[loadData] Network error: HTTP ${res.status} ${res.statusText}`);
       document.body.classList.add('data-load-error');
@@ -162,7 +173,6 @@
   }
 
   let map;
-  let mapInitialized = false;
   function initMap() {
     map = new maplibregl.Map({
       container: 'map',
@@ -182,15 +192,18 @@
       ld.style.opacity = '0';
       setTimeout(() => ld.remove(), 320);
     };
-    map.on('load', () => {
-      if (mapInitialized) return;
-      mapInitialized = true;
-      map.resize();
-      renderMarkers();
-      dismissLoader();
-    });
-    // Fallback: if tiles are blocked or load is slow, dismiss anyway.
-    setTimeout(() => { if (!mapInitialized) { mapInitialized = true; try { map.resize(); renderMarkers(); } catch {} dismissLoader(); } }, 1500);
+    // Idempotent ready(): safe to call from styledata, load, or the fallback timeout.
+    // styledata fires when the style is parsed (before tiles), so the loader dismisses early
+    // and markers render; load fires again once tiles are painted for a clean re-render.
+    let readyFired = false;
+    const ready = () => {
+      if (!readyFired) { readyFired = true; map.resize(); dismissLoader(); }
+      try { renderMarkers(); } catch {}
+    };
+    map.on('styledata', ready);
+    map.on('load', ready);
+    // Fallback: tiles blocked or very slow.
+    setTimeout(ready, 1500);
 
     // Close drawers when clicking the map
     map.on('click', (e) => {
@@ -263,12 +276,14 @@
       svg.setAttribute('aria-label', `${s.name}, ${s.city}, ${s.country}, status ${kind}`);
       svg.setAttribute('role', 'button');
       svg.setAttribute('tabindex', '0');
-      svg.addEventListener('click', (e) => {
+      const onActivate = (e) => {
         e.stopPropagation();
-        selectSpace(s.id, { fly: false });
-      });
+        if (IS_EMBED) showEmbedPopup(s, kind, [lon, lat]);
+        else selectSpace(s.id, { fly: false });
+      };
+      svg.addEventListener('click', onActivate);
       svg.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectSpace(s.id, { fly: false }); }
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onActivate(e); }
       });
       const marker = new maplibregl.Marker({ element: svg, anchor: 'center' })
         .setLngLat([lon, lat])
@@ -277,6 +292,46 @@
     }
     if (state.selectedId) highlightSelected();
     updateCounts();
+  }
+
+  // Lightweight popup for embedded maps — no full detail drawer, just identity + a way out.
+  let _embedPopup = null;
+  function showEmbedPopup(s, kind, lngLat) {
+    if (_embedPopup) _embedPopup.remove();
+    const badgeKindClass = { open: 'sp-badge-open', shut: 'sp-badge-shut', confirmed: 'sp-badge-confirmed', broken: 'sp-badge-broken', seeded: 'sp-badge-seeded' };
+    const deepLink = `https://mapsofmaking.org/?space=${encodeURIComponent(s.id)}`;
+
+    const logoBox = el('div', { class: 'sp-logo' });
+    if (s.logo) {
+      const img = document.createElement('img');
+      img.src = s.logo; img.alt = '';
+      img.onerror = () => { img.remove(); logoBox.classList.add('is-placeholder'); logoBox.appendChild(_logoPlaceholder()); };
+      logoBox.appendChild(img);
+    } else {
+      logoBox.classList.add('is-placeholder');
+      logoBox.appendChild(_logoPlaceholder());
+    }
+
+    const node = el('div', { class: 'embed-popup' }, [
+      el('div', { class: 'sp-hero' }, [
+        el('div', { class: 'sp-name-row' }, [
+          el('div', { class: 'sp-name' }, [s.name || s.id]),
+          logoBox,
+        ]),
+        s.address ? el('div', { class: 'sp-address' }, [s.address]) : null,
+        el('div', { class: 'sp-badges-row' }, [
+          el('span', { class: `sp-badge ${badgeKindClass[kind] || 'sp-badge-tag'}` }, [kind]),
+          ...(s.network_memberships || []).map((n) => el('span', { class: 'sp-badge sp-badge-tag' }, [n.split('/').pop().toUpperCase()])),
+        ]),
+      ]),
+      el('div', { class: 'ep-footer' }, [
+        el('a', { class: 'ep-link', href: deepLink, target: '_blank', rel: 'noopener' }, ['Open on mapsofmaking.org ↗']),
+      ]),
+    ]);
+    _embedPopup = new maplibregl.Popup({ offset: 16, closeButton: true, closeOnClick: true, maxWidth: '280px' })
+      .setLngLat(lngLat)
+      .setDOMContent(node)
+      .addTo(map);
   }
 
   // ───────────────────────────── live freshness axes (Story 3.10)
@@ -391,6 +446,7 @@
   }
 
   function updateCounts() {
+    if (IS_EMBED) return; // all targets are hidden chrome in embed mode
     const visible = filteredSpaces();
     const total = state.spaces.length;
     $('#results-count').textContent = String(visible.length);
@@ -903,10 +959,11 @@
     if (p.has('status'))   p.get('status').split(',').filter(Boolean).forEach((s) => state.filters.statuses.add(s));
     if (p.has('specialty')) p.get('specialty').split(',').filter(Boolean).forEach((s) => state.filters.specialties.add(s));
     if (p.has('q')) state.search = p.get('q');
-    // viewport applied after map loads so fitBounds overrides the default center/zoom
+    // viewport + space selection applied after map loads
     const bbox = p.get('bbox');
     const center = p.get('center');
-    if (bbox || center) {
+    const spaceId = p.get('space');
+    if (bbox || center || spaceId) {
       map.once('load', () => {
         if (bbox) {
           const [west, south, east, north] = bbox.split(',').map(Number);
@@ -916,6 +973,16 @@
         } else if (center) {
           const [lat, lon] = center.split(',').map(Number);
           if (!isNaN(lat) && !isNaN(lon)) map.jumpTo({ center: [lon, lat], zoom: 13 });
+        }
+        const target = spaceId && state.spaces.find((x) => x.id === spaceId);
+        if (target) {
+          if (IS_EMBED) {
+            // no detail drawer in embed — fly + lightweight popup
+            map.flyTo({ center: [target.coordinates.lon, target.coordinates.lat], zoom: Math.max(map.getZoom(), 8), speed: 1.2 });
+            showEmbedPopup(target, computeMarker(target), [target.coordinates.lon, target.coordinates.lat]);
+          } else {
+            selectSpace(spaceId, { fly: true });
+          }
         }
       });
     }
@@ -1421,9 +1488,7 @@
   window.__map = () => map;
 
   // ───────────────────────────── embed detection
-  if (window.frameElement !== null) {
-    document.body.classList.add('embed-mode');
-  }
+  if (IS_EMBED) document.body.classList.add('embed-mode');
 
   // ───────────────────────────── boot
   (async function boot() {
@@ -1440,6 +1505,15 @@
         const protocol = new pmtiles.Protocol({ metadata: true });
         maplibregl.addProtocol('pmtiles', protocol.tile);
       }
+      // Embed mode: slim render path. No chrome wiring, no preferences, no poller —
+      // just map + markers + the deep-linked view. Keeps the host page lightweight.
+      if (IS_EMBED) {
+        initMap();
+        applyUrlParams();
+        // renderMarkers fires from initMap's ready(); applyUrlParams handles bbox/center/space.
+        return;
+      }
+
       loadPreferences();
       initMap();
       applyUrlParams();

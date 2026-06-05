@@ -4,6 +4,7 @@
 <meta charset="utf-8" />
 <title>Maps of Making — demo</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<link rel="preconnect" href="https://tiles.openfreemap.org" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Caveat:wght@600;700&display=swap" rel="stylesheet" />
@@ -519,6 +520,20 @@
   body.embed-mode .bot-drawer,
   body.embed-mode .drawer { display: none !important; }
   body.embed-mode .maplibregl-ctrl-bottom-right { bottom: 10px !important; }
+
+  /* Embed popup — card styled to match the space profile drawer */
+  .maplibregl-popup .embed-popup { font-family: 'Inter Tight', sans-serif; }
+  .maplibregl-popup-content:has(.embed-popup) {
+    padding: 0; border: 1.5px solid var(--ink); box-shadow: var(--shadow); border-radius: 0;
+    overflow: hidden;
+  }
+  .embed-popup .sp-hero { border-bottom: 1px dashed var(--rule); }
+  .embed-popup .ep-footer { padding: 8px 14px; background: var(--paper-2); }
+  .embed-popup .ep-link,
+  .embed-popup .ep-link:link,
+  .embed-popup .ep-link:visited { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600;
+    color: var(--accent-2) !important; text-decoration: none; letter-spacing: 0.02em; }
+  .embed-popup .ep-link:hover { text-decoration: underline; }
 
 </style>
 </head>
