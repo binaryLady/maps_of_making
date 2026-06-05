@@ -463,7 +463,9 @@
     const networks = unique(state.spaces.flatMap((s) => s.network_memberships))
       .map((n) => [n, n.split('/').pop().toUpperCase()]);
     const countries = unique(state.spaces.map((s) => s.country_code)).filter(Boolean);
-    const statuses = ['seeded', 'confirmed', 'open', 'shut', 'broken'];
+    // Matches computeMarker's collapsed label. Real fix (orthogonal health/freshness
+    // vs open/shut axes) is deferred → Epic 5. See deferred-work.md.
+    const statuses = ['seeded', 'confirmed', 'open', 'shut', 'broken', 'aging', 'zombie', 'dead'];
     const specialties = unique(state.spaces.flatMap((s) => s.specialties)).sort();
 
     renderChips('#chips-network', networks, state.filters.networks);
@@ -1010,8 +1012,8 @@
     const base = window.location.origin + window.location.pathname;
     const paramParts = [`preset=${slug}`, q !== 'all' ? q : null, `bbox=${bbox}`];
     if (state.embed.centerId) {
-      const cs = state.spaces.find((x) => x.id === state.embed.centerId);
-      if (cs) paramParts.push(`center=${cs.coordinates.lat.toFixed(5)},${cs.coordinates.lon.toFixed(5)}`);
+      // single-space embed: ?space= flies + selects/pops the space (overrides bbox on load)
+      paramParts.push(`space=${encodeURIComponent(state.embed.centerId)}`);
     }
     const shareUrl = `${base}?${paramParts.filter(Boolean).join('&')}`;
 
@@ -1283,7 +1285,11 @@
     }
     $('#btn-filters').addEventListener('click', () => toggleDrawer('filters'));
     $('#btn-search').addEventListener('click', () => toggleDrawer('search'));
-    $('#btn-preset').addEventListener('click', () => toggleDrawer('preset'));
+    $('#btn-preset').addEventListener('click', () => {
+      // Toolbar entry = filter-preset builder; start clean (embedSpace path sets these).
+      if (state.openDrawer !== 'preset') { state.embed.centerId = null; $('#preset-name').value = ''; }
+      toggleDrawer('preset');
+    });
     $('#btn-addurl').addEventListener('click', () => toggleDrawer('addurl'));
     $('#btn-tweaks').addEventListener('click', () => toggleDrawer('tweaks'));
     $('#btn-bot').addEventListener('click', () => toggleDrawer('bot'));

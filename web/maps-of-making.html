@@ -534,6 +534,9 @@
   .embed-popup .ep-link:visited { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600;
     color: var(--accent-2) !important; text-decoration: none; letter-spacing: 0.02em; }
   .embed-popup .ep-link:hover { text-decoration: underline; }
+  /* no focus ring inside the embed popup */
+  .maplibregl-popup-content:has(.embed-popup) :focus,
+  .maplibregl-popup-content:has(.embed-popup) :focus-visible { outline: none; }
 
 </style>
 </head>
@@ -659,7 +662,7 @@
         <h4>Current view</h4>
         <div class="preset-field">
           <label for="preset-name">Preset name</label>
-          <input id="preset-name" type="text" value="Open wood workshops, DE" style="border:1.5px solid var(--rule); padding:8px 10px; background:#fff; font-family:'JetBrains Mono',monospace; font-size:12px;" />
+          <input id="preset-name" type="text" placeholder="e.g. Open wood workshops, DE" style="border:1.5px solid var(--rule); padding:8px 10px; background:#fff; font-family:'JetBrains Mono',monospace; font-size:12px;" />
         </div>
         <div class="preset-preview" id="preset-preview">
           Captures <strong id="pp-count">—</strong> spaces · filters: <span id="pp-filters">—</span> · bbox auto

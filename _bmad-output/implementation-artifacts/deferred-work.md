@@ -347,3 +347,21 @@ Generating a real openfab.jsonld against the `space-jsonld-generator` skill expo
   pivot (`scripts/seed_csv.py`, which blanks invalid URLs at conversion). Revisit only if
   a real recurring need appears. The nudge philosophy (incomplete data = signal to the
   space to publish a clean endpoint) makes lossy-but-honest acceptable.
+- **Status filter conflates two orthogonal axes → Epic 5.** The map's status filter
+  chips (`web/app.js` `buildFilterChips`) currently list the *collapsed* `computeMarker`
+  label: `seeded, confirmed, open, shut, broken, aging, zombie, dead`. Cheap fix applied
+  2026-06-05 (added `aging/zombie/dead` so the new freshness states are at least
+  selectable). **Real fix deferred:** `computeMarker` collapses two independent
+  dimensions into one label — **health/freshness** (broken / aging / zombie / dead, from
+  the three-token model) and **door state** (open / shut). A space can be both `aging`
+  AND `open`, but the single-label filter can only match one. Proper solution is to split
+  status filtering into two filter groups (health-freshness vs open/shut) so combinations
+  work, which is a real UX rethink (chip layout, preset URL param shape, legend). Pair
+  with the Epic 5 map-viz lenses work. Touches `filteredSpaces`, `buildFilterChips`,
+  `applyUrlParams` (`status=` param), and the preset/embed share URL contract.
+- **Preset & embed feature is thin → TBD.** Toolbar "Preset & embed" now opens clean
+  (empty name, no stale `center`/`space`) vs the per-card "Embed this space" path which
+  pre-populates. Open ideas, not yet scoped: (a) a small **banner in the preset drawer**
+  clarifying which mode you're in (filter-preset vs single-space embed); (b) named/saved
+  presets; (c) decide the fate of the decorative `preset=<slug>` URL param (emitted but
+  never read by `applyUrlParams`). Revisit when presets get real product attention.
