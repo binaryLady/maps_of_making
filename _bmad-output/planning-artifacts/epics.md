@@ -55,12 +55,12 @@ Phase 1 (map SPA, deployed at mapofmaking.debarquin.eu) is shipped. The epic/sto
 - FR23: No edit UI — coordinators update their data by editing their JSON at the URL
 
 **Endpoint Health & Ingestion (Phase 2)**
-- FR24: Periodic fetch of all registered endpoints (6-hour cadence, configurable)
-- FR25: Endpoint state machine: confirmed → stale (N failed fetches) → broken → closed
+- FR24: Periodic fetch of all registered endpoints (~10-min cadence, configurable). Raw payload written to SQLite snapshot store (`observed_at`); Oxigraph triples rewritten (DROP/INSERT) only on content change.
+- FR25: Three orthogonal freshness axes computed in the browser from tokens + `thresholds` header — endpoint reachability (Axis A: `observed_at` age), lifecycle freshness (Axis B: `updated_at` age → confirmed/aging/zombie/dead), operational liveness (Axis C: `open_now`). Terminal states: `closed` (declared) and `dead` (auto-inferred). *(Three-token contract — Epic 3.5 done.)*
 - FR25b: Closure logic: JSON self-reports closed OR N consecutive fetch failures → PII removed, space marked closed-at-date, pin retained for historical record
 - FR26: Diff detection between snapshots flags meaningful changes
 - FR27: Ingestion failures logged with reason (timeout, 4xx, 5xx, schema invalid)
-- FR27b: Append-only versioned snapshots — ingested data never overwritten, each fetch stored with timestamp
+- FR27b: Raw payload retained verbatim in SQLite snapshot store (latest per space) as transparency receipt. Oxigraph triples rewritten only on real content change. *(Per-event immutable history = future `public_ledger`, not a per-fetch archive.)*
 
 **Admin Dashboard (Phase 2)**
 - FR28: Admin dashboard on separate subdomain showing all endpoints with current state
@@ -272,12 +272,12 @@ Phase 1 (map SPA, deployed at mapofmaking.debarquin.eu) is shipped. The epic/sto
 | FR21 | Epic 2 | Pin flip ⚪ → 🔵 on successful registration |
 | FR22 | Epic 2 | Reciprocal embed snippet returned to coordinator |
 | FR23 | Epic 2 | No edit UI — coordinator updates JSON at source URL |
-| FR24 | Epic 3 | Periodic endpoint fetch (6h cadence, configurable) |
-| FR25 | Epic 3 | State machine: confirmed → stale → broken → closed |
+| FR24 | Epic 3 | Periodic endpoint fetch (~10min cadence, configurable); SQLite receipt + Oxigraph on diff |
+| FR25 | Epic 3 | Three-axis freshness computed in browser (observed_at / updated_at / open_now) — Epic 3.5 done |
 | FR25b | Epic 3 | Closure logic: PII removed, space marked closed-at-date |
 | FR26 | Epic 2 | Diff detection on first ingest (seed→claim transition) |
 | FR27 | Epic 3 | Ingestion failure logging (timeout / 4xx / 5xx / schema) |
-| FR27b | Epic 2 | Append-only versioned snapshots from first ingest |
+| FR27b | Epic 2 | Raw payload in SQLite (latest per space); Oxigraph rewritten on diff only |
 | FR28 | Epic 4 | Admin dashboard: all endpoints + current state |
 | FR29 | Epic 4 | Dashboard filters: confirmed / stale / broken / closed |
 | FR30 | Epic 4 | Per-endpoint: fetch history, last diff, error log |
@@ -1499,6 +1499,68 @@ So that I can recover my pin without needing to remember what a JSON endpoint is
 ## Epic 5: Map Polish, Progressive Disclosure & Accessibility
 
 The map now runs on real federated data. This epic validates phase-1 UI hypotheses against actual usage, adds provenance and failure states throughout, wires the accessible list view, and gets axe-core into CI. Each story is independently shippable — polish is continuous, not a gate.
+
+**Story 5.0 is the prerequisite foundation for this entire epic.** It migrates the rendering substrate from DOM markers to GL-native layers, unlocks the world view (drops EU `maxBounds`), remaps the colour ladder (`shut` → dimmed-green, Overview Effect continental layer), and establishes viewport-first embed init. Stories 5.1–5.5 assume 5.0 has landed.
+
+---
+
+### Story 5.0: GL Rendering Substrate + World View Unlock
+
+As a map viewer anywhere in the world,
+I want the map to render spaces using a GL-native layer that clusters at continental zoom and opens to the full world,
+So that the map feels alive at every scale — from a maker's street corner to a continental field of light — and embeds load at the right place from the first frame.
+
+**Acceptance Criteria:**
+
+**Given** `spaces.geojson` is fetched on map load
+**When** the map initialises
+**Then** all spaces are loaded into a single MapLibre GL GeoJSON source (`map.addSource('spaces', { type: 'geojson', cluster: true, clusterMaxZoom: 7 … })`)
+**And** the existing `renderMarkers()` DOM-marker loop is removed — no individual `maplibregl.Marker` elements are created for spaces
+**And** `computeMarker()` logic is ported to a JS helper that maps space state → GL paint property values (circle-color, circle-radius)
+**And** `filteredSpaces()` drives `map.setFilter()` on the GL source instead of DOM re-mount
+**And** `selectSpace()` / `highlightSelected()` use the GL feature-state API
+
+**Given** the map is at zoom ≤ 7 (continental / world scale)
+**When** spaces are clustered
+**Then** clusters render as GL circles sized by count
+**And** cluster fill colour encodes the health composition of member spaces — a status-weighted blend (green-dominant = healthy region; amber/grey = decaying) derived from each member's `computeMarker()` value
+**And** MapLibre place/label symbol layers fade to opacity 0 below z6 — coastlines and landmass remain, named labels dissolve (Overview Effect: geography + points only at altitude)
+**And** no network or country colouring is applied to clusters — spaces are kin by aliveness, not by directory
+
+**Given** the map is at zoom ≥ 8 (city / street scale)
+**When** clusters break apart into individual spaces
+**Then** each space renders as a GL circle with colour and radius driven by its `computeMarker()` state
+**And** the open-pulse animation is reproduced via a `requestAnimationFrame`-driven `circle-opacity` / `circle-radius` paint update (no CSS `@keyframes`)
+**And** the full colour ladder is honoured: `open` (bright algae + pulse), `shut` (dimmed green — **not black**), `confirmed` (blue), `aging` (amber), `zombie` (faint ghost), `dead` (grey, admin only), `broken` (red ×)
+
+**Given** the EU `maxBounds` constraint currently set in `initMap()`
+**When** Story 5.0 lands
+**Then** `maxBounds` is removed — the map is navigable worldwide
+**And** the default `center`/`zoom` is updated from the FR/DE midpoint (zoom 4.3) to a world-overview start (center [10, 20], zoom 2) so the full continental field is visible on first load
+**And** at world zoom the status-weighted clusters make the map immediately legible rather than sparse
+
+**Given** a visitor loads `/?space=openfab&lat=51.50&lon=-0.12`
+**When** `initMap()` runs
+**Then** the map initialises AT `[lon, lat]` zoom 13 — first tile fetch is the local area, not the world overview
+**And** when data is ready, the space is selected and its drawer opens without any `flyTo` animation
+**And** the share button generates URLs with coordinates appended: `/?space={id}&lat={lat}&lon={lon}`
+**And** embed snippets generated by `embedSpace()` include the same coordinate params
+
+**Given** old embed snippets arrive without coordinates (`/?space=openfab&embed=1`)
+**When** the page loads
+**Then** the map falls back gracefully to default zoom at the space's location once data loads (no crash, no blank map)
+*(Server-side 301 redirect for legacy embeds is a follow-up task — not in this story's scope)*
+
+**Done when:**
+- `renderMarkers()` is deleted; no DOM marker SVG elements in the map
+- All filter interactions use `setFilter()` — re-renders are GPU repaints, not DOM rebuilds
+- Status-weighted cluster colours visible at zoom ≤ 7 on real data
+- Place-name labels fade out at continental zoom
+- `maxBounds` removed; world-navigable map confirmed on VPS
+- Share/embed URLs include coordinates; cold load of `?space=` param starts at correct viewport
+- `state-colour-ladder.html` and `overview-effect-north-stars.md` are the design reference — any visual deviation is a bug
+
+**Architecture reference:** ADR-017 (`_bmad-output/planning-artifacts/architecture.md`). Colour model: `_bmad-output/planning-artifacts/state-colour-ladder.html`. Continental UX intent: `_bmad-output/planning-artifacts/overview-effect-north-stars.md`.
 
 ---
 

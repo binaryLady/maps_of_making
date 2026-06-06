@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maps of Making — State Colour Ladder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,300;0,400;0,500;1,400&family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --depth-black: #0D0D0F;
+  --depth-surface: #131319;
+  --depth-raised: #1C1C24;
+  --depth-border: #2A2A34;
+  --salt: #F0EDE0;
+  --salt-mid: #C8C4B4;
+  --salt-dim: #8A8678;
+  --parchment: #E8E4D6;
+  --parchment-dark: #D4D0C2;
+  --ink: #1E1D1A;
+  --ink-mid: #4A4840;
+  --ink-dim: #7A786E;
+  --algae: #5DCAA5;
+  --algae-bright: #9FE1CB;
+  --algae-deep: #1D9E75;
+  --algae-deeper: #0F6E56;
+  --algae-darkest: #085041;
+  --uv: #7DF9FF;
+  --blue-day: #1456A0;
+  --blue-dep: #378ADD;
+  --grey-mark: #8A8680;
+  --grey-faint: #3A3A42;
+  --red: #E24B4A;
+  --red-deep: #A32D2D;
+  --font-body: 'Inter Tight', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+body {
+  background: #1A1A22;
+  font-family: var(--font-body);
+  min-height: 100vh;
+  padding: 48px 24px;
+}
+
+.page { max-width: 860px; margin: 0 auto; }
+
+/* HEADER */
+header { margin-bottom: 44px; }
+.wordmark {
+  font-family: var(--font-mono);
+  font-size: 10px; letter-spacing: 0.14em;
+  text-transform: uppercase; font-style: italic;
+  color: #4A4A54; margin-bottom: 18px;
+}
+h1 {
+  font-size: 26px; font-weight: 300;
+  letter-spacing: -0.02em; color: var(--salt);
+  line-height: 1.2; margin-bottom: 10px;
+}
+h1 em { font-style: normal; color: var(--algae); }
+.subtitle {
+  font-family: var(--font-mono); font-size: 12px;
+  color: #5A5A64; line-height: 1.8; max-width: 560px;
+}
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--algae-deeper);
+  background: rgba(29,158,117,0.08);
+  border: 1px solid rgba(29,158,117,0.18);
+  border-radius: 3px; padding: 4px 10px; margin-top: 16px;
+}
+
+/* SURFACE TABS */
+.surface-tabs {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  margin-bottom: 0;
+}
+.tab {
+  padding: 10px 20px; border-radius: 8px 8px 0 0;
+  font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  font-weight: 400;
+}
+.tab-day {
+  background: var(--parchment); color: var(--ink-mid);
+  border: 1px solid var(--parchment-dark); border-bottom: none;
+}
+.tab-dep {
+  background: var(--depth-surface); color: var(--algae);
+  border: 1px solid var(--depth-border); border-bottom: none;
+}
+
+/* MAIN GRID */
+.ladder-wrap {
+  border-radius: 0 0 10px 10px;
+  overflow: hidden;
+  border: 1px solid var(--depth-border);
+  margin-bottom: 16px;
+}
+
+.row {
+  display: grid; grid-template-columns: 1fr 1fr;
+}
+.row + .row { border-top: 1px solid rgba(0,0,0,0.12); }
+
+/* DAYLIGHT CELL */
+.cell-day {
+  background: var(--parchment);
+  padding: 22px 24px;
+  display: flex; align-items: center; gap: 18px;
+  border-right: 1px solid var(--parchment-dark);
+}
+.cell-day:hover { background: #E0DCCF; }
+
+/* DEPTH CELL */
+.cell-dep {
+  background: var(--depth-surface);
+  padding: 22px 24px;
+  display: flex; align-items: center; gap: 18px;
+}
+.cell-dep:hover { background: var(--depth-raised); }
+
+/* MARKER WRAP */
+.mw {
+  width: 44px; height: 44px;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+
+/* --- SEEDED --- */
+.mk-seeded-day {
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 1.5px solid #A09C90; background: transparent;
+}
+.mk-seeded-dep {
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 1.5px solid var(--grey-faint); background: transparent;
+}
+
+/* --- CONFIRMED --- */
+.mk-confirmed-day {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--blue-day);
+}
+.mk-confirmed-dep {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--blue-dep);
+  box-shadow: 0 0 16px rgba(55,138,221,0.4);
+}
+
+/* --- CLOSED NOW --- */
+.mk-closed-day {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #2D7A5A;
+}
+.mk-closed-dep {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--algae-deep);
+  box-shadow: 0 0 12px rgba(29,158,117,0.3);
+}
+
+/* --- OPEN NOW --- */
+.mk-open-day {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--algae-deeper);
+  box-shadow: 0 0 0 7px rgba(15,110,86,0.14);
+  animation: pulse-day 2.4s ease-in-out infinite;
+}
+@keyframes pulse-day {
+  0%,100% { box-shadow: 0 0 0 5px rgba(15,110,86,0.12); }
+  50%      { box-shadow: 0 0 0 12px rgba(15,110,86,0.06); }
+}
+
+.mk-open-dep {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--algae);
+  box-shadow: 0 0 22px rgba(93,202,165,0.5);
+  animation: pulse-dep 2.4s ease-in-out infinite;
+  position: relative;
+}
+.mk-open-dep::after {
+  content: '';
+  position: absolute; inset: 7px;
+  border-radius: 50%;
+  background: var(--uv);
+  opacity: 0.85;
+}
+@keyframes pulse-dep {
+  0%,100% { box-shadow: 0 0 16px rgba(125,249,255,0.3); }
+  50%      { box-shadow: 0 0 32px rgba(125,249,255,0.55); }
+}
+
+/* --- DEAD TOMBSTONE --- */
+.mk-dead-day {
+  width: 14px; height: 17px;
+  background: #9A9690;
+  border-radius: 7px 7px 0 0;
+  position: relative;
+}
+.mk-dead-day::before {
+  content: ''; position: absolute;
+  top: 5px; left: 50%; transform: translateX(-50%);
+  width: 1px; height: 6px; background: var(--parchment); opacity: 0.6;
+}
+.mk-dead-day::after {
+  content: ''; position: absolute;
+  top: 7px; left: 3px; width: 8px; height: 1px;
+  background: var(--parchment); opacity: 0.6;
+}
+.mk-dead-dep {
+  width: 14px; height: 17px;
+  background: transparent;
+  border-radius: 7px 7px 0 0;
+  border: 1px solid var(--grey-faint);
+  position: relative;
+}
+.mk-dead-dep::before {
+  content: ''; position: absolute;
+  top: 5px; left: 50%; transform: translateX(-50%);
+  width: 1px; height: 6px; background: var(--grey-faint);
+}
+.mk-dead-dep::after {
+  content: ''; position: absolute;
+  top: 7px; left: 3px; width: 8px; height: 1px;
+  background: var(--grey-faint);
+}
+
+/* --- BROKEN --- */
+.mk-broken {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 1.5px solid var(--red);
+  position: relative; display: flex;
+  align-items: center; justify-content: center;
+}
+.mk-broken-day { background: rgba(226,75,74,0.08); }
+.mk-broken-dep { background: rgba(226,75,74,0.06); }
+.mk-broken::before, .mk-broken::after {
+  content: ''; position: absolute;
+  width: 9px; height: 1.5px; background: var(--red-deep);
+}
+.mk-broken::before { transform: rotate(45deg); }
+.mk-broken::after  { transform: rotate(-45deg); }
+
+/* TEXT INFO */
+.info-day .sname {
+  font-size: 13px; font-weight: 500; color: var(--ink);
+  margin-bottom: 4px;
+}
+.info-day .smean {
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--ink-dim); line-height: 1.65;
+}
+
+.info-dep .sname {
+  font-size: 13px; font-weight: 500; color: var(--salt);
+  margin-bottom: 4px;
+}
+.info-dep .smean {
+  font-family: var(--font-mono); font-size: 10px;
+  color: #56565E; line-height: 1.65;
+}
+
+/* luminosity ramp axis */
+.axis-row {
+  display: grid; grid-template-columns: 1fr 1fr;
+}
+.axis-day, .axis-dep {
+  padding: 12px 24px;
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.06em;
+}
+.axis-day {
+  background: var(--parchment-dark);
+  color: var(--ink-dim);
+  border-right: 1px solid #C8C4B6;
+}
+.axis-dep {
+  background: var(--depth-black);
+  color: var(--algae-deeper);
+}
+.ramp { display: flex; align-items: center; gap: 6px; }
+.ramp span {
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* --- AGING --- */
+.mk-aging-day {
+  width: 16px; height: 16px; border-radius: 50%;
+  background: oklch(78% 0.14 70);
+  opacity: 0.85;
+}
+.mk-aging-dep {
+  width: 16px; height: 16px; border-radius: 50%;
+  background: oklch(72% 0.11 65);
+  box-shadow: 0 0 10px rgba(200,150,40,0.3);
+  opacity: 0.8;
+}
+
+/* --- ZOMBIE --- */
+.mk-zombie-day {
+  width: 13px; height: 13px; border-radius: 50%;
+  background: #8A8C80;
+  opacity: 0.5;
+}
+.mk-zombie-dep {
+  width: 13px; height: 13px; border-radius: 50%;
+  background: transparent;
+  border: 1px solid var(--grey-faint);
+  opacity: 0.55;
+}
+
+/* OFF-LADDER */
+.off-section { margin-top: 20px; }
+.off-label {
+  font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: rgba(226,75,74,0.5); padding-left: 4px;
+  margin-bottom: 3px;
+}
+.off-wrap {
+  border: 1px solid rgba(226,75,74,0.18);
+  border-radius: 10px; overflow: hidden;
+}
+.off-row-bg-day { background: rgba(226,75,74,0.05); }
+.off-row-bg-dep { background: var(--depth-surface); }
+
+/* NOTES */
+.notes { margin-top: 24px; display: flex; flex-direction: column; gap: 12px; }
+.note {
+  border-radius: 8px; padding: 18px 22px;
+}
+.note-fix {
+  background: rgba(226,75,74,0.05);
+  border: 1px solid rgba(226,75,74,0.15);
+}
+.note-sub {
+  background: rgba(29,158,117,0.05);
+  border: 1px solid rgba(29,158,117,0.14);
+}
+.note-head {
+  font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.note-fix .note-head { color: rgba(226,75,74,0.6); }
+.note-sub .note-head { color: var(--algae-deeper); }
+.note p {
+  font-family: var(--font-mono); font-size: 12px;
+  line-height: 1.8; color: #56565E;
+}
+.note-fix p strong { color: var(--salt); font-weight: 500; }
+.note-sub p strong { color: var(--algae); font-weight: 500; }
+
+footer {
+  margin-top: 40px; padding-top: 20px;
+  border-top: 1px solid var(--depth-border);
+  font-family: var(--font-mono); font-size: 10px;
+  color: #36363E; display: flex; justify-content: space-between;
+  letter-spacing: 0.06em;
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <div class="wordmark">maps of making · design reference · 2026-06-06</div>
+  <h1>State <em>colour</em> ladder</h1>
+  <p class="subtitle">
+    aliveness = luminosity + size. brighter means more alive.<br>
+    colour family = which rung. dead is off the ladder — never just "darker".
+  </p>
+  <div class="pill">luminosity ↑ · size ↑ · aliveness ↑</div>
+</header>
+
+<div class="surface-tabs">
+  <div class="tab tab-day">daylight · exterior · light basemap · find your space</div>
+  <div class="tab tab-dep">depth · organism lens · dark · feel the whole</div>
+</div>
+
+<div class="ladder-wrap">
+
+  <!-- SEEDED -->
+  <div class="row">
+    <div class="cell-day">
+      <div class="mw"><div class="mk-seeded-day"></div></div>
+      <div class="info-day">
+        <div class="sname">seeded</div>
+        <div class="smean">scraped · unclaimed<br>potential, not yet activated</div>
+      </div>
+    </div>
+    <div class="cell-dep">
+      <div class="mw"><div class="mk-seeded-dep"></div></div>
+      <div class="info-dep">
+        <div class="sname">seeded</div>
+        <div class="smean">faint substrate · barely there<br>lowest luminosity on the field</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONFIRMED -->
+  <div class="row">
+    <div class="cell-day">
+      <div class="mw"><div class="mk-confirmed-day"></div></div>
+      <div class="info-day">
+        <div class="sname">confirmed</div>
+        <div class="smean">live endpoint · verified<br>self-sovereign · steady</div>
+      </div>
+    </div>
+    <div class="cell-dep">
+      <div class="mw"><div class="mk-confirmed-dep"></div></div>
+      <div class="info-dep">
+        <div class="sname">confirmed</div>
+        <div class="smean">cool blue glow<br>trusted, not yet broadcasting</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLOSED NOW -->
+  <div class="row">
+    <div class="cell-day">
+      <div class="mw"><div class="mk-closed-day"></div></div>
+      <div class="info-day">
+        <div class="sname">live · closed now</div>
+        <div class="smean">knows its state · resting<br>door shut this minute — not dead</div>
+      </div>
+    </div>
+    <div class="cell-dep">
+      <div class="mw"><div class="mk-closed-dep"></div></div>
+      <div class="info-dep">
+        <div class="sname">live · closed now</div>
+        <div class="smean">low steady green glow<br>no pulse · a lit node at rest</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPEN NOW -->
+  <div class="row">
+    <div class="cell-day">
+      <div class="mw"><div class="mk-open-day"></div></div>
+      <div class="info-day">
+        <div class="sname">live · open now</div>
+        <div class="smean">alive AND open this minute<br>the brightest mark on the map</div>
+      </div>
+    </div>
+    <div class="cell-dep">
+      <div class="mw"><div class="mk-open-dep"></div></div>
+      <div class="info-dep">
+        <div class="sname">live · open now</div>
+        <div class="smean">pulse halo · UV cyan core<br>this is what the movement looks like</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AXIS ROW -->
+  <div class="axis-row">
+    <div class="axis-day">
+      <span>size + brightness →</span>
+      <div class="ramp">
+        <span style="width:8px;height:8px;background:#A09C90;opacity:0.4;"></span>
+        <span style="width:10px;height:10px;background:var(--blue-day);opacity:0.7;"></span>
+        <span style="width:12px;height:12px;background:#2D7A5A;"></span>
+        <span style="width:15px;height:15px;background:var(--algae-deeper);box-shadow:0 0 6px rgba(15,110,86,0.3);"></span>
+      </div>
+    </div>
+    <div class="axis-dep">
+      <span>seeded → confirmed → closed → open</span>
+      <div class="ramp">
+        <span style="width:8px;height:8px;background:var(--grey-faint);opacity:0.5;"></span>
+        <span style="width:10px;height:10px;background:var(--blue-dep);box-shadow:0 0 8px rgba(55,138,221,0.3);"></span>
+        <span style="width:12px;height:12px;background:var(--algae-deep);box-shadow:0 0 8px rgba(29,158,117,0.3);"></span>
+        <span style="width:15px;height:15px;background:var(--algae);box-shadow:0 0 12px rgba(125,249,255,0.4);"></span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- DECAY RAMP -->
+<div class="off-section">
+  <div class="off-label" style="color:rgba(200,150,40,0.55);">decay ramp — alive but fading · still on the map, not yet off it</div>
+  <div class="off-wrap" style="border-color:rgba(200,150,40,0.18);">
+
+    <!-- AGING -->
+    <div class="row">
+      <div class="cell-day" style="background:rgba(200,150,40,0.04);">
+        <div class="mw"><div class="mk-aging-day"></div></div>
+        <div class="info-day">
+          <div class="sname">aging</div>
+          <div class="smean">endpoint slow to answer · warming<br>freshness clock running out</div>
+        </div>
+      </div>
+      <div class="cell-dep" style="background:var(--depth-surface);">
+        <div class="mw"><div class="mk-aging-dep"></div></div>
+        <div class="info-dep">
+          <div class="sname">aging</div>
+          <div class="smean">amber glow, fading · still present<br>the thin blue line begins here</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ZOMBIE -->
+    <div class="row" style="border-top:1px solid rgba(200,150,40,0.1);">
+      <div class="cell-day" style="background:rgba(138,140,128,0.06);">
+        <div class="mw"><div class="mk-zombie-day"></div></div>
+        <div class="info-day">
+          <div class="sname">zombie</div>
+          <div class="smean">silent for months · unresponsive<br>no one home — or no one watching</div>
+        </div>
+      </div>
+      <div class="cell-dep" style="background:var(--depth-surface);">
+        <div class="mw"><div class="mk-zombie-dep"></div></div>
+        <div class="info-dep">
+          <div class="sname">zombie</div>
+          <div class="smean">barely a presence · almost absorbed<br>the last ember before dark</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DECAY AXIS -->
+    <div class="axis-row">
+      <div class="axis-day" style="border-right:1px solid #C8C4B6;">
+        <span>decay →</span>
+        <div class="ramp">
+          <span style="width:16px;height:16px;border-radius:50%;background:oklch(78% 0.14 70);opacity:0.85;"></span>
+          <span style="width:13px;height:13px;border-radius:50%;background:#8A8C80;opacity:0.5;"></span>
+          <span style="width:10px;height:13px;border-radius:5px 5px 0 0;background:#9A9690;opacity:0.7;"></span>
+        </div>
+      </div>
+      <div class="axis-dep">
+        <span>aging → zombie → dead</span>
+        <div class="ramp">
+          <span style="width:16px;height:16px;border-radius:50%;background:oklch(72% 0.11 65);opacity:0.8;box-shadow:0 0 8px rgba(200,150,40,0.25);"></span>
+          <span style="width:13px;height:13px;border-radius:50%;background:transparent;border:1px solid var(--grey-faint);opacity:0.55;"></span>
+          <span style="width:10px;height:13px;border-radius:5px 5px 0 0;background:transparent;border:1px solid var(--grey-faint);opacity:0.4;"></span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- OFF-LADDER -->
+<div class="off-section">
+  <div class="off-label">off the ladder — distinct, never just "darker"</div>
+  <div class="off-wrap">
+    <div class="row">
+      <div class="cell-day off-row-bg-day">
+        <div class="mw"><div class="mk-dead-day"></div></div>
+        <div class="info-day">
+          <div class="sname">dead</div>
+          <div class="smean">the space is gone · grey tombstone<br>the only truly extinguished mark</div>
+        </div>
+      </div>
+      <div class="cell-dep off-row-bg-dep" style="border-top:none;">
+        <div class="mw"><div class="mk-dead-dep"></div></div>
+        <div class="info-dep">
+          <div class="sname">dead</div>
+          <div class="smean">a dark hole · the light went out<br>the void at the edges of the organism</div>
+        </div>
+      </div>
+    </div>
+    <div class="row" style="border-top:1px solid rgba(226,75,74,0.1);">
+      <div class="cell-day off-row-bg-day">
+        <div class="mw"><div class="mk-broken mk-broken-day"></div></div>
+        <div class="info-day">
+          <div class="sname">broken</div>
+          <div class="smean">endpoint erroring · transient<br>"fix me" — structurally not "gone"</div>
+        </div>
+      </div>
+      <div class="cell-dep off-row-bg-dep">
+        <div class="mw"><div class="mk-broken mk-broken-dep"></div></div>
+        <div class="info-dep">
+          <div class="sname">broken</div>
+          <div class="smean">red alarm · recoverable<br>same on both surfaces — alarm is alarm</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="notes">
+  <div class="note note-fix">
+    <div class="note-head">the correction</div>
+    <p><strong>Black is retired as a state colour.</strong> It was doing double duty as "closed now" — a healthy resting space looked like a corpse. Closed-now moves into the <strong>living green family.</strong> Dead gets the grey tombstone. They must never share a colour. The only thing allowed to read as absence is absence.</p>
+  </div>
+  <div class="note note-sub">
+    <div class="note-head">why this works at scale</div>
+    <p>MapLibre GL data-driven paint drives <strong>colour + size per point.</strong> Alive = large and bright. Seeded = small and dim. At continental density, living points self-aggregate into a glowing organism field — <strong>no separate membrane layer needed.</strong> The overview effect and the GL substrate are the same decision. And at altitude, place-names dissolve too: labels fade out, leaving only coastlines and the breathing points.</p>
+  </div>
+</div>
+
+<footer>
+  <span>maps-of-making · state-colour-ladder · v0</span>
+  <span>Inter Tight + JetBrains Mono · system fonts · depth palette</span>
+</footer>
+
+</div>
+</body>
+</html>

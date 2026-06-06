@@ -16,6 +16,10 @@ editHistory:
     changes: 'Added ADR-016 (Layered Community Namespaces + Bundle-Loading Model) — four-layer schema, bundle = view config, schema:knowsAbout concept pivot, crosswalk.csv as living bridge registry; Story 3.5'
   - date: '2026-06-05'
     changes: 'Correct-course artifact-alignment pass. Reconciled in place to current state: ADR-004/006 rewritten to three-token computed-in-browser model; ADR-015 disk-snapshot stages removed (SpaceAPI→MOM mapping kept); ADR-008 marked superseded by ADR-013 (Nanobot); named-graph table, project structure tree, requirements map, and data-flow diagram corrected to the real runtime (infra/link_handler/, scripts/spaceapi_extract/, web/data/spaces.geojson); w3id.org IRIs corrected to canonical nicolasdb.github.io; stale superseding banners removed once their sections were corrected. Epic 6 (Nanobot/NL-bot), Epic 4b (magic link), Epic 7 (open-now) directions retained as planned-not-built.'
+  - date: '2026-06-06'
+    changes: 'ADR-004 updated: full state colour ladder (shut remap to dimmed-green, aging+zombie decay ramp, dead=off-ladder tombstone), continental view Overview Effect layer (label dissolve at altitude, no network/country colouring, freshness=fragility principle), reference to state-colour-ladder.html and overview-effect-north-stars.md. ADR-017 added: full-GL rendering substrate decision (DOM markers → GeoJSON source + GL layers, vanilla MapLibre no MapTiler SDK, viewport-first init for deep links/embeds with coords-in-URL pattern, optional 301-redirect upgrade for legacy embeds, DOM primitives retired).'
+  - date: '2026-06-06'
+    changes: 'ADR-017 reconciled: removed "status-weighted clusters" model (stale ideation caught in Story 5.0 readiness review). Continental view is NOT clustered — it is a zoom-scaled point field (every space its own ladder-coloured dot; circle-radius interpolates with zoom; field-of-light at world scale), reproducing the MapTiler helpers/point look in vanilla GL. Dropped cluster:true source config. Clarified ladder Daylight/Depth surfaces follow the tweaks-panel theme toggle, NOT zoom tier. Added symbol-layer glyphs for NFR-A4 (colour not sole state indicator).'
 lastReconciled: '2026-06-05'
 ---
 
@@ -167,18 +171,41 @@ Host-level cron daily N-Quads dump, outside any application process — see **AD
 
 ### ADR-004: Pin Visual Grammar
 
-**Decision:** Two-layer progressive disclosure. One marker per space, **allocated in the browser** by resolving three orthogonal axes — the map never reads a stored marker colour. Full axis spec + marker-allocation table: `docs/architecture/03-freshness-axes.md` and `04-design-rules.md`.
+> **Updated 2026-06-06:** rendering substrate migrated to full-GL (see ADR-017). State colour remap and continental-view layer documented here; implementation detail in ADR-017.
+
+**Decision:** Two-layer progressive disclosure. One marker per space, **allocated in the browser** by resolving three orthogonal axes — the map never reads a stored marker colour. Full axis spec + marker-allocation table: `docs/architecture/03-freshness-axes.md` and `04-design-rules.md`. Authoritative visual reference: `_bmad-output/planning-artifacts/state-colour-ladder.html`.
 
 **The three axes (computed client-side from tokens + the GeoJSON `thresholds` header):**
 1. **Endpoint health** — derived from `observed_at` age vs thresholds (responsive / warning / unreachable).
 2. **Lifecycle freshness** — `seeded` (no `mom:endpointUrl`) vs `confirmed`, then content-staleness from `mom:updatedAt`. Two terminal states: **`closed`** (operator-declared retirement) and **`dead`** (auto-inferred after N failed cycles) — both render as a tombstone, provenance preserved.
 3. **Open/now** — from Axis-C `mom:lastOpenChange` / current open claim.
 
+**State colour model — the full ladder (authoritative: `state-colour-ladder.html`):**
+
+| State | Family | Visual treatment | Zoom visibility |
+|---|---|---|---|
+| `seeded` | neutral | small dim outline circle | street + regional |
+| `confirmed` | blue | solid blue circle, cool glow (depth surface) | street + regional |
+| `shut` (live, closed now) | **green family** | dimmed/desaturated green — open's quieter twin. **Never black.** | street + regional |
+| `open` | green | bright circle + pulse halo; UV cyan core (depth surface) | street + regional |
+| `aging` | amber | warm amber circle, fading opacity | street + regional |
+| `zombie` | grey | near-invisible ghost outline | street + regional |
+| `dead` | grey tombstone | arch shape with cross-mark — **off the ladder, never just "darker"** | admin query only |
+| `broken` | red | circle with × mark — same alarm on both surfaces | street + regional |
+
+**Colour rule: darkness is reserved for absence.** `shut` (alive, door closed tonight) was previously rendered as near-black (`--ink`) — this conflated a healthy resting space with a corpse. It is remapped to dimmed-green. Only `dead` and the void earn darkness.
+
 **Default (exploratory) layer:** seeded vs confirmed, plus an open-now accent. Clean first look — trustworthy, never alarming.
 
 **Health (diagnostic) toggle:** overlays aging / zombie / dead and endpoint-health states for outreach triage. Never shown by default. The space detail drawer carries a quiet amber staleness banner ("Last confirmed N months ago…") even with the toggle off.
 
 **Pin shape:** Circles only. No shape-based type differentiation for PoC or pilot — filters and bot queries handle type disambiguation (LOD approach). Revisited post-pilot if needed.
+
+**Continental view — the Overview Effect layer** (design compass: `_bmad-output/planning-artifacts/overview-effect-north-stars.md`):
+- At continental/world zoom, the individual dots shrink into a *field of light* — every space stays its own dot (no aggregation/clustering), just smaller, with density emerging through overlap (see ADR-017).
+- The continental view **never colours by network or country** — those are the drawn lines MoM exists to dissolve. Spaces are kin by what they do and whether they're alive.
+- **Place names and region labels dissolve at altitude** — GL label-layer symbol layers fade out below the continental zoom threshold (same zoom-interpolation machinery as the dot radius ramp). Coastlines and landmass remain. Left with geography and the breathing points.
+- Freshness is fragility, not failure. Aging, zombie, dead states are the thin blue line that makes the living spaces feel precious. They are not suppressed.
 
 Dead/closed spaces: removed from the default map view, retained in Oxigraph for admin query; significant life-events recorded in the append-only `<urn:mak:public_ledger>` graph.
 
@@ -524,6 +551,61 @@ The `.ttl` is the specification; `scripts/spaceapi_extract/` (`core`/`mom`) is i
 **Ontology-gap on-ramp.** `mom:OntologyGap` is declared in `mom.ttl` (added by Story 3.5). Today, unrecognised activity tags are logged to `gap_log.txt` as plain text by `transformer.py::_log_unmapped_tags` — no gap *triples* are emitted yet. Emitting `mom:OntologyGap` triples is deferred to **Story 6.3**. The gap log is intentionally the on-ramp for emergent community ontology (gap term → curation → concept minting → bridge discovery), not a janitorial dump.
 
 **Sync model:** `ontology/mom.ttl` and `ontology/core.ttl` in this repo are the working copies. The maintainer manually syncs them to the `github.com/nicolasdb/mapsofmaking_ontology` repo (published via GitHub Pages). Ontology edits land in `ontology/` here first; nothing git-pushes to the ontology repo automatically.
+
+---
+
+### ADR-017: Map Rendering Substrate — Full-GL Migration (2026-06-06)
+
+**Decision:** Migrate the map's marker layer from **individual DOM markers** (`maplibregl.Marker` per space) to a **GeoJSON source + MapLibre GL layers** — one rendering system, no DOM/GL hybrid. Implementation: vanilla MapLibre GL `addSource` / `addLayer`; no MapTiler SDK (vendor coupling, API-key dependency, conflicts with self-hosted PMTiles tile strategy).
+
+**What this replaces:** `renderMarkers()` in `web/app.js` currently creates one SVG DOM element per space on every render. At 111 spaces this is manageable; it cannot render a continuous zoom-scaled field and re-mounts all 111 nodes on every filter/style change.
+
+**The GL source model:**
+```js
+map.addSource('spaces', {
+  type: 'geojson',
+  data: '/data/spaces.geojson',   // the map's existing ONLY data source — unchanged
+});
+// NO clustering: cluster:false. Every space is its own point at every zoom.
+```
+A single `circle` layer (plus a `symbol` layer for non-colour state glyphs) shares this source. The data contract (`spaces.geojson` + `thresholds` header) is **unchanged** — this is a browser rendering change only; the pipeline is untouched.
+
+**Zoom-scaled point field — NOT clustering:**
+
+The continental view is a *field of individually-coloured dots*, not aggregated clusters. Visual reference: the MapTiler `helpers/point` example (`docs.maptiler.com/leaflet/examples/helpers-point/`) — every point rendered individually, sized/coloured by a data value, density emerging through overlap. We reproduce that *look* in vanilla GL `circle-*` expressions (the helper is a thin wrapper over them — no SDK).
+
+| Zoom | What the viewer sees |
+|---|---|
+| ≤ 5 (world) | Small ladder-coloured dots — the "field of light"; dense regions read through overlapping/additive opacity |
+| 5–7 (continental) | Same dots, slightly larger; place labels faded out |
+| ≥ 8 (street/city) | Same dots at full radius; full colour ladder legible per-space |
+
+The ONLY thing that changes with zoom is `circle-radius` — a single `interpolate(['linear'], ['zoom'], …)` ramp. There is no dot↔cluster swap, no aggregation, no count labels.
+
+Label fade: MapLibre `place` symbol layer `paint['text-opacity']` interpolated to 0 below ~z6–7. Coastlines/landmass remain (Overview Effect: geography + points only at altitude).
+
+**Colour ladder surface follows the theme toggle, not zoom:** the `state-colour-ladder` has two surfaces — Daylight (parchment) and Depth (dark) — selected by the existing tweaks-panel light/dark/grayscale toggle. The dark field in the reference screenshots is one theme, not a requirement; dots must read on whichever basemap flavour is active.
+
+**Viewport-first init for deep links and embeds:**
+Share URLs encode coordinates: `/?space=openfab&lat=51.50&lon=-0.12`. `initMap()` reads these before constructing `new maplibregl.Map()`, starting at the target viewport. First tile fetch is the local area; continental tiles only load if the viewer zooms out. No `flyTo` on cold load.
+
+For old embed snippets (coords not in URL): optional server-side 301 redirect — if `?space=<id>` arrives without lat/lon, nginx/Flask looks up coords and redirects to the coord-enriched URL. Upgrades all legacy embeds silently. Coords are stable; redirect is cache-safe.
+
+**What is retired:**
+- `createMarkerSVG()` — DOM SVG construction per space
+- `renderMarkers()` — full tear-down and re-mount on every filter/style change
+- Emoji glyphs (🧟 🪦 ⚠️) and CSS `@keyframes` pulse — replaced by GL data-driven `circle-color`, `circle-radius` paint expressions and a `requestAnimationFrame`-driven opacity animation for the open-pulse. A `symbol` layer carries short text glyphs (`×` etc.) so colour is never the sole state indicator (NFR-A4).
+- `maxBounds` EU constraint — dropped; world view enabled because the zoom-scaled point field keeps the world view alive (field of light) rather than empty
+
+**What is preserved:**
+- `computeMarker()` logic — ported to a JS function that maps space state → GL paint property values
+- `filteredSpaces()` — drives `setFilter()` / `setData()` on the GL source instead of DOM re-mount
+- `selectSpace()` / `highlightSelected()` — adapted to GL feature-state API
+- All data (spaces.geojson, thresholds header, three-token model) — unchanged
+
+**Design reference:** MapTiler `helpers/point` example (visual target; screenshots `~/Images/Screenshots/screencap_0606_151757.png`, `screencap_0606_110737.png`). Continental UX intent: `overview-effect-north-stars.md`. Authoritative colour model: `state-colour-ladder.html`.
+
+**Rationale:** DOM markers cannot render a continuous zoom-scaled field and re-mount expensively on every state change. Moving to a GL source + `circle`/`symbol` layers gives the field-of-light point field with GPU-cheap filter/re-render (repaint vs DOM churn). The data contract is unchanged — this is a pure consumption-layer decision. *(Aggregation/clustering was considered and rejected: at PoC scale every space should be individually visible; the meaning is presence, not headcount.)*
 
 ---
 
