@@ -144,13 +144,13 @@
   /* Pins — riso sticker style */
   .pin-swatch { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--rule);
     display: inline-block; box-shadow: 2px 2px 0 var(--ink); flex-shrink: 0; position: relative; }
-  .pin-swatch.seeded { background: var(--paper); }
-  .pin-swatch.confirmed { background: var(--accent-2); }
-  .pin-swatch.open { background: var(--green); }
-  .pin-swatch.shut { background: var(--ink); }
-  .pin-swatch.aging { background: var(--paper); border-style: dashed; border-color: #c49a00; box-shadow: none; }
-  .pin-swatch.zombie { background: var(--paper); border-style: dashed; border-color: var(--muted); box-shadow: none; opacity: 0.6; }
-  .pin-swatch.dead { background: #666; border-color: #444; box-shadow: none; }
+  .pin-swatch.seeded { background: #A89F94; }
+  .pin-swatch.confirmed { background: #378ADD; }
+  .pin-swatch.open { background: #5DCAA5; }
+  .pin-swatch.shut { background: #1D9E75; }
+  .pin-swatch.aging { background: #C9963F; border-style: dashed; box-shadow: none; }
+  .pin-swatch.zombie { background: transparent; border-style: dashed; border-color: #6A6A72; box-shadow: none; opacity: 0.6; }
+  .pin-swatch.dead { background: #5A5A60; border-color: #3A3A42; box-shadow: none; }
   .pin-swatch.broken { background: var(--accent); }
   .pin-swatch.broken::before { content: '×'; position: absolute; inset: 0; color: #fff;
     display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; line-height: 1; }
@@ -165,29 +165,9 @@
   .status-label.dead { color: #444; border-color: #444; background: #e8e8e8; }
   .status-label.broken { color: var(--accent); border-color: var(--accent); }
 
-  /* Map SVG markers — intrinsic SVG dimensions guarantee stable offsetWidth for MapLibre anchor math */
-  .map-marker { cursor: pointer; filter: drop-shadow(1px 1px 0 var(--paper)); }
-  .map-marker:hover { filter: drop-shadow(1px 1px 0 var(--paper)) brightness(1.1); }
-  .map-marker.selected { outline: 1px solid var(--accent); outline-offset: 1px; border-radius: 50%; }
-
-  /* Per-kind fill colours */
-  .map-marker .marker-fill { stroke: var(--ink); stroke-width: 2; }
-  .map-marker.seeded    .marker-fill { fill: var(--paper); }
-  .map-marker.confirmed .marker-fill { fill: var(--accent-2); }
-  .map-marker.open      .marker-fill { fill: var(--green); }
-  .map-marker.shut      .marker-fill { fill: var(--ink); stroke: var(--paper); }
-  .map-marker.broken    .marker-fill { fill: var(--accent); }
-
-  /* Broken ×  */
-  .marker-x { fill: #fff; font-size: 13px; font-weight: 700; font-family: inherit; }
-  /* Health map emoji glyphs */
-  .marker-emoji { font-size: 18px; font-family: inherit; }
-
-  /* Pulse ring on open markers */
-  .marker-pulse { fill: none; stroke: var(--green); stroke-width: 2; opacity: 0;
-    transform-box: fill-box; transform-origin: center;
-    animation: pulse 1.8s ease-out infinite; }
-  @keyframes pulse { 0% { transform: scale(0.9); opacity: 0.8; } 100% { transform: scale(1.8); opacity: 0; } }
+  /* Story 5.0: map markers are now GL circle/symbol layers (web/app.js), not DOM SVG.
+     The retired .map-marker / .marker-* rules lived here — including the black-dot
+     `shut` bug. The ladder now lives in the GL paint expressions. */
   @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
   .check-line { animation: fadeSlideIn 0.2s ease both; }
 
@@ -505,11 +485,10 @@
   /* Reduce motion */
   @media (prefers-reduced-motion: reduce) {
     .drawer, .search-drawer, .bot-drawer, .tweaks { transition: none !important; }
-    .marker-pulse { animation: none; }
   }
 
-  /* Map tile desaturation */
-  .map-dim .maplibregl-canvas { filter: saturate(0.45) contrast(0.95) brightness(1.03); }
+  /* Map canvas — no filter; grayscale tile style handles the muted background. */
+  .map-dim .maplibregl-canvas { filter: none; }
   .map-dark .maplibregl-canvas { filter: none; }
 
   /* Embed mode — hide all chrome, show minimal caption */
@@ -712,7 +691,7 @@
 
 <!-- Legend -->
 <div class="legend" aria-label="Pin legend">
-  <h4>Legend</h4>
+  <h4>Legend <span id="legend-zoom" style="font-weight:400;color:var(--muted);margin-left:6px;">z—</span></h4>
   <div class="row"><span class="pin-swatch seeded"></span><span>Seeded · unclaimed</span></div>
   <div class="row"><span class="pin-swatch confirmed"></span><span>Confirmed</span></div>
   <div class="row"><span class="pin-swatch open"></span><span>Open now</span></div>
@@ -763,13 +742,7 @@
     <button class="close" aria-label="Close tweaks" data-close="tweaks" style="margin-left:6px; width:24px; height:24px; border:1.5px solid var(--rule);">✕</button>
   </div>
   <div class="body">
-    <div class="tweak-row">
-      <label>Map style</label>
-      <div class="opts" data-tweak="mapStyle">
-        <button data-val="dim" aria-pressed="true">dim</button>
-        <button data-val="dark" aria-pressed="false">dark</button>
-      </div>
-    </div>
+    <!-- Map style toggle retired: theme transitions automatically by zoom (dark at world, light at street) -->
     <div class="tweak-row">
       <label>Pin density</label>
       <div class="opts" data-tweak="density">

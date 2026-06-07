@@ -38,12 +38,14 @@
     openDrawer: null,          // 'filters' | 'search' | 'preset' | 'addurl' | 'detail' | 'bot' | 'tweaks' | null
     tweaks: {
       mapStyle: 'dim',
-      density: 'roomy',
+      density: 'compact',
       pulse: 'on',
     },
     embed: { centerId: null },
-    markers: new Map(),        // id -> maplibre.Marker
     _lastMapStyle: 'dim',      // track last applied style to avoid redundant setStyle() calls
+    _fsSelected: null,         // id currently flagged selected via GL feature-state
+    _pulseDensityMul: 1,       // density multiplier shared with the rAF pulse loop
+    _initialViewport: false,   // true when initMap centered on ?lat/?lon (viewport-first)
   };
 
   // ───────────────────────────── embed mode
@@ -133,13 +135,16 @@
   // Dev: OpenFreeMap (CORS-enabled, no key). Production: swap TILES_URL to self-hosted PMTiles on VPS.
   const TILES_URL = 'https://tiles.openfreemap.org/planet';
 
-  function buildStyle(flavor) {
-    const colors = {
-      light:     { bg: '#f7f2e7', water: '#b9d5e5', road: '#d4ccbb', building: '#e8e2d6', label: '#2a2a2a' },
-      dark:      { bg: '#1a1a2e', water: '#16213e', road: '#333355', building: '#0f3460', label: '#cccccc' },
-      grayscale: { bg: '#e8e8e8', water: '#c0d0d8', road: '#bbbbbb', building: '#d0d0d0', label: '#555555' },
-    };
-    const c = colors[flavor] || colors.light;
+  // Basemap transitions dark→light between z6 (space/organism view) and z9 (street/find view).
+  // No manual theme toggle — the zoom level IS the theme.
+  function buildStyle() {
+    const z0 = 6, z1 = 9; // transition zone
+    const lerp = (dark, light) => ['interpolate', ['linear'], ['zoom'], z0, dark, z1, light];
+    const bg    = lerp('#1a1a2e', '#e8e8e8');
+    const water = lerp('#16213e', '#c0d0d8');
+    const road  = lerp('#333355', '#bbbbbb');
+    const bldg  = lerp('#0f3460', '#d0d0d0');
+    const label = lerp('#cccccc', '#555555');
     return {
       version: 8,
       glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
@@ -151,39 +156,67 @@
         }
       },
       layers: [
-        { id: 'background',  type: 'background', paint: { 'background-color': c.bg } },
-        { id: 'landcover',   type: 'fill', source: 'ofm', 'source-layer': 'landcover',      paint: { 'fill-color': c.bg, 'fill-opacity': 0.6 } },
-        { id: 'water',       type: 'fill', source: 'ofm', 'source-layer': 'water',          paint: { 'fill-color': c.water } },
-        { id: 'landuse',     type: 'fill', source: 'ofm', 'source-layer': 'landuse',        paint: { 'fill-color': c.bg, 'fill-opacity': 0.4 } },
+        { id: 'background',  type: 'background', paint: { 'background-color': bg } },
+        { id: 'landcover',   type: 'fill', source: 'ofm', 'source-layer': 'landcover',   paint: { 'fill-color': bg, 'fill-opacity': 0.6 } },
+        { id: 'water',       type: 'fill', source: 'ofm', 'source-layer': 'water',       paint: { 'fill-color': water } },
+        { id: 'landuse',     type: 'fill', source: 'ofm', 'source-layer': 'landuse',     paint: { 'fill-color': bg, 'fill-opacity': 0.4 } },
         { id: 'roads-minor', type: 'line', source: 'ofm', 'source-layer': 'transportation',
           filter: ['in', ['get', 'class'], ['literal', ['minor', 'service', 'track', 'path']]],
-          paint: { 'line-color': c.road, 'line-width': ['interpolate', ['linear'], ['zoom'], 8, 0.3, 14, 1.5] } },
+          paint: { 'line-color': road, 'line-width': ['interpolate', ['linear'], ['zoom'], 8, 0.3, 14, 1.5] } },
         { id: 'roads-major', type: 'line', source: 'ofm', 'source-layer': 'transportation',
           filter: ['in', ['get', 'class'], ['literal', ['primary', 'secondary', 'tertiary', 'trunk', 'motorway']]],
-          paint: { 'line-color': c.road, 'line-width': ['interpolate', ['linear'], ['zoom'], 5, 0.5, 12, 3] } },
-        { id: 'buildings',   type: 'fill', source: 'ofm', 'source-layer': 'building',       paint: { 'fill-color': c.building, 'fill-opacity': 0.8 } },
-        { id: 'labels-places', type: 'symbol', source: 'ofm', 'source-layer': 'place',
+          paint: { 'line-color': road, 'line-width': ['interpolate', ['linear'], ['zoom'], 5, 0.5, 12, 3] } },
+        { id: 'buildings',   type: 'fill', source: 'ofm', 'source-layer': 'building',   paint: { 'fill-color': bldg, 'fill-opacity': 0.8 } },
+        { id: 'labels-cities', type: 'symbol', source: 'ofm', 'source-layer': 'place',
+          filter: ['in', ['get', 'class'], ['literal', ['city']]],
           layout: { 'text-field': ['coalesce', ['get', 'name:en'], ['get', 'name']],
-            'text-font': ['Noto Sans Regular'],
-            'text-size': ['interpolate', ['linear'], ['zoom'], 4, 10, 10, 14],
-            'text-max-width': 8 },
-          paint: { 'text-color': c.label, 'text-halo-color': c.bg, 'text-halo-width': 1.5 } },
+            'text-font': ['Noto Sans Regular'], 'text-size': ['interpolate', ['linear'], ['zoom'], 5, 11, 10, 14], 'text-max-width': 8 },
+          paint: { 'text-color': label, 'text-halo-color': bg, 'text-halo-width': 1.5,
+            'text-opacity': ['interpolate', ['linear'], ['zoom'], 5, 0, 7, 1] } },
+        { id: 'labels-towns', type: 'symbol', source: 'ofm', 'source-layer': 'place',
+          filter: ['in', ['get', 'class'], ['literal', ['town']]],
+          layout: { 'text-field': ['coalesce', ['get', 'name:en'], ['get', 'name']],
+            'text-font': ['Noto Sans Regular'], 'text-size': ['interpolate', ['linear'], ['zoom'], 11, 11, 14, 13], 'text-max-width': 8 },
+          paint: { 'text-color': label, 'text-halo-color': bg, 'text-halo-width': 1.5,
+            'text-opacity': ['interpolate', ['linear'], ['zoom'], 11, 0, 12, 1] } },
       ],
     };
   }
 
   let map;
   function initMap() {
+    // Story 5.0 AC5 — viewport-first: read ?lat/?lon BEFORE constructing the map so the
+    // first tile fetch is the local area (no flyTo on cold load). Absent → world overview.
+    const p = new URLSearchParams(window.location.search);
+    const qlat = parseFloat(p.get('lat'));
+    const qlon = parseFloat(p.get('lon'));
+    const hasViewport = !isNaN(qlat) && !isNaN(qlon) && qlat >= -90 && qlat <= 90 && qlon >= -180 && qlon <= 180;
+    state._initialViewport = hasViewport;
+    // Compute initial camera before constructing the map — one position, no correction later.
+    let initCamera;
+    if (hasViewport) {
+      initCamera = { center: [qlon, qlat], zoom: 13 };
+    } else if (state.spaces.length > 1) {
+      const pct = (arr, p) => { const s = [...arr].sort((a, b) => a - b); return s[Math.floor((s.length - 1) * p)]; };
+      const lons = state.spaces.map(s => s.coordinates?.lon).filter(v => typeof v === 'number' && v >= -180 && v <= 180);
+      const lats = state.spaces.map(s => s.coordinates?.lat).filter(v => typeof v === 'number' && v >= -90 && v <= 90);
+      initCamera = { bounds: [[pct(lons, 0.05), pct(lats, 0.05)], [pct(lons, 0.95), pct(lats, 0.95)]], fitBoundsOptions: { padding: 80, maxZoom: 7 } };
+    } else {
+      initCamera = { center: [10, 48], zoom: 4 };
+    }
     map = new maplibregl.Map({
       container: 'map',
-      style: buildStyle('grayscale'),
-      center: [4.8, 49.5],   // rough midpoint FR/DE
-      zoom: 4.3,
-      maxBounds: [[-25, 34], [45, 72]], // [west, south], [east, north] — Atlantic to Ural, N Africa to Scandinavia
+      style: buildStyle(),
       hash: false,
+      minZoom: 1.5,
       attributionControl: { compact: true },
+      ...initCamera,
     });
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
+    const _zoomEl = document.getElementById('legend-zoom');
+    const _updateZoom = () => { if (_zoomEl) _zoomEl.textContent = 'z' + map.getZoom().toFixed(1); };
+    map.on('zoom', _updateZoom);
+    map.on('load', _updateZoom);
 
     const dismissLoader = () => {
       const ld = $('#loader');
@@ -198,100 +231,212 @@
     let readyFired = false;
     const ready = () => {
       if (!readyFired) { readyFired = true; map.resize(); dismissLoader(); }
-      try { renderMarkers(); } catch {}
+      try { refreshSpacesLayer(); } catch {}
     };
     map.on('styledata', ready);
     map.on('load', ready);
     // Fallback: tiles blocked or very slow.
     setTimeout(ready, 1500);
 
-    // Close drawers when clicking the map
+    // Close drawers + deselect when clicking the map background (not on a GL point).
     map.on('click', (e) => {
-      // Only close if we didn't click on a marker element
-      const target = e.originalEvent.target;
-      if (target && target.closest && target.closest('.map-marker')) return;
-      // leave drawers where user put them — this is map-first; only close detail
+      const hits = map.queryRenderedFeatures(e.point, { layers: ['spaces-point'] });
+      if (hits && hits.length) return;
+      if (state.selectedId) {
+        state.selectedId = null;
+        highlightSelected();
+      }
       if (state.openDrawer === 'detail') setDrawer(null);
     });
   }
 
-  const SVG_NS = 'http://www.w3.org/2000/svg';
+  // ───────────────────────────── GL point-field substrate (Story 5.0)
+  // One GeoJSON source + circle/glyph layers replace the per-space DOM markers.
+  // Colours are authored in state-colour-ladder.html (two surfaces: Daylight = parchment,
+  // Depth = dark) and selected by the tweaks theme toggle — NOT by zoom. `shut` is a
+  // dimmed green, never black (retires the old .map-marker.shut black-dot bug).
+  const LADDER = {
+    daylight: { seeded: '#A89F94', confirmed: '#378ADD', open: '#5DCAA5', shut: '#1D9E75', aging: '#C9963F', zombie: '#6A6A72', dead: '#5A5A60', broken: '#E24B4A' },
+    depth:    { seeded: '#555560', confirmed: '#378ADD', open: '#5DCAA5', shut: '#1D9E75', aging: '#C9963F', zombie: '#6A6A72', dead: '#5A5A60', broken: '#E24B4A' },
+  };
+  // Dedicated neon for the open-pulse halo — must pop on both surfaces.
+  const PULSE_COLOR = '#9FE1CB'; // algae-bright — lighter than the open dot, glows on both surfaces
+  // Stroke gives non-colour separation; seeded/dead/zombie read as hollow/faint rings.
+  const LADDER_STROKE = {
+    daylight: { seeded: '#A09C90', dead: '#7A786E', zombie: '#8A8C80', default: '#1E1D1A' },
+    depth:    { seeded: '#3A3A42', dead: '#3A3A42', zombie: '#3A3A42', default: '#0D0D0F' },
+  };
+  const KINDS = ['seeded', 'confirmed', 'open', 'shut', 'aging', 'zombie', 'dead', 'broken'];
+  // NFR-A4: colour must not be the sole differentiator. Short glyphs render in Noto Sans.
+  const KIND_GLYPH = { broken: '×', aging: '!', zombie: '…', dead: '+' };
 
-  function createMarkerSVG(kind, size, pulseOff) {
-    const svg = document.createElementNS(SVG_NS, 'svg');
-    svg.setAttribute('width', size);
-    svg.setAttribute('height', size);
-    svg.setAttribute('viewBox', '0 0 22 22');
-    svg.classList.add('map-marker', kind);
-    svg.style.display = 'block';
-    svg.style.overflow = 'visible'; // pulse ring bleeds outside bounds
-
-    const r = 9; // circle radius in viewBox coords
-    const cx = 11; const cy = 11;
-
-    if (kind === 'open' && !pulseOff) {
-      const ring = document.createElementNS(SVG_NS, 'circle');
-      ring.setAttribute('cx', cx); ring.setAttribute('cy', cy); ring.setAttribute('r', r);
-      ring.classList.add('marker-pulse');
-      svg.appendChild(ring);
-    }
-
-    const EMOJI_ONLY = new Set(['aging', 'zombie', 'dead']);
-    const MARKER_GLYPH = { broken: '×', aging: '⚠️', zombie: '🧟', dead: '🪦' };
-
-    if (!EMOJI_ONLY.has(kind)) {
-      const circle = document.createElementNS(SVG_NS, 'circle');
-      circle.setAttribute('cx', cx); circle.setAttribute('cy', cy); circle.setAttribute('r', r);
-      circle.classList.add('marker-fill');
-      svg.appendChild(circle);
-    }
-
-    if (MARKER_GLYPH[kind]) {
-      const t = document.createElementNS(SVG_NS, 'text');
-      t.setAttribute('x', cx); t.setAttribute('y', cy);
-      t.setAttribute('dominant-baseline', 'central');
-      t.setAttribute('text-anchor', 'middle');
-      t.classList.add(kind === 'broken' ? 'marker-x' : 'marker-emoji');
-      t.textContent = MARKER_GLYPH[kind];
-      svg.appendChild(t);
-    }
-
-    return svg;
+  function currentSurface() {
+    return 'depth'; // basemap transitions by zoom; dots use the depth palette on both surfaces
   }
 
-  function renderMarkers() {
-    state.markers.forEach((m) => m.remove());
-    state.markers.clear();
-    const visible = filteredSpaces();
-    const size = state.tweaks.density === 'compact' ? 14 : 22;
-    const pulseOff = state.tweaks.pulse === 'off';
-    for (const s of visible) {
+  // Build a FeatureCollection from spaces, skipping invalid coords (guard preserved
+  // from the retired renderMarkers()). Each feature carries `id` + computed `kind`.
+  function buildFeatureCollection(spaces) {
+    const features = [];
+    for (const s of spaces) {
       const lat = s.coordinates?.lat, lon = s.coordinates?.lon;
       if (typeof lat !== 'number' || typeof lon !== 'number' || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
-        console.warn('[renderMarkers] skipping space with invalid coords:', s.id, lat, lon);
+        console.warn('[buildFeatureCollection] skipping space with invalid coords:', s.id, lat, lon);
         continue;
       }
-      const kind = computeMarker(s);
-      const svg = createMarkerSVG(kind, size, pulseOff);
-      svg.setAttribute('aria-label', `${s.name}, ${s.city}, ${s.country}, status ${kind}`);
-      svg.setAttribute('role', 'button');
-      svg.setAttribute('tabindex', '0');
-      const onActivate = (e) => {
-        e.stopPropagation();
-        if (IS_EMBED) showEmbedPopup(s, kind, [lon, lat]);
-        else selectSpace(s.id, { fly: false });
-      };
-      svg.addEventListener('click', onActivate);
-      svg.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onActivate(e); }
+      features.push({
+        type: 'Feature',
+        id: s.id,
+        geometry: { type: 'Point', coordinates: [lon, lat] },
+        properties: { id: s.id, kind: computeMarker(s), name: s.name, city: s.city, country: s.country },
       });
-      const marker = new maplibregl.Marker({ element: svg, anchor: 'center' })
-        .setLngLat([lon, lat])
-        .addTo(map);
-      state.markers.set(s.id, marker);
     }
+    return { type: 'FeatureCollection', features };
+  }
+
+  function colorMatchExpr(table) {
+    const expr = ['match', ['get', 'kind']];
+    for (const k of KINDS) expr.push(k, table[k]);
+    expr.push(table.seeded); // fallback
+    return expr;
+  }
+  function strokeMatchExpr(surface) {
+    const t = LADDER_STROKE[surface];
+    return ['match', ['get', 'kind'], 'seeded', t.seeded, 'dead', t.dead, 'zombie', t.zombie, t.default];
+  }
+  // Single continuous radius ramp: a field of light at world zoom (z2) growing to
+  // street-scale pins by z12+. The ONLY thing that changes with zoom is radius.
+  const RADIUS_STOPS = [[1.5, 1], [2, 2.2], [6, 3.5], [9, 6], [12, 9], [16, 12], [18, 14]];
+  function radiusExpr(densityMul) {
+    const e = ['interpolate', ['linear'], ['zoom']];
+    for (const [z, r] of RADIUS_STOPS) e.push(z, r * densityMul);
+    return e;
+  }
+  function glyphColorExpr(surface) {
+    return ['case', ['==', ['get', 'kind'], 'broken'], '#ffffff', surface === 'depth' ? '#F0EDE0' : '#1E1D1A'];
+  }
+
+  // Idempotent — safe to call after every setStyle (which wipes custom sources/layers).
+  function ensureSpacesLayers() {
+    if (!map || !map.getStyle()) return false;
+    const surface = currentSurface();
+    if (!map.getSource('spaces')) {
+      map.addSource('spaces', { type: 'geojson', data: { type: 'FeatureCollection', features: [] }, promoteId: 'id' });
+    }
+    // Beacon halo: rAF-driven A→B ripple. Transitions zeroed so setPaintProperty
+    // takes effect immediately — no 300ms GL interpolation fighting the 16ms loop.
+    if (!map.getLayer('spaces-glow')) {
+      map.addLayer({ id: 'spaces-glow', type: 'circle', source: 'spaces',
+        filter: ['==', ['get', 'kind'], 'open'],
+        paint: {
+          // Glow transitions with the basemap: bright algae on dark, deeper on light.
+          'circle-color': ['interpolate', ['linear'], ['zoom'], 6, '#9FE1CB', 9, '#0F6E56'],
+          'circle-opacity': 0,
+          'circle-radius': 0,
+          'circle-blur': 0.8,
+          'circle-opacity-transition': { duration: 0, delay: 0 },
+          'circle-radius-transition': { duration: 0, delay: 0 },
+        } });
+    }
+    if (!map.getLayer('spaces-point')) {
+      map.addLayer({ id: 'spaces-point', type: 'circle', source: 'spaces',
+        layout: {
+          // seeded always renders below registered dots (lower sort key = drawn first)
+          'circle-sort-key': ['match', ['get', 'kind'], 'seeded', 0, 1],
+        },
+        paint: {
+          'circle-color': colorMatchExpr(LADDER[surface]),
+          'circle-radius': radiusExpr(state._pulseDensityMul),
+          'circle-opacity': 1.0,
+          'circle-stroke-width': ['case',
+            ['boolean', ['feature-state', 'selected'], false], 2.5,
+            ['==', ['get', 'kind'], 'seeded'], 0.5,
+            1.2],
+          'circle-stroke-color': ['case', ['boolean', ['feature-state', 'selected'], false], '#FFFFFF', strokeMatchExpr(surface)],
+          'circle-stroke-opacity': ['interpolate', ['linear'], ['zoom'], 6, 0, 9, 1],
+        } });
+    }
+    if (!map.getLayer('spaces-glyph')) {
+      map.addLayer({ id: 'spaces-glyph', type: 'symbol', source: 'spaces',
+        filter: ['in', ['get', 'kind'], ['literal', Object.keys(KIND_GLYPH)]],
+        layout: {
+          'text-field': ['match', ['get', 'kind'], 'broken', '×', 'aging', '!', 'zombie', '…', 'dead', '+', ''],
+          'text-font': ['Noto Sans Regular'],
+          'text-size': ['interpolate', ['linear'], ['zoom'], 6, 8, 12, 13],
+          'text-allow-overlap': true,
+          'text-ignore-placement': true,
+        },
+        paint: { 'text-color': glyphColorExpr(surface) } });
+    }
+    wireSpacesClick();
+    startBeacon();
+    return true;
+  }
+
+  // Re-apply surface-dependent paint (theme toggle) + density radius. Cheap; expressions only.
+  function applyLadderPaint() {
+    const surface = currentSurface();
+    state._pulseDensityMul = state.tweaks.density === 'compact' ? 0.7 : 1;
+    if (map.getLayer('spaces-point')) {
+      map.setPaintProperty('spaces-point', 'circle-color', colorMatchExpr(LADDER[surface]));
+      map.setPaintProperty('spaces-point', 'circle-radius', radiusExpr(state._pulseDensityMul));
+      map.setPaintProperty('spaces-point', 'circle-stroke-color',
+        ['case', ['boolean', ['feature-state', 'selected'], false], '#FFFFFF', strokeMatchExpr(surface)]);
+    }
+    if (map.getLayer('spaces-glyph')) map.setPaintProperty('spaces-glyph', 'text-color', glyphColorExpr(surface));
+  }
+
+  // The one entry point replacing renderMarkers(): ensure layers exist, push fresh data,
+  // re-apply paint + selection. Safe to call before the style is loaded (no-op until ready).
+  function refreshSpacesLayer() {
+    if (!map || !map.isStyleLoaded()) return;
+    if (!ensureSpacesLayers()) return;
+    const fc = buildFeatureCollection(filteredSpaces());
+    const src = map.getSource('spaces');
+    if (src) src.setData(fc);
+    applyLadderPaint();
     if (state.selectedId) highlightSelected();
     updateCounts();
+  }
+
+  function wireSpacesClick() {
+    if (map._spacesClickWired) return;
+    map._spacesClickWired = true;
+    map.on('click', 'spaces-point', (e) => {
+      const f = e.features && e.features[0];
+      if (!f) return;
+      const s = state.spaces.find((x) => x.id === f.properties.id);
+      if (!s) return;
+      if (IS_EMBED) showEmbedPopup(s, f.properties.kind, f.geometry.coordinates);
+      else selectSpace(s.id, { fly: false });
+    });
+    map.on('mouseenter', 'spaces-point', () => { map.getCanvas().style.cursor = 'pointer'; });
+    map.on('mouseleave', 'spaces-point', () => { map.getCanvas().style.cursor = ''; });
+  }
+
+  // Beacon: A→B ripple on open spaces. Transitions on the layer are zeroed so
+  // setPaintProperty takes effect in the same frame — no 300ms GL easing fighting the loop.
+  let _beaconRAF = null;
+  function startBeacon() {
+    if (_beaconRAF) return;
+    const PERIOD = 2400;
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const tick = () => {
+      _beaconRAF = requestAnimationFrame(tick);
+      if (!map.getLayer('spaces-glow')) return;
+      if (reduce || state.tweaks.pulse === 'off') {
+        map.setPaintProperty('spaces-glow', 'circle-opacity', 0);
+        return;
+      }
+      const phase = (performance.now() % PERIOD) / PERIOD; // 0→1, snap
+      const dotMul = state._pulseDensityMul;
+      // ease-out expand: fast growth, slow tail; opacity zeroes well before the snap
+      const expand = 1 - Math.pow(1 - phase, 2);
+      map.setPaintProperty('spaces-glow', 'circle-radius',
+        ['interpolate', ['linear'], ['zoom'], 2, dotMul * (4 + expand * 10), 9, dotMul * (8 + expand * 18), 16, dotMul * (14 + expand * 30)]);
+      map.setPaintProperty('spaces-glow', 'circle-opacity', Math.pow(1 - phase, 1.8) * 0.85);
+    };
+    _beaconRAF = requestAnimationFrame(tick);
   }
 
   // Lightweight popup for embedded maps — no full detail drawer, just identity + a way out.
@@ -405,12 +550,17 @@
     return 'seeded';
   }
 
+  // GL feature-state selection (replaces DOM classList). Clears the prior selection,
+  // flags the current one. Guarded — the source may not be loaded yet on cold deep-links.
   function highlightSelected() {
-    state.markers.forEach((m, id) => {
-      const nd = m.getElement();
-      if (id === state.selectedId) nd.classList.add('selected');
-      else nd.classList.remove('selected');
-    });
+    if (!map || !map.getSource('spaces')) return;
+    if (state._fsSelected && state._fsSelected !== state.selectedId) {
+      try { map.setFeatureState({ source: 'spaces', id: state._fsSelected }, { selected: false }); } catch {}
+    }
+    if (state.selectedId) {
+      try { map.setFeatureState({ source: 'spaces', id: state.selectedId }, { selected: true }); } catch {}
+    }
+    state._fsSelected = state.selectedId;
   }
 
   function selectSpace(id, opts = {}) {
@@ -498,7 +648,7 @@
       btn.addEventListener('click', () => {
         if (set.has(val)) set.delete(val); else set.add(val);
         btn.setAttribute('aria-pressed', set.has(val) ? 'true' : 'false');
-        renderMarkers();
+        refreshSpacesLayer();
       });
       host.appendChild(btn);
     }
@@ -603,7 +753,9 @@
     }
     if (shareBtn) {
       shareBtn.onclick = () => {
-        const url = window.location.origin + '/?space=' + s.id;
+        // Story 5.0 AC5 — append coords so the shared link opens local-first (viewport-first).
+        const url = window.location.origin + '/?space=' + s.id
+          + `&lat=${s.coordinates.lat.toFixed(5)}&lon=${s.coordinates.lon.toFixed(5)}`;
         navigator.clipboard.writeText(url).then(() => {
           shareBtn.textContent = '✓';
           setTimeout(() => { shareBtn.innerHTML = SHARE_SVG; }, 1500);
@@ -885,7 +1037,7 @@
                   .then(r => r.json())
                   .then(geoJson => {
                     ingestGeoJSON(geoJson);
-                    renderMarkers();
+                    refreshSpacesLayer();
                     renderDetail();
                   })
                   .catch(() => {})
@@ -965,6 +1117,9 @@
     const bbox = p.get('bbox');
     const center = p.get('center');
     const spaceId = p.get('space');
+    // Story 5.0 AC5 — when ?lat/?lon were present, initMap already centered the map there
+    // (viewport-first). state._initialViewport tells us to select WITHOUT a flyTo on cold load.
+    const viewportFirst = state._initialViewport;
     if (bbox || center || spaceId) {
       map.once('load', () => {
         if (bbox) {
@@ -976,14 +1131,19 @@
           const [lat, lon] = center.split(',').map(Number);
           if (!isNaN(lat) && !isNaN(lon)) map.jumpTo({ center: [lon, lat], zoom: 13 });
         }
+        // (?lat/?lon needs no jump here — initMap consumed it as the initial center.)
         const target = spaceId && state.spaces.find((x) => x.id === spaceId);
         if (target) {
           if (IS_EMBED) {
-            // no detail drawer in embed — fly + lightweight popup
-            map.flyTo({ center: [target.coordinates.lon, target.coordinates.lat], zoom: Math.max(map.getZoom(), 8), speed: 1.2 });
+            // no detail drawer in embed — lightweight popup. Only fly if we're not
+            // already centered on the deep-linked viewport (AC5) — AC6 legacy still flies.
+            if (!viewportFirst) {
+              map.flyTo({ center: [target.coordinates.lon, target.coordinates.lat], zoom: Math.max(map.getZoom(), 8), speed: 1.2 });
+            }
             showEmbedPopup(target, computeMarker(target), [target.coordinates.lon, target.coordinates.lat]);
           } else {
-            selectSpace(spaceId, { fly: true });
+            // viewport-first → no flyTo on cold load; legacy (?space only) → graceful fly (AC6).
+            selectSpace(spaceId, { fly: !viewportFirst });
           }
         }
       });
@@ -1012,8 +1172,13 @@
     const base = window.location.origin + window.location.pathname;
     const paramParts = [`preset=${slug}`, q !== 'all' ? q : null, `bbox=${bbox}`];
     if (state.embed.centerId) {
-      // single-space embed: ?space= flies + selects/pops the space (overrides bbox on load)
+      // single-space embed: ?space= selects/pops the space (overrides bbox on load).
+      // Story 5.0 AC5 — append the space's coords so the embed loads local-first.
       paramParts.push(`space=${encodeURIComponent(state.embed.centerId)}`);
+      const cs = state.spaces.find((x) => x.id === state.embed.centerId);
+      if (cs && cs.coordinates) {
+        paramParts.push(`lat=${cs.coordinates.lat.toFixed(5)}`, `lon=${cs.coordinates.lon.toFixed(5)}`);
+      }
     }
     const shareUrl = `${base}?${paramParts.filter(Boolean).join('&')}`;
 
@@ -1173,7 +1338,7 @@
           state.selectedId = null;
         }
         buildFilterChips();
-        renderMarkers();
+        refreshSpacesLayer();
       } catch (_) { /* non-fatal */ }
 
       const spaceName = reg.space_name || 'Your space';
@@ -1365,7 +1530,7 @@
     const si = $('#search-input');
     si.addEventListener('input', () => {
       state.search = si.value;
-      renderMarkers();
+      refreshSpacesLayer();
     });
 
     $('#btn-reset-filters').addEventListener('click', () => {
@@ -1378,7 +1543,7 @@
       searchInput.value = '';
       searchInput.dispatchEvent(new Event('input', { bubbles: true }));
       buildFilterChips();
-      renderMarkers();
+      refreshSpacesLayer();
     });
 
     // Preset name → re-render code
@@ -1425,19 +1590,8 @@
   }
 
   function applyTweaks() {
-    const styleMap = { dim: 'grayscale', dark: 'dark' };
-    const mapEl = document.getElementById('map');
-    if (map) {
-      if (state.tweaks.mapStyle !== state._lastMapStyle) {
-        state._lastMapStyle = state.tweaks.mapStyle;
-        map.once('styledata', () => renderMarkers());
-        map.setStyle(buildStyle(styleMap[state.tweaks.mapStyle] || 'grayscale'));
-      } else {
-        renderMarkers();
-      }
-    }
-    if (mapEl) mapEl.className = 'map-' + state.tweaks.mapStyle;
-    if (!map) renderMarkers();
+    // mapStyle tweak retired — basemap transitions automatically by zoom.
+    if (map) refreshSpacesLayer();
   }
 
   function loadPreferences() {
@@ -1473,22 +1627,14 @@
     });
   }
 
-  // ───────────────────────────── drift measurement (DevTools probe)
+  // ───────────────────────────── DevTools probe (Story 5.0: GL renders the field of
+  // light, so marker-vs-projection drift no longer exists). Dumps currently-rendered
+  // spaces-point features for spot-checking ladder colours / counts.
   window.__driftProbe = () => {
-    const rect = map.getContainer().getBoundingClientRect();
-    const rows = [];
-    state.markers.forEach((m, id) => {
-      const ll = m.getLngLat();
-      const projected = map.project(ll);
-      const el = m.getElement();
-      const r = el.getBoundingClientRect();
-      const domX = r.left + r.width / 2 - rect.left;
-      const domY = r.top + r.height / 2 - rect.top;
-      rows.push({ id, lat: ll.lat, lon: ll.lng,
-                  dx: +(domX - projected.x).toFixed(2),
-                  dy: +(domY - projected.y).toFixed(2) });
-    });
-    console.table(rows.sort((a, b) => a.lat - b.lat));
+    if (!map.getLayer('spaces-point')) { console.warn('spaces-point layer not ready'); return []; }
+    const rows = map.queryRenderedFeatures({ layers: ['spaces-point'] })
+      .map((f) => ({ id: f.properties.id, kind: f.properties.kind, name: f.properties.name }));
+    console.table(rows);
     return rows;
   };
   window.__map = () => map;
@@ -1516,7 +1662,7 @@
       if (IS_EMBED) {
         initMap();
         applyUrlParams();
-        // renderMarkers fires from initMap's ready(); applyUrlParams handles bbox/center/space.
+        // refreshSpacesLayer fires from initMap's ready(); applyUrlParams handles bbox/center/space.
         return;
       }
 
@@ -1548,7 +1694,7 @@
           const geoJson = await geo.json();
           ingestGeoJSON(geoJson);
           buildFilterChips();
-          renderMarkers();
+          refreshSpacesLayer();
           renderDetail();
           updateCounts();
         } catch (_) {}

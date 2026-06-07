@@ -55,8 +55,8 @@ def source_tag(slug: str) -> str:
 FETCH_CONCURRENCY = 20
 PER_ENDPOINT_TIMEOUT = 10.0
 
-# Match the map maxBounds from app.js: [[-25, 34], [45, 72]]
-BBOX_WEST, BBOX_SOUTH, BBOX_EAST, BBOX_NORTH = -25, 34, 45, 72
+# Story 5.0 (AC4): the EU bbox gate that mirrored the map's maxBounds was dropped —
+# the map is now world-navigable, so the SpaceAPI directory seeds globally.
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("seed_spaceapi")
@@ -265,9 +265,6 @@ def main() -> int:
                 counters["no_name"] += 1
                 continue
             if lat is None or lon is None or not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
-                counters["no_geo"] += 1
-                continue
-            if not (BBOX_SOUTH <= lat <= BBOX_NORTH and BBOX_WEST <= lon <= BBOX_EAST):
                 counters["no_geo"] += 1
                 continue
 

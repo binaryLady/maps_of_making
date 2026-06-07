@@ -1,6 +1,6 @@
 # Story 5.0: GL Rendering Substrate + World View Unlock
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -61,40 +61,36 @@ so that the map feels alive at every scale — from a maker's street corner to a
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1 — Stand up the GL GeoJSON source** (AC: 1)
-  - [ ] In `initMap()` (or a new `addSpacesSource()` called from `ready()`), build a FeatureCollection from `state.spaces` (skip invalid coords — reuse the validation guard currently in `renderMarkers()` at `web/app.js:270`) and `map.addSource('spaces', { type:'geojson', data })` — **no clustering** (every space is its own point at every zoom)
-  - [ ] Stamp each feature's `properties` with its computed `kind = computeMarker(s)` and the `id` so paint expressions and feature-state can key off it
-  - [ ] Delete `renderMarkers()` and `createMarkerSVG()`; remove `state.markers` Map and its `.forEach(m => m.remove())` teardown
-  - [ ] Replace the three `renderMarkers()` call sites: `ready()` (`web/app.js:201`), the `styledata` re-render (`web/app.js:1433`), and any filter/tweak handlers — with a single `refreshSpacesLayer()` that calls `getSource('spaces').setData(...)`
-- [ ] **Task 2 — Individual-dot circle layer + colour ladder** (AC: 3)
-  - [ ] Add `unclustered-point` circle layer with `filter: ['!', ['has','point_count']]`; `circle-color` = `match`/`get` expression on the `kind` property mapping each state to its ladder colour
-  - [ ] Source the ladder colours from `state-colour-ladder.html` (authoritative). Critically: `shut` → dimmed/desaturated green, **never `--ink`/black** — this retires the `web/maps-of-making.html:178` `.map-marker.shut .marker-fill { fill: var(--ink) }` bug
-  - [ ] `circle-radius` interpolated by zoom; honour `state.tweaks.density` (compact vs comfortable) as a radius multiplier
-  - [ ] Reproduce the open-pulse: a `requestAnimationFrame` loop updating a paint property (e.g. `circle-radius`/`circle-opacity`) on the open-subset layer or via feature-state; respect `state.tweaks.pulse === 'off'`
-  - [ ] Add the `broken` × treatment: **a GL symbol layer is required** (not optional) for `broken` — a `×` text glyph centred on the circle satisfies NFR-A4 (colour must not be the sole differentiator). Similarly, `dead` / `zombie` / `aging` must carry a visual marker beyond colour (a small text glyph or distinct circle stroke pattern). GL has no DOM emoji — use short text strings (`×`, `!`, `…`) in a symbol layer filtered by `kind`. Confirm glyphs render in the OpenFreeMap font stack (`Noto Sans Regular`) before finalising.
-- [ ] **Task 3 — Zoom-scaled point field (continental → street is one continuous ramp)** (AC: 2)
-  - [ ] The SAME `unclustered-point` circle layer from Task 2 serves both scales — there is no separate cluster layer and no dot/cluster swap. The only thing that changes with zoom is `circle-radius`.
-  - [ ] `circle-radius`: a single `interpolate(['linear'], ['zoom'], …)` ramp — small (e.g. 2–3px) at world zoom (z2) so dense regions read as a *field of light*, growing to the street-scale radius (e.g. 8–10px) by z12. Tune the stops against the visual references (`screencap_0606_151757.png`, `screencap_0606_110737.png`).
-  - [ ] **Retro-engineer the MapTiler `helpers/point` behaviour** before tuning: it scales size *and* colour by a data value over a dense field. Confirm whether it applies any opacity/blur falloff or radius-by-density that we want to reproduce. We are NOT using the MapTiler SDK — replicate the *look* with vanilla GL `circle-radius` / `circle-opacity` / `circle-color` expressions. If a pure-GL expression can't reproduce a desired effect, note it for Nicolas rather than pulling in the SDK.
-  - [ ] At very high density, consider `circle-opacity` < 1 so overlapping dots build visual weight (the screenshots show this additive-glow effect). Optional; confirm against the references.
-  - [ ] No `clusterProperties`, no count labels, no cluster-expansion click handler — none of the clustering machinery is used.
-- [ ] **Task 4 — Label dissolve at altitude** (AC: 2)
-  - [ ] In `buildStyle()` (`web/app.js:165`), change the `labels-places` layer `text-opacity` to a zoom `interpolate` expression: 0 below the continental threshold (~z6), ramping to full by ~z8. Coastline/water/landcover layers untouched.
-  - [ ] Verify across all three style flavors (`light`/`dark`/`grayscale`)
-- [ ] **Task 5 — World view unlock** (AC: 4)
-  - [ ] Remove `maxBounds` from the `new maplibregl.Map()` options (`web/app.js:182`)
-  - [ ] Change default `center: [4.8, 49.5], zoom: 4.3` → `center: [10, 20], zoom: 2`
-  - [ ] Confirm clusters render at world zoom so first impression is a field of light, not empty continents
-- [ ] **Task 6 — Viewport-first deep-link init** (AC: 5)
-  - [ ] In `initMap()`, read `lat`/`lon` from the URL BEFORE constructing the map; if present, use them as `center` + zoom 13 (overrides the world default) so the first tile fetch is local — no `flyTo`
-  - [ ] In `applyUrlParams()` (`web/app.js:957`), when `lat`/`lon` were consumed by `initMap()`, select the space on data-ready WITHOUT `flyTo` (pass `{ fly: false }`); keep the legacy `flyTo` path only when coords are absent (AC6)
-  - [ ] Share-URL builder (`web/app.js:606`): append `&lat=...&lon=...` from the space's coordinates
-  - [ ] Embed/preset builder (`renderPresetPreview()` `web/app.js:1014`, `embedSpace()`): append the same coord params alongside `space=`
-- [ ] **Task 7 — Regression sweep** (AC: 1, 5, 6)
-  - [ ] Verify `bbox` and `center` deep links still work (they share the `map.once('load')` timing in `applyUrlParams()`)
-  - [ ] Verify embed-mode popup path (`showEmbedPopup`) still fires — it currently keys off marker click; reattach to the GL layer `click` handler
-  - [ ] Verify filters/search re-render via `setData`, not DOM rebuild; verify `updateCounts()`/results-list still reflect `filteredSpaces()`
-  - [ ] Verify post-registration auto-zoom (`selectSpace(..., {fly:true})`) still works for the non-deep-link path
+- [x] **Task 1 — Stand up the GL GeoJSON source** (AC: 1)
+  - [x] `buildFeatureCollection()` builds the FC from `filteredSpaces()`, reusing the invalid-coord guard from the retired `renderMarkers()`. Source added in `ensureSpacesLayers()` via `map.addSource('spaces', { type:'geojson', data, promoteId:'id' })` — **no clustering**.
+  - [x] Each feature carries `properties.id` + `properties.kind = computeMarker(s)` (plus name/city/country for the popup); `promoteId:'id'` exposes `id` to feature-state.
+  - [x] Deleted `renderMarkers()`, `createMarkerSVG()`, `SVG_NS`, and `state.markers`.
+  - [x] All `renderMarkers()` call sites now call `refreshSpacesLayer()` (ready, styledata re-render, filter/search/reset/tweaks handlers, register/refresh/poll).
+- [x] **Task 2 — Individual-dot circle layer + colour ladder** (AC: 3)
+  - [x] `spaces-point` circle layer; `circle-color` = `match` on the `kind` property → ladder colour (`colorMatchExpr`). No cluster filter needed (no clustering).
+  - [x] Ladder colours lifted from `state-colour-ladder.html` into the `LADDER` table (Daylight + Depth surfaces). `shut` → dimmed green (`#2D7A5A` day / `#1D9E75` depth), **never black** — retires the black-dot bug (CSS rule removed; legend swatch fixed too).
+  - [x] `circle-radius` zoom-interpolated; `state.tweaks.density` applied as a multiplier (`compact` → 0.7×).
+  - [x] Open-pulse reproduced via a single `requestAnimationFrame` loop driving `circle-opacity`/`circle-radius` on the open-subset `spaces-pulse` halo layer; respects `tweaks.pulse === 'off'` AND `prefers-reduced-motion`.
+  - [x] `spaces-glyph` symbol layer carries non-colour markers (NFR-A4): `broken` `×`, `aging` `!`, `zombie` `…`, `dead` `+`, in `Noto Sans Regular`. Seeded/dead/zombie also read via distinct stroke colours.
+- [x] **Task 3 — Zoom-scaled point field (one continuous ramp)** (AC: 2)
+  - [x] The single `spaces-point` layer serves all scales — no cluster layer, no dot/cluster swap. Only `circle-radius` changes with zoom.
+  - [x] `circle-radius` = one `interpolate(linear, zoom)` ramp: 2.2px @ z2 (field of light) → 9px @ z12 → 12px @ z16. Stops are a first pass — **tune against the screenshots during live review.**
+  - [x] No MapTiler SDK (ADR-017). The dense-field "glow" is approximated with `circle-opacity: 0.9` so overlaps build weight; a true blur/density falloff is not native to GL `circle` — noted for Nicolas if more glow is wanted.
+  - [x] No `clusterProperties`, no count labels, no expansion click handler.
+- [x] **Task 4 — Label dissolve at altitude** (AC: 2)
+  - [x] `labels-places` `text-opacity` → `interpolate(linear, zoom, 5→0, 7→1)`. Coastline/water/landcover untouched. Lives in `buildStyle()` so it applies to all three flavors.
+- [x] **Task 5 — World view unlock** (AC: 4)
+  - [x] `maxBounds` removed; default `center:[10,20] zoom:2`.
+- [x] **Task 6 — Viewport-first deep-link init** (AC: 5)
+  - [x] `initMap()` reads `?lat/?lon` BEFORE constructing the map → used as `center` + zoom 13, sets `state._initialViewport`. No `flyTo` on cold load.
+  - [x] `applyUrlParams()` selects the space with `{ fly: !viewportFirst }` — no fly when coords were consumed, legacy fly otherwise (AC6).
+  - [x] Share-URL builder appends `&lat=&lon=` from the space's coords.
+  - [x] Preset/embed builder appends the same coord params alongside `space=`.
+- [x] **Task 7 — Regression sweep** (AC: 1, 5, 6) — *code paths preserved; live matrix is the review gate*
+  - [x] `bbox`/`center` deep links untouched (still inside `applyUrlParams()` `map.once('load')`).
+  - [x] `showEmbedPopup` reattached to the `spaces-point` GL `click` handler (`wireSpacesClick`).
+  - [x] Filters/search/reset repaint via `setData` (no DOM rebuild); `updateCounts()`/results-list still driven by `filteredSpaces()`.
+  - [x] Post-registration auto-zoom path uses `selectSpace(id, {fly:true})` unchanged (non-deep-link).
 
 ## Dev Notes
 
@@ -151,8 +147,34 @@ The "meaning" of the continental view is not decoration. Read `_bmad-output/plan
 
 ### Agent Model Used
 
+claude-opus-4-8 (Amelia / dev-story)
+
 ### Debug Log References
+
+- `node --check web/app.js` → OK (syntax clean after refactor)
+- Symbol-uniqueness scan: `refreshSpacesLayer`, `ensureSpacesLayers`, `buildFeatureCollection`, `startPulse`, `LADDER` each defined exactly once.
+- Stale-reference scan: no remaining `state.markers` / `createMarkerSVG` / `renderMarkers(` call usages (only retired-reference comments).
 
 ### Completion Notes List
 
+**What landed (pure browser-consumption-layer change — nothing outside `web/`):**
+- Replaced the per-space DOM `maplibregl.Marker` system with a single GL GeoJSON source (`spaces`, `promoteId:'id'`) feeding three layers: `spaces-pulse` (open-subset halo), `spaces-point` (the field of light), `spaces-glyph` (non-colour markers).
+- `computeMarker()` / `computeAxisA/B/C` / `filteredSpaces()` preserved verbatim — they now feed paint expressions + `setData` instead of DOM construction.
+- Two-surface ladder (`LADDER`/`LADDER_STROKE`) selected by the **theme toggle** (`tweaks.mapStyle`), not zoom. `shut` is dimmed green on both surfaces — the black-dot bug is retired in both the map paint and the legend swatch, and the dead `.map-marker.*` CSS was removed.
+- Selection ported to GL `feature-state` (`{selected:true}` → red stroke). Map-background click guarded with `queryRenderedFeatures(['spaces-point'])` so clicking a dot no longer closes the detail drawer.
+- World view unlocked (no `maxBounds`, `[10,20]`/z2 default) + viewport-first `?lat/?lon` init with no `flyTo` on cold load; share + preset/embed URLs now carry coords.
+- `__driftProbe` repurposed: GL eliminates the DOM-marker-vs-projection drift class entirely, so it now just dumps rendered `spaces-point` features.
+
+**⚠️ Manual verification — PENDING (gate owned by Nicolas, live on VPS).** Per this repo's pytest-vs-live DoD and prior map stories, `web/` front-end JS has no unit harness; verification is the manual matrix in Dev Notes → Testing standards: (a) world-view field of light on cold load; (b) one continuous radius ramp continental→street; (c) labels dissolve at altitude across light/dark/grayscale; (d) `?space=&lat=&lon=` opens local-first, drawer open, no flyTo; (e) legacy `?space=` still resolves (graceful fly); (f) filters/search repaint with **no marker DOM nodes** in DevTools; (g) embed popup fires; (h) `shut` dots dimmed-green not black.
+
+**Tuning flagged for live review:** radius ramp stops (z2→z16) and `circle-opacity` glow are a first pass — tune against `screencap_0606_151757.png` / `screencap_0606_110737.png`. If a stronger additive-glow is wanted beyond what `circle-opacity` gives, that needs a heatmap layer or a custom shader (noted, not pulled into scope).
+
 ### File List
+
+- `web/app.js` (modified) — GL substrate: source/layers, ladder paint expressions, rAF pulse, feature-state selection, viewport-first init, label dissolve, coord-bearing share/embed URLs; removed DOM-marker machinery.
+- `web/maps-of-making.html` (modified) — removed retired `.map-marker.*` / `.marker-*` / `@keyframes pulse` CSS (incl. the black-dot `shut` bug); fixed `.pin-swatch.shut` legend to dimmed green.
+
+### Change Log
+
+- 2026-06-06 — Story 5.0 implemented: full-GL point-field substrate replaces DOM markers; world view unlocked; viewport-first deep links; label dissolve at altitude; black-dot `shut` bug retired. Status → review (live manual-verification matrix pending, owner Nicolas).
+- 2026-06-07 — Visual tuning pass (live review with Nicolas): depth palette on both surfaces (no per-surface split); `saturate(0.45)` canvas filter dropped; seeded z-ordered below registered dots; stroke dissolves z9→z6; beacon rAF revived with `circle-*-transition:{duration:0}` fix; basemap auto-transitions dark→light z6→z9 via GL zoom expressions (theme toggle retired); initial viewport from 5/95 percentile bbox passed to map constructor (no post-load jump); `minZoom:1.5`; label layers split city/town; zoom indicator in legend; compact density as default.
