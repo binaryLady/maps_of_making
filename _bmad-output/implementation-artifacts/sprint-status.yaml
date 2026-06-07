@@ -1,5 +1,5 @@
 # generated: 2026-05-01
-# last_updated: 2026-06-07 (Story 5.1 unified-find-surface → ready-for-dev)
+# last_updated: 2026-06-07 (Story 5.1 unified-find-surface → done)
 # project: maps_of_making
 # project_key: NOKEY
 # tracking_system: file-system
@@ -169,7 +169,7 @@ development_status:
   # 5-1 reframed 2026-06-07 (quick-dev): "Unified Find surface" — merge search+filter
   # into one panel, matches visible on map (dim-not-hide + fit), accent/country-aware.
   # Supersedes the original "filters-search-wired" framing (data wiring already live).
-  5-1-unified-find-surface: review
+  5-1-unified-find-surface: done
   5-2-stale-broken-state-ui-banners-provenance-empty-states: backlog
   5-3-embed-polish-last-confirmed-caption-reciprocal-visibility: backlog
   5-4-accessible-list-view-axe-core-in-ci: backlog

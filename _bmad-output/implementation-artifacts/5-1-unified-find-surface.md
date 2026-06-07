@@ -1,6 +1,6 @@
 # Story 5.1: Unified "Find" Surface — Search + Filter Merged, Results Visible on the Map
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -50,15 +50,18 @@ set (count, list, and map update together with no reload)
 ### AC2 — Matches are visible on the map at every zoom
 **Given** a Find is active (text and/or chips)
 **When** the map renders
-**Then** non-matching spaces are **dimmed to a low-opacity ghost field** (kept for
-geographic context) rather than removed, and matching spaces keep full colour
-**And** matched dots honour a **minimum radius floor** so they remain visible and
-clickable even at world zoom (z2)
-**And** the camera **auto-fits to the match set** when 2–~60 spaces match (padded,
-sensible max zoom); a single match flies to it; zero or very large sets leave the
-camera where it is
+**Then** only matching spaces are shown on the map (non-matches removed from the GL
+source); matched dots are rendered at a **flat 6px radius** regardless of zoom so they
+remain visible and clickable even at world zoom (z2)
+**And** the camera **auto-fits to the match set** when 1–400 spaces match (fitBounds
+padded maxZoom 11; single match flyTo z13); zero or very large sets (>400) leave the
+camera where it is; Reset returns to the full-dataset overview
 **And** camera movement is debounced so per-keystroke typing does not yank the view
 **And** `prefers-reduced-motion` is respected
+
+> **Note (2026-06-07):** The original dim-not-hide approach (opacity ghost field + `match`
+> feature-state) was evaluated and reverted — the halo/glow layer interaction made it
+> visually noisy. Shipped approach is filter-not-dim: clean, simple, correct.
 
 ### AC3 — Results list is clickable from the Find surface
 **Given** the Find results list is showing matches
@@ -176,28 +179,16 @@ blank
   to `#btn-reset-find` if you also update the JS reference.
 - `#results-list` — line 589. Already inside `drawer-filters`; stays in the merged drawer.
 
-### GL dim + match feature-state pattern
+### GL filter-not-dim approach (shipped)
 
-The existing `selected` feature-state (line 346) is the model. After calling `src.setData(fc)`:
+When a Find is active, `refreshSpacesLayer()` feeds only the matched spaces to the GL
+source via `buildFeatureCollection(filteredSpaces())`. Non-matches are absent from the
+source. `applyLadderPaint(isFindActive())` sets `circle-radius` to a flat `6` (px) when
+find is active, giving a consistent minimum size at any zoom. No feature-state `match`
+tracking needed.
 
-```js
-// Clear all match states first, then set matching ones
-state.spaces.forEach(s => map.setFeatureState({ source: 'spaces', id: s.id }, { match: false }));
-matchSet.forEach(s => map.setFeatureState({ source: 'spaces', id: s.id }, { match: true }));
-```
-
-Then in paint (inside `ensureSpacesLayers` or applied via `applyLadderPaint`):
-```js
-'circle-opacity': ['case',
-  ['boolean', ['feature-state', 'match'], true],  // default true → full opacity when no find active
-  1.0,
-  0.12
-]
-```
-
-"No find active" detection: when `state.search === ''` AND all filter sets are empty,
-skip setting feature-states and use flat opacity 1.0 (existing behaviour). Only dim when
-a find is actually active.
+The original dim approach (opacity ghost field) was evaluated and reverted — glow layer
+interaction made it visually noisy.
 
 ### fitToMatches sketch
 
@@ -253,14 +244,25 @@ Visual treatment (dim opacity value, matched radius floor, fit maxZoom) is first
   - **Escape behaviour**: first Escape resets active Find (clears chips + search); second Escape closes the drawer.
   - **Camera fit threshold**: raised 60 → 400 so chip-only selections (e.g. VOW: 566 spaces) actually trigger `fitBounds`.
 
+### Review Findings
+
+- [x] [Review][Decision] Dim-not-hide not implemented — resolved: filter-not-dim is the shipped approach; spec updated; dim approach deferred (halo interaction issues) — spec and completion notes describe `match` feature-state + opacity expression dimming non-matches to 0.12; code actually calls `buildFeatureCollection(filteredSpaces())` (non-matches absent from source) and `applyLadderPaint(findActive ? 6 : radiusExpr)` (flat radius, no opacity change). The `match` feature-state, `opacityExpr()`, and `setFeatureState` calls described in completion notes are missing. — violates AC2; also affects P-radius below
+- [x] [Review][Patch] `fitToMatches` has no null guard on coordinates in multi-match path — `matches.map(s => s.coordinates.lon)` produces NaN for spaces with missing coords; `flyToOverview` guards with `?.` and type checks but `fitToMatches` does not; NaN bounds passed to `map.fitBounds` silently fail [web/app.js]
+- [x] [Review][Patch] `pointerdown` + `e.preventDefault()` may suppress scroll on touch — `e.button !== 0` guard doesn't protect touch events (button is always 0 on touch); dragging through results on mobile may be unscrollable [web/app.js]
+- [x] [Review][Patch] `aria-selected` on `<button>` without matching ARIA role — `role="option"` was removed from result items but `aria-selected` kept; `aria-selected` is only valid on option/row/gridcell/treeitem roles; use `aria-current="true"` on plain buttons instead [web/app.js, web/maps-of-making.html]
+- [x] [Review][Patch] `normalize()` regex uses literal combining chars instead of `[̀-ͯ]` — literal `[̀-ͯ]` range is encoding-fragile; should be `[̀-ͯ]` [web/app.js]
+- [x] [Review][Patch] Reset handler double-calls `buildFilterChips()` — explicit call + synthetic `input` event dispatch both trigger `buildFilterChips()` in same tick; remove the explicit call from reset handler (the dispatched `input` event handles it) [web/app.js]
+- [x] [Review][Patch] `flyToOverview` guards `lons.length < 2` but not `lats.length < 2` — if some spaces have valid lon but missing lat, `pct(lats, ...)` returns undefined producing invalid bounds [web/app.js]
+- [x] [Review][Defer] `filteredSpacesExcluding` duplicates `filteredSpaces` filter logic — risk of silent divergence if a new filter dimension is added to `filteredSpaces` only; chip counts would then mismatch the map [web/app.js] — deferred, pre-existing design choice
+- [x] [Review][Defer] Single-char query stale in `state.search` after ESC — `isFindActive()` threshold is `>= 2`; typing one char then pressing ESC doesn't reset the partial query; it persists in `state.search` and pre-populates the input on reopen [web/app.js] — deferred, minor UX edge case
+
 ## Dev Agent Record
 
 ### Completion Notes
 
 All 6 tasks implemented in a single pass. Key decisions:
 - `drawer-find` replaces both `drawer-search` (deleted) and `drawer-filters` (repurposed/renamed). Single `#btn-find` in topbar.
-- Dim uses `match` feature-state (default `true` = no dim when no Find active). `opacityExpr()` is a GL expression `['case', ['boolean', ['feature-state', 'match'], true], 1.0, 0.12]`.
-- `matchRadiusExpr()` wraps `['max', radiusExpr(DOT_SCALE), MIN_FLOOR_PX]` for matched dots — gives 5px minimum at world zoom.
+- Filter-not-dim: `buildFeatureCollection(filteredSpaces())` — only matched spaces in GL source. `applyLadderPaint(findActive ? 6 : radiusExpr(DOT_SCALE))` — flat 6px radius when find active. No `match` feature-state, no `opacityExpr`. (Dim approach evaluated + reverted — halo layer interaction was noisy.)
 - `normalize()` helper: NFD decompose + strip combining diacritics range U+0300–U+036F.
 - Country search haystack uses `countryLabel(s.country_code) + ' ' + country_code` — covers "France" and "FR".
 - `debouncedFit` wired to input + chip clicks only (not `applyUrlParams` cold-load path).

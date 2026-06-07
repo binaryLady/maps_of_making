@@ -588,7 +588,7 @@ function glyphColorExpr(surface) {
     const pct = (arr, p) => { const s = [...arr].sort((a, b) => a - b); return s[Math.floor((s.length - 1) * p)]; };
     const lons = state.spaces.map(s => s.coordinates?.lon).filter(v => typeof v === 'number' && v >= -180 && v <= 180);
     const lats = state.spaces.map(s => s.coordinates?.lat).filter(v => typeof v === 'number' && v >= -90 && v <= 90);
-    if (lons.length < 2) return;
+    if (lons.length < 2 || lats.length < 2) return;
     map.fitBounds([[pct(lons, 0.05), pct(lats, 0.05)], [pct(lons, 0.95), pct(lats, 0.95)]],
       { padding: 80, maxZoom: 7, animate: !reduce });
   }
@@ -601,8 +601,9 @@ function glyphColorExpr(surface) {
       map.flyTo({ center: [matches[0].coordinates.lon, matches[0].coordinates.lat], zoom: 13, animate: !reduce });
       return;
     }
-    const lons = matches.map((s) => s.coordinates.lon);
-    const lats = matches.map((s) => s.coordinates.lat);
+    const lons = matches.map((s) => s.coordinates?.lon).filter((v) => typeof v === 'number');
+    const lats = matches.map((s) => s.coordinates?.lat).filter((v) => typeof v === 'number');
+    if (lons.length < 2) return;
     map.fitBounds(
       [[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]],
       { padding: 80, maxZoom: 11, animate: !reduce }
@@ -615,7 +616,7 @@ function glyphColorExpr(surface) {
 
   // ───────────────────────────── filtering
   function normalize(str) {
-    return (str || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    return (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   }
 
   function filteredSpaces() {
@@ -761,7 +762,7 @@ function glyphColorExpr(surface) {
       const locationParts = [s.city, countryLabel(s.country_code)].filter(Boolean);
       const locationStr = locationParts.join(', ');
       const networkStr = (s.network_memberships || []).length ? ' · ' + s.network_memberships.map((n) => n.split('/').pop().toUpperCase()).join(' · ') : '';
-      const item = el('button', { class: 'result', 'data-sid': s.id, 'aria-selected': state.selectedId === s.id ? 'true' : 'false', type: 'button' }, [
+      const item = el('button', { class: 'result', 'data-sid': s.id, 'aria-current': state.selectedId === s.id ? 'true' : 'false', type: 'button' }, [
         el('span', { class: `pin-swatch ${kind}`, style: { marginTop: '2px' } }),
         el('div', { style: { flex: 1, minWidth: 0 } }, [
           el('div', { class: 'name' }, [s.name]),
@@ -1554,13 +1555,24 @@ function glyphColorExpr(surface) {
 
     // Delegated result selection — uses pointerdown (not click) because the scroll container
     // causes slight movement on touchpad taps which suppresses the browser's click event.
+    // preventDefault only fires on pointerup after no meaningful move, so touch-scroll still works.
+    let _pdTarget = null, _pdX = 0, _pdY = 0;
     $('#results-list').addEventListener('pointerdown', (e) => {
-      if (e.button !== 0) return; // left button / primary pointer only
+      if (e.button !== 0 && e.pointerType !== 'touch') return;
       const btn = e.target.closest('.result[data-sid]');
       if (!btn) return;
-      e.preventDefault(); // prevent focus-shift scroll that would move content under pointer
+      _pdTarget = btn; _pdX = e.clientX; _pdY = e.clientY;
+    });
+    $('#results-list').addEventListener('pointerup', (e) => {
+      if (!_pdTarget) return;
+      const dx = Math.abs(e.clientX - _pdX), dy = Math.abs(e.clientY - _pdY);
+      const btn = _pdTarget;
+      _pdTarget = null;
+      if (dx > 8 || dy > 8) return; // scroll gesture — ignore
+      e.preventDefault();
       selectSpace(btn.dataset.sid, { fly: true });
     });
+    $('#results-list').addEventListener('pointercancel', () => { _pdTarget = null; });
 $('#btn-preset').addEventListener('click', () => {
       // Toolbar entry = filter-preset builder; start clean (embedSpace path sets these).
       if (state.openDrawer !== 'preset') { state.embed.centerId = null; $('#preset-name').value = ''; }
@@ -1658,8 +1670,6 @@ $('#btn-preset').addEventListener('click', () => {
       const searchInput = $('#search-input');
       searchInput.value = '';
       searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-      buildFilterChips();
-      refreshSpacesLayer();
       flyToOverview();
     });
 

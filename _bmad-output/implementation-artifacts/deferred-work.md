@@ -373,3 +373,9 @@ Generating a real openfab.jsonld against the `space-jsonld-generator` skill expo
   clarifying which mode you're in (filter-preset vs single-space embed); (b) named/saved
   presets; (c) decide the fate of the decorative `preset=<slug>` URL param (emitted but
   never read by `applyUrlParams`). Revisit when presets get real product attention.
+
+
+## Deferred from: code review of 5-1-unified-find-surface (2026-06-07)
+
+- `filteredSpacesExcluding` duplicates `filteredSpaces` filter logic — risk of silent divergence if a new filter dimension is added to one but not the other; chip counts would mismatch the map. Revisit when adding a new filter axis.
+- Single-char query stale in `state.search` after ESC — `isFindActive()` threshold is `>= 2`; typing one char then ESC doesn't reset the partial query; it persists and pre-populates the input on reopen. Acceptable for now; revisit if users report confusion.
