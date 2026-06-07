@@ -34,7 +34,7 @@ from typing import Any
 import httpx
 
 sys.path.insert(0, str(Path(__file__).parent))
-from spaceapi_extract import escape_literal, extract_core, triples_for
+from spaceapi_extract import escape_literal, extract_core, extract_mom, triples_for
 
 OXIGRAPH_ENDPOINT = os.getenv("OXIGRAPH_ENDPOINT", "http://localhost:7878")
 UPDATE_URL = f"{OXIGRAPH_ENDPOINT}/update"
@@ -125,6 +125,9 @@ def build_insert(name: str, endpoint_url: str, payload: dict, network: str) -> t
     # Payload fields — core only; no contact/specialties at seed time
     fields = extract_core(payload)
     fields["schema:name"] = name  # use validated/chosen name
+    mom_fields = extract_mom(payload)
+    if "mom:address" in mom_fields:
+        fields["mom:address"] = mom_fields["mom:address"]
     for skip in ("schema:contactJson", "schema:knowsAbout", "mom:memberOf"):
         fields.pop(skip, None)
 

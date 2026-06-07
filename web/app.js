@@ -299,7 +299,8 @@
   }
   // Single continuous radius ramp: a field of light at world zoom (z2) growing to
   // street-scale pins by z12+. The ONLY thing that changes with zoom is radius.
-  const RADIUS_STOPS = [[1.5, 1], [2, 2.2], [6, 3.5], [9, 6], [12, 9], [16, 11], [18, 12]];
+  const RADIUS_STOPS = [[1.5, 1], [2, 2.2], [6, 3.5], [9, 9], [12, 12], [16, 16], [18, 22]];
+  const DOT_SCALE = 0.5;
   function radiusExpr(densityMul) {
     const e = ['interpolate', ['linear'], ['zoom']];
     for (const [z, r] of RADIUS_STOPS) e.push(z, r * densityMul);
@@ -339,7 +340,7 @@
         },
         paint: {
           'circle-color': colorMatchExpr(LADDER[surface]),
-          'circle-radius': radiusExpr(1),
+          'circle-radius': radiusExpr(DOT_SCALE),
           'circle-opacity': 1.0,
           'circle-stroke-width': ['case',
             ['boolean', ['feature-state', 'selected'], false], 2.5,
@@ -371,7 +372,7 @@
     const surface = currentSurface();
     if (map.getLayer('spaces-point')) {
       map.setPaintProperty('spaces-point', 'circle-color', colorMatchExpr(LADDER[surface]));
-      map.setPaintProperty('spaces-point', 'circle-radius', radiusExpr(1));
+      map.setPaintProperty('spaces-point', 'circle-radius', radiusExpr(DOT_SCALE));
       map.setPaintProperty('spaces-point', 'circle-stroke-color',
         ['case', ['boolean', ['feature-state', 'selected'], false], '#FFFFFF', strokeMatchExpr(surface)]);
     }
@@ -421,7 +422,7 @@
         return;
       }
       const phase = (performance.now() % PERIOD) / PERIOD; // 0→1, snap
-      const dotMul = 1;
+      const dotMul = DOT_SCALE;
       // ease-out expand: fast growth, slow tail; opacity zeroes well before the snap
       const expand = 1 - Math.pow(1 - phase, 2);
       map.setPaintProperty('spaces-glow', 'circle-radius',
@@ -436,6 +437,7 @@
   function showEmbedPopup(s, kind, lngLat) {
     if (_embedPopup) _embedPopup.remove();
     const badgeKindClass = { open: 'sp-badge-open', shut: 'sp-badge-shut', confirmed: 'sp-badge-confirmed', broken: 'sp-badge-broken', seeded: 'sp-badge-seeded' };
+    const kindLabel = { seeded: 'unclaimed', confirmed: 'claimed' };
     const deepLink = `https://mapsofmaking.org/?space=${encodeURIComponent(s.id)}`;
 
     const logoBox = el('div', { class: 'sp-logo' });
@@ -457,7 +459,7 @@
         ]),
         s.address ? el('div', { class: 'sp-address' }, [s.address]) : null,
         el('div', { class: 'sp-badges-row' }, [
-          el('span', { class: `sp-badge ${badgeKindClass[kind] || 'sp-badge-tag'}` }, [kind]),
+          el('span', { class: `sp-badge ${badgeKindClass[kind] || 'sp-badge-tag'}` }, [kindLabel[kind] || kind]),
           ...(s.network_memberships || []).map((n) => el('span', { class: 'sp-badge sp-badge-tag' }, [n.split('/').pop().toUpperCase()])),
         ]),
       ]),
@@ -612,7 +614,8 @@
 
     renderChips('#chips-network', networks, state.filters.networks);
     renderChips('#chips-country', countries.map((c) => [c, countryLabel(c)]), state.filters.countries);
-    renderChips('#chips-status', statuses.map((s) => [s, s]), state.filters.statuses, { swatch: true });
+    const chipLabel = { seeded: 'unclaimed', confirmed: 'claimed', open: 'open now', shut: 'closed now', aging: 'going quiet', zombie: 'unreachable', dead: 'closed' };
+    renderChips('#chips-status', statuses.map((s) => [s, chipLabel[s] || s]), state.filters.statuses, { swatch: true });
     renderChips('#chips-spec', specialties, state.filters.specialties);
   }
 
@@ -769,6 +772,7 @@
       logoBox.appendChild(_logoPlaceholder());
     }
     const badgeKindClass = { open: 'sp-badge-open', shut: 'sp-badge-shut', confirmed: 'sp-badge-confirmed', broken: 'sp-badge-broken', seeded: 'sp-badge-seeded' };
+    const kindLabel = { seeded: 'unclaimed', confirmed: 'claimed' };
     body.appendChild(el('div', { class: 'sp-hero' }, [
       el('div', { class: 'sp-name-row' }, [
         el('div', { class: 'sp-name' }, [s.name]),
@@ -776,7 +780,7 @@
       ]),
       el('div', { class: 'sp-address' }, [s.address || el('em', { class: 'sp-fact-empty' }, ['address not provided'])]),
       el('div', { class: 'sp-badges-row' }, [
-        el('span', { class: `sp-badge ${badgeKindClass[kind] || 'sp-badge-tag'}` }, [kind]),
+        el('span', { class: `sp-badge ${badgeKindClass[kind] || 'sp-badge-tag'}` }, [kindLabel[kind] || kind]),
         ...(s.network_memberships || []).map((n) => el('span', { class: 'sp-badge sp-badge-tag' }, [networkLabel(n)])),
         s.open_for_hosting ? el('span', { class: 'sp-badge sp-badge-tag' }, ['open for hosting']) : null,
       ]),
@@ -797,7 +801,7 @@
     if (kind !== 'seeded') {
       const dotClass = ['aging', 'zombie'].includes(kind) ? 'sp-dot sp-dot-stale'
         : kind === 'broken' ? 'sp-dot sp-dot-error' : 'sp-dot';
-      const statusPhrases = { open: 'Open right now', shut: 'Closed right now', confirmed: 'Confirmed', broken: 'Endpoint issue', aging: 'Going quiet', zombie: 'Unreachable', dead: 'Permanently closed' };
+      const statusPhrases = { open: 'Open right now', shut: 'Closed right now', confirmed: 'Claimed', broken: 'Endpoint issue', aging: 'Going quiet', zombie: 'Unreachable', dead: 'Permanently closed' };
       const phrase = statusPhrases[kind] || kind;
       body.appendChild(el('div', { class: 'sp-status-bar' }, [
         el('div', { class: 'sp-status-left' }, [
@@ -880,8 +884,8 @@
     {
       if (kind === 'seeded') {
         const bannerDiv = el('div', { class: 'sp-section', style: { cursor: 'pointer' } }, [
-          el('div', { class: 'sp-section-label' }, ['Is this your space?']),
-          el('div', { style: { fontSize: '13px', color: 'var(--muted)', marginTop: '4px' } }, ['Register your SpaceAPI endpoint to activate it on the map and keep your information up to date.']),
+          el('div', { class: 'sp-section-label' }, ['Unclaimed space']),
+          el('div', { style: { fontSize: '13px', color: 'var(--muted)', marginTop: '4px' } }, ['This space appears in a public directory. Register your endpoint to claim it and keep your information live on the map.']),
         ]);
         bannerDiv.addEventListener('click', () => setDrawer('addurl'));
         body.appendChild(bannerDiv);
