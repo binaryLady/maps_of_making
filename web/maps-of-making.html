@@ -356,20 +356,6 @@
     text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 500; }
   .legend .row { display: flex; align-items: center; gap: 8px; }
 
-  /* Tweaks panel */
-  .tweaks { position: absolute; top: 14px; right: 14px; z-index: 40;
-    width: 280px; background: var(--drawer-bg); border: 1.5px solid var(--rule); box-shadow: var(--shadow);
-    padding: 0; transform: translateX(calc(100% + 20px)); transition: transform 260ms cubic-bezier(.2,.8,.2,1); }
-  .tweaks.open { transform: translateX(0); }
-  .tweaks .head { padding: 10px 14px; border-bottom: 1.5px solid var(--rule); display: flex; align-items: center; gap: 8px; }
-  .tweaks .head h3 { font-family: 'Caveat', cursive; font-size: 20px; margin: 0; line-height: 1; }
-  .tweaks .body { padding: 10px 14px; }
-  .tweak-row { margin-bottom: 12px; }
-  .tweak-row > label { display: block; font-family: 'JetBrains Mono', monospace; font-size: 10px;
-    text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 4px; }
-  .tweak-row .opts { display: flex; flex-wrap: wrap; gap: 4px; }
-  .tweak-row .opts button { border: 1px solid var(--rule); padding: 3px 8px; font-size: 11px; background: var(--paper); font-family: 'JetBrains Mono', monospace; }
-  .tweak-row .opts button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
 
   /* Empty / loading */
   .loader { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 16px; background: var(--paper); z-index: 100; padding: 24px; }
@@ -408,16 +394,8 @@
     /* Remove double border where seg meets chip-btn */
     .nav-group .chip-btn { border-left: 0; }
 
-    /* Tweaks → fixed top-right */
-    #btn-tweaks {
-      position: fixed;
-      top: 14px;
-      right: 14px;
-      z-index: 20;
-    }
-
     /* Prevent overlay surfaces from acting as scroll/zoom targets for the page */
-    .topbar, .drawer, .tweaks, .bot-drawer, .bot-fab, .legend { touch-action: pan-y; }
+    .topbar, .drawer, .bot-drawer, .bot-fab, .legend { touch-action: pan-y; }
     .drawer-body, #detail-body { touch-action: pan-y; }
 
     /* Extra bottom padding so content clears the fixed Near me + Tweaks buttons */
@@ -447,7 +425,6 @@
     #drawer-addurl { max-height: 80vh; }
 
     .drawer.bottom { width: calc(100vw - 28px); max-height: 80vh; }
-    .tweaks { width: calc(100vw - 28px); top: 60px; }
     .preset-body { grid-template-columns: 1fr; }
     .preset-col + .preset-col { border-left: 0; border-top: 1px dashed var(--rule); }
 
@@ -484,7 +461,7 @@
 
   /* Reduce motion */
   @media (prefers-reduced-motion: reduce) {
-    .drawer, .search-drawer, .bot-drawer, .tweaks { transition: none !important; }
+    .drawer, .search-drawer, .bot-drawer { transition: none !important; }
   }
 
   /* Map canvas — no filter; grayscale tile style handles the muted background. */
@@ -493,7 +470,6 @@
 
   /* Embed mode — hide all chrome, show minimal caption */
   body.embed-mode .topbar,
-  body.embed-mode .tweaks,
   body.embed-mode .legend,
   body.embed-mode .bot-fab,
   body.embed-mode .bot-drawer,
@@ -571,9 +547,6 @@
     </button>
   </div>
   <div class="spacer"></div>
-  <button class="chip-btn" id="btn-tweaks" aria-pressed="false" aria-controls="tweaks" title="Tweaks">
-    <span aria-hidden="true">⚙</span> <span class="label">Tweaks</span>
-  </button>
 </header>
 
 <!-- Search drawer (top) -->
@@ -735,30 +708,6 @@
 </div>
 
 <!-- Tweaks panel -->
-<aside class="tweaks" id="tweaks" role="dialog" aria-label="Design tweaks" aria-hidden="true">
-  <div class="head">
-    <h3>Tweaks</h3>
-    <span class="mono" style="color: var(--muted); margin-left: auto;">design only</span>
-    <button class="close" aria-label="Close tweaks" data-close="tweaks" style="margin-left:6px; width:24px; height:24px; border:1.5px solid var(--rule);">✕</button>
-  </div>
-  <div class="body">
-    <!-- Map style toggle retired: theme transitions automatically by zoom (dark at world, light at street) -->
-    <div class="tweak-row">
-      <label>Pin density</label>
-      <div class="opts" data-tweak="density">
-        <button data-val="roomy" aria-pressed="true">roomy</button>
-        <button data-val="compact" aria-pressed="false">compact</button>
-      </div>
-    </div>
-    <div class="tweak-row">
-      <label>Show pulse on open</label>
-      <div class="opts" data-tweak="pulse">
-        <button data-val="on" aria-pressed="true">on</button>
-        <button data-val="off" aria-pressed="false">off</button>
-      </div>
-    </div>
-  </div>
-</aside>
 
 <script src="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/pmtiles@3/dist/pmtiles.js"></script>

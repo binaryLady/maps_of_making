@@ -35,16 +35,10 @@
     },
     search: '',
     selectedId: null,
-    openDrawer: null,          // 'filters' | 'search' | 'preset' | 'addurl' | 'detail' | 'bot' | 'tweaks' | null
-    tweaks: {
-      mapStyle: 'dim',
-      density: 'compact',
-      pulse: 'on',
-    },
+    openDrawer: null,          // 'filters' | 'search' | 'preset' | 'addurl' | 'detail' | 'bot' | null
     embed: { centerId: null },
     _lastMapStyle: 'dim',      // track last applied style to avoid redundant setStyle() calls
     _fsSelected: null,         // id currently flagged selected via GL feature-state
-    _pulseDensityMul: 1,       // density multiplier shared with the rAF pulse loop
     _initialViewport: false,   // true when initMap centered on ?lat/?lon (viewport-first)
   };
 
@@ -253,7 +247,7 @@
   // ───────────────────────────── GL point-field substrate (Story 5.0)
   // One GeoJSON source + circle/glyph layers replace the per-space DOM markers.
   // Colours are authored in state-colour-ladder.html (two surfaces: Daylight = parchment,
-  // Depth = dark) and selected by the tweaks theme toggle — NOT by zoom. `shut` is a
+  // Depth = dark) and auto-selected by zoom. `shut` is a
   // dimmed green, never black (retires the old .map-marker.shut black-dot bug).
   const LADDER = {
     daylight: { seeded: '#A89F94', confirmed: '#378ADD', open: '#5DCAA5', shut: '#1D9E75', aging: '#C9963F', zombie: '#6A6A72', dead: '#5A5A60', broken: '#E24B4A' },
@@ -345,7 +339,7 @@
         },
         paint: {
           'circle-color': colorMatchExpr(LADDER[surface]),
-          'circle-radius': radiusExpr(state._pulseDensityMul),
+          'circle-radius': radiusExpr(1),
           'circle-opacity': 1.0,
           'circle-stroke-width': ['case',
             ['boolean', ['feature-state', 'selected'], false], 2.5,
@@ -375,10 +369,9 @@
   // Re-apply surface-dependent paint (theme toggle) + density radius. Cheap; expressions only.
   function applyLadderPaint() {
     const surface = currentSurface();
-    state._pulseDensityMul = state.tweaks.density === 'compact' ? 0.7 : 1;
     if (map.getLayer('spaces-point')) {
       map.setPaintProperty('spaces-point', 'circle-color', colorMatchExpr(LADDER[surface]));
-      map.setPaintProperty('spaces-point', 'circle-radius', radiusExpr(state._pulseDensityMul));
+      map.setPaintProperty('spaces-point', 'circle-radius', radiusExpr(1));
       map.setPaintProperty('spaces-point', 'circle-stroke-color',
         ['case', ['boolean', ['feature-state', 'selected'], false], '#FFFFFF', strokeMatchExpr(surface)]);
     }
@@ -423,12 +416,12 @@
     const tick = () => {
       _beaconRAF = requestAnimationFrame(tick);
       if (!map.getLayer('spaces-glow')) return;
-      if (reduce || state.tweaks.pulse === 'off') {
+      if (reduce) {
         map.setPaintProperty('spaces-glow', 'circle-opacity', 0);
         return;
       }
       const phase = (performance.now() % PERIOD) / PERIOD; // 0→1, snap
-      const dotMul = state._pulseDensityMul;
+      const dotMul = 1;
       // ease-out expand: fast growth, slow tail; opacity zeroes well before the snap
       const expand = 1 - Math.pow(1 - phase, 2);
       map.setPaintProperty('spaces-glow', 'circle-radius',
@@ -1395,7 +1388,7 @@
     state.openDrawer = name;
     const id = ({
       filters: 'drawer-filters', search: 'drawer-search', preset: 'drawer-preset',
-      addurl: 'drawer-addurl', detail: 'drawer-detail', bot: 'bot-drawer', tweaks: 'tweaks'
+      addurl: 'drawer-addurl', detail: 'drawer-detail', bot: 'bot-drawer'
     })[name];
     const node = document.getElementById(id);
     if (!node) return;
@@ -1414,7 +1407,7 @@
   function closeDrawer(name) {
     const id = ({
       filters: 'drawer-filters', search: 'drawer-search', preset: 'drawer-preset',
-      addurl: 'drawer-addurl', detail: 'drawer-detail', bot: 'bot-drawer', tweaks: 'tweaks'
+      addurl: 'drawer-addurl', detail: 'drawer-detail', bot: 'bot-drawer'
     })[name];
     const node = document.getElementById(id);
     if (!node) return;
@@ -1432,7 +1425,6 @@
     $('#btn-search').setAttribute('aria-pressed', state.openDrawer === 'search' ? 'true' : 'false');
     $('#btn-preset').setAttribute('aria-pressed', state.openDrawer === 'preset' ? 'true' : 'false');
     $('#btn-addurl').setAttribute('aria-pressed', state.openDrawer === 'addurl' ? 'true' : 'false');
-    $('#btn-tweaks').setAttribute('aria-pressed', state.openDrawer === 'tweaks' ? 'true' : 'false');
     $('#btn-bot').setAttribute('aria-expanded', state.openDrawer === 'bot' ? 'true' : 'false');
     // When bot drawer is open, hide the FAB
     $('#btn-bot').style.display = state.openDrawer === 'bot' ? 'none' : 'flex';
@@ -1455,7 +1447,6 @@
       toggleDrawer('preset');
     });
     $('#btn-addurl').addEventListener('click', () => toggleDrawer('addurl'));
-    $('#btn-tweaks').addEventListener('click', () => toggleDrawer('tweaks'));
     $('#btn-bot').addEventListener('click', () => toggleDrawer('bot'));
     // Near me (AC5b)
     $('#btn-nearme').addEventListener('click', function nearMeClick() {
@@ -1567,20 +1558,6 @@
       }
     }));
 
-    // Tweaks
-    $$('.tweaks .opts').forEach((group) => {
-      const key = group.dataset.tweak;
-      group.querySelectorAll('button').forEach((b) => {
-        b.addEventListener('click', () => {
-          group.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', 'false'));
-          b.setAttribute('aria-pressed', 'true');
-          state.tweaks[key] = b.dataset.val;
-          applyTweaks();
-          savePreferences();
-        });
-      });
-    });
-
     // Keep preset preview bbox fresh as map moves
     if (map && !map._presetPreviewListenerAdded) {
       map._presetPreviewListenerAdded = true;
@@ -1588,43 +1565,6 @@
     }
   }
 
-  function applyTweaks() {
-    // mapStyle tweak retired — basemap transitions automatically by zoom.
-    if (map) refreshSpacesLayer();
-  }
-
-  function loadPreferences() {
-    try {
-      const stored = localStorage.getItem('mom_preferences');
-      if (stored) {
-        const prefs = JSON.parse(stored);
-        const validKeys = ['mapStyle', 'density', 'pulse'];
-        validKeys.forEach((key) => {
-          if (key in prefs) state.tweaks[key] = prefs[key];
-        });
-      }
-    } catch (e) {
-      // Silently ignore: corrupted JSON, localStorage unavailable, etc.
-    }
-  }
-
-  function savePreferences() {
-    try {
-      localStorage.setItem('mom_preferences', JSON.stringify(state.tweaks));
-    } catch (e) {
-      // Silently ignore: quota exceeded, private mode, etc.
-    }
-  }
-
-  function syncTweakButtons() {
-    $$('.tweaks .opts').forEach((group) => {
-      const key = group.dataset.tweak;
-      const val = String(state.tweaks[key]);
-      group.querySelectorAll('button').forEach((b) => {
-        b.setAttribute('aria-pressed', b.dataset.val === val ? 'true' : 'false');
-      });
-    });
-  }
 
   // ───────────────────────────── DevTools probe (Story 5.0: GL renders the field of
   // light, so marker-vs-projection drift no longer exists). Dumps currently-rendered
@@ -1665,16 +1605,12 @@
         return;
       }
 
-      loadPreferences();
       initMap();
       applyUrlParams();
       buildFilterChips();
       initAddUrl();
       wireUI();
-      syncTweakButtons();
       updateCounts();
-      // Initial tweaks apply
-      applyTweaks();
 
       // Auto-refresh: poll heartbeat last-run timestamp every 60s.
       // When a new cycle completes, soft-reload GeoJSON without touching map pan/zoom.
