@@ -701,6 +701,21 @@
     return svg;
   }
 
+  // Detect double-encoded UTF-8 (mojibake) in a space's text fields — e.g. an
+  // endpoint that serves "Universität" as "UniversitÃ¤t". We never repair the
+  // data (the raw snapshot stays byte-for-byte as served); we only surface the
+  // anomaly to coordinators in the Source Data zone. The signature is a stray
+  // Ã/Â immediately followed by another high code point.
+  const _MOJIBAKE_RE = /[\u00C2\u00C3][\u0080-\u00FF]/;
+  function _detectEncodingIssue(s) {
+    const sample = s.address || '';
+    if (_MOJIBAKE_RE.test(sample)) return sample;
+    for (const f of [s.name, s.description, s.opening_hours, s.next_event]) {
+      if (typeof f === 'string' && _MOJIBAKE_RE.test(f)) return f;
+    }
+    return null;
+  }
+
   function _contactChannel(key) {
     const SVG_ICONS = {
       email: '<path d="M1.5 3h11l-5.5 5L1.5 3zm-1 1v7.5c0 .3.2.5.5.5h12c.3 0 .5-.2.5-.5V4l-6.5 5.5L.5 4z"/>',
@@ -957,6 +972,18 @@
         ]),
         el('div', { class: 'raw-content', style: { color: 'var(--muted)', fontSize: '11px' } }, ['Loading source data…']),
       ]);
+      // Coordinator-facing data-quality flag — surfaced, never repaired (the raw
+      // snapshot below stays exactly as the endpoint served it).
+      const encIssue = _detectEncodingIssue(s);
+      if (encIssue) {
+        zone3.insertBefore(
+          el('div', { class: 'sp-data-warning', style: { display: 'flex', gap: '6px', alignItems: 'flex-start', margin: '6px 0 2px', padding: '7px 9px', border: '1px solid var(--error, #c0392b)', borderRadius: '2px', fontSize: '11px', lineHeight: '1.4', color: 'var(--error, #c0392b)' } }, [
+            el('span', { style: { flex: '0 0 auto' } }, ['⚠']),
+            el('span', {}, ['Encoding issue in source — non-UTF-8 characters arrive corrupted (e.g. ', el('code', {}, [encIssue.match(_MOJIBAKE_RE)[0]]), '). The space owner should serve UTF-8; the raw response below is shown unaltered.']),
+          ]),
+          zone3.querySelector('.raw-content')
+        );
+      }
       body.appendChild(zone3);
       const rawEl = zone3.querySelector('.raw-content');
 

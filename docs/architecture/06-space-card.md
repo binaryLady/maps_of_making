@@ -25,7 +25,7 @@ sections today. The zones still hold:
 | **Specialties** | `specialties` (pills) | has any | `app.js:664` |
 | **Embed CTA** | — (opens preset for this space) | non-seeded, desktop | `app.js:671` |
 | **State banner / unlocks** | seeded → register prompt · `last_fetch_error`+`observed_at` (broken) · aging/zombie/dead notices · `subset`+`next_unlock` (confirmed unlock steps) | by kind | `app.js:677` |
-| **Source Data (Zone 3)** | `endpoint_url`, raw JSON via `/api/space/{id}/raw`, `observed_at` (timestamp) | non-seeded, **desktop only** (`innerWidth ≥ 768`) | `app.js:747` |
+| **Source Data (Zone 3)** | `endpoint_url`, raw JSON via `/api/space/{id}/raw`, `observed_at` (timestamp), **encoding-issue flag** (`_detectEncodingIssue`) | non-seeded, **desktop only** (`innerWidth ≥ 768`) | `app.js:747` |
 
 ## Design rules the card enforces
 
@@ -58,6 +58,20 @@ The Source Data section (`app.js:747`) is the transparency half of the dual guar
   (`app.js:766`) — never a blank panel.
 - **Desktop-only** by deliberate design (no room on mobile; the trust-evaluator audience is at a
   desk anyway).
+
+### Data-quality anomalies are surfaced, never repaired
+When a source serves **double-encoded UTF-8** (mojibake — e.g. `Universität` arriving as
+`UniversitÃ¤t`), the card flags it instead of silently cleaning it. `_detectEncodingIssue(s)`
+(`app.js:704`) scans the visible text fields (`address`, then `name`/`description`/`opening_hours`/
+`next_event`) for the tell-tale `Ã`/`Â`-plus-high-byte signature. On a hit, a coordinator-facing
+warning row is injected at the top of the Source Data zone: *"Encoding issue in source — non-UTF-8
+characters arrive corrupted … the raw response below is shown unaltered."*
+
+This is a deliberate split: the **derived display** value and the **raw snapshot** both stay
+byte-for-byte as the endpoint served them (preserving the non-alteration guarantee above), while the
+anomaly is named and pointed at the space owner — turning a confusing glyph into an actionable CTA.
+Detection lives purely in the view layer; no pipeline or stored data is touched. _(Scoped at first
+sight to two directory spaces: `turmlabor`, `mag.lab`.)_
 
 ### The card can re-fetch on demand
 Zone 3 includes a **Refresh from endpoint** button (`_makeRefreshBtn`, `app.js:802`) that POSTs
