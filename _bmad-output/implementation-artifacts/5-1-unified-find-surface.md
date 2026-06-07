@@ -1,6 +1,6 @@
 # Story 5.1: Unified "Find" Surface — Search + Filter Merged, Results Visible on the Map
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -94,32 +94,32 @@ blank
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1 — Merge the two drawers into one Find panel** (AC1)
-  - [ ] `web/maps-of-making.html`: move `#search-input` (+ hints) to the top of the
+- [x] **Task 1 — Merge the two drawers into one Find panel** (AC1)
+  - [x] `web/maps-of-making.html`: move `#search-input` (+ hints) to the top of the
         Find drawer body above the chips; rename head to "Find"; delete the
         `#drawer-search` block; collapse the topbar two-button seg to one **Find**
         button (keep `#results-count`).
-  - [ ] `web/app.js`: remove `#btn-search`/`drawer-search` open + esc handlers and the
+  - [x] `web/app.js`: remove `#btn-search`/`drawer-search` open + esc handlers and the
         `search` case in `setDrawer()`; keep the input listener driving `state.search`.
-- [ ] **Task 2 — Hide→dim + visibility floor on the GL field** (AC2)
-  - [ ] `refreshSpacesLayer()`: build the FC from **all** `state.spaces`; compute the
+- [x] **Task 2 — Hide→dim + visibility floor on the GL field** (AC2)
+  - [x] `refreshSpacesLayer()`: build the FC from **all** `state.spaces`; compute the
         match set via `filteredSpaces()`; apply `match` feature-state per feature.
-  - [ ] `spaces-point` paint: opacity `case` (match 1 / non-match ~0.12, only when a
+  - [x] `spaces-point` paint: opacity `case` (match 1 / non-match ~0.12, only when a
         Find is active); matched radius floor (~5px min) wrapping `radiusExpr`; matched
         stroke emphasis; mirror in `applyLadderPaint()` after setStyle.
-- [ ] **Task 3 — Auto-fit camera to matches** (AC2)
-  - [ ] `fitToMatches()`: fitBounds for 2–~60 matches (pad ~80, maxZoom ~11), flyTo
+- [x] **Task 3 — Auto-fit camera to matches** (AC2)
+  - [x] `fitToMatches()`: fitBounds for 2–~60 matches (pad ~80, maxZoom ~11), flyTo
         z13 for a single match, no-op otherwise; debounce (~350ms); call from input +
         chip handlers (not on cold load).
-- [ ] **Task 4 — Accent-tolerant + country-aware search** (AC4)
-  - [ ] `filteredSpaces()`: NFD-strip-diacritics normalise for query + haystack; replace
+- [x] **Task 4 — Accent-tolerant + country-aware search** (AC4)
+  - [x] `filteredSpaces()`: NFD-strip-diacritics normalise for query + haystack; replace
         dead `s.country` with `countryLabel(s.country_code)` + raw code.
-  - [ ] `renderResultsList()`: guard the row meta against empty city/country.
-- [ ] **Task 5 — Empty-state nudge** (AC5)
-  - [ ] `renderResultsList()` zero-result branch: nudge copy + inline Reset reusing the
+  - [x] `renderResultsList()`: guard the row meta against empty city/country.
+- [x] **Task 5 — Empty-state nudge** (AC5)
+  - [x] `renderResultsList()` zero-result branch: nudge copy + inline Reset reusing the
         existing reset action.
-- [ ] **Task 6 — Verify URL + persistence** (AC6)
-  - [ ] Confirm `q`/chips round-trip through `applyUrlParams()` + preset builder with the
+- [x] **Task 6 — Verify URL + persistence** (AC6)
+  - [x] Confirm `q`/chips round-trip through `applyUrlParams()` + preset builder with the
         merged input; confirm in-memory state survives panel close/reopen. (Expected:
         already satisfied — verify, don't rebuild.)
 
@@ -234,3 +234,35 @@ Visual treatment (dim opacity value, matched radius floor, fit maxZoom) is first
 7. Zero results → "try widening your Find" + working Reset.
 8. Reload `?q=wood&country=DE` → restored; share/preset URL round-trips.
 9. `prefers-reduced-motion` honoured.
+
+## File List
+
+- `web/maps-of-making.html` — merged Find drawer; removed search drawer; single Find button
+- `web/app.js` — setDrawer/closeDrawer/syncTopbar updated; refreshSpacesLayer dim logic; matchRadiusExpr/opacityExpr; fitToMatches/debouncedFit; normalize(); filteredSpaces accent+country; renderResultsList nudge+meta guard
+
+## Change Log
+
+- 2026-06-07: Story 5.1 implemented — unified Find surface (search + filter merged into one drawer), dim-not-hide GL field, camera auto-fit with debounce, accent-tolerant + country-aware search, empty-state nudge, URL round-trip verified.
+- 2026-06-07: Post-implementation debug + UX corrections:
+  - **Click bug fixed**: result items unclickable due to scroll container (`.drawer-body { overflow: auto }`) causing slight movement on touchpad taps, suppressing browser `click` event. Fixed by switching `#results-list` delegation from `click` → `pointerdown` with `e.preventDefault()`.
+  - **Event delegation**: `buildFilterChips()` decoupled from `updateCounts()` (called explicitly from chip/search/reset handlers to avoid unnecessary DOM churn). Result buttons use `data-sid` attribute, no per-item listeners.
+  - **Diagnostic panel removed**: `#btn-findclick` / `#drawer-findclick` / `fcRender` / `fcRenderAbove` / `fcLog` functions removed after root cause confirmed.
+  - **Hints style**: `.hints`/`kbd` CSS de-scoped from `.search-drawer` → global so Find drawer renders them correctly.
+  - **Reset UX**: moved Reset button to drawer-head (always visible); removed from bottom of scroll body. Reset now also calls `flyToOverview()` to return camera to full-dataset view.
+  - **`flyToOverview()`**: extracted from `initMap` percentile-bounds logic into a reusable function.
+  - **Escape behaviour**: first Escape resets active Find (clears chips + search); second Escape closes the drawer.
+  - **Camera fit threshold**: raised 60 → 400 so chip-only selections (e.g. VOW: 566 spaces) actually trigger `fitBounds`.
+
+## Dev Agent Record
+
+### Completion Notes
+
+All 6 tasks implemented in a single pass. Key decisions:
+- `drawer-find` replaces both `drawer-search` (deleted) and `drawer-filters` (repurposed/renamed). Single `#btn-find` in topbar.
+- Dim uses `match` feature-state (default `true` = no dim when no Find active). `opacityExpr()` is a GL expression `['case', ['boolean', ['feature-state', 'match'], true], 1.0, 0.12]`.
+- `matchRadiusExpr()` wraps `['max', radiusExpr(DOT_SCALE), MIN_FLOOR_PX]` for matched dots — gives 5px minimum at world zoom.
+- `normalize()` helper: NFD decompose + strip combining diacritics range U+0300–U+036F.
+- Country search haystack uses `countryLabel(s.country_code) + ' ' + country_code` — covers "France" and "FR".
+- `debouncedFit` wired to input + chip clicks only (not `applyUrlParams` cold-load path).
+- URL persistence: `applyUrlParams` already handles `q`/chips; added post-`wireUI` sync of `#search-input.value` from `state.search`.
+- Visual tuning (0.12 dim opacity, 5px floor, maxZoom 11) is first-pass — subject to slice review.

@@ -35,7 +35,7 @@
     },
     search: '',
     selectedId: null,
-    openDrawer: null,          // 'filters' | 'search' | 'preset' | 'addurl' | 'detail' | 'bot' | null
+    openDrawer: null,          // 'find' | 'preset' | 'addurl' | 'detail' | 'bot' | null
     embed: { centerId: null },
     _lastMapStyle: 'dim',      // track last applied style to avoid redundant setStyle() calls
     _fsSelected: null,         // id currently flagged selected via GL feature-state
@@ -153,6 +153,12 @@
         { id: 'background',  type: 'background', paint: { 'background-color': bg } },
         { id: 'landcover',   type: 'fill', source: 'ofm', 'source-layer': 'landcover',   paint: { 'fill-color': bg, 'fill-opacity': 0.6 } },
         { id: 'water',       type: 'fill', source: 'ofm', 'source-layer': 'water',       paint: { 'fill-color': water } },
+        { id: 'waterways',   type: 'line', source: 'ofm', 'source-layer': 'water_lines',
+          filter: ['in', ['get', 'kind'], ['literal', ['river', 'canal']]],
+          minzoom: 9,
+          paint: { 'line-color': water,
+            'line-width': ['interpolate', ['linear'], ['zoom'], 9, 0.5, 14, 2],
+            'line-opacity': ['interpolate', ['linear'], ['zoom'], 9, 0, 11, 1] } },
         { id: 'landuse',     type: 'fill', source: 'ofm', 'source-layer': 'landuse',     paint: { 'fill-color': bg, 'fill-opacity': 0.4 } },
         { id: 'roads-minor', type: 'line', source: 'ofm', 'source-layer': 'transportation',
           filter: ['in', ['get', 'class'], ['literal', ['minor', 'service', 'track', 'path']]],
@@ -301,12 +307,12 @@
   // street-scale pins by z12+. The ONLY thing that changes with zoom is radius.
   const RADIUS_STOPS = [[1.5, 1], [2, 2.2], [6, 3.5], [9, 9], [12, 12], [16, 16], [18, 22]];
   const DOT_SCALE = 0.5;
-  function radiusExpr(densityMul) {
+function radiusExpr(densityMul) {
     const e = ['interpolate', ['linear'], ['zoom']];
     for (const [z, r] of RADIUS_STOPS) e.push(z, r * densityMul);
     return e;
   }
-  function glyphColorExpr(surface) {
+function glyphColorExpr(surface) {
     return ['case', ['==', ['get', 'kind'], 'broken'], '#ffffff', surface === 'depth' ? '#F0EDE0' : '#1E1D1A'];
   }
 
@@ -367,16 +373,23 @@
     return true;
   }
 
-  // Re-apply surface-dependent paint (theme toggle) + density radius. Cheap; expressions only.
-  function applyLadderPaint() {
+  // Re-apply surface-dependent paint + radius. findActive = flat pin size for visibility.
+  function applyLadderPaint(findActive = false) {
     const surface = currentSurface();
     if (map.getLayer('spaces-point')) {
       map.setPaintProperty('spaces-point', 'circle-color', colorMatchExpr(LADDER[surface]));
-      map.setPaintProperty('spaces-point', 'circle-radius', radiusExpr(DOT_SCALE));
+      map.setPaintProperty('spaces-point', 'circle-radius',
+        findActive ? 6 : radiusExpr(DOT_SCALE));
       map.setPaintProperty('spaces-point', 'circle-stroke-color',
         ['case', ['boolean', ['feature-state', 'selected'], false], '#FFFFFF', strokeMatchExpr(surface)]);
     }
     if (map.getLayer('spaces-glyph')) map.setPaintProperty('spaces-glyph', 'text-color', glyphColorExpr(surface));
+  }
+
+  function isFindActive() {
+    return state.search.trim().length >= 2 ||
+      state.filters.networks.size > 0 || state.filters.countries.size > 0 ||
+      state.filters.statuses.size > 0 || state.filters.specialties.size > 0;
   }
 
   // The one entry point replacing renderMarkers(): ensure layers exist, push fresh data,
@@ -387,7 +400,7 @@
     const fc = buildFeatureCollection(filteredSpaces());
     const src = map.getSource('spaces');
     if (src) src.setData(fc);
-    applyLadderPaint();
+    applyLadderPaint(isFindActive());
     if (state.selectedId) highlightSelected();
     updateCounts();
   }
@@ -569,10 +582,45 @@
     }
   }
 
+  // ───────────────────────────── camera fit
+  function flyToOverview() {
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const pct = (arr, p) => { const s = [...arr].sort((a, b) => a - b); return s[Math.floor((s.length - 1) * p)]; };
+    const lons = state.spaces.map(s => s.coordinates?.lon).filter(v => typeof v === 'number' && v >= -180 && v <= 180);
+    const lats = state.spaces.map(s => s.coordinates?.lat).filter(v => typeof v === 'number' && v >= -90 && v <= 90);
+    if (lons.length < 2) return;
+    map.fitBounds([[pct(lons, 0.05), pct(lats, 0.05)], [pct(lons, 0.95), pct(lats, 0.95)]],
+      { padding: 80, maxZoom: 7, animate: !reduce });
+  }
+
+  let _fitTimer = null;
+  function fitToMatches(matches) {
+    if (!matches.length || matches.length > 400) return;
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (matches.length === 1) {
+      map.flyTo({ center: [matches[0].coordinates.lon, matches[0].coordinates.lat], zoom: 13, animate: !reduce });
+      return;
+    }
+    const lons = matches.map((s) => s.coordinates.lon);
+    const lats = matches.map((s) => s.coordinates.lat);
+    map.fitBounds(
+      [[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]],
+      { padding: 80, maxZoom: 11, animate: !reduce }
+    );
+  }
+  function debouncedFit(matches) {
+    clearTimeout(_fitTimer);
+    _fitTimer = setTimeout(() => fitToMatches(matches), 350);
+  }
+
   // ───────────────────────────── filtering
+  function normalize(str) {
+    return (str || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  }
+
   function filteredSpaces() {
     const f = state.filters;
-    const q = state.search.trim().toLowerCase();
+    const q = normalize(state.search.trim());
     return state.spaces.filter((s) => {
       if (f.networks.size && !(s.network_memberships || []).some((n) => f.networks.has(n))) return false;
       if (f.countries.size && !f.countries.has(s.country_code)) return false;
@@ -581,8 +629,9 @@
         if (!f.statuses.has(tag)) return false;
       }
       if (f.specialties.size && !(s.specialties || []).some((sp) => f.specialties.has(sp))) return false;
-      if (q) {
-        const hay = (s.name + ' ' + s.city + ' ' + s.country + ' ' + (s.specialties || []).join(' ') + ' ' + (s.network_memberships || []).join(' ')).toLowerCase();
+      if (q.length >= 2) {
+        const countryStr = countryLabel(s.country_code) + ' ' + (s.country_code || '');
+        const hay = normalize(s.name + ' ' + s.city + ' ' + countryStr + ' ' + (s.specialties || []).join(' ') + ' ' + (s.network_memberships || []).join(' '));
         if (!hay.includes(q)) return false;
       }
       return true;
@@ -597,13 +646,32 @@
     $('#drawer-count').textContent = `${visible.length} / ${total}`;
     renderResultsList(visible);
     renderPresetPreview();
-    const filterN = state.filters.networks.size + state.filters.countries.size + state.filters.statuses.size + state.filters.specialties.size + (state.search ? 1 : 0);
-    $('#filters-summary').textContent = filterN ? `${filterN} filter${filterN > 1 ? 's' : ''} on` : '';
   }
 
   // ───────────────────────────── filter chips
+  // Returns spaces matching all active filters EXCEPT the named group — so chip counts
+  // for that group reflect "how many would match if I add this chip" rather than the
+  // already-filtered set (which would collapse unselected chips to 0).
+  function filteredSpacesExcluding(excludeGroup) {
+    const f = state.filters;
+    const q = normalize(state.search.trim());
+    return state.spaces.filter((s) => {
+      if (excludeGroup !== 'networks' && f.networks.size && !(s.network_memberships || []).some((n) => f.networks.has(n))) return false;
+      if (excludeGroup !== 'countries' && f.countries.size && !f.countries.has(s.country_code)) return false;
+      if (excludeGroup !== 'statuses' && f.statuses.size) {
+        if (!f.statuses.has(computeMarker(s))) return false;
+      }
+      if (excludeGroup !== 'specialties' && f.specialties.size && !(s.specialties || []).some((sp) => f.specialties.has(sp))) return false;
+      if (q.length >= 2) {
+        const countryStr = countryLabel(s.country_code) + ' ' + (s.country_code || '');
+        const hay = normalize(s.name + ' ' + s.city + ' ' + countryStr + ' ' + (s.specialties || []).join(' ') + ' ' + (s.network_memberships || []).join(' '));
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }
+
   function buildFilterChips() {
-    // Networks
     const networks = unique(state.spaces.flatMap((s) => s.network_memberships))
       .map((n) => [n, n.split('/').pop().toUpperCase()]);
     const countries = unique(state.spaces.map((s) => s.country_code)).filter(Boolean);
@@ -611,23 +679,25 @@
     // vs open/shut axes) is deferred → Epic 5. See deferred-work.md.
     const statuses = ['seeded', 'confirmed', 'open', 'shut', 'broken', 'aging', 'zombie', 'dead'];
     const specialties = unique(state.spaces.flatMap((s) => s.specialties)).sort();
+    const active = isFindActive();
 
-    renderChips('#chips-network', networks, state.filters.networks);
-    renderChips('#chips-country', countries.map((c) => [c, countryLabel(c)]), state.filters.countries);
+    renderChips('#chips-network', networks, state.filters.networks, {}, filteredSpacesExcluding('networks'), active);
+    renderChips('#chips-country', countries.map((c) => [c, countryLabel(c)]), state.filters.countries, {}, filteredSpacesExcluding('countries'), active);
     const chipLabel = { seeded: 'unclaimed', confirmed: 'claimed', open: 'open now', shut: 'closed now', aging: 'going quiet', zombie: 'unreachable', dead: 'closed' };
-    renderChips('#chips-status', statuses.map((s) => [s, chipLabel[s] || s]), state.filters.statuses, { swatch: true });
-    renderChips('#chips-spec', specialties, state.filters.specialties);
+    renderChips('#chips-status', statuses.map((s) => [s, chipLabel[s] || s]), state.filters.statuses, { swatch: true }, filteredSpacesExcluding('statuses'), active);
+    renderChips('#chips-spec', specialties, state.filters.specialties, {}, filteredSpacesExcluding('specialties'), active);
   }
 
-  function renderChips(selector, values, set, opts = {}) {
+  function renderChips(selector, values, set, opts = {}, base = null, hideZero = false) {
     const host = $(selector);
     host.innerHTML = '';
-    // Pre-compute match counts to avoid O(n) filter per chip
+    const countBase = base || state.spaces;
+    // Pre-compute match counts
     const counts = new Map();
     for (const v of values) {
       const [val] = Array.isArray(v) ? v : [v, v];
       let count = 0;
-      for (const s of state.spaces) {
+      for (const s of countBase) {
         if (chipMatches(selector, s, val)) count++;
       }
       counts.set(val, count);
@@ -635,6 +705,7 @@
     for (const v of values) {
       const [val, label] = Array.isArray(v) ? v : [v, v];
       const count = counts.get(val) || 0;
+      if (hideZero && count === 0 && !set.has(val)) continue;
       const btn = el('button', { class: 'chip', 'aria-pressed': set.has(val) ? 'true' : 'false', type: 'button' }, [
         opts.swatch ? el('span', { class: `pin-swatch ${val}` }) : null,
         label.replace(/-/g, ' '),
@@ -643,7 +714,9 @@
       btn.addEventListener('click', () => {
         if (set.has(val)) set.delete(val); else set.add(val);
         btn.setAttribute('aria-pressed', set.has(val) ? 'true' : 'false');
+        buildFilterChips();
         refreshSpacesLayer();
+        debouncedFit(filteredSpaces());
       });
       host.appendChild(btn);
     }
@@ -674,21 +747,29 @@
     const host = $('#results-list');
     host.innerHTML = '';
     if (!visible.length) {
-      host.appendChild(el('div', { style: { padding: '24px 14px', color: 'var(--muted)', fontSize: '13px' } }, ['No spaces match these filters.']));
+      const resetBtn = el('button', { class: 'btn', style: { marginTop: '8px' }, type: 'button' }, ['Reset']);
+      resetBtn.addEventListener('click', () => $('#btn-reset-filters').click());
+      host.appendChild(el('div', { style: { padding: '24px 14px', color: 'var(--muted)', fontSize: '13px' } }, [
+        'No spaces match — try widening your Find',
+        el('br'),
+        resetBtn,
+      ]));
       return;
     }
     for (const s of visible.slice(0, 200)) {
       const kind = computeMarker(s);
-      const item = el('button', { class: 'result', role: 'option', 'aria-selected': state.selectedId === s.id ? 'true' : 'false', type: 'button' }, [
+      const locationParts = [s.city, countryLabel(s.country_code)].filter(Boolean);
+      const locationStr = locationParts.join(', ');
+      const networkStr = (s.network_memberships || []).length ? ' · ' + s.network_memberships.map((n) => n.split('/').pop().toUpperCase()).join(' · ') : '';
+      const item = el('button', { class: 'result', 'data-sid': s.id, 'aria-selected': state.selectedId === s.id ? 'true' : 'false', type: 'button' }, [
         el('span', { class: `pin-swatch ${kind}`, style: { marginTop: '2px' } }),
         el('div', { style: { flex: 1, minWidth: 0 } }, [
           el('div', { class: 'name' }, [s.name]),
-          el('div', { class: 'meta' }, [`${s.city}, ${s.country}${(s.network_memberships || []).length ? ' · ' + s.network_memberships.map((n) => n.split('/').pop().toUpperCase()).join(' · ') : ''}`]),
+          el('div', { class: 'meta' }, [locationStr + networkStr]),
           el('div', { class: 'tags' }, (s.specialties || []).slice(0, 4).map((sp) => el('span', { class: 'tag' }, [sp]))),
         ]),
         el('span', { class: `status-label ${kind}`, style: { alignSelf: 'flex-start' } }, [kind])
       ]);
-      item.addEventListener('click', () => selectSpace(s.id, { fly: true }));
       host.appendChild(item);
     }
   }
@@ -1418,7 +1499,7 @@
     if (!name) { state.openDrawer = null; return; }
     state.openDrawer = name;
     const id = ({
-      filters: 'drawer-filters', search: 'drawer-search', preset: 'drawer-preset',
+      find: 'drawer-find', preset: 'drawer-preset',
       addurl: 'drawer-addurl', detail: 'drawer-detail', bot: 'bot-drawer'
     })[name];
     const node = document.getElementById(id);
@@ -1437,7 +1518,7 @@
   }
   function closeDrawer(name) {
     const id = ({
-      filters: 'drawer-filters', search: 'drawer-search', preset: 'drawer-preset',
+      find: 'drawer-find', preset: 'drawer-preset',
       addurl: 'drawer-addurl', detail: 'drawer-detail', bot: 'bot-drawer'
     })[name];
     const node = document.getElementById(id);
@@ -1452,8 +1533,7 @@
     else setDrawer(name);
   }
   function syncTopbar() {
-    $('#btn-filters').setAttribute('aria-pressed', state.openDrawer === 'filters' ? 'true' : 'false');
-    $('#btn-search').setAttribute('aria-pressed', state.openDrawer === 'search' ? 'true' : 'false');
+    $('#btn-find').setAttribute('aria-pressed', state.openDrawer === 'find' ? 'true' : 'false');
     $('#btn-preset').setAttribute('aria-pressed', state.openDrawer === 'preset' ? 'true' : 'false');
     $('#btn-addurl').setAttribute('aria-pressed', state.openDrawer === 'addurl' ? 'true' : 'false');
     $('#btn-bot').setAttribute('aria-expanded', state.openDrawer === 'bot' ? 'true' : 'false');
@@ -1470,9 +1550,18 @@
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openMS(); }
       });
     }
-    $('#btn-filters').addEventListener('click', () => toggleDrawer('filters'));
-    $('#btn-search').addEventListener('click', () => toggleDrawer('search'));
-    $('#btn-preset').addEventListener('click', () => {
+    $('#btn-find').addEventListener('click', () => toggleDrawer('find'));
+
+    // Delegated result selection — uses pointerdown (not click) because the scroll container
+    // causes slight movement on touchpad taps which suppresses the browser's click event.
+    $('#results-list').addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return; // left button / primary pointer only
+      const btn = e.target.closest('.result[data-sid]');
+      if (!btn) return;
+      e.preventDefault(); // prevent focus-shift scroll that would move content under pointer
+      selectSpace(btn.dataset.sid, { fly: true });
+    });
+$('#btn-preset').addEventListener('click', () => {
       // Toolbar entry = filter-preset builder; start clean (embedSpace path sets these).
       if (state.openDrawer !== 'preset') { state.embed.centerId = null; $('#preset-name').value = ''; }
       toggleDrawer('preset');
@@ -1536,14 +1625,18 @@
     });
     $$('[data-close]').forEach((b) => b.addEventListener('click', () => closeDrawer(b.dataset.close)));
 
-    // ESC closes topmost drawer
+    // ESC: if Find is open and active → reset first; second press closes
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
+        if (state.openDrawer === 'find' && isFindActive()) {
+          $('#btn-reset-filters').click();
+          return;
+        }
         if (state.openDrawer) { closeDrawer(state.openDrawer); return; }
       }
       if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
         e.preventDefault();
-        setDrawer('search');
+        setDrawer('find');
       }
     });
 
@@ -1551,7 +1644,9 @@
     const si = $('#search-input');
     si.addEventListener('input', () => {
       state.search = si.value;
+      buildFilterChips();
       refreshSpacesLayer();
+      debouncedFit(filteredSpaces());
     });
 
     $('#btn-reset-filters').addEventListener('click', () => {
@@ -1565,6 +1660,7 @@
       searchInput.dispatchEvent(new Event('input', { bubbles: true }));
       buildFilterChips();
       refreshSpacesLayer();
+      flyToOverview();
     });
 
     // Preset name → re-render code
@@ -1641,6 +1737,8 @@
       buildFilterChips();
       initAddUrl();
       wireUI();
+      // Sync search input value from URL-restored state
+      if (state.search) $('#search-input').value = state.search;
       updateCounts();
 
       // Auto-refresh: poll heartbeat last-run timestamp every 60s.
