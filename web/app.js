@@ -234,6 +234,9 @@
     const _updateZoom = () => { if (_zoomEl) _zoomEl.textContent = 'z' + map.getZoom().toFixed(1); };
     map.on('zoom', _updateZoom);
     map.on('load', _updateZoom);
+    map.once('idle', () => {
+      document.querySelector('.maplibregl-ctrl-attrib')?.classList.remove('maplibregl-compact-show');
+    });
 
     const dismissLoader = () => {
       const ld = $('#loader');

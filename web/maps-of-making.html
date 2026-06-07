@@ -84,7 +84,6 @@
   /* nav-group is transparent to flex layout on desktop */
   .nav-group { display: contents; }
 
-  .hints { margin-top: 8px; font-size: 11px; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; }
   kbd { font-family: 'JetBrains Mono', monospace; border: 1px solid var(--rule);
     padding: 1px 5px; background: #fff; border-radius: 2px; font-size: 10px; }
 
@@ -546,11 +545,8 @@
     <button class="close" aria-label="Close Find" data-close="find">✕</button>
   </div>
   <div class="drawer-body">
-    <div class="filter-group" style="padding-bottom: 0;">
+    <div class="filter-group">
       <input id="search-input" type="search" placeholder="Search name, city, specialty…" aria-label="Search" style="width:100%; box-sizing:border-box;" />
-      <div class="hints" style="margin-top:4px;">
-        <span>Try <kbd>paris</kbd>, <kbd>wood</kbd>, <kbd>VOW</kbd></span>
-      </div>
     </div>
     <div class="filter-group" id="fg-network">
       <h3>Network</h3>
