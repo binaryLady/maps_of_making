@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-01
-last_updated: "2026-06-06 (Story 5.0 GL substrate implemented → review; live manual-verification matrix pending)"
+last_updated: "2026-06-07 (Story 5.0 code review complete → done; 2 patches applied, 5 deferred)"
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
@@ -165,7 +165,7 @@ development_status:
   # Unlocks: status-weighted clusters, world view (drop EU maxBounds), viewport-first
   # embed init, colour-ladder remap (shut→dimmed-green), Overview Effect continental layer.
   epic-5: in-progress
-  5-0-gl-rendering-substrate-world-view: review
+  5-0-gl-rendering-substrate-world-view: done
   5-1-filters-search-wired-to-real-federated-data: backlog
   5-2-stale-broken-state-ui-banners-provenance-empty-states: backlog
   5-3-embed-polish-last-confirmed-caption-reciprocal-visibility: backlog

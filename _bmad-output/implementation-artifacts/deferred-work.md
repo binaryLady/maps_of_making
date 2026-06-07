@@ -1,5 +1,13 @@
 # Deferred Work
 
+## Deferred from: code review of 5-0-gl-rendering-substrate-world-view (2026-06-07)
+
+- **Percentile bbox collapses with 2 spaces** — `pct(arr, 0.05)` and `pct(arr, 0.95)` both return index 0 when length=2; bounds collapse to a point, MapLibre snaps to maxZoom:7 silently. Not triggered at 111 spaces. Fix when space count drops near 2.
+- **Beacon rAF runs every frame when pulse=off** — `startBeacon` tick calls `setPaintProperty` on every frame even when pulse is disabled; no RAF cancel path. Minor CPU overhead. Optimize if it becomes measurable.
+- **`_beaconRAF` never cancelled** — module-level, no stop path. Would leak if `initMap()` were ever called twice. Add a `stopBeacon()` if re-init becomes a requirement.
+- **`ingestGeoJSON` crashes on null geometry** — `f.geometry.coordinates[...]` throws if `f.geometry` is null (valid RFC 7946). Add a null-geometry guard before the map call.
+- **TOCTOU in `applyUrlParams()`** — `map.once('load', ...)` callback never fires if the `load` event already fired before `applyUrlParams()` runs. Consider using `map.loaded()` check + immediate call pattern.
+
 ## Deferred from: Story 3.11 — bundle-choice config file (2026-05-22)
 
 - **Schema-bundle selection config** — a config mechanism to declare which schema

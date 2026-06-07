@@ -1,6 +1,6 @@
 # Story 5.0: GL Rendering Substrate + World View Unlock
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -26,7 +26,7 @@ so that the map feels alive at every scale — from a maker's street corner to a
 **Visual reference:** the MapTiler `helpers/point` example (`docs.maptiler.com/leaflet/examples/helpers-point/`) — see `/home/nicolas/Images/Screenshots/screencap_0606_151757.png` and `screencap_0606_110737.png`. That helper renders *every* point individually on a dark field, sizing and colouring each dot by a data value — **no aggregation**. We reproduce that field in vanilla MapLibre GL (the helper is a thin wrapper over `circle` paint expressions — no MapTiler SDK needed).
 **Given** the map is at continental / world scale (zoom ≤ ~7)
 **When** the point field renders
-**Then** each space is a small GL circle, `circle-color` driven by its `computeMarker()` state via the `state-colour-ladder`. The ladder has two surfaces — Daylight (parchment) and Depth (dark) — **selected by the existing tweaks-panel theme toggle (light/dark/grayscale), NOT by zoom level.** The dark field in the visual references is one theme, not a requirement; the point field must read correctly on whichever basemap flavour is active.
+**Then** each space is a small GL circle, `circle-color` driven by its `computeMarker()` state via the `state-colour-ladder`. The ladder uses the **Depth palette on all surfaces** — the basemap auto-transitions dark→light between z6 and z9 via GL zoom-interpolated expressions; the manual theme toggle has been retired. *(Tuning decision, 2026-06-07: single-surface depth palette on all zoom tiers; LADDER.daylight defined in code but intentionally unreachable — retained as reference for future re-introduction if needed.)*
 **And** `circle-radius` is a zoom-interpolated expression: small dots at world zoom (the "field of light"), growing as the viewer zooms in — a single continuous radius ramp, not a cluster/dot swap
 **And** the `labels-places` symbol layer (`web/app.js` `buildStyle()`) fades to `text-opacity` 0 below ~z6–7 — coastlines and landmass remain, named place labels dissolve (Overview Effect: geography + points only at altitude)
 **And** no network or country colouring is applied — spaces are kin by aliveness, not by directory
@@ -34,7 +34,7 @@ so that the map feels alive at every scale — from a maker's street corner to a
 ### AC3 — Street scale: full colour ladder + pulse
 **Given** the map is at city / street scale (zoom ≥ ~8)
 **When** the same point field renders at larger radius
-**Then** each space renders as a GL circle with colour and radius driven by its `computeMarker()` state (same ladder, same theme-selected surface as AC2 — only the radius has grown)
+**Then** each space renders as a GL circle with colour and radius driven by its `computeMarker()` state (same Depth-palette ladder as AC2 — only the radius has grown)
 **And** the open-pulse animation is reproduced via a `requestAnimationFrame`-driven `circle-opacity` / `circle-radius` paint update (no CSS `@keyframes`, no DOM)
 **And** the full colour ladder is honoured: `open` (bright algae + pulse), `shut` (**dimmed green — NOT black**), `confirmed` (blue), `aging` (amber), `zombie` (faint ghost), `dead` (grey tombstone, admin only), `broken` (red ×), `seeded` (neutral)
 
@@ -42,7 +42,7 @@ so that the map feels alive at every scale — from a maker's street corner to a
 **Given** the EU `maxBounds` constraint currently set in `initMap()` (`web/app.js:182`)
 **When** Story 5.0 lands
 **Then** `maxBounds` is removed — the map is navigable worldwide
-**And** the default `center`/`zoom` is updated from the FR/DE midpoint (`[4.8, 49.5]` zoom 4.3) to a world-overview start (center `[10, 20]`, zoom 2) so the full continental field is visible on first load
+**And** the initial camera is computed from the 5th/95th percentile bounding box of loaded spaces (padding 80px, maxZoom 7) — the field of loaded spaces is the first impression, not a hardcoded centre. Fallback when <2 valid spaces: `center:[10,20] zoom:2`. *(Tuning decision, 2026-06-07: percentile bbox replaces the hardcoded world-overview start; no post-load jump.)*
 **And** at world zoom the ladder-coloured point field keeps the map alive and legible rather than sparse — the field of light is the first impression, never empty continents
 
 ### AC5 — Viewport-first init for deep links
@@ -174,7 +174,20 @@ claude-opus-4-8 (Amelia / dev-story)
 - `web/app.js` (modified) — GL substrate: source/layers, ladder paint expressions, rAF pulse, feature-state selection, viewport-first init, label dissolve, coord-bearing share/embed URLs; removed DOM-marker machinery.
 - `web/maps-of-making.html` (modified) — removed retired `.map-marker.*` / `.marker-*` / `@keyframes pulse` CSS (incl. the black-dot `shut` bug); fixed `.pin-swatch.shut` legend to dimmed green.
 
+### Review Findings
+
+- [x] [Review][Decision] Spec-code drift: theme toggle retired — resolved: spec updated to reflect auto-zoom-transition design (depth palette on all surfaces).
+- [x] [Review][Decision] Fallback camera `[10, 48]` z4 vs AC4 `[10, 20]` z2 — resolved: spec updated; percentile bbox is the primary path, fallback is [10,20] z2.
+- [x] [Review][Patch] Stale comment in `computeAxisC` still says "black dot" for `shut` — fixed: updated to "dimmed green dot" [web/app.js]
+- [x] [Review][Patch] `PULSE_COLOR` constant defined but never referenced — fixed: removed dead code [web/app.js]
+- [x] [Review][Defer] Percentile bbox collapses to degenerate zero-area bounds with exactly 2 valid spaces — MapLibre snaps to maxZoom:7 (silent), not triggered with 111 spaces in prod [web/app.js] — deferred, pre-existing math edge case
+- [x] [Review][Defer] Beacon rAF runs setPaintProperty every frame even when `pulse=off` — minor CPU overhead, no functional bug [web/app.js startBeacon()] — deferred, first-pass design choice
+- [x] [Review][Defer] `_beaconRAF` module-level, never cancelled — no current re-init path; would leak on hypothetical future `initMap()` double-call [web/app.js] — deferred, pre-existing pattern
+- [x] [Review][Defer] `ingestGeoJSON` crashes on null-geometry GeoJSON feature (RFC 7946 valid) — pre-existing fragility [web/app.js ingestGeoJSON()] — deferred, not worsened by this diff
+- [x] [Review][Defer] TOCTOU: `applyUrlParams()` `map.once('load')` may miss if load event already fired — pre-existing timing risk [web/app.js applyUrlParams()] — deferred, pre-existing pattern
+
 ### Change Log
 
 - 2026-06-06 — Story 5.0 implemented: full-GL point-field substrate replaces DOM markers; world view unlocked; viewport-first deep links; label dissolve at altitude; black-dot `shut` bug retired. Status → review (live manual-verification matrix pending, owner Nicolas).
 - 2026-06-07 — Visual tuning pass (live review with Nicolas): depth palette on both surfaces (no per-surface split); `saturate(0.45)` canvas filter dropped; seeded z-ordered below registered dots; stroke dissolves z9→z6; beacon rAF revived with `circle-*-transition:{duration:0}` fix; basemap auto-transitions dark→light z6→z9 via GL zoom expressions (theme toggle retired); initial viewport from 5/95 percentile bbox passed to map constructor (no post-load jump); `minZoom:1.5`; label layers split city/town; zoom indicator in legend; compact density as default.
+- 2026-06-07 — Code review: 2 decision-needed, 2 patch, 5 deferred, 9 dismissed.

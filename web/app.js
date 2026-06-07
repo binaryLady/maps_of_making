@@ -260,7 +260,6 @@
     depth:    { seeded: '#555560', confirmed: '#378ADD', open: '#5DCAA5', shut: '#1D9E75', aging: '#C9963F', zombie: '#6A6A72', dead: '#5A5A60', broken: '#E24B4A' },
   };
   // Dedicated neon for the open-pulse halo — must pop on both surfaces.
-  const PULSE_COLOR = '#9FE1CB'; // algae-bright — lighter than the open dot, glows on both surfaces
   // Stroke gives non-colour separation; seeded/dead/zombie read as hollow/faint rings.
   const LADDER_STROKE = {
     daylight: { seeded: '#A09C90', dead: '#7A786E', zombie: '#8A8C80', default: '#1E1D1A' },
@@ -306,7 +305,7 @@
   }
   // Single continuous radius ramp: a field of light at world zoom (z2) growing to
   // street-scale pins by z12+. The ONLY thing that changes with zoom is radius.
-  const RADIUS_STOPS = [[1.5, 1], [2, 2.2], [6, 3.5], [9, 6], [12, 9], [16, 12], [18, 14]];
+  const RADIUS_STOPS = [[1.5, 1], [2, 2.2], [6, 3.5], [9, 6], [12, 9], [16, 11], [18, 12]];
   function radiusExpr(densityMul) {
     const e = ['interpolate', ['linear'], ['zoom']];
     for (const [z, r] of RADIUS_STOPS) e.push(z, r * densityMul);
@@ -526,7 +525,7 @@
 
   // Axis C — operational liveness. Current source claim, does not age.
   // 'open'  = state.open=true   → green dot
-  // 'shut'  = state.open=false  → black dot (operator-declared closed-right-now)
+  // 'shut'  = state.open=false  → dimmed green dot (operator-declared closed-right-now)
   // 'opt-out' = state field absent/unknown → C contributes nothing, fall through.
   function computeAxisC(s) {
     if (!s || s.open_now === undefined || s.open_now === null) return 'opt-out';
