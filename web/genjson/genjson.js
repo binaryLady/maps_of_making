@@ -653,7 +653,7 @@ function assemblev15Doc() {
   if (draft.space) doc.space = draft.space;
 
   // location — address is a single string per v15 schema; country_code is a separate field
-  const addrParts = [draft.address, draft.city, draft.postcode, draft.country_code].filter(Boolean);
+  const addrParts = [draft.address, draft.city, draft.postcode].filter(Boolean);
   const location = {};
   if (addrParts.length) location.address = addrParts.join(', ');
   if (draft.country_code) location.country_code = draft.country_code;
