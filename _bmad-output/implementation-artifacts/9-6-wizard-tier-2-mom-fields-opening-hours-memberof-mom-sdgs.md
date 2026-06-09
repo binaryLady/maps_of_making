@@ -20,6 +20,9 @@ Tier 2 is unlocked only after Tier 1 (SpaceAPI core) is complete. The three fiel
 **Upstream sealing (Story 9.3):**
 Story 9.3 export includes an optional `mom:memberOf: null` seed key to telegraph Tier 2 existence. This story fills that slot.
 
+**⚠️ Key-shape contract (traced 2026-06-09):**
+`core.py` reads `payload.mom.memberOf` (nested) or bare `payload.memberOf` — **never** the flat CURIE key `"mom:memberOf"`. The wizard export scaffold was using the wrong shape and was fixed in the same session (`genjson.js`: `doc['mom:memberOf']` → `doc.mom = { memberOf: null }`). When wiring Tier 2 here, emit `doc.mom.memberOf = [...]` (array of strings); the extractor will normalize bare slugs to `urn:mak:network/<slug>` automatically.
+
 ---
 
 ## Acceptance Criteria

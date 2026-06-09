@@ -678,9 +678,9 @@ function assemblev15Doc() {
   doc.state = { open: null };
 
   // ── Tier 2 — mom: (last; seeds the next frontier) ──
-  // mom:memberOf hints Tier 2 network membership (Story 9.6). additionalProperties
-  // is open in the v15 schema so it validates.
-  doc['mom:memberOf'] = null;
+  // Nested shape: core.py reads payload.mom.memberOf (not flat "mom:memberOf").
+  // Story 9.6 will populate this; scaffold must use the right key or it silently drops.
+  doc.mom = { memberOf: null };
 
   return doc;
 }
