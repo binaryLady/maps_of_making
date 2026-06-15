@@ -3,6 +3,7 @@
 .bmad/
 _bmad/
 node_modules/
+graphify-out/
 
 # OS / editor
 .directory
