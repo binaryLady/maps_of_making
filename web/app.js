@@ -533,8 +533,24 @@ function glyphColorExpr(surface) {
     return 'fresh';
   }
 
+  // Returns updated_at as epoch ms, or null. Single anchor for Axis B and the
+  // status-bar "updated X ago" line. updated_at is set by the pipeline at first
+  // fetch (backfill) or on content change — both paths produce reliable ISO timestamps.
+  // last_open_change (state.lastchange) is intentionally excluded: spaces self-report
+  // it unreliably (stale 2013–2019 timestamps) and the pipeline backfill makes it
+  // unnecessary as a fallback.
+  function _lastActivity(s) {
+    if (!s || s.updated_at == null) return null;
+    const v = s.updated_at;
+    const n = Number(v);
+    if (!isNaN(n) && n > 1e8) return n * 1000;
+    const iso = String(v);
+    const t = new Date(iso.endsWith('Z') ? iso : iso + 'Z').getTime();
+    return isNaN(t) ? null : t;
+  }
+
   // Axis B — content lifecycle. Returns 'dead'|'zombie'|'aging'|'confirmed'.
-  // Null updated_at → oldest supported state (never observed to change). Per AC 2
+  // Null _lastActivity → oldest supported state (never observed to change). Per AC 2
   // Dev Notes: do NOT crash, do NOT silently render `confirmed`.
   function computeAxisB(s, thresholds) {
     // Story 3.10 B1: per-feature override beats the global thresholds.
@@ -542,9 +558,10 @@ function glyphColorExpr(surface) {
     // so the bucket walk is observable in a live demo.
     const override = s && s.thresholds_override && s.thresholds_override.operational_state;
     const t = override || (thresholds && thresholds.operational_state) || FALLBACK_THRESHOLDS.operational_state;
-    if (!s || !s.updated_at) return 'dead';
-    const age = _ageDays(s.updated_at);
-    if (age == null) return 'dead';
+    if (!s) return 'dead';
+    const lastMs = _lastActivity(s);
+    if (lastMs == null) return 'dead';
+    const age = (Date.now() - lastMs) / 86400000;
     if (age >= t.dead_days_threshold) return 'dead';
     if (age >= t.zombie_days_threshold) return 'zombie';
     if (age >= t.aging_days_threshold) return 'aging';
@@ -567,13 +584,13 @@ function glyphColorExpr(surface) {
   function computeMarker(s) {
     if (!s) return 'seeded';
     const b = computeAxisB(s, state.thresholds);
-    if (s.updated_at && (b === 'dead' || b === 'zombie' || b === 'aging')) return b;
+    if (_lastActivity(s) != null && (b === 'dead' || b === 'zombie' || b === 'aging')) return b;
     const a = computeAxisA(s, state.thresholds);
     if (a === 'broken' && s.observed_at) return 'broken';
     const c = computeAxisC(s);
     if (c === 'open') return 'open';
     if (c === 'shut') return 'shut';
-    if (s.updated_at || s.observed_at) return 'confirmed';
+    if (_lastActivity(s) != null || s.observed_at) return 'confirmed';
     return 'seeded';
   }
 
@@ -920,13 +937,14 @@ function glyphColorExpr(surface) {
         : kind === 'broken' ? 'sp-dot sp-dot-error' : 'sp-dot';
       const statusPhrases = { open: 'Open right now', shut: 'Closed right now', confirmed: 'Claimed', broken: 'Endpoint issue', aging: 'Going quiet', zombie: 'Unreachable', dead: 'Permanently closed' };
       const phrase = statusPhrases[kind] || kind;
+      const lastMs = _lastActivity(s);
       body.appendChild(el('div', { class: 'sp-status-bar' }, [
         el('div', { class: 'sp-status-left' }, [
           el('div', { class: dotClass }),
           el('span', {}, [phrase]),
         ]),
         el('div', { class: 'sp-status-right' }, [
-          'updated ' + (s.updated_at ? timeAgo(s.updated_at) + ' ago' : 'unknown')
+          'updated ' + (lastMs != null ? timeAgo(new Date(lastMs).toISOString()) + ' ago' : 'unknown')
         ]),
       ]));
     }

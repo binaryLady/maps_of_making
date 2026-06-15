@@ -18,6 +18,7 @@ import json
 import logging
 import os
 import sys
+from email.utils import parsedate_to_datetime
 from pathlib import Path
 from typing import Optional
 
@@ -205,6 +206,46 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
     logger.info("[axis-c] %s mom:openNow=%s lastOpenChange=%s", subject, open_now, last_open_change)
 
 
+def _to_iso_datetime(ts: Optional[str]) -> Optional[str]:
+    """Normalize a timestamp to ISO 8601 for mom:updatedAt (xsd:dateTime).
+
+    observed_at is already ISO. The HTTP Last-Modified header is RFC 7231 date
+    format ("Thu, 11 Jun 2026 00:08:43 GMT") — NOT valid xsd:dateTime — so it must
+    be converted before it lands in the graph, or the browser's ISO parser drops it
+    and the card reads "updated unknown".
+    """
+    if not ts:
+        return None
+    s = ts.strip()
+    # Already ISO 8601 → starts with YYYY-MM-DD. Trust it as-is.
+    if len(s) >= 10 and s[:4].isdigit() and s[4] == "-" and s[7] == "-":
+        return s
+    # Otherwise assume an HTTP-date header ("Thu, 11 Jun 2026 00:08:43 GMT").
+    try:
+        return parsedate_to_datetime(s).isoformat()
+    except (TypeError, ValueError):
+        logger.warning("WARNING_UNPARSEABLE_TIMESTAMP: cannot normalize %r to ISO", ts)
+        return None
+
+
+async def _updated_at_absent(
+    oxigraph_endpoint: str,
+    graph_uri: str,
+    subject: str,
+) -> bool:
+    """True when mom:updatedAt is not yet present for this subject. Used for one-time backfill."""
+    sparql = f"""PREFIX mom: <{MOM_NS}>
+ASK {{ GRAPH <{graph_uri}> {{ <{subject}> mom:updatedAt ?t }} }}"""
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.post(
+            f"{oxigraph_endpoint}/query",
+            content=sparql,
+            headers={"Content-Type": "application/sparql-query", "Accept": "application/sparql-results+json"},
+        )
+        resp.raise_for_status()
+    return not bool(resp.json().get("boolean", False))
+
+
 async def _space_is_claimed(
     oxigraph_endpoint: str,
     graph_uri: str,
@@ -359,6 +400,25 @@ async def run_space_pipeline(
             await write_payload_fields(uid, snap["payload"], graph_uri, subject, oxigraph_endpoint)
         except Exception as e:
             logger.warning("[payload-fields] %s write failed (non-fatal): %s", uid, e)
+    else:
+        # One-time backfill: stamp mom:updatedAt from the snapshot's last_modified or
+        # observed_at (never a fresh "now") for claimed spaces that pre-date Story 3.8b
+        # and have never triggered a content diff.
+        try:
+            if await _updated_at_absent(oxigraph_endpoint, graph_uri, subject):
+                # Anchor Axis B at observed_at (when we first successfully reached the
+                # space), not last_modified (when the server last touched the file).
+                # last_modified can be years old on static JSON that never changes —
+                # stamping it would immediately bucket the space as dead/zombie even
+                # though we just reached it. observed_at is always fresh and reliable.
+                backfill_ts = observed_at
+                if not backfill_ts:
+                    logger.warning("[axis-b] %s backfill skipped: no timestamp available", uid)
+                else:
+                    await write_updated_at(oxigraph_endpoint, graph_uri, subject, backfill_ts)
+                    logger.info("[axis-b] %s mom:updatedAt backfilled from observed_at=%s", uid, backfill_ts)
+        except Exception as e:
+            logger.warning("[axis-b] %s backfill check/write failed (non-fatal): %s", uid, e)
 
     state_obj = snap["payload"].get("state") if isinstance(snap.get("payload"), dict) else None
     open_now = _extract_open_now(state_obj)

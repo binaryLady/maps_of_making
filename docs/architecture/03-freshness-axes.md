@@ -19,16 +19,16 @@
 | `last_fetch_status` | fetch outcome (`unreachable` / http) | Axis A |
 
 **Thresholds** are not hardcoded — they ride in the file-level `thresholds` block of
-`spaces.geojson` (`ingestGeoJSON`, `app.js:101`). A per-feature `thresholds_override`
-beats the global block (canary demo compresses the walk to seconds, `app.js:316`). If
+`spaces.geojson` (`ingestGeoJSON`, `app.js:108`). A per-feature `thresholds_override`
+beats the global block (canary demo compresses the walk to seconds, `app.js:565`). If
 the block is missing the code logs a **contract violation** and falls back to
-`FALLBACK_THRESHOLDS` (`app.js:114`) — loud, never silently "everything confirmed".
+`FALLBACK_THRESHOLDS` (`app.js:13`) — loud, never silently "everything confirmed".
 
 ## The three axes
 
 Each axis is one pure function of a token + thresholds.
 
-### Axis A — endpoint health (reachability) · `computeAxisA` (`app.js:296`)
+### Axis A — endpoint health (reachability) · `computeAxisA` (`app.js:523`)
 From `observed_at` **age in minutes** (+ `last_fetch_status`). Answers *can we still reach it?*
 
 | Result | When |
@@ -40,7 +40,7 @@ From `observed_at` **age in minutes** (+ `last_fetch_status`). Answers *can we s
 
 Default thresholds: unresponsive 10 min · warning 30 min · broken 60 min.
 
-### Axis B — content lifecycle · `computeAxisB` (`app.js:312`)
+### Axis B — content lifecycle · `computeAxisB` (`app.js:561`)
 From `updated_at` **age in days**. Answers *how long since the content actually changed?*
 
 | Result | When |
@@ -53,7 +53,7 @@ From `updated_at` **age in days**. Answers *how long since the content actually 
 Default thresholds: aging 30 d · zombie 90 d · dead 180 d. Null `updated_at` → `dead`
 (per AC: do **not** crash, do **not** silently render `confirmed`).
 
-### Axis C — operational liveness (open/close) · `computeAxisC` (`app.js:331`)
+### Axis C — operational liveness (open/close) · `computeAxisC` (`app.js:581`)
 From `open_now`. Does **not** age — it's the current source claim.
 
 | Result | When |
@@ -62,7 +62,7 @@ From `open_now`. Does **not** age — it's the current source claim.
 | `shut` | `open_now === false` |
 | `opt-out` | `open_now` absent/null → C contributes nothing |
 
-## Marker allocation — combining the axes · `computeMarker` (`app.js:340`)
+## Marker allocation — combining the axes · `computeMarker` (`app.js:590`)
 
 One marker per space, by **precedence** (loudest signal wins):
 
@@ -85,12 +85,15 @@ trust a claim from a source we can't reach.
 | `confirmed` | 🔵 | blue circle | reachable, fresh, opted out of open/close |
 | `seeded` | ⚪ | grey circle | known space, no tokens yet (never fetched) |
 
-Glyph/shape mapping: `createMarkerSVG` + `MARKER_GLYPH` (`app.js:207,227`). Circle
-colors come from the `.map-marker.<kind>` CSS classes — *why* those glyphs and colours
-(circles-vs-emoji, the riso palette, the curated legend) is [04 · Design rules](04-design-rules.md). The filter drawer exposes a
-subset as status chips: `seeded · confirmed · open · shut · broken`
-(`buildFilterChips`, `app.js`). The decay markers (`aging`/`zombie`/`dead`) render on
-the map but are not yet filterable.
+Marker rendering is **GL-native** — no DOM markers. `computeMarker` sets the `kind`
+property on each GeoJSON feature; MapLibre reads it via a `match` expression to pick
+the glyph character and colour for the `spaces-glyph` symbol layer (`app.js:379`).
+Colour per kind is computed by `glyphColorExpr` (`app.js:335`). *Why* those glyphs and
+colours (circles-vs-emoji, the riso palette, the curated legend) is
+[04 · Design rules](04-design-rules.md). The `find` drawer exposes a subset as status
+chips: `seeded · confirmed · open · shut · broken` (`buildFilterChips`, `app.js:718`).
+The decay markers (`aging`/`zombie`/`dead`) render on the map but are not yet
+filterable.
 
 ---
 

@@ -1,5 +1,35 @@
 # Deferred Work
 
+## PARKED (needs fresh eyes): Axis-B-as-tombstone contradiction (2026-06-11, updated 2026-06-15)
+
+**Status: acute symptom resolved — structural design question still open. Do NOT change precedence or death-word semantics until model is settled.**
+
+**What was fixed (2026-06-15):** The immediate "reachable but dead" symptom is gone. Root cause was `mom:updatedAt` never being seeded for SpaceAPI-directory spaces: null `updated_at` → Axis B → `dead` regardless of reachability. Fix: pipeline now stamps `mom:updatedAt = observed_at` on first heartbeat for any claimed space missing the predicate (`_updated_at_absent` backfill in `pipeline.py`). Anchor is `observed_at` (when WE first reached the space), not `last_modified` (when the server last touched the file — stale for static JSON). After `make rebuild && make seed-spaceapi && make heartbeat`, 0 false-dead / zombie / aging spaces remain at current demo scale.
+
+**What was tried and reverted:** `state.lastchange` (SpaceAPI `last_open_change` field) was briefly used as a second input to `_lastActivity(s)` to cover spaces with null `updated_at`. Reverted: spaces self-report this timestamp unreliably (values from 2013–2019 common), producing false aging/zombie/dead on ~16 spaces with fresh `observed_at`. The backfill from `observed_at` makes this bypass unnecessary.
+
+**What is still structurally unresolved:**
+- Axis B is a **"content changed?" clock** (`updated_at` = content-change only), yet it emits `dead`/`zombie` (death words) and sits at the **loudest** precedence (`B → A → C`).
+- Long-lived static spaces will accumulate age past thresholds (180 d dead, 90 d zombie) and show 🪦 — even if reachable and answering — once their backfill-seeded `updated_at` ages out. This is deferred until first real coordinator dispute ("why is my space stale?").
+- Nicolas's caution stands: **reachability ≠ alive** (a static JSON answers forever). The agreed direction: "stop *asserting* alive/dead from untrustworthy stamps; only report facts we hold."
+
+Two candidate resolutions (pick when fresh):
+- **(a)** Keep Axis B's names but move it to the **bottom** of precedence (A and C win; B only shows when otherwise idle); null → neutral, not `dead`.
+- **(b)** Axis B stops emitting death words entirely — floor = `aging`; `dead`/`zombie` move to **Axis A** (reachability), the only signal we actually gather ourselves.
+
+Settle the doc (`docs/architecture/03-freshness-axes.md`) FIRST, then bring `computeAxisB` + `computeMarker` (`app.js:561, 590`) to match. Mother Sands HTTP-date side-issue is resolved (✅ `_to_iso_datetime` in pipeline.py, image rebuilt).
+
+## Deferred: overlapping/stale directory sources — VOW & fabtafle profile-URLs as endpoints (2026-06-11)
+
+Surfaced while fixing "updated unknown". A space is treated as **claimed** when `mom:endpointUrl` is present, but the VOW/fabtafle scrapers write the **directory profile page** (e.g. `https://offene-werkstaetten.org/werkstatt/...`) into that field. Result: 641 spaces (566 `scraped-vow` + 75 `scraped-fabtafle`) look claimed but are never fetchable SpaceAPI endpoints — only **1 of 566** VOW URLs is a real endpoint. They render `seeded` (grey) with "updated unknown" — honest, but they shouldn't occupy the claimed bucket.
+
+This is the **core MoM problem**, not a quick fix: directory sources (VOW, fabtafle, SpaceAPI directory) are independently stale and overlap irregularly — many VOW entries ARE on SpaceAPI (those get a real `endpointUrl` + a `profileUrl`, e.g. Eigenbaukombinat), many are not, and not all SpaceAPI spaces are in VOW. Needs a deliberate story on:
+- distinguishing a fetchable SpaceAPI `endpointUrl` from a human-readable directory `profileUrl` at seed time (don't let a profile URL claim a space);
+- deduplicating/merging the same physical space appearing across sources;
+- a provenance/trust model for which source's facts win when they disagree.
+→ New story (Epic 4 or a dedicated "source reconciliation" epic). Do NOT fold into the freshness work.
+
+
 ## Deferred from: code review of 5-0-gl-rendering-substrate-world-view (2026-06-07)
 
 - **Percentile bbox collapses with 2 spaces** — `pct(arr, 0.05)` and `pct(arr, 0.95)` both return index 0 when length=2; bounds collapse to a point, MapLibre snaps to maxZoom:7 silently. Not triggered at 111 spaces. Fix when space count drops near 2.
@@ -379,3 +409,33 @@ Generating a real openfab.jsonld against the `space-jsonld-generator` skill expo
 
 - `filteredSpacesExcluding` duplicates `filteredSpaces` filter logic — risk of silent divergence if a new filter dimension is added to one but not the other; chip counts would mismatch the map. Revisit when adding a new filter axis.
 - Single-char query stale in `state.search` after ESC — `isFindActive()` threshold is `>= 2`; typing one char then ESC doesn't reset the partial query; it persists and pre-populates the input on reopen. Acceptable for now; revisit if users report confusion.
+
+
+## Deferred from: party-mode "what counts as content / liveness" (2026-06-10)  → Story (post-traction)
+
+- **Operator-declared `mom_liveness_optin`.** A coordinator names which core SpaceAPI
+  fields feed the liveness (green-dot) signal. Opt-IN, never exclusion — exclusion was
+  rejected because it demands the operator understand MoM internals. Lives on the
+  coordinator's per-space `mom:` record (sovereignty stance), NOT our pipeline config.
+  **Build trigger:** the first real coordinator who disputes a staleness call ("why is my
+  space stale when X changed?"). Until then it's speculative config for users who don't
+  exist yet (no SpaceAPI-community traction).
+- **`detect_diff` two-clock rework — "accept any field change by default".** The agreed
+  end-state: stop hand-judging which fields are "real content". Stewardship clock =
+  full-payload diff minus a *tiny, fully-named* built-in volatile list (no `...`) and the
+  operator's opt-in declaration; Liveness clock = a small allow-list read (`state.open`,
+  declared sensors) that drives the green dot and bumps a separate `last_live_at`, never
+  `updated_at`. NOTE the trap: diffing genuinely per-fetch-changing VALUES (temperature
+  drift, per-fetch `lastchange`) pegs `updated_at` to "0m" forever — a *stable* `state.open`
+  does NOT (no diff vs prev snapshot), so state is safe to diff; volatile sensor *values*
+  are not. `detect_diff` already returns a structured dict, so the volatile filter is
+  additive. Also revisit the unnamed extras in `_IGNORED` — enumerate every excluded path
+  or delete it (`pipeline_helpers.py:52`). Pairs with the liveness-optin above.
+- **`state.message` is human prose, currently dropped.** Whole-`state` strip discards the
+  operator's curated "closed for renovation till July" message along with the churny
+  `open`/`lastchange`/`icon`. When the two-clock rework lands, go path-level so
+  `state.message` survives into the stewardship diff.
+
+## Deferred from: review of spec-fix-updated-unknown-liveness (2026-06-11)
+
+- **`_updated_at_absent` ASK fires on every unchanged-content heartbeat cycle forever.** After the one-time backfill has fired, the predicate is present and the write is skipped, but the ASK query still executes each cycle for every space that never changes content. At demo scale (hundreds of spaces) this is negligible; at production scale it adds one SPARQL round-trip per unchanged space per 10-min tick. Fix: cache a per-uid "backfill done" flag in snapshot_store (a nullable column) so the ASK is skipped once the backfill is confirmed. `pipeline.py` / `snapshot_store.py`. → Story 4.x (Epic 4 pipeline work).

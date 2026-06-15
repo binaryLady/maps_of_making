@@ -365,3 +365,70 @@ def test_axes_computed_from_header_thresholds_not_stored_buckets(oxigraph_requir
     assert compute_axis_b(props, prod_thresholds) == "confirmed"
     # With compressed thresholds the same feature ages.
     assert compute_axis_b(props, COMPRESSED_THRESHOLDS) in ("aging", "zombie")
+
+
+# ── Backfill: one-time mom:updatedAt stamp for pre-3.8b claimed spaces ────────
+
+def _seed_claimed_no_updated_at(endpoint_url: str) -> None:
+    """Seed a claimed space that has mom:endpointUrl but no mom:updatedAt."""
+    _sparql_update(f"DROP SILENT GRAPH <{SPACE_URI}>")
+    _sparql_update(f"""
+PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
+PREFIX schema: <https://schema.org/>
+INSERT DATA {{
+  GRAPH <{SPACE_URI}> {{
+    <{SPACE_URI}> a mom:Space ;
+      schema:name "Backfill Test Space" ;
+      schema:geo [ schema:latitude 50.0 ; schema:longitude 4.0 ] ;
+      mom:endpointUrl "{endpoint_url}" .
+  }}
+}}
+""")
+
+
+def _read_updated_at_from_graph() -> str | None:
+    """Return mom:updatedAt value from Oxigraph for SPACE_URI, or None."""
+    r = httpx.post(
+        f"{OXIGRAPH_URL}/query",
+        content=f"""PREFIX mom: <https://nicolasdb.github.io/mapsofmaking_ontology/ns#>
+SELECT ?t WHERE {{ GRAPH <{SPACE_URI}> {{ <{SPACE_URI}> mom:updatedAt ?t }} }}""",
+        headers={"Content-Type": "application/sparql-query",
+                 "Accept": "application/sparql-results+json"},
+        timeout=5.0,
+    )
+    r.raise_for_status()
+    bindings = r.json().get("results", {}).get("bindings", [])
+    return bindings[0]["t"]["value"] if bindings else None
+
+
+@pytest.mark.live_integration
+def test_backfill_stamps_updated_at_once_on_unchanged_content(
+    oxigraph_required, clean_space, canary_endpoint
+):
+    """Given a claimed space with no mom:updatedAt and unchanged content,
+    when the pipeline runs, then mom:updatedAt is written exactly once
+    and a second pipeline run on the same content does not move it."""
+    import asyncio
+    from pipeline import run_space_pipeline
+
+    start, stop = canary_endpoint
+    url = start(mode="open")
+    try:
+        _seed_claimed_no_updated_at(url)
+
+        assert _read_updated_at_from_graph() is None, "precondition: no mom:updatedAt yet"
+
+        asyncio.get_event_loop().run_until_complete(
+            run_space_pipeline(SPACE_ID, url, SPACE_URI, SPACE_URI, OXIGRAPH_URL)
+        )
+        first_ts = _read_updated_at_from_graph()
+        assert first_ts is not None, "backfill must stamp mom:updatedAt on first run"
+
+        # Second run — same content, no diff; must not overwrite the backfilled value.
+        asyncio.get_event_loop().run_until_complete(
+            run_space_pipeline(SPACE_ID, url, SPACE_URI, SPACE_URI, OXIGRAPH_URL)
+        )
+        second_ts = _read_updated_at_from_graph()
+        assert second_ts == first_ts, "backfill must not overwrite on subsequent unchanged run"
+    finally:
+        stop()
