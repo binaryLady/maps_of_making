@@ -12,7 +12,7 @@ import httpx
 import yaml
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Header, HTTPException
 from geopy.geocoders import Nominatim
 from geopy.extra.rate_limiter import RateLimiter
 from geopy.exc import GeocoderServiceError, GeocoderTimedOut, GeocoderUnavailable
@@ -822,12 +822,26 @@ class DeployKeyRequest(BaseModel):
 
 
 @app.post("/api/bot/deploy-key/{space_id}")
-async def bot_deploy_key(space_id: str, req: Optional[DeployKeyRequest] = None, room_id: Optional[str] = None):
+async def bot_deploy_key(
+    space_id: str,
+    req: Optional[DeployKeyRequest] = None,
+    room_id: Optional[str] = None,
+    x_bot_secret: Optional[str] = Header(None),
+):
     """Generate (or reuse) a deploy key for a registered space, and — if a
     Matrix room_id is supplied — write the mom:botRoom mapping. The bot itself
     never writes to Oxigraph (NFR-S7); link_handler, the sole writer (ADR-015),
     does this write on the bot's behalf. See Story 6.1 Dev Notes "Room→space
-    mapping: who writes it"."""
+    mapping: who writes it".
+
+    `/api/` is proxied to the public internet (infra/nginx/conf.d/app.conf) —
+    this endpoint is meant to be called only by mak-agent-bot, so it requires
+    the shared X-Bot-Secret header (same value as BOT_KEY_SECRET) to prevent
+    an internet caller from hijacking a space's mom:botRoom mapping (Story 6.1
+    code review finding)."""
+    if x_bot_secret != os.environ.get("BOT_KEY_SECRET"):
+        raise HTTPException(status_code=401, detail={"error": "unauthorized"})
+
     if not _SPACE_ID_RE.match(space_id):
         raise HTTPException(status_code=400, detail={"error": "invalid_space_id"})
 
@@ -868,7 +882,7 @@ SELECT ?endpointUrl WHERE {{
     if not bot_keys.key_exists(space_id):
         public_key, tutorial = bot_keys.generate_and_store(space_id)
     else:
-        public_key = (bot_keys._pub_path(space_id)).read_text().strip()
+        public_key = bot_keys.get_public_key(space_id)
         tutorial = bot_keys.TUTORIAL_TEMPLATE.format(space_id=space_id, public_key=public_key)
 
     if effective_room_id:

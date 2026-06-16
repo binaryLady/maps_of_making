@@ -1,5 +1,14 @@
 # Deferred Work
 
+## Deferred from: code review of story-6.1 (2026-06-16)
+
+- `StrictHostKeyChecking=no` / no `IdentitiesOnly=yes` on `git_ops.py`'s SSH calls — specified verbatim in Story 6.1's own Dev Notes crypto snippet; weakens host-key verification for the bot's git operations (MITM risk), revisit if/when a known_hosts pinning strategy is adopted.
+- `!mom update` failure messages collapse `NoEndpointError`/`UnsupportedHostError`/schema-validation/git-SSH failures into one generic `update_failed_ack()` — hides the real cause already present in logs. Self-acknowledged in story Completion Notes; candidate for Epic 6.5 (graceful failure / Bernard voice pass) or 6.2.
+- GitHub raw-URL regex in `_repo_remote_for` handles `refs/heads/{branch}/{path}` but not `refs/tags/{tag}/{path}` — consistent with the story's documented "GitHub/Gitea best-effort, untested" scope; will need a regex case if/when a tag-based raw URL is registered.
+- `SpaceAPISchema`'s `extra="allow"` (infra/link_handler/schema.py) makes `git_ops.patch_json`'s schema-validation guard weaker than AC4 implies — most unknown field paths pass validation regardless of value. Pre-existing schema design, not introduced by Story 6.1; tighten if/when Story 6.2's field whitelist lands.
+- Blocking sync crypto/disk I/O (`bot_keys.generate_and_store`, `load_private_key`) called directly from async endpoint/command handlers with no `asyncio.to_thread` — minor event-loop-blocking smell under concurrent room load, not yet a measured problem.
+- Unhandled `cryptography.fernet.InvalidToken` / missing `BOT_KEY_SECRET` env var collapses into the same generic "update failed" ack as any other failure — same root cause as the failure-messaging item above; a misconfigured secret currently looks identical to a network blip from the room's perspective.
+
 ## FIXED: orphaned test imports from materialize_geojson.py deletion (2026-06-16)
 
 **Status: resolved — quick fix done during Story 6.0 dev-story session, not a new deferred item.**

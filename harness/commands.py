@@ -16,6 +16,10 @@ from bot.git_ops import NoDeployKeyError, NoEndpointError, UnsupportedHostError
 log = structlog.get_logger()
 
 LINK_HANDLER_URL = os.environ.get("LINK_HANDLER_URL", "http://mak-link-handler:8000")
+# Shared secret proving this call came from the bot, not an internet caller —
+# /api/ is proxied publicly, so the deploy-key endpoint requires this header
+# (Story 6.1 code review finding; same value as link_handler's BOT_KEY_SECRET).
+BOT_KEY_SECRET = os.environ.get("BOT_KEY_SECRET", "")
 
 
 async def try_handle(text: str, user_id: str, room_id: str, session_id: str) -> Optional[str]:
@@ -46,6 +50,7 @@ async def _handle_link(space_slug: str, room_id: str, bound) -> str:
             resp = await client.post(
                 f"{LINK_HANDLER_URL}/api/bot/deploy-key/{space_slug}",
                 params={"room_id": room_id},
+                headers={"X-Bot-Secret": BOT_KEY_SECRET},
             )
             resp.raise_for_status()
             data = resp.json()

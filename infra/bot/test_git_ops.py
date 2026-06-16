@@ -45,12 +45,23 @@ def _isolated_keys_dir(tmp_path, monkeypatch):
     yield
 
 
-@pytest.mark.asyncio
-async def test_patch_json_accepts_valid_shape(monkeypatch):
-    async def fake_read_json(space_id):
-        return {"schema:name": "Test Space", "schema:url": "https://example.com"}
+def _fake_resolve_repo(tmp_path, data: dict):
+    async def fake(space_id):
+        repo_dir = tmp_path / "repo"
+        repo_dir.mkdir(exist_ok=True)
+        (repo_dir / "spaceapi.json").write_text(__import__("json").dumps(data))
+        return repo_dir, "main", "spaceapi.json"
 
-    monkeypatch.setattr(git_ops, "read_json", fake_read_json)
+    return fake
+
+
+@pytest.mark.asyncio
+async def test_patch_json_accepts_valid_shape(monkeypatch, tmp_path):
+    monkeypatch.setattr(
+        git_ops,
+        "_resolve_repo_unlocked",
+        _fake_resolve_repo(tmp_path, {"schema:name": "Test Space", "schema:url": "https://example.com"}),
+    )
     import bot_keys
     bot_keys.generate_and_store("test-space")
 
@@ -59,11 +70,10 @@ async def test_patch_json_accepts_valid_shape(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_patch_json_rejects_invalid_state_shape(monkeypatch):
-    async def fake_read_json(space_id):
-        return {"schema:name": "Test Space"}
-
-    monkeypatch.setattr(git_ops, "read_json", fake_read_json)
+async def test_patch_json_rejects_invalid_state_shape(monkeypatch, tmp_path):
+    monkeypatch.setattr(
+        git_ops, "_resolve_repo_unlocked", _fake_resolve_repo(tmp_path, {"schema:name": "Test Space"})
+    )
     import bot_keys
     bot_keys.generate_and_store("test-space")
 
@@ -71,6 +81,28 @@ async def test_patch_json_rejects_invalid_state_shape(monkeypatch):
     # directly — assert the nested-path patch still applies and round-trips.
     patched = await git_ops.patch_json("test-space", "state.open", True)
     assert patched["state"]["open"] is True
+
+
+@pytest.mark.asyncio
+async def test_patch_json_rejects_empty_field_path(monkeypatch, tmp_path):
+    monkeypatch.setattr(git_ops, "_resolve_repo_unlocked", _fake_resolve_repo(tmp_path, {"schema:name": "Test"}))
+    import bot_keys
+    bot_keys.generate_and_store("test-space")
+
+    with pytest.raises(ValueError):
+        await git_ops.patch_json("test-space", "", "x")
+
+
+@pytest.mark.asyncio
+async def test_patch_json_rejects_non_dict_intermediate(monkeypatch, tmp_path):
+    monkeypatch.setattr(
+        git_ops, "_resolve_repo_unlocked", _fake_resolve_repo(tmp_path, {"schema:name": "a string, not a dict"})
+    )
+    import bot_keys
+    bot_keys.generate_and_store("test-space")
+
+    with pytest.raises(ValueError):
+        await git_ops.patch_json("test-space", "schema:name.nested", "x")
 
 
 @pytest.mark.asyncio

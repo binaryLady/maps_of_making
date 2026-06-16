@@ -6,12 +6,14 @@ file in docker-compose (see Story 6.1 Dev Notes "Schema validation reuse
 needs a shared import path") so there is exactly one SpaceAPISchema and one
 key-storage format shared by both containers.
 """
+import asyncio
 import json
 import os
 import re
 import subprocess
 import sys
 import tempfile
+from collections import defaultdict
 from pathlib import Path
 from typing import Optional
 
@@ -25,6 +27,20 @@ import httpx  # noqa: E402
 OXIGRAPH_ENDPOINT = os.environ.get("OXIGRAPH_ENDPOINT", "http://localhost:7878")
 BOT_REPOS_DIR = Path(os.environ.get("BOT_REPOS_DIR", "/app/bot-repos"))
 MOM = "https://nicolasdb.github.io/mapsofmaking_ontology/ns#"
+
+# Per-space lock so concurrent !mom update/!mom link for the same space can't
+# double-clone or race a non-fast-forward push (Story 6.1 code review finding).
+_space_locks: dict[str, asyncio.Lock] = defaultdict(asyncio.Lock)
+
+
+def _sparql_iri(value: str) -> Optional[str]:
+    """Minimal IRI-safety check mirroring infra/link_handler/utils.py's
+    _sparql_iri — duplicated here because this module runs in the bot
+    container, which doesn't have utils.py bind-mounted. Rejects characters
+    that would let `value` break out of the surrounding <...> IRI literal."""
+    if not value or "<" in value or ">" in value or " " in value or "\n" in value:
+        return None
+    return value
 
 
 class NoDeployKeyError(Exception):
@@ -44,9 +60,13 @@ async def resolve_space_for_room(room_id: str) -> str:
     written by `!mom link` (POST /api/bot/deploy-key/{space_id}, see Story 6.1
     Dev Notes "Room→space mapping: who writes it"). Raises NoEndpointError if
     the room has no linked space."""
+    safe_room_id = _sparql_iri(f"urn:mak:room/{room_id}")
+    if safe_room_id is None:
+        raise NoEndpointError(f"Room {room_id!r} is not a valid room id")
+
     sparql = f"""PREFIX mom: <{MOM}>
 SELECT ?space WHERE {{
-  <urn:mak:room/{room_id}> mom:botRoom ?space .
+  <{safe_room_id}> mom:botRoom ?space .
 }}"""
     async with httpx.AsyncClient(timeout=10.0) as client:
         resp = await client.post(
@@ -162,8 +182,28 @@ def _clone_or_pull(space_id: str, ssh_remote: str, branch: str) -> Path:
     return repo_dir
 
 
-async def _resolve_repo(space_id: str) -> tuple[Path, str, str]:
-    """Returns (repo_dir, branch, file_path) after clone/pull."""
+def _patch_dict(data: dict, field_path: str, value) -> dict:
+    """Apply a dotted-path patch to `data` in place. Raises ValueError on an
+    empty/dot-only field_path or a path that walks through a non-dict
+    intermediate value, instead of silently mis-writing or raising a raw
+    AttributeError (Story 6.1 code review finding)."""
+    keys = [k for k in field_path.split(".")]
+    if not keys or any(k == "" for k in keys):
+        raise ValueError(f"field_path {field_path!r} must be a non-empty dot-separated path")
+
+    target = data
+    for key in keys[:-1]:
+        nxt = target.setdefault(key, {})
+        if not isinstance(nxt, dict):
+            raise ValueError(f"field_path {field_path!r} expects {key!r} to be an object, found {type(nxt).__name__}")
+        target = nxt
+    target[keys[-1]] = value
+    return data
+
+
+async def _resolve_repo_unlocked(space_id: str) -> tuple[Path, str, str]:
+    """Returns (repo_dir, branch, file_path) after clone/pull. Caller must
+    hold `_space_locks[space_id]` — see read_json/patch_json/commit_json."""
     endpoint_url = await _lookup_endpoint_url(space_id)
     ssh_remote, branch, file_path = _repo_remote_for(endpoint_url)
     repo_dir = _clone_or_pull(space_id, ssh_remote, branch)
@@ -174,47 +214,52 @@ async def read_json(space_id: str) -> dict:
     """Clone/pull the space's repo over SSH using the stored deploy key, return
     the parsed JSON file content."""
     _require_key(space_id)
-    repo_dir, _branch, file_path = await _resolve_repo(space_id)
-    return json.loads((repo_dir / file_path).read_text())
+    async with _space_locks[space_id]:
+        repo_dir, _branch, file_path = await _resolve_repo_unlocked(space_id)
+        return json.loads((repo_dir / file_path).read_text())
 
 
 async def patch_json(space_id: str, field_path: str, value) -> dict:
     """Apply a dotted-path patch to the space's JSON, validate against
     SpaceAPISchema, and return the patched dict (does not commit)."""
     _require_key(space_id)
-    data = await read_json(space_id)
-
-    target = data
-    keys = field_path.split(".")
-    for key in keys[:-1]:
-        target = target.setdefault(key, {})
-    target[keys[-1]] = value
-
-    SpaceAPISchema.model_validate(data)  # raises if the patched shape is invalid
-    return data
+    async with _space_locks[space_id]:
+        repo_dir, _branch, file_path = await _resolve_repo_unlocked(space_id)
+        data = json.loads((repo_dir / file_path).read_text())
+        _patch_dict(data, field_path, value)
+        SpaceAPISchema.model_validate(data)  # raises if the patched shape is invalid
+        return data
 
 
 async def commit_json(space_id: str, field_path: str, value, authorized_by: str) -> str:
-    """Write the patched file, git add/commit/push over the deploy key, return the commit SHA."""
+    """Write the patched file, git add/commit/push over the deploy key, return the commit SHA.
+
+    The whole clone/patch/write/commit/push sequence runs under the space's
+    lock so two concurrent !mom update calls for the same space can't
+    double-clone or race a non-fast-forward push (Story 6.1 code review
+    finding)."""
     _require_key(space_id)
-    patched = await patch_json(space_id, field_path, value)
-    repo_dir, branch, file_path = await _resolve_repo(space_id)
+    async with _space_locks[space_id]:
+        repo_dir, branch, file_path = await _resolve_repo_unlocked(space_id)
+        data = json.loads((repo_dir / file_path).read_text())
+        patched = _patch_dict(data, field_path, value)
+        SpaceAPISchema.model_validate(patched)  # raises if the patched shape is invalid
 
-    (repo_dir / file_path).write_text(json.dumps(patched, indent=2) + "\n")
+        (repo_dir / file_path).write_text(json.dumps(patched, indent=2) + "\n")
 
-    space_name = patched.get("name") or patched.get("space") or space_id
-    message = f"Update {field_path} for {space_name} · authorized by {authorized_by}"
+        space_name = patched.get("name") or patched.get("space") or space_id
+        message = f"Update {field_path} for {space_name} · authorized by {authorized_by}"
 
-    _run_git_ssh(["add", file_path], cwd=repo_dir, space_id=space_id)
-    _run_git_ssh(
-        [
-            "-c", "user.name=Bernard",
-            "-c", "user.email=bernard@mapsofmaking.org",
-            "commit", "-m", message,
-        ],
-        cwd=repo_dir,
-        space_id=space_id,
-    )
-    _run_git_ssh(["push", "origin", branch], cwd=repo_dir, space_id=space_id)
-    sha = subprocess.run(["git", "rev-parse", "HEAD"], cwd=repo_dir, capture_output=True, text=True, check=True)
-    return sha.stdout.strip()
+        _run_git_ssh(["add", file_path], cwd=repo_dir, space_id=space_id)
+        _run_git_ssh(
+            [
+                "-c", "user.name=Bernard",
+                "-c", "user.email=bernard@mapsofmaking.org",
+                "commit", "-m", message,
+            ],
+            cwd=repo_dir,
+            space_id=space_id,
+        )
+        _run_git_ssh(["push", "origin", branch], cwd=repo_dir, space_id=space_id)
+        sha = subprocess.run(["git", "rev-parse", "HEAD"], cwd=repo_dir, capture_output=True, text=True, check=True)
+        return sha.stdout.strip()

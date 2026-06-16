@@ -39,7 +39,16 @@ def _pub_path(space_id: str) -> Path:
 
 
 def key_exists(space_id: str) -> bool:
-    return _key_path(space_id).exists()
+    """True only if both halves of the keypair are present. A crash between
+    writing .key and .pub in generate_and_store leaves a partial state —
+    treat that as "no key" so the caller regenerates rather than reading a
+    missing .pub (Story 6.1 code review finding)."""
+    return _key_path(space_id).exists() and _pub_path(space_id).exists()
+
+
+def get_public_key(space_id: str) -> str:
+    """Public accessor for the stored OpenSSH public key line."""
+    return _pub_path(space_id).read_text().strip()
 
 
 def generate_and_store(space_id: str) -> tuple[str, str]:

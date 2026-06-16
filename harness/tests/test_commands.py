@@ -43,7 +43,7 @@ async def test_link_command_returns_tutorial_on_success(monkeypatch):
         async def __aexit__(self, *a):
             pass
 
-        async def post(self, url, params=None):
+        async def post(self, url, params=None, headers=None):
             assert "openfab" in url
             return FakeResponse()
 
@@ -64,7 +64,7 @@ async def test_link_command_returns_degraded_ack_on_http_failure(monkeypatch):
         async def __aexit__(self, *a):
             pass
 
-        async def post(self, url, params=None):
+        async def post(self, url, params=None, headers=None):
             raise httpx.HTTPError("boom")
 
     monkeypatch.setattr(commands.httpx, "AsyncClient", lambda timeout=None: FakeClient())

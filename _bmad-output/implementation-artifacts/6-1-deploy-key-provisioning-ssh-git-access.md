@@ -1,6 +1,6 @@
 # Story 6.1: Deploy-Key Provisioning + SSH Git Access
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -74,6 +74,21 @@ so that the bot can edit my data on my behalf without MOM ever hosting or owning
 - [x] **Task 8 — Done gate**
   - [x] Operator confirmation, Matrix half: `!mom link openfab` in a real Matrix room on the self-hosted Dendrite homeserver returns a real public key + tutorial (`commands.link_succeeded`, verified in `mak-agent-bot` logs). Bernard auto-joins the room invite (see Change Log — new fix, not present at story start).
   - [x] Operator confirmation, write-path half: openfab re-registered with its real raw GitHub URL (`https://raw.githubusercontent.com/openfab-lab/openfab-website/refs/heads/master/openfab.json`); `!mom update next_event "Open House — 2026-06-20"` committed and pushed over SSH (`commands.update_succeeded sha=bd286a598cb19e88a6e231337c7ad7f8dde4b215`, Bernard acked `Done. Committed as bd286a59.` in the room). Re-ingestion confirmed via manual refresh on the Space Profile card (heartbeat trigger endpoint isn't host-exposed; manual refresh is the equivalent, lower-friction check) — `next_event` visible in the live endpoint response.
+
+### Review Findings
+
+- [x] [Review][Patch] `POST /api/bot/deploy-key/{space_id}` has no auth and `/api/` is proxied publicly (infra/nginx/conf.d/app.conf:88-95) — any internet caller can hijack the `mom:botRoom` mapping for any registered space. Fix: require a shared-secret header (reuse BOT_KEY_SECRET or a new bot-internal token), checked in `infra/link_handler/main.py`. [infra/link_handler/main.py, harness/commands.py]
+- [x] [Review][Patch] SPARQL injection — `room_id` interpolated unescaped into the SPARQL SELECT in `resolve_space_for_room`, unlike `main.py`'s write path which escapes via `_sparql_iri()`. [infra/bot/git_ops.py:47-50]
+- [x] [Review][Patch] No locking around `_clone_or_pull`/`commit_json` — concurrent `!mom update`/`!mom link` for the same space can double-clone or race a non-fast-forward push. Fix: per-`space_id` `asyncio.Lock`. [infra/bot/git_ops.py]
+- [x] [Review][Patch] Idempotent re-link doesn't handle partial `.key`/`.pub` state — `key_exists()` only checks `.key`; if `.pub` is missing (crash mid-`generate_and_store`), the relink branch raises an unhandled `FileNotFoundError`. Fix: check both files, regenerate if either missing. [infra/link_handler/bot_keys.py, infra/link_handler/main.py]
+- [x] [Review][Patch] `patch_json`'s dotted-path walk has no guard for empty/dot-only `field_path` (silently creates a `""` key) or a non-dict intermediate value (raises unhandled `AttributeError` instead of a clean error). [infra/bot/git_ops.py]
+- [x] [Review][Patch] `main.py`'s `bot_deploy_key` reaches into `bot_keys._pub_path()` (private-by-convention) — add a public accessor. [infra/link_handler/bot_keys.py, infra/link_handler/main.py]
+- [x] [Review][Defer] `StrictHostKeyChecking=no` / no `IdentitiesOnly=yes` on SSH calls — deferred, pre-existing (specified verbatim in this story's own Dev Notes crypto snippet, not introduced by dev)
+- [x] [Review][Defer] `!mom update` failure messages collapse all error types into one generic ack — deferred, pre-existing (self-acknowledged in story Completion Notes, already flagged for Epic 6.2/6.5)
+- [x] [Review][Defer] GitHub raw-URL regex doesn't handle `refs/tags/{tag}/{path}` shape (only `refs/heads/{branch}/`) — deferred, pre-existing (consistent with documented "GitHub/Gitea best-effort, untested" scope)
+- [x] [Review][Defer] `SpaceAPISchema`'s `extra="allow"` makes `patch_json`'s schema validation weak relative to AC4's "validates against schema" intent — deferred, pre-existing (schema design reused, not introduced by this story)
+- [x] [Review][Defer] Blocking sync crypto/disk I/O (`generate_and_store`, `load_private_key`) inside async endpoint/command handlers — deferred, pre-existing pattern, minor perf smell only
+- [x] [Review][Defer] Unhandled `cryptography.fernet.InvalidToken` / missing `BOT_KEY_SECRET` collapses into the same generic "update failed" ack as any other failure — deferred, same root cause as the failure-messaging item above
 
 ## Dev Notes
 

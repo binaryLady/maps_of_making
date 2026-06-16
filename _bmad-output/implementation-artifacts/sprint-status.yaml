@@ -1,5 +1,5 @@
 # generated: 2026-05-01
-# last_updated: 2026-06-07 (Story 5.1 unified-find-surface → done)
+# last_updated: 2026-06-16 (Story 6.1 deploy-key-provisioning-ssh-git-access → done, code review patches applied)
 # project: maps_of_making
 # project_key: NOKEY
 # tracking_system: file-system
@@ -184,7 +184,7 @@ development_status:
   # write fields via the 6.2 write skillset. Bot is read-only on Oxigraph; pipeline is the only writer.
   epic-6: in-progress
   6-0-bot-infrastructure-adapters-intent-router-bernard-config: done
-  6-1-deploy-key-provisioning-ssh-git-access: review  # 2026-06-16: Task 8 live done gate confirmed (Matrix + GitHub SSH write path + re-ingestion); 3 bugs found+fixed during testing, see story Change Log
+  6-1-deploy-key-provisioning-ssh-git-access: done  # 2026-06-16: Task 8 live done gate confirmed; code review found 6 patch + 6 defer findings, all 6 patches applied (auth header, SPARQL escaping, per-space asyncio locking, partial-key-state fix, patch_json guard, public key accessor); 29 tests passing
   6-2-write-skillset-json-patch-git-commit-permission-model: backlog
   6-3-read-query-command-set-isochrone-tool: backlog
   6-4-nl-sparql-natural-language-iop-ontology: backlog
