@@ -410,12 +410,20 @@ Multi-network beyond RFF/VOW; Matrix + Discord bot; 🟢 live-now tier via webho
 - **FR36** Public SPARQL endpoint (read-only) for third-party integrations
 
 ### Natural Language Bot (Phase 2)
-- **FR37** "Ask the map" bot accepts natural language questions
+> **Restructured 2026-06-16** (sprint-change-proposal-2026-06-16.md): one channel-agnostic "Ask Bernard" bot with an internal intent router and two skillsets (write + discovery). The agent framework is the extended `harness/` baseline; Nanobot is deferred to Story 6.4 (see ADR-017). The "Nanobot" mentions elsewhere in this PRD (Exec Summary, Innovation §3, Journey 5) are retained as design-intent trail.
+- **FR37** "Ask Bernard" is a single channel-agnostic bot. A platform adapter normalises Matrix/Discord/Telegram/Mattermost to a `Message`; an intent classifier routes each message to `write | query | nl_discovery | unknown`; one Bernard voice responds across all skillsets
 - **FR38** Nanobot agent translates NL → SPARQL using IoP ontology as prompt context (OpenRouter API via LiteLLMProvider, model-agnostic via config)
 - **FR39** Bot returns results with source space links + query transparency (show SPARQL)
 - **FR40** Bot acknowledges gracefully when query can't be answered; offers clarification
 - **FR41** Failed/ambiguous queries logged as ontology gap signals
-- **FR42** Nanobot deployed to Discord (built-in), Telegram (built-in), then Mattermost (custom adapter at pilot)
+- **FR42** Matrix-first for the **write** skillset (room-based power-level permissions); Discord, Telegram, and Mattermost carry read/discovery commands only for the PoC
+
+### Coordinator Write-Back via Bot (Phase 2)
+- **FR45** Bot write path: coordinator commands patch the space's **own** endpoint JSON over an SSH deploy key (JSON patch → git commit → push). The bot never writes triples directly; the heartbeat re-ingests on its next cycle. No deploy key registered ⇒ graceful degraded path (Bernard voice); read/query commands always work
+- **FR46** Permission model: Matrix power levels map to bot policy (100 = coordinator: any field + `grant`/`revoke`; 50 = trusted member: only coordinator-granted fields; 0 = read-only). Member-writable fields are a fixed whitelist (`state.open`, `contact.irc/matrix/twitter`); `space.name`, `location.*`, `url` are coordinator-only regardless of grant. Commit message `authorized_by: {matrix_user_id}` is the audit trail
+- **FR47** Deploy-key provisioning & sovereignty: MOM generates an ed25519 key pair per space, stores the private key encrypted (Fernet); the coordinator adds the public key to their repo (GitLab / GitHub / Codeberg / Gitea — identical flow); revoking the deploy key removes MOM's access entirely
+- **FR48** Template query command set (no LLM in the query, only in formatting): `status`, `hours`, `find {tag} {city}`, `nearby {city} {radius}`, `network {name}`
+- **FR49** Isochrone travel-time discovery: resolve origin → OpenRouteService isochrone polygon → `shapely` point-in-polygon filter over confirmed spaces; degrade to bounding-box (`nearby`) on ORS timeout; seeded-but-unregistered spaces in range surfaced as a follow-up offer
 
 ### Auth (Phase 2)
 - **FR43** Admin subdomain gated by simple shared password (PoC-grade)
@@ -450,6 +458,7 @@ Multi-network beyond RFF/VOW; Matrix + Discord bot; 🟢 live-now tier via webho
 - **NFR-S4** Admin audit log (FR33b) immutable append-only, retained indefinitely
 - **NFR-S5** Bot SPARQL generation passes validation gate against IoP ontology before execution
 - **NFR-S6** Admin dashboard exposes **operational metrics only** — no raw endpoint payloads or coordinator identifiers beyond what's public on the map
+- **NFR-S7** The bot has **read-only** access to Oxigraph — no SPARQL UPDATE from the bot, ever (the heartbeat pipeline is the only triple writer). Deploy-key private keys are encrypted at rest (Fernet, key from `BOT_KEY_SECRET`); each key is scoped to one repo and one file. LLM-generated SPARQL still passes the NFR-S5 mutation gate before execution
 
 ### Data Model — Space-not-People
 - **NFR-D1** JSON endpoints describe **spaces, not individuals**. Space-level contact only: generic email, webform URL, or website link. No personal names, personal emails, or personal phone numbers.

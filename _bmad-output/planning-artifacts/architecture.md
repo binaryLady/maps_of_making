@@ -39,7 +39,7 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 > - **Transform** is `scripts/spaceapi_extract/` (`core`/`mom`/`sparql`) → idempotent `DELETE WHERE + INSERT DATA`, **only on a real content change**. **Materialize** is `_rematerialize_geojson` (`main.py`) → `web/data/spaces.geojson`, the map's only source.
 > - **Derived state** (`endpointHealth`, `operationalState`, marker colour) is computed **in the browser** from the raw tokens + a `thresholds` block shipped in the GeoJSON header. Storage holds facts; consumption layers compute buckets.
 >
-> Planned-not-built directions retained below as design intent: **Epic 6** (Nanobot NL bot — ADR-008/009/013, harness patterns), **Epic 4b** (magic link — ADR-005/010/011), **Epic 7** (open-now presence — ADR-007).
+> Planned-not-built directions retained below as design intent: **Epic 6** ("Ask Bernard" — one channel-agnostic bot, two skillsets; harness baseline + deploy-key write path + isochrone — **ADR-017**; Nanobot ADR-008/013 deferred to Story 6.4), **Epic 4b** (magic link — ADR-005/010/011), **Epic 7** (open-now presence — ADR-007).
 
 ---
 
@@ -454,7 +454,9 @@ CREATE TABLE llm_cost_log (
 
 ### ADR-013: Agent Framework — Nanobot with One Custom Adapter
 
-**Decision:** Use Nanobot as the primary agent framework. Discord and Telegram adapters built-in; implement one custom Mattermost adapter if needed post-pilot.
+> **Deferred to Story 6.4 (2026-06-16, sprint-change-proposal-2026-06-16.md / mom_handoff_2026-06-16.md).** Stories 6.0–6.2 extend the `harness/` baseline directly — no Nanobot. Re-evaluate Nanobot when NL→SPARQL lands (6.4). The Bernard-bot architecture (channel-agnostic core, intent router, deploy-key write path, isochrone, read-only Oxigraph) is **ADR-017**, which supersedes this for 6.0–6.3. ADR-013 retained for the framework trade-off trail.
+
+**Decision (deferred):** Use Nanobot as the primary agent framework. Discord and Telegram adapters built-in; implement one custom Mattermost adapter if needed post-pilot.
 
 **Rationale:**
 - **OpenRouter native:** LiteLLMProvider handles `anthropic/claude-*`, `minimax/minimax-01`, OpenRouter transparently — full model-swap control via config
@@ -469,6 +471,46 @@ CREATE TABLE llm_cost_log (
 **Mattermost adapter:** If needed, implement as custom extension after pilot. Nanobot's adapter protocol is straightforward (send/receive interface).
 
 **Implementation:** Dockerfile `FROM hkuds/nanobot:latest`. Port `config.yaml` to Nanobot's `config.json` format. Keep `tasks/` directory structure for LLM tasks (heartbeat.py, nl_to_sparql.py, etc.) — they stay the same, just invoked from Nanobot instead of harness/main.py.
+
+---
+
+### ADR-017: "Ask Bernard" — One Voice, Two Skillsets, Deploy-Key Write Path
+
+> **Added 2026-06-16** (sprint-change-proposal-2026-06-16.md, mom_handoff_2026-06-16.md). Supersedes ADR-008/013 for Epic 6 Stories 6.0–6.3; ADR-013 (Nanobot) deferred to Story 6.4.
+
+**Decision:** Epic 6 ships **one channel-agnostic bot with one Bernard voice and an internal intent router**, built by extending the dormant `harness/` baseline — **not** Nanobot, and **not** two separate bots.
+
+**Rationale:**
+- **Coordinators shouldn't route themselves.** "Ask Bernard" covers both maintenance and discovery; the intent classifier (not the user) picks the skill.
+- **Platform is transport, not product.** Matrix/Discord/Telegram/Mattermost are adapters behind a normalised `Message`; the skill chain never knows the transport.
+- **harness/ already models the LLM call** (`harness/llm_client.py`, LiteLLMProvider over OpenRouter). 6.0–6.2 are slot-filling + formatting + git plumbing — no orchestration framework needed yet. Re-evaluate Nanobot only when free-form NL→SPARQL lands (6.4).
+
+**Core seam:**
+```
+Message(text, user_id, room_id, platform, raw)
+ChannelAdapter: async receive() → Message ; async send(response, context) → None
+intent classifier (Gemma 4 12B via OpenRouter, ~200-token context) → write | query | nl_discovery | unknown
+skill router → response formatter (Bernard voice, platform-aware markdown) → adapter.send()
+```
+
+**Models:** Gemma 4 12B (OpenRouter) for classification + response formatting (slot-filling, not reasoning; Haiku acceptable fallback). **Sonnet (`temperature=0.0`) only** for NL→SPARQL query generation in 6.4. Do not use a heavier model for routing/formatting.
+
+**Write path (data sovereignty — never touches Oxigraph):**
+```
+write command → permission check (Matrix power level) → git_ops.patch_json (schema-validate)
+             → git commit + push over SSH deploy key → heartbeat re-ingests on next cycle
+```
+- MOM generates an ed25519 key pair per space; private key encrypted at rest (Fernet, `BOT_KEY_SECRET`), keyed to `space_uri`. Deploy-key endpoint: `POST /api/bot/deploy-key/{space_id}` in `infra/link_handler/`.
+- Coordinator pastes the public key into their repo's Deploy Keys (GitLab/GitHub/Codeberg/Gitea — identical flow, Story 9.8 tutorial surface) and enables Write. Scope: **one repo, one file**. Revocation = remove the key; MOM retains no access.
+- Permissions stored per room in Oxigraph (`mom:botRoom`, `mom:memberPermission`/`mom:allowedFields`). Power levels: 100 coordinator (any field + grant/revoke), 50 trusted (granted fields), 0 read-only. Fixed member whitelist (`state.open`, `contact.irc/matrix/twitter`); `space.name`/`location.*`/`url` coordinator-only. Commit message `· authorized by {matrix_user_id}` is the audit trail.
+
+**Read/query path:** templated SPARQL (LLM only formats the answer) for `status`/`hours`/`find`/`nearby`/`network`; `infra/bot/isochrone.py` does origin-resolve → OpenRouteService isochrone polygon → `shapely` point-in-polygon over confirmed spaces, degrading to bounding-box on ORS timeout. **Bot is read-only on Oxigraph** (NFR-S7); LLM SPARQL still passes the NFR-S5 mutation gate.
+
+**Deployment:** new `mak-agent-bot` Docker Compose service on `maps_of_making_internal` (`external: true`, `expose` not `ports`). New deps: `matrix-nio` (Matrix adapter, async), `shapely` (isochrone); `httpx`/`cryptography` already present. External: `OpenRouteService` (`ORS_API_KEY`, free tier 2000 req/day).
+
+**Channels (Story 6.6):** Matrix ships in 6.0 and is the **only** platform with the write skillset (room power-level model has no Discord/Telegram equivalent). Discord/Telegram/Mattermost add read/discovery only; Discord uses the defer pattern for any LLM-involved command.
+
+**Voice (Story 6.5):** Bernard voice rules (handoff §"Bernard voice rules") are hard constraints and serve as the 6.5 acceptance criteria — never raw errors/status codes; always "what I know first, then what I can't reach, then the exact path forward."
 
 ---
 
@@ -978,7 +1020,7 @@ networks:
 | FR24–27b Endpoint health / ingestion | `infra/link_handler/pipeline.py` (fetch+gate) + `scripts/spaceapi_extract/` (transform) + `snapshot_store.py` (raw + `observed_at`) |
 | FR28–33b Operator dashboard | `web/admin/index.html` + `/api/*` status endpoints in `infra/link_handler/main.py` |
 | FR34–36 SPARQL federated query | Oxigraph service + nginx routing |
-| FR37–42 NL bot | 🟡 Epic 6 — `harness/` (Nanobot + `tasks/nl_to_sparql`, `answer_format`; ADR-009/013) |
+| FR37–42, FR45–49 "Ask Bernard" bot | 🟡 Epic 6 — `harness/` baseline + `infra/bot/` (adapters, intent router, `git_ops.py`, `isochrone.py`); deploy-key endpoint in `infra/link_handler/`; `mak-agent-bot` compose service. **ADR-017** (Nanobot ADR-013 deferred to 6.4) |
 | FR43–44 Auth | nginx (shared-password basic auth header) |
 
 ## External Schema References
@@ -1087,7 +1129,11 @@ web/app.js
   → health toggle overlays aging/zombie/dead — no auth, no admin access
   → space card: GET /api/space/{id}/raw → SQLite raw payload (Zone-3 trust receipt)
 
-NL bot query  🟡 Epic 6 (dormant — harness/ + Nanobot)
+"Ask Bernard" bot  🟡 Epic 6 (dormant — harness/ baseline + infra/bot/; ADR-017)
   ↓
-harness/ → Nanobot → tasks/nl_to_sparql → run_select → tasks/answer_format → reply
+channel adapter → Message → intent classifier (write|query|nl_discovery|unknown)
+  ├── write       → permission check → git_ops.patch_json → git commit (SSH deploy key) → heartbeat re-ingests
+  ├── query       → SPARQL template → Oxigraph (READ-ONLY) → Bernard-voice answer
+  │                 (isochrone: ORS polygon → shapely point-in-polygon filter)
+  └── nl_discovery → nl_to_sparql (Sonnet) → IoP guardrail → run_select → Bernard-voice answer
 ```

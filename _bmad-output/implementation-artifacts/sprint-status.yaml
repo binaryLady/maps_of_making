@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-01
-last_updated: "2026-06-07 (Story 5.0 code review complete → done; 2 patches applied, 5 deferred)"
+last_updated: "2026-06-16 (Epic 6 restructure → Ask Bernard 6.0-6.6; Epic 9 9.6/9.7/9.9/9.10 superseded; sprint-change-proposal-2026-06-16.md)"
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
@@ -176,14 +176,20 @@ development_status:
   5-5-phase-1-ui-hypothesis-validation-tweaks-panel-decision: backlog
   epic-5-retrospective: optional
 
-  # Epic 6: "Ask the Map" — NL Bot in Discord & Telegram
-  epic-6: backlog
-  6-1-nl-sparql-task-with-iop-ontology-context: backlog
-  6-2-answer-formatting-source-links-sparql-transparency: backlog
-  6-3-graceful-failure-clarification-ontology-gap-logging: backlog
-  6-4-discord-ask-mom-command-wired-end-to-end: backlog
-  6-5-telegram-adapter: backlog
-  6-6-mattermost-custom-adapter: backlog
+  # Epic 6: "Ask Bernard" — One Bot, Two Skillsets (channel-agnostic; deploy-key write path)
+  # Restructured 2026-06-16 (sprint-change-proposal-2026-06-16.md, mom_handoff_2026-06-16.md):
+  # one channel-agnostic bot + intent router (write|query|nl_discovery|unknown), one Bernard voice.
+  # harness/ is the baseline (extend, no Nanobot for 6.0-6.2; Nanobot deferred to 6.4).
+  # Old read-only NL-bot stories 6.1-6.6 superseded by this sequence. Absorbs Epic 9 9.6/9.7/9.9/9.10
+  # write fields via the 6.2 write skillset. Bot is read-only on Oxigraph; pipeline is the only writer.
+  epic-6: in-progress
+  6-0-bot-infrastructure-adapters-intent-router-bernard-config: ready-for-dev
+  6-1-deploy-key-provisioning-ssh-git-access: backlog
+  6-2-write-skillset-json-patch-git-commit-permission-model: backlog
+  6-3-read-query-command-set-isochrone-tool: backlog
+  6-4-nl-sparql-natural-language-iop-ontology: backlog
+  6-5-graceful-failure-bernard-voice-pass: backlog
+  6-6-additional-channel-adapters-discord-telegram-mattermost: backlog
   epic-6-retrospective: optional
 
   # Epic 7: 🟢 "Open Now" Presence Layer (parked indefinitely — 2026-05-06)
@@ -213,11 +219,11 @@ development_status:
   9-3-wizard-core-tiers-0-1-name-address-spaceapi-v15-core-localstorage-export: done  # 9.4 merged in (geocode proxy) — one demoable vertical slice
   9-4-nominatim-proxy-endpoint-in-link-handler: merged  # 2026-05-30: merged into 9.3; 9.3 cannot E2E-pass without geocode
   9-5-bernard-voice-copy-pass-curated-voice-artifact: done
-  9-6-wizard-tier-2-mom-fields-opening-hours-memberof-mom-sdgs: ready-for-dev
-  9-7-wizard-state-open-fsm-cascading-questions-marker-mapping-opt-out: backlog
+  9-6-wizard-tier-2-mom-fields-opening-hours-memberof-mom-sdgs: superseded  # 2026-06-16: absorbed by Epic 6.2 write skillset
+  9-7-wizard-state-open-fsm-cascading-questions-marker-mapping-opt-out: superseded  # 2026-06-16: absorbed by Epic 6.2 write skillset
   9-8-gitlab-tutorial-surface-embedded-guide-raw-url-handoff-register-flow: done  # spec revised 2026-06-01: raw URL (not GitLab Pages), no logo step, CTA hands off to register flow
-  9-9-three-mode-unification-url-fetch-pre-fill-validator-mode-cache-resume-reconciliation: backlog  # M3 — deferrable
-  9-10-wizard-tier-3-ext-fab-fields-space-type-fuzzy-dropdown-equipment: backlog  # M3 — deferrable
+  9-9-three-mode-unification-url-fetch-pre-fill-validator-mode-cache-resume-reconciliation: superseded  # 2026-06-16: absorbed by Epic 6
+  9-10-wizard-tier-3-ext-fab-fields-space-type-fuzzy-dropdown-equipment: superseded  # 2026-06-16: absorbed by Epic 6.2 write skillset
   9-11-validator-error-ux-inline-per-field-summary-report: backlog  # M3 — deferrable
   9-12-wizard-visual-design-pass-color-layout-contrast: done  # operator-approved; locks the interaction+visual frame 9.6/9.10 inherit (see story Final decision record)
   epic-9-retrospective: optional

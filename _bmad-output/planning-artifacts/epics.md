@@ -1,7 +1,7 @@
 ---
 stepsCompleted: ['step-01-validate-prerequisites', 'step-02-design-epics', 'step-03-create-stories', 'edit-2026-04-29', 'step-e-01-discovery', 'step-e-02-review', 'step-e-03-edit']
-lastEdited: '2026-05-29'
-editSummary: '2026-05-29 sprint change proposal (sprint-change-proposal-2026-05-29.md): added Cleanup Story C.X (schema namespace pass: ext_mom→ext_canary, mom: horizontal fields, SDG migration); added Epic 9 — Bernard''s Workshop (assisted SpaceAPI JSON composer at genjson.mapsofmaking.org, Stories 9.1–9.11 full BDD-spec, M1/M2/M3 milestones); renamed old Epic 9 (Multi-Network Schema) to Epic 10; updated sequencing notes to reflect C.X→Epic 9→Epic 4 re-review track. Prior: 2026-05-16 reconciliation (Story 3.3 canary, 3.2c, 3.4, 3.5, Epic 8 stub).'
+lastEdited: '2026-06-16'
+editSummary: '2026-06-16 sprint change proposal (sprint-change-proposal-2026-06-16.md, mom_handoff_2026-06-16.md): Epic 6 restructured to "Ask Bernard" — one channel-agnostic bot + intent router (write|query|nl_discovery|unknown), one Bernard voice; harness/ baseline (Nanobot deferred to 6.4); new stories 6.0-6.6 (infra/adapters/router → deploy-key SSH write → write skillset+permissions → read/query+isochrone → NL→SPARQL → voice pass → channel adapters). Epic 9 stories 9.6/9.7/9.9/9.10 superseded (absorbed by Epic 6.2 write skillset). New FRs FR45-FR49 + NFR-S7 added to PRD; new ADR-017 in architecture. Prior: 2026-05-29 sprint change proposal (sprint-change-proposal-2026-05-29.md): added Cleanup Story C.X (schema namespace pass: ext_mom→ext_canary, mom: horizontal fields, SDG migration); added Epic 9 — Bernard''s Workshop (assisted SpaceAPI JSON composer at genjson.mapsofmaking.org, Stories 9.1–9.11 full BDD-spec, M1/M2/M3 milestones); renamed old Epic 9 (Multi-Network Schema) to Epic 10; updated sequencing notes to reflect C.X→Epic 9→Epic 4 re-review track. Prior: 2026-05-16 reconciliation (Story 3.3 canary, 3.2c, 3.4, 3.5, Epic 8 stub).'
 inputDocuments:
   - _bmad-output/planning-artifacts/prd.md
   - _bmad-output/planning-artifacts/architecture.md
@@ -289,14 +289,19 @@ Phase 1 (map SPA, deployed at mapofmaking.debarquin.eu) is shipped. The epic/sto
 | FR35 | Epic 6 | Queries validated against IoP ontology |
 | FR35b | Epic 6 | Lenient validation: non-compliant data → warning + log |
 | FR36 | Epic 1 | Public SPARQL endpoint (read-only, nginx-gated) |
-| FR37 | Epic 6 | Bot accepts natural language questions |
-| FR38 | Epic 6 | NL → SPARQL via OpenRouter + IoP ontology context |
-| FR39 | Epic 6 | Bot returns results with source links + SPARQL transparency |
-| FR40 | Epic 6 | Bot graceful failure → clarification offer |
-| FR41 | Epic 6 | Failed queries logged as ontology gap triples |
-| FR42 | Epic 6 | Discord (first) + Telegram built-in; Mattermost post-pilot |
+| FR37 | Epic 6.0 | "Ask Bernard" — one channel-agnostic bot + intent router (write\|query\|nl_discovery\|unknown) |
+| FR38 | Epic 6.4 | NL → SPARQL via OpenRouter (Sonnet) + IoP ontology context |
+| FR39 | Epic 6.4 | Bot returns results with source links + SPARQL transparency |
+| FR40 | Epic 6.5 | Bot graceful failure → clarification offer (Bernard voice rules) |
+| FR41 | Epic 6.4 | Failed queries logged as ontology gap triples |
+| FR42 | Epic 6.6 | Matrix-first write; read/discovery on Discord/Telegram/Mattermost |
 | FR43 | Epic 4 | Admin subdomain shared-password auth (PoC-grade) |
 | FR44 | Epic 1 | Public map + coordinator registration: no auth |
+| FR45 | Epic 6.1/6.2 | Bot write path: deploy-key JSON patch → git commit → heartbeat re-ingest (never writes triples) |
+| FR46 | Epic 6.2 | Permission model: Matrix power levels + fixed member-write whitelist + `authorized_by` audit |
+| FR47 | Epic 6.1 | Deploy-key provisioning & sovereignty (ed25519, Fernet-encrypted, coordinator-revocable) |
+| FR48 | Epic 6.3 | Template query command set (status/hours/find/nearby/network) |
+| FR49 | Epic 6.3 | Isochrone travel-time discovery (OpenRouteService + shapely point-in-polygon) |
 
 **Epic 9 scope note:** Stories 9.1–9.11 implement the "LLM-assisted JSON generator" referenced in PRD §Vision (Post-PoC). No numbered FRs exist for this capability — approved via the 2026-05-29 sprint change proposal. The PRD requires a targeted update to add FRs for Epic 9 when it moves to active development (pre-Story 9.1 recommended).
 
@@ -385,13 +390,13 @@ The full ingestion pipeline becomes real: SpaceAPI JSON is fetched, raw snapshot
 
 ---
 
-### Epic 6: "Ask the Map" — NL Bot in Discord & Telegram *(parallel with Epic 3; non-blocker)*
-Arjun types a natural-language question in Discord. The bot defers, translates NL→SPARQL via OpenRouter/Sonnet, validates against the IoP ontology, queries Oxigraph, returns results with source space links and SPARQL transparency. Graceful failure logs ontology gap triples. Discord first; Telegram via built-in adapter; Mattermost post-pilot.
+### Epic 6: "Ask Bernard" — One Bot, Two Skillsets *(parallel; non-blocker; restructured 2026-06-16)*
+One channel-agnostic bot, one Bernard voice. A platform adapter normalises Matrix/Discord/Telegram/Mattermost to a `Message`; an intent classifier routes each message to `write | query | nl_discovery | unknown`; the matching skill fires and Bernard responds. **Write skillset:** a coordinator edits their *own* endpoint JSON via an SSH deploy key (JSON patch → git commit → heartbeat re-ingests) — the bot never writes Oxigraph triples; permissions follow Matrix power levels. **Discovery skillset:** template SPARQL queries (`status`/`hours`/`find`/`nearby`/`network`) + isochrone travel-time search (OpenRouteService + shapely), then full NL→SPARQL with the IoP ontology guardrail. `harness/` is the baseline (Nanobot deferred to Story 6.4). Matrix-first for write; read/discovery on all channels.
 
-**FRs:** FR35, FR35b, FR37–FR42
-**NFRs:** NFR-L1–L4, NFR-S5, NFR-P4, NFR-I3
-**ARs:** AR-AGT3–5, AR-DATA5
-**UX-DRs:** UX-DR12
+**FRs:** FR35, FR35b, FR37–FR42, FR45–FR49
+**NFRs:** NFR-L1–L4, NFR-S5, NFR-S7, NFR-P4, NFR-I3
+**ARs:** AR-AGT3–5, AR-DATA5; ADR-017 (Bernard bot — harness baseline, deploy-key write, isochrone)
+**UX-DRs:** UX-DR12; Bernard voice rules (handoff 2026-06-16 §"Bernard voice rules" = Story 6.5 ACs)
 
 ---
 
@@ -407,7 +412,7 @@ Originally a webhook-driven presence layer. As of Story 3.2, the heartbeat polls
 Mother Sands stops being only a diagnostic canary (Story 3.3) and becomes MOM's self-representation on its own map: a public website at `mom.mapsofmaking.org`, a wiki/lore page, Bernard the hermit-crab admin persona, a curated changelog/feature "broadcast", and relocation/fort-rotation as ambient narrative. Parallel to Epic 5 polish; not on the demo critical path. Stub only — stories created post-demo. Design seeds: `mom_handoff_2026-05-16.md`, `mom_handoff_2026-05-15.md` (Bernard character bible, lore skeleton).
 
 ### Epic 9: Bernard's Workshop — Assisted SpaceAPI JSON Composer *(parallel, post-C.X; post-demo non-blocker)*
-Assisted SpaceAPI JSON composer at `genjson.mapsofmaking.org` with Bernard's voice as the UX anchor. Goal: convincing, inclusive, effortless onboarding for non-technical coordinators, with data sovereignty and GitLab Pages self-hosting as the end state. M1 (Stories 9.1–9.5): subdomain infra, drawer UX, wizard Tiers 0+1, Nominatim proxy, voice copy. M2 (9.6–9.8): `mom:` fields, `state.open` FSM, GitLab tutorial. M3 (9.9–9.11, deferrable): URL pre-fill / validator mode, Tier 3 `ext_fab`, error UX. **Depends on:** Story C.X. **Defers Epic 4 re-review** until M1+ in flight.
+Assisted SpaceAPI JSON composer at `genjson.mapsofmaking.org` with Bernard's voice as the UX anchor. Goal: convincing, inclusive, effortless onboarding for non-technical coordinators, with data sovereignty and self-hosting as the end state. **Tier 1 first-user slice (9.1–9.5, 9.8, 9.12):** subdomain infra, drawer UX, wizard Tiers 0+1, Nominatim proxy, voice copy, GitLab raw-URL tutorial, visual design pass — compose JSON → host on GitLab → see pin on map. **Superseded by Epic 6 (2026-06-16):** 9.6 (`mom:` fields), 9.7 (`state.open` FSM), 9.9 (three-mode unification), 9.10 (Tier 3 `ext_fab`) — once a coordinator has a live file, the bot's write skillset (Epic 6.2) updates these fields conversationally, no wizard re-run. 9.11 (validator error UX) deferred, still valid. **Depends on:** Story C.X. **Defers Epic 4 re-review** until Tier 1 in flight.
 
 ---
 
@@ -1671,131 +1676,176 @@ So that the demo map carries only UI that earns its cognitive load — nothing i
 
 ---
 
-## Epic 6: "Ask the Map" — NL Bot
+## Epic 6: "Ask Bernard" — One Bot, Two Skillsets
 
-*(Parallel with Epic 3; non-blocker for demo)*
+*(Parallel; non-blocker for demo. Restructured 2026-06-16 — sprint-change-proposal-2026-06-16.md, mom_handoff_2026-06-16.md. Supersedes the old read-only NL-bot stories 6.1–6.6.)*
 
-Arjun types a natural-language question in Discord, Telegram, or Mattermost. The bot translates it to SPARQL, validates against the IoP ontology, queries Oxigraph, and returns results with source links and SPARQL transparency. Graceful failure logs ontology gaps. Discord first, Telegram built-in, Mattermost custom adapter.
+**One bot. One voice. Internal routing.** A coordinator typing "update our Tuesday hours to 10–18" and a maker typing "find laser cutters near Hamburg" both reach the same Bernard — a different skill fires, the same voice responds. The platform is transport, not product: Matrix/Discord/Telegram/Mattermost are adapters behind a normalised `Message`. An intent classifier routes to `write | query | nl_discovery | unknown`.
 
----
-
-### Story 6.1: NL→SPARQL Task with IoP Ontology Context
-
-As the system processing a user's natural-language question,
-I want to translate it to a valid SPARQL SELECT query using the IoP ontology as a guardrail,
-So that queries are grounded in real schema vocabulary and the LLM never invents predicates that don't exist in our graph.
-
-**Acceptance Criteria:**
-
-**Given** the IoP ontology is loaded in `<urn:mak:ontology/iop>` (Story 1.4) and the harness is running
-**When** `tasks/nl_to_sparql.py` is called with a natural-language question string
-**Then** it extracts a ~15–20% relevant subset of the IoP ontology via SPARQL CONSTRUCT, serializes it as a compact text block, and caches it in memory (AR-DATA5)
-**And** calls OpenRouter via `llm_client.py` using the `nl_to_sparql` model (Sonnet, `temperature=0.0`, `max_tokens=512`) with the ontology subset as system context
-**And** the prompt instructs the model to return only a SPARQL SELECT string targeting `<urn:mak:space/*>` (and `<urn:mak:canary/*>`) named graphs, using only predicates present in the ontology context (there is no `<urn:mak:status>` graph — freshness buckets are browser-computed, not stored)
-**And** the returned SPARQL string is validated before use: checked for `DROP`, `INSERT`, `DELETE`, `UPDATE` keywords — any mutation attempt is rejected and logged as a security event (NFR-S5)
-**And** the task returns a plain `str` (the SPARQL query) — no structured object (AR-AGT2)
-**And** prompt cache hit-rate is logged per call to `llm_cost_log` SQLite table for admin dashboard tracking (NFR-L1)
-**And** the ontology subset is refreshed from Oxigraph when `RELOAD_ONTOLOGY=1` env var is set (AR-DATA5)
-
----
-
-### Story 6.2: Answer Formatting + Source Links + SPARQL Transparency
-
-As a community member who asked the bot a question,
-I want the answer in plain language with links to the actual spaces and an option to see the query that was run,
-So that I can trust the result and follow up directly with the space — and curious users can inspect the reasoning.
-
-**Acceptance Criteria:**
-
-**Given** `tasks/nl_to_sparql.py` has returned a valid SPARQL query (Story 6.1) and `sparql_client.run_select()` has returned results
-**When** `tasks/answer_format.py` is called with the original question, the SPARQL bindings, and the raw SPARQL string
-**Then** it calls OpenRouter via the `answer_format` model (Minimax, `temperature=0.5`, `max_tokens=512`) to produce a plain-language summary
-**And** the response includes: plain-language answer, a list of matching spaces with name + status badge + URI link (max 5 results, with "and N more — browse the full map" if exceeded)
-**And** a spoiler/collapsed section shows the raw SPARQL query used ("show how I searched") — so technically curious users can inspect the query (FR39)
-**And** if results are empty but the query is valid, the response reads: "I found no confirmed spaces matching that — try widening your search or browse the map directly" (not "0 results" alone)
-**And** the task returns a plain `str` formatted for the target channel (Discord markdown for 6.4, plain text for 6.5/6.6)
-
----
-
-### Story 6.3: Graceful Failure → Clarification + Ontology Gap Logging
-
-As a community member whose question the bot couldn't answer,
-I want a clear, honest response that tells me why and suggests what to do next,
-So that a bot failure doesn't feel like a dead end — and the system learns from the gap.
-
-**Acceptance Criteria:**
-
-**Given** `tasks/nl_to_sparql.py` produces invalid SPARQL, or the SPARQL validation gate rejects it, or `run_select()` returns an error
-**When** the failure is caught in the task chain
-**Then** the bot responds in plain language: "I couldn't find a way to answer that with the map's current data. Try rephrasing, or browse the map directly at {url}" — no stack trace, no raw error (FR40, NFR-L3)
-**And** the failed query is logged as an ontology gap triple in Oxigraph (FR41):
-```turtle
-<urn:mak:gap/{uuid}> a mom:OntologyGap ;
-  mom:rawQuery "{escaped original question}" ;
-  mom:rawLLMOutput "{escaped SPARQL attempt or error}" ;
-  mom:timestamp "{ISO datetime}"^^xsd:dateTime .
 ```
-**And** the gap triple is visible in the admin dashboard's Oxigraph sync panel as a queryable signal for ontology evolution
-**And** LLM unavailability (OpenRouter timeout, rate limit) produces a distinct response: "The map's brain is temporarily busy — try again in a minute" and is logged separately from ontology gaps (NFR-L3)
-**And** the retry budget is read from `config.yaml`: max attempts, jitter delay between retries (NFR-L3)
+channel message → platform adapter → intent classifier → skill router
+   ├── write skill   → permission check → JSON patch → git commit via SSH deploy key
+   ├── query skill   → SPARQL template → Oxigraph (read-only) → formatted answer
+   └── nl_discovery  → NL→SPARQL → IoP ontology guardrail → Oxigraph → answer
+→ response formatter (Bernard voice, platform-aware) → platform adapter
+```
+
+**Framework:** extend `harness/` (🟡 dormant, Epic 6 baseline). **No Nanobot for 6.0–6.2** — deferred, re-evaluate at 6.4. **LLM:** Gemma 4 12B via OpenRouter (LiteLLMProvider, `harness/llm_client.py` pattern) for slot-filling + formatting; Sonnet only for NL→SPARQL generation (6.4). **Oxigraph is read-only from the bot** — the write path is always JSON patch → git commit → heartbeat re-ingest; the bot never writes triples (NFR-S7).
+
+**Data sovereignty:** coordinators own their endpoint JSON. The bot edits it on their behalf via an SSH deploy key scoped to one repo, one file. MOM generates the key pair, stores the private key encrypted (Fernet), the coordinator pastes the public key into their repo's Deploy Keys (GitLab/GitHub/Codeberg/Gitea — identical flow, Story 9.8 surface), and revokes by removing it. No deploy key registered ⇒ Bernard's degraded path; read/query always works.
 
 ---
 
-### Story 6.4: Discord `/ask-mom` Command Wired End-to-End
+### Story 6.0: Bot Infrastructure — Adapters, Intent Router, Bernard Config
 
-As a community member in the Discord server,
-I want to type `/ask-mom "Des espaces confirmés avec du bois à Hamburg?"` and receive a useful answer within 30 seconds,
-So that I can find maker spaces without leaving the community channel I'm already in.
+As the MOM operator,
+I want a channel-agnostic bot core with a platform adapter and an intent router,
+So that every later skillset plugs into one transport-independent spine with one Bernard voice.
+
+**Depends on:** Epic 1 (Oxigraph running), `harness/` baseline exists.
 
 **Acceptance Criteria:**
 
-**Given** the Nanobot agent is running with Discord adapter enabled and the bot is invited to the Openfab Brussels Discord server
-**When** a user runs `/ask-mom question:"<natural language question>"`
-**Then** the bot immediately defers with `interaction.response.defer(thinking=True)` — buying 15 minutes before timeout (AR-AGT4)
-**And** calls `nl_to_sparql.py` → `run_select()` → `answer_format.py` in sequence
-**And** sends the formatted answer via `interaction.followup.send(answer)` — always via followup, never via `response.send_message()` (AR-AGT4)
-**And** the answer includes Discord-formatted markdown: bold space names, inline links, collapsed SPARQL spoiler using `||spoiler||` syntax
-**And** multilingual input is handled transparently — French, English, and German questions produce valid SPARQL via the ontology-grounded prompt (Journey 5 requirement)
-**And** on any failure path (Story 6.3), the followup is still sent — the interaction never times out silently
-**And** slash commands are synced via `tree.sync()` in `setup_hook`, not on every message (AR-AGT4)
-**And** the command is tested end-to-end in the Openfab Discord server using real Oxigraph data before Epic 6 is considered done
+**Given** the `harness/` baseline runs cleanly (verify drift from the Epic 1 spike first) and a new `mak-agent-bot` Docker Compose service joins `maps_of_making_internal` (`external: true`, `expose` not `ports`)
+**When** Story 6.0 lands
+**Then** a `Message` dataclass exists with `text`, `user_id`, `room_id`, `platform`, `raw`
+**And** a `ChannelAdapter` protocol is defined: `async receive() → Message`, `async send(response, context) → None`
+**And** a Matrix adapter is implemented via `matrix-nio` (async Python, fits the existing stack)
+**And** an intent classifier makes one compact LLM call (~200-token context) returning exactly one of `write | query | nl_discovery | unknown` (may return hardcoded `unknown` in a first pass, LLM wired second)
+**And** `config.yaml` gains `bot.model`, `bot.platform_tokens`, `bot.matrix_homeserver` and the Bernard voice config is loaded at startup
+**And** `!mom ping` is a smoke test: the classifier returns `unknown`, Bernard acknowledges gracefully
+**And** the classifier result is logged via structlog with `session_id` bound
+
+**Done gate (operator confirmation):** `!mom ping` in the Openfab Matrix room returns a Bernard-voice response within 5s.
 
 ---
 
-### Story 6.5: Telegram Adapter
+### Story 6.1: Deploy-Key Provisioning + SSH Git Access
 
-As a community member on Telegram,
-I want to ask the bot the same natural-language questions I can ask on Discord,
-So that communities using Telegram instead of Discord have equal access to the map's query capability.
+As a space coordinator,
+I want to grant Bernard scoped write access to my endpoint JSON via a deploy key,
+So that the bot can edit my data on my behalf without MOM ever hosting or owning the file.
+
+**Depends on:** 6.0 (bot running), Epic 2 (spaces registered with endpoint URLs).
 
 **Acceptance Criteria:**
 
-**Given** `TELEGRAM_BOT_TOKEN` is set in `.env` and the Nanobot config has `telegram: { enabled: true, token: "${TELEGRAM_BOT_TOKEN}" }`
-**When** a user sends a message to the bot in a Telegram chat
-**Then** Nanobot's built-in Telegram adapter routes the message through the same `nl_to_sparql` → `run_select` → `answer_format` task chain as Discord (AR-AGT5)
-**And** the Telegram adapter uses the edit-message pattern for streaming-style responses: sends a "Thinking…" message, then edits it with the final answer (AR-INF2 / ADR-009 table)
-**And** the response is formatted in plain text (no Discord markdown syntax) — links are bare URLs, bold via `*text*` Telegram markdown
-**And** failure paths (Story 6.3) produce the same user-facing plain-language response
-**And** `allowFrom` in config restricts Telegram access to `ADMIN_USER_ID` initially — opens to broader use at pilot (ADR-008 config)
+**Given** a space is registered with an endpoint URL and a room→space mapping is stored in Oxigraph (`mom:botRoom`)
+**When** a coordinator runs `!mom link` in the space's Matrix room
+**Then** `link_handler` exposes `POST /api/bot/deploy-key/{space_id}` which generates an ed25519 key pair, stores the private key encrypted (Fernet, key from env `BOT_KEY_SECRET`), and returns the public key + tutorial markdown
+**And** the bot presents the public key block and step-by-step tutorial in Bernard voice (GitLab → Settings → Repository → Deploy Keys → paste → enable Write access)
+**And** `infra/bot/git_ops.py` provides `read_json(space_uri)`, `patch_json(space_uri, field_path, value)` (apply + schema-validate, return commit SHA), and `commit_json(...)` (commit + push) with message format `Update {field_path} for {space_name} · authorized by {matrix_user_id}`
+**And** the bot checks for a stored key before any write — no deploy key ⇒ Bernard's degraded path, never a raw error
+
+**Done gate (operator confirmation):** `!mom link` returns a public key + tutorial; after the coordinator adds it, `!mom update space.url "https://example.com"` commits the change and the heartbeat picks it up within 10 min.
 
 ---
 
-### Story 6.6: Mattermost Custom Adapter
+### Story 6.2: Write Skillset — JSON Patch, Git Commit, Permission Model
 
-As a community member in an RFF or VOW Mattermost channel,
-I want to ask `@mom-bot` natural-language questions about the map directly in our community's own platform,
-So that the federated map is a tool used where our community already lives — not a separate destination.
+As a space coordinator (or a member they trust),
+I want to update my space's fields conversationally,
+So that I never have to re-run the wizard or hand-edit JSON to change hours, contact, or open/close state.
+
+**Depends on:** 6.1 (git access working). **Absorbs Epic 9 stories 9.6/9.7/9.10** — the Tier 2/3 fields are edited here conversationally, not as wizard tiers.
 
 **Acceptance Criteria:**
 
-**Given** a Mattermost instance is available for the pilot network (RFF or VOW) and outgoing + incoming webhooks are configured
-**When** a user posts `@mom-bot <question>` in a Mattermost channel
-**Then** the Mattermost adapter receives the outgoing webhook POST, strips the bot mention, and routes the question through the same `nl_to_sparql` → `run_select` → `answer_format` chain
-**And** the adapter implements the `ChannelAdapter` protocol (`async receive() → Message`, `async send(response, context) → None`) — the core task chain is never aware of the transport (AR-AGT5)
-**And** the response is posted back via Mattermost incoming webhook as a plain-text message with bare URLs (no Discord/Telegram markdown)
-**And** the adapter service runs as a separate Docker Compose service (`mak-agent-mattermost`) with `ADAPTER=mattermost` env var — same image, different config (ADR-009)
-**And** the Mattermost adapter is the only custom-built adapter; Discord and Telegram use Nanobot built-ins
-**And** the adapter is tested against the pilot Mattermost instance (RFF or VOW) with at least one real query answered correctly before Epic 6 is marked complete
+**Given** a deploy key is registered and the room has a `mom:space` mapping
+**When** a coordinator (Matrix power level 100) runs a write command
+**Then** the bot supports: `!mom update {field.path} {value}`, `!mom open` (`state.open=true`), `!mom close` (`state.open=false`), `!mom grant @user {field}`, `!mom revoke @user {field}`, `!mom permissions`
+**And** the permission model maps Matrix power levels: 100 = coordinator (any field + grant/revoke); 50 = trusted member (only coordinator-granted fields); 0 = read-only
+**And** the member-writable whitelist is fixed and cannot be expanded by the coordinator: `state.open`, `contact.irc`, `contact.matrix`, `contact.twitter`; `space.name`, `location.*`, `url` are coordinator-only regardless of grant
+**And** per-room permission policy is stored in Oxigraph (`mom:memberPermission` with `mom:matrixId` + `mom:allowedFields`)
+**And** every commit carries `authorized_by: {matrix_user_id}` in the message — this is the audit trail, no separate log
+**And** a member without the required grant receives a graceful refusal (Bernard voice, points to `!mom grant`), never "permission denied"
+
+**Done gate (operator confirmation):** `!mom update space.contact.irc "#atelier-commun:libera.chat"` patches the JSON, commits, Bernard confirms; heartbeat re-ingests next cycle; an ungranted member is refused gracefully.
+
+---
+
+### Story 6.3: Read/Query Command Set + Isochrone Tool
+
+As a maker,
+I want templated discovery commands and a travel-time radius search,
+So that I can find spaces fast without natural-language ambiguity (and without an LLM in the query path).
+
+**Depends on:** 6.0 (bot running), Epic 3 (data in Oxigraph). All queries here are **templated** — the LLM only formats the Bernard-voice response.
+
+**Acceptance Criteria:**
+
+**Given** confirmed spaces exist in Oxigraph
+**When** Story 6.3 lands
+**Then** the bot supports: `!mom status` (lifecycle + last heartbeat for this room's space), `!mom hours`, `!mom find {tag} {city}`, `!mom nearby {city} {radius}` (Nominatim → bbox → SPARQL), `!mom network {network_name}` (confirmed both directions), `!mom travel {origin} {hours}`
+**And** `infra/bot/isochrone.py` runs three steps: (1) resolve origin → coordinates (Oxigraph if a space name, Nominatim if a city), (2) call OpenRouteService `GET /v2/isochrones/{profile}` with `range_type: time` (`driving-car` default; `cycling-regular`/`foot-walking` via `by bike`/`by foot`) returning a GeoJSON polygon, (3) Python `shapely` point-in-polygon filter over all confirmed spaces
+**And** `ORS_API_KEY` is read from `.env` (free tier, 2000 req/day); new deps `shapely` + existing `httpx`
+**And** results include travel-time estimates and surface seeded-but-unregistered spaces in range as a follow-up offer (Bernard's seeded fallback)
+
+**Done gate (operator confirmation):** `!mom travel Brussels 2h` returns confirmed spaces inside the isochrone with travel times; an ORS timeout (>5s) degrades gracefully to the `!mom nearby` bounding-box fallback.
+
+---
+
+### Story 6.4: NL→SPARQL — Full Natural Language with IoP Ontology Guardrail
+
+As a community member,
+I want to ask free-form questions and get grounded answers,
+So that discovery isn't limited to the templated command vocabulary.
+
+**Depends on:** 6.3 (template queries working), IoP ontology in Oxigraph (Story 1.4). This is the original Epic 6 NL→SPARQL work, now arriving on proven infrastructure.
+
+**Acceptance Criteria:**
+
+**Given** the IoP ontology is loaded and the classifier (6.0) routes a message to `nl_discovery` because it matches no template pattern
+**When** Story 6.4 lands
+**Then** an IoP ontology subset is extracted via SPARQL CONSTRUCT and cached; the model (Sonnet, `temperature=0.0`) is given it as system context and returns only a SPARQL SELECT over `<urn:mak:space/*>` / `<urn:mak:canary/*>` using only ontology predicates
+**And** the SPARQL is validated before use — `DROP`/`INSERT`/`DELETE`/`UPDATE` rejected and logged as a security event (NFR-S5); the bot stays read-only on Oxigraph (NFR-S7)
+**And** results are formatted in Bernard voice with source-space links + a collapsed "show how I searched" SPARQL block (FR39)
+**And** invalid/empty/ambiguous queries log an `mom:OntologyGap` triple (FR41) and Bernard offers clarification, never a dead end (FR40)
+**And** Gemma handles classification + formatting; Sonnet is used only for this query-generation step
+
+**Done gate (operator confirmation):** a French / English / German free-form question returns a grounded, source-linked answer; an unanswerable one logs a gap and gets a Bernard clarification.
+
+---
+
+### Story 6.5: Graceful Failure + Bernard Voice Pass
+
+As a user hitting any failure path,
+I want Bernard to tell me what he knows, why something is unavailable, and the exact way forward,
+So that error states build trust instead of dead-ending.
+
+**Depends on:** 6.0–6.4 all functional. This is a retroactive pass once every failure path is observable — do **not** pre-tune voice in 6.0–6.3 (write functional responses there, polish here).
+
+**Acceptance Criteria (the Bernard voice rules are the AC — handoff 2026-06-16 §"Bernard voice rules"):**
+
+**Given** all 6.0–6.4 paths are functional
+**When** Story 6.5 lands
+**Then** Bernard **never** emits HTTP status codes, exception names, `null`/`undefined`, "I don't have permission to do that", "Your query returned no results", or "I cannot help with that" without offering what he can do
+**And** Bernard **always**: states what he knows first then what he can't reach; explains *why* write is unavailable with the exact path forward (deploy-key tutorial link); for zero results offers the seeded fallback; for permission refusal points to `!mom grant`; for LLM unavailability distinguishes it from data absence and offers template queries while he recovers
+**And** commit messages are in Bernard's voice (e.g. `Mark Atelier Commun open · authorized by @luca:matrix.org`)
+**And** every failure path identified across 6.0–6.4 is covered by a voice-audited response
+
+**Done gate (operator confirmation):** a walk of each failure path (no key, no grant, ORS timeout, LLM down, empty results) returns voice-compliant Bernard responses.
+
+---
+
+### Story 6.6: Additional Channel Adapters — Discord, Telegram, Mattermost
+
+As a community on Discord/Telegram/Mattermost,
+I want discovery and read commands on our own platform,
+So that the map is usable where our community already lives (Matrix already shipped in 6.0).
+
+**Depends on:** 6.0 (adapter protocol defined). These add channels, not features.
+
+**Acceptance Criteria:**
+
+**Given** the `ChannelAdapter` protocol from 6.0
+**When** Story 6.6 lands
+**Then** Discord and Telegram adapters implement the same protocol; Discord uses the defer pattern (`interaction.response.defer(thinking=True)`) for any LLM-involved command (3s timeout); Mattermost uses outgoing webhook → response via incoming webhook
+**And** read/query/discovery commands work on all channels with platform-aware formatting (Discord markdown, Telegram `*text*`, Mattermost bare URLs)
+**And** the **write skillset is explicitly Matrix-only** for the PoC — the room-based power-level permission model has no Discord/Telegram equivalent
+**And** each adapter is tested with at least one real query in a live channel
+
+**Done gate (operator confirmation):** the same discovery question answered correctly on Discord and Telegram; a write command on those channels is gracefully declined as Matrix-only.
 
 ---
 
@@ -2052,6 +2102,8 @@ validation_messages:
 
 ### Story 9.6: Wizard Tier 2 — `mom:` Fields (opening_hours, memberOf, mom:sdgs)
 
+> **SUPERSEDED 2026-06-16** (sprint-change-proposal-2026-06-16.md) — absorbed by **Epic 6.2 write skillset**. These Tier 2 fields are better edited conversationally via Bernard once a coordinator has a live file, rather than as a wizard tier. Not built as a wizard story. Body retained as design trail.
+
 As a space coordinator who has completed Tiers 0 + 1,
 I want to fill in the MoM-specific horizontal fields that unlock network features (membership, opening hours, SDGs),
 So that my space appears correctly in network filters and benefits from the cross-network features MoM provides.
@@ -2077,6 +2129,8 @@ So that my space appears correctly in network filters and benefits from the cros
 ---
 
 ### Story 9.7: Wizard `state.open` FSM — Cascading Questions + Marker Mapping + Opt-out
+
+> **SUPERSEDED 2026-06-16** (sprint-change-proposal-2026-06-16.md) — absorbed by **Epic 6.2 write skillset** (`!mom open` / `!mom close` / `!mom update state.open`). Not built as a wizard story. Body retained as design trail; the Axis-C `state.open` semantics here still inform the bot's write behaviour.
 
 As a space coordinator filling in the wizard,
 I want to express whether my space signals open/closed status — or choose not to — without encountering jargon,
@@ -2141,6 +2195,8 @@ So that I can register as an advanced user without needing to ask anyone for hel
 
 ### Story 9.9: Three-Mode Unification — URL Fetch Pre-fill, Validator Mode, Cache Resume Reconciliation *(M3 — deferrable)*
 
+> **SUPERSEDED 2026-06-16** (sprint-change-proposal-2026-06-16.md) — absorbed by **Epic 6**. URL-fetch reconciliation and ongoing edits move to the bot's read + write skillsets. Not built as a wizard story. Body retained as design trail.
+
 > **M3 — deferrable.** Implement after M1 + M2 are validated with real coordinators.
 
 As a space coordinator returning to the wizard with an existing endpoint URL,
@@ -2166,6 +2222,8 @@ So that maintaining my data doesn't require re-entering everything from scratch.
 ---
 
 ### Story 9.10: Wizard Tier 3 — `ext_fab` Fields (space_type Fuzzy Dropdown, equipment) *(M3 — deferrable)*
+
+> **SUPERSEDED 2026-06-16** (sprint-change-proposal-2026-06-16.md) — absorbed by **Epic 6.2 write skillset**. Tier 3 `ext_fab` fields are edited conversationally via Bernard. Not built as a wizard story. Body retained as design trail.
 
 > **M3 — deferrable.** Implement after M2 is validated; requires `ext_fab.ttl` extraction (Epic 10).
 
