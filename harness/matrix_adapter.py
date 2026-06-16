@@ -1,7 +1,7 @@
 import asyncio
 
 import structlog
-from nio import AsyncClient, MatrixRoom, RoomMessageText
+from nio import AsyncClient, InviteMemberEvent, MatrixRoom, RoomMessageText
 
 from message import Message
 
@@ -21,6 +21,16 @@ class MatrixAdapter:
         self._queue: asyncio.Queue[Message] = asyncio.Queue()
         self._sync_task: asyncio.Task | None = None
         self.client.add_event_callback(self._on_message, RoomMessageText)
+        self.client.add_event_callback(self._on_invite, InviteMemberEvent)
+
+    async def _on_invite(self, room: MatrixRoom, event: InviteMemberEvent) -> None:
+        # matrix-nio does not auto-join invites (by design, per its own
+        # examples) — without this callback, every invite sits pending
+        # until something calls client.join() explicitly.
+        if event.state_key != self.client.user_id:
+            return
+        await self.client.join(room.room_id)
+        log.info("matrix.invite_joined", room_id=room.room_id)
 
     async def _on_message(self, room: MatrixRoom, event: RoomMessageText) -> None:
         if event.sender.lower() == self.client.user_id.lower():

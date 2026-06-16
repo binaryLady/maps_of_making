@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import structlog
 
 import bernard
+import commands
 import llm_client
 import sparql_client
 from config import load_config
@@ -35,7 +36,13 @@ async def handle_message(adapter: MatrixAdapter, message) -> None:
     bound.info("message.received", text=message.text)
 
     stripped = dataclasses.replace(message, text=message.text[len(COMMAND_PREFIX):].strip())
-    response = await route(stripped, session_id)
+
+    # Literal !mom <verb> commands (link, update) are matched before the LLM
+    # intent classifier — see Story 6.1 Dev Notes "Command parsing, not intent
+    # routing". Only messages that don't match a known verb fall through to route().
+    response = await commands.try_handle(stripped.text, message.user_id, message.room_id, session_id)
+    if response is None:
+        response = await route(stripped, session_id)
 
     bound.info("message.responded", response=response)
     await adapter.send(response, message)

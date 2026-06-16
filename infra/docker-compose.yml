@@ -114,6 +114,15 @@ services:
     restart: unless-stopped
     networks:
       - internal
+    volumes:
+      # infra/bot/ is the bot-write code (Story 6.1); schema.py/bot_keys.py are
+      # link_handler's canonical copies, mounted alongside so there's exactly
+      # one SpaceAPISchema and one key-storage format shared by both containers.
+      - ./bot:/app/bot:ro
+      - ./link_handler/schema.py:/app/bot/schema.py:ro
+      - ./link_handler/bot_keys.py:/app/bot/bot_keys.py:ro
+      - ../data/bot-keys:/app/bot-keys:ro
+      - ../data/bot-repos:/app/bot-repos
     environment:
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - OXIGRAPH_ENDPOINT=http://oxigraph:7878
@@ -121,6 +130,10 @@ services:
       - MATRIX_USER_ID=${MATRIX_USER_ID}
       - MATRIX_ACCESS_TOKEN=${MATRIX_ACCESS_TOKEN}
       - MATRIX_DEVICE_ID=${MATRIX_DEVICE_ID}
+      - LINK_HANDLER_URL=http://mak-link-handler:8000
+      - BOT_KEY_SECRET=${BOT_KEY_SECRET:?BOT_KEY_SECRET must be set in .env}
+      - BOT_KEYS_DIR=/app/bot-keys
+      - BOT_REPOS_DIR=/app/bot-repos
     depends_on:
       oxigraph:
         condition: service_started
@@ -144,11 +157,14 @@ services:
       - ../scripts/activity_map.yaml:/app/scripts/activity_map.yaml:ro
       - ../scripts/spaceapi_extract:/app/scripts/spaceapi_extract:ro
       - ../data/tasks:/app/tasks    # persist heartbeat_log.db across restarts
+      - ../data/bot-keys:/app/bot-keys    # deploy keys (Story 6.1) — read/write, this is the only generator
     environment:
       - OXIGRAPH_ENDPOINT=http://oxigraph:7878
       - LINK_SECRET=${LINK_SECRET:?LINK_SECRET must be set in .env}
       - GEOJSON_OUTPUT=/app/web_data/spaces.geojson
       - SCRIPTS_DIR=/app/scripts
+      - BOT_KEY_SECRET=${BOT_KEY_SECRET:?BOT_KEY_SECRET must be set in .env}
+      - BOT_KEYS_DIR=/app/bot-keys
     depends_on:
       oxigraph:
         condition: service_started

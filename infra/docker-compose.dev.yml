@@ -26,8 +26,17 @@ services:
       - ../web/canary:/app/web/canary:ro,z  # served canary JSON for load_canary CANARY_FILE
       - ../data/tasks:/app/tasks:z  # persist heartbeat_log.db; :z for Fedora SELinux
       - ../data/canary:/app/data/canary:ro,z  # for Mother Sands canary diagnostic endpoint
+      - ../data/bot-keys:/app/bot-keys:z  # deploy keys (Story 6.1); :z for Fedora SELinux
     environment:
       - SCRIPTS_DIR=/app/scripts
+
+  mak-agent-bot:
+    volumes:
+      - ./bot:/app/bot:ro,z
+      - ./link_handler/schema.py:/app/bot/schema.py:ro,z
+      - ./link_handler/bot_keys.py:/app/bot/bot_keys.py:ro,z
+      - ../data/bot-keys:/app/bot-keys:ro,z
+      - ../data/bot-repos:/app/bot-repos:z
 
   oxigraph:
     ports:

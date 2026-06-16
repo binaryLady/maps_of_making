@@ -31,3 +31,38 @@ def ping_ack() -> str:
 
 def unknown_ack() -> str:
     return load_voice().get("bot", {}).get("unknown_ack", "Not sure what you mean by that.")
+
+
+def link_tutorial(public_key: str, tutorial_md: str) -> str:
+    template = load_voice().get("bot", {}).get(
+        "link_tutorial", "{tutorial}"
+    )
+    return template.format(public_key=public_key, tutorial=tutorial_md)
+
+
+def link_failed_ack() -> str:
+    return load_voice().get("bot", {}).get(
+        "link_failed_ack",
+        "I couldn't generate a key for that space — check the space slug is registered, then try again.",
+    )
+
+
+def no_deploy_key_ack() -> str:
+    return load_voice().get("bot", {}).get(
+        "no_deploy_key_ack",
+        "I can read your profile but I can't edit it yet — run `!mom link {space}` first so I get write access.",
+    )
+
+
+def update_failed_ack() -> str:
+    return load_voice().get("bot", {}).get(
+        "update_failed_ack",
+        "That update didn't go through — check the field path and value, then try again.",
+    )
+
+
+def update_succeeded_ack(sha: str) -> str:
+    template = load_voice().get("bot", {}).get(
+        "update_succeeded_ack", "Done. Committed as {sha}."
+    )
+    return template.format(sha=sha[:8])
