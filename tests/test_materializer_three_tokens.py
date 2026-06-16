@@ -2,11 +2,100 @@
 
 Validates that GeoJSON materialization correctly joins SQLite (observed_at)
 and Oxigraph (updated_at, last_open_change) into each feature.
+
+Repointed 2026-06-16 (Story 6.0 dev-story session): scripts/materialize_geojson.py
+was deleted 2026-06-03 (commit 6ddf9db, honest-inventory triage) as a hand-synced
+duplicate of the live `_rematerialize_geojson` in infra/link_handler/main.py — these
+tests (and their `live_stack` fixture, which never had an implementation anywhere in
+the repo) were never repointed at the time, so they only ever errored at collection.
 """
 import json
-import pytest
+import os
+import sys
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
+
+import httpx
+import pytest
+
+REPO_ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(REPO_ROOT / "infra" / "link_handler"))
+sys.path.insert(0, str(REPO_ROOT))
+
+OXIGRAPH_URL = os.getenv("OXIGRAPH_URL", "http://localhost:7878").rstrip("/")
+if OXIGRAPH_URL.endswith("/query"):
+    OXIGRAPH_URL = OXIGRAPH_URL[: -len("/query")]
+
+
+def _oxigraph_alive() -> bool:
+    try:
+        r = httpx.post(
+            f"{OXIGRAPH_URL}/query",
+            content="ASK { ?s ?p ?o }",
+            headers={"Content-Type": "application/sparql-query",
+                     "Accept": "application/sparql-results+json"},
+            timeout=2.0,
+        )
+        return r.status_code == 200
+    except Exception:
+        return False
+
+
+class _OxigraphHandle:
+    def insert(self, uri: str, sparql: str) -> None:
+        r = httpx.post(
+            f"{OXIGRAPH_URL}/update",
+            content=sparql,
+            headers={"Content-Type": "application/sparql-update"},
+            timeout=10.0,
+        )
+        r.raise_for_status()
+
+
+class _LiveStack:
+    def __init__(self):
+        self.oxigraph = _OxigraphHandle()
+
+
+@pytest.fixture
+def live_stack(monkeypatch, tmp_path):
+    """Minimal live-stack handle: real Oxigraph + isolated SQLite snapshot store.
+
+    Skips if Oxigraph isn't reachable — this fixture never existed in the repo
+    before; these tests only ever errored at collection (`fixture 'live_stack'
+    not found`), so there is no prior behaviour to preserve, only the contract
+    described in the test docstrings.
+    """
+    if not _oxigraph_alive():
+        pytest.skip(f"Oxigraph not reachable at {OXIGRAPH_URL} — run `make up` first")
+    monkeypatch.setenv("SNAPSHOT_DB_PATH", str(tmp_path / "snapshot_store.db"))
+    yield _LiveStack()
+
+
+def _materialize_spaces() -> dict:
+    """Drive the live async materializer and return the GeoJSON dict.
+
+    Mirrors tests/test_canary_three_axis_e2e.py::_materialize_feature — see
+    that helper's docstring for why this indirection exists.
+    """
+    import asyncio
+
+    import main as link_handler_main
+
+    link_handler_main.OXIGRAPH_ENDPOINT = OXIGRAPH_URL
+    out_path = tempfile.mktemp(suffix=".geojson")
+    link_handler_main.GEOJSON_OUTPUT = out_path
+    try:
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        loop.run_until_complete(link_handler_main._rematerialize_geojson())
+        return json.loads(Path(out_path).read_text())
+    finally:
+        Path(out_path).unlink(missing_ok=True)
 
 
 @pytest.mark.live_integration
@@ -61,8 +150,7 @@ INSERT DATA {{
         )
 
         # Run materialization
-        from scripts.materialize_geojson import materialize_spaces
-        geojson = materialize_spaces()
+        geojson = _materialize_spaces()
 
         # Verify three tokens present in feature
         feature = next(
@@ -84,6 +172,15 @@ INSERT DATA {{
         assert "operational_state" in geojson["thresholds"]
 
     @pytest.mark.live_integration
+    @pytest.mark.skip(
+        reason="Tests a CLI contract (sys.exit(1) on zero-token space) that belonged "
+        "only to the deleted scripts/materialize_geojson.py standalone script. The "
+        "live _rematerialize_geojson() in infra/link_handler/main.py was deliberately "
+        "designed fail-silent for the async/heartbeat path per Story 3.9 Dev Notes "
+        "('fail-silent for async heartbeat, fail-loud for batch script') — it logs "
+        "THREE_TOKENS_MISSING and continues, it never raises/exits. There is no "
+        "longer a standalone batch entrypoint to assert a nonzero exit code against."
+    )
     def test_three_tokens_missing_exits_nonzero(self, live_stack):
         """Verify standalone script exits non-zero if all three tokens missing.
 
@@ -175,8 +272,7 @@ INSERT DATA {{
         )
 
         # Run materialization
-        from scripts.materialize_geojson import materialize_spaces
-        geojson = materialize_spaces()
+        geojson = _materialize_spaces()
 
         # Verify observed_at comes from SQLite
         feature = next(

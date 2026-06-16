@@ -51,25 +51,76 @@ services:
     command: serve --location /data --bind 0.0.0.0:7878
 
   # ─────────────────────────────────────────────────────────────────
-  # mak-agent — Nanobot NL bot (deferred to Epic 6)
-  # Build from source: https://github.com/HKUDS/nanobot
-  # Run as a SEPARATE compose project joining maps_of_making_internal.
-  # Do NOT embed here — kept as separate project for clean isolation.
+  # dendrite-postgres — DB for the self-hosted Matrix homeserver.
+  # Postgres (not SQLite) per Dendrite's own guidance: SQLite is
+  # single-writer and explicitly not recommended for federated deployments.
   # ─────────────────────────────────────────────────────────────────
-  # mak-agent:
-  #   image: hkuds/nanobot:local   # build from HKUDS/nanobot repo
-  #   container_name: maps-agent
-  #   restart: unless-stopped
-  #   networks:
-  #     - internal
-  #   environment:
-  #     - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
-  #     - OXIGRAPH_ENDPOINT=http://oxigraph:7878
-  #   volumes:
-  #     - ./nanobot-config:/root/.nanobot:z
-  #     - ./tasks:/app/tasks:z
-  #   depends_on:
-  #     - oxigraph
+  dendrite-postgres:
+    image: postgres:16-alpine
+    container_name: maps-dendrite-postgres
+    restart: unless-stopped
+    networks:
+      - internal
+    environment:
+      - POSTGRES_USER=dendrite
+      - POSTGRES_PASSWORD=${DENDRITE_DB_PASSWORD:?DENDRITE_DB_PASSWORD must be set in .env}
+      - POSTGRES_DATABASE=dendrite
+      - PGDATA=/var/lib/postgresql/data/pgdata   # avoid initdb choking on .gitkeep at the mount root
+    volumes:
+      - ../data/dendrite-postgres:/var/lib/postgresql/data
+
+  # ─────────────────────────────────────────────────────────────────
+  # dendrite — self-hosted Matrix homeserver for @bernard:mapsofmaking.org.
+  # Federated (not isolated): bots are ordinary Matrix accounts, so a
+  # federated homeserver lets the bot be invited into rooms on any
+  # federation-friendly server (matrix.org included) without redeploying
+  # it elsewhere. server_name "mapsofmaking.org" set at config-generation
+  # time (infra/dendrite/config/dendrite.yaml, gitignored — contains the
+  # signing key + DB password + registration_shared_secret).
+  # Joins `gateway` for federation (inbound :8448) + client API; nginx
+  # proxies/well-known delegation is a deploy-time step (see Dev Notes).
+  # ─────────────────────────────────────────────────────────────────
+  dendrite:
+    image: ghcr.io/element-hq/dendrite-monolith:latest
+    container_name: maps-dendrite
+    restart: unless-stopped
+    networks:
+      - gateway
+      - internal
+    volumes:
+      - ./dendrite/config:/etc/dendrite
+      - ../data/dendrite-media:/var/dendrite/media
+    command: --config /etc/dendrite/dendrite.yaml
+    expose:
+      - "8008"
+    depends_on:
+      dendrite-postgres:
+        condition: service_started
+
+  # ─────────────────────────────────────────────────────────────────
+  # mak-agent-bot — "Ask Bernard" channel-agnostic bot spine (Epic 6).
+  # ADR-017: folded into harness/ as a service in this compose project
+  # (no separate Nanobot project). Long-running Matrix sync-loop client,
+  # not an HTTP server — no port to expose.
+  # ─────────────────────────────────────────────────────────────────
+  mak-agent-bot:
+    build: ../harness
+    container_name: maps-agent-bot
+    restart: unless-stopped
+    networks:
+      - internal
+    environment:
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - OXIGRAPH_ENDPOINT=http://oxigraph:7878
+      - MATRIX_HOMESERVER=${MATRIX_HOMESERVER}
+      - MATRIX_USER_ID=${MATRIX_USER_ID}
+      - MATRIX_ACCESS_TOKEN=${MATRIX_ACCESS_TOKEN}
+      - MATRIX_DEVICE_ID=${MATRIX_DEVICE_ID}
+    depends_on:
+      oxigraph:
+        condition: service_started
+      dendrite:
+        condition: service_started
 
   # ─────────────────────────────────────────────────────────────────
   # mak-link-handler — FastAPI magic link validator & claim handler
@@ -106,4 +157,4 @@ networks:
   gateway:
     external: true        # shared with hetzner-gateway
   internal:
-    driver: bridge        # maps-nginx ↔ oxigraph, mak-agent, mak-link-handler
+    driver: bridge        # maps-nginx ↔ oxigraph, mak-agent-bot, mak-link-handler

@@ -1,5 +1,45 @@
 # Deferred Work
 
+## FIXED: orphaned test imports from materialize_geojson.py deletion (2026-06-16)
+
+**Status: resolved — quick fix done during Story 6.0 dev-story session, not a new deferred item.**
+
+`scripts/materialize_geojson.py` was deleted 2026-06-03 (commit `6ddf9db`, honest-inventory
+triage) as a hand-synced duplicate of the live `_rematerialize_geojson` in
+`infra/link_handler/main.py`. Two test files were never repointed at the time, so they had
+been silently failing at collection ever since (`ModuleNotFoundError`, `fixture 'live_stack'
+not found`) — these failures pre-dated and were unrelated to Story 6.0, surfaced only while
+running the full regression suite for that story.
+
+**Fix applied:**
+- `tests/test_canary_three_axis_e2e.py` and `tests/test_materializer_three_tokens.py` —
+  added a `_materialize_feature()` / `_materialize_spaces()` helper that drives the live async
+  `_rematerialize_geojson()` directly (monkeypatches `OXIGRAPH_ENDPOINT`/`GEOJSON_OUTPUT`,
+  runs via a preserved event loop — `asyncio.run()` was tried first but closes the loop and
+  broke a sibling test using the deprecated `get_event_loop()` pattern; switched to
+  `get_event_loop()`/`run_until_complete()` instead).
+- `tests/test_materializer_three_tokens.py` — implemented the `live_stack` fixture, which
+  never existed anywhere in the repo (these tests had *always* errored at collection, even
+  before the script deletion — confirmed via full git history search).
+- `test_three_tokens_missing_exits_nonzero` — explicitly `@pytest.mark.skip`'d. It asserts a
+  `sys.exit(1)` CLI contract that only ever belonged to the deleted standalone script; the
+  live async path is deliberately fail-silent per Story 3.9 Dev Notes ("fail-silent for async
+  heartbeat, fail-loud for batch script"). No replacement CLI exists to assert against.
+
+**Net result:** all collection-time crashes eliminated (`9 failed, 85 passed, 3 errors` →
+`8 failed, 88 passed, 1 skipped`). **Not fixed, left as pre-existing/out-of-scope** (now
+visible for the first time since collection used to fail before these could even run):
+- `test_axis_b_ages_independently_when_content_unchanged`,
+  `test_axis_c_flips_independently_on_open_now_change` — the live materializer iterates the
+  full ~600-space Oxigraph dataset, too slow for these tests' sub-2-second timing thresholds.
+- `test_three_tokens_all_present`, `test_observed_at_from_sqlite_not_oxigraph` — Oxigraph
+  canonicalizes `xsd:dateTime` literals (precision/timezone notation) on storage, breaking
+  these tests' string-equality assertions against the value as originally written.
+
+If picked up again: the timing tests need either a scoped/filtered materialization path or a
+relaxed threshold; the dateTime tests need comparison via parsed datetime equality, not string
+equality. → revisit opportunistically, not blocking.
+
 ## PARKED (needs fresh eyes): Axis-B-as-tombstone contradiction (2026-06-11, updated 2026-06-15)
 
 **Status: acute symptom resolved — structural design question still open. Do NOT change precedence or death-word semantics until model is settled.**

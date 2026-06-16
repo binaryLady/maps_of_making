@@ -35,6 +35,17 @@ services:
     volumes:
       - ../data/oxigraph:/data:z
 
+  dendrite:
+    ports:
+      - "8008:8008"   # client API reachable for a local Matrix client / curl, federation untested locally
+    volumes:
+      - ./dendrite/config:/etc/dendrite:z
+      - ../data/dendrite-media:/var/dendrite/media:z
+
+  dendrite-postgres:
+    volumes:
+      - ../data/dendrite-postgres:/var/lib/postgresql/data:z
+
 networks:
   gateway:
     external: false   # override: create locally instead of requiring hetzner-gateway

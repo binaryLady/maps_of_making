@@ -6,7 +6,13 @@ import structlog
 log = structlog.get_logger()
 
 
-async def complete(prompt: str) -> tuple[str, str, int]:
+DEFAULT_MODEL = "google/gemma-3-12b-it"
+
+# Set from config.yaml bot.model at startup; falls back to DEFAULT_MODEL.
+MODEL = DEFAULT_MODEL
+
+
+async def complete(prompt: str, model: str | None = None, max_tokens: int = 64) -> tuple[str, str, int]:
     """One LLM completion via OpenRouter. Returns (text, model_used, latency_ms)."""
     api_key = os.environ.get("OPENROUTER_API_KEY")
     if not api_key:
@@ -22,9 +28,9 @@ async def complete(prompt: str) -> tuple[str, str, int]:
     )
     t0 = time.monotonic()
     resp = await client.chat.completions.create(
-        model="minimax/minimax-m2.1",
+        model=model or MODEL,
         messages=[{"role": "user", "content": prompt}],
-        max_tokens=64,
+        max_tokens=max_tokens,
     )
     latency = int((time.monotonic() - t0) * 1000)
     text = resp.choices[0].message.content or ""

@@ -177,9 +177,37 @@ def clean_space():
 
 
 def _materialize_feature() -> tuple[dict, dict]:
-    """Run the materializer and return (feature_props, thresholds_block)."""
-    from scripts.materialize_geojson import materialize_spaces
-    geojson = materialize_spaces()
+    """Run the live materializer and return (feature_props, thresholds_block).
+
+    scripts/materialize_geojson.py was deleted 2026-06-03 (commit 6ddf9db,
+    honest-inventory triage) as a hand-synced duplicate of the live
+    `_rematerialize_geojson` in infra/link_handler/main.py — this test was
+    never repointed at the time. Drive the real async materializer directly,
+    against a tmp GeoJSON output path, instead.
+    """
+    import asyncio
+    import tempfile
+
+    import main as link_handler_main
+
+    link_handler_main.OXIGRAPH_ENDPOINT = OXIGRAPH_URL
+    out_path = tempfile.mktemp(suffix=".geojson")
+    link_handler_main.GEOJSON_OUTPUT = out_path
+    try:
+        # asyncio.run() (not used here) closes its loop on exit, which breaks the
+        # deprecated asyncio.get_event_loop() pattern other tests in this module
+        # rely on (e.g. test_backfill_stamps_updated_at_once_on_unchanged_content)
+        # when run later in the same session — keep a loop around instead.
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        loop.run_until_complete(link_handler_main._rematerialize_geojson())
+        geojson = json.loads(Path(out_path).read_text())
+    finally:
+        Path(out_path).unlink(missing_ok=True)
+
     feat = next((f for f in geojson["features"] if f["properties"]["id"] == SPACE_ID), None)
     assert feat is not None, f"{SPACE_ID} missing from GeoJSON"
     return feat["properties"], geojson["thresholds"]

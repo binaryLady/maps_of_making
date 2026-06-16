@@ -1,0 +1,8 @@
+# Bernard's bot-side voice strings (harness/). Full voice audit is Story 6.5 —
+# this file only carries the graceful-ack path needed for `!mom ping` /
+# `unknown` intent. Register: dry, terse, no exclamation marks, never a raw
+# error/status code, never "I cannot help". [bernard-bible.md §3]
+
+bot:
+  ping_ack: "Still on watch. Send me something to do."
+  unknown_ack: "Not sure what you're after there — try asking about a space, or registering one."

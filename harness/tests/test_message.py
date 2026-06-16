@@ -1,0 +1,20 @@
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from message import Message
+
+
+def test_message_has_exactly_five_fields():
+    fields = {f.name for f in Message.__dataclass_fields__.values()}
+    assert fields == {"text", "user_id", "room_id", "platform", "raw"}
+
+
+def test_message_normalises_matrix_event():
+    raw_event = object()
+    message = Message(text="!mom ping", user_id="@nicolas:matrix.org", room_id="!abc:matrix.org",
+                       platform="matrix", raw=raw_event)
+    assert message.text == "!mom ping"
+    assert message.platform == "matrix"
+    assert message.raw is raw_event
