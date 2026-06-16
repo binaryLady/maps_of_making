@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-01
-last_updated: "2026-06-16 (Story 6.0 bot-infrastructure code review → done; Epic 6 restructure → Ask Bernard 6.0-6.6; Epic 9 9.6/9.7/9.9/9.10 superseded; sprint-change-proposal-2026-06-16.md)"
+last_updated: "2026-06-16 (Story 6.1 deploy-key-provisioning created → ready-for-dev; Story 6.0 bot-infrastructure code review → done; Epic 6 restructure → Ask Bernard 6.0-6.6; Epic 9 9.6/9.7/9.9/9.10 superseded; sprint-change-proposal-2026-06-16.md)"
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
@@ -184,7 +184,7 @@ development_status:
   # write fields via the 6.2 write skillset. Bot is read-only on Oxigraph; pipeline is the only writer.
   epic-6: in-progress
   6-0-bot-infrastructure-adapters-intent-router-bernard-config: done
-  6-1-deploy-key-provisioning-ssh-git-access: backlog
+  6-1-deploy-key-provisioning-ssh-git-access: ready-for-dev
   6-2-write-skillset-json-patch-git-commit-permission-model: backlog
   6-3-read-query-command-set-isochrone-tool: backlog
   6-4-nl-sparql-natural-language-iop-ontology: backlog
