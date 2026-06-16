@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-01
-last_updated: "2026-06-16 (Epic 6 restructure → Ask Bernard 6.0-6.6; Epic 9 9.6/9.7/9.9/9.10 superseded; sprint-change-proposal-2026-06-16.md)"
+last_updated: "2026-06-16 (Story 6.0 bot-infrastructure context created → ready-for-dev; Epic 6 restructure → Ask Bernard 6.0-6.6; Epic 9 9.6/9.7/9.9/9.10 superseded; sprint-change-proposal-2026-06-16.md)"
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
