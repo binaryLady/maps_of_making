@@ -68,6 +68,11 @@ services:
       - PGDATA=/var/lib/postgresql/data/pgdata   # avoid initdb choking on .gitkeep at the mount root
     volumes:
       - ../data/dendrite-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dendrite -d dendrite"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   # ─────────────────────────────────────────────────────────────────
   # dendrite — self-hosted Matrix homeserver for @bernard:mapsofmaking.org.
@@ -95,7 +100,7 @@ services:
       - "8008"
     depends_on:
       dendrite-postgres:
-        condition: service_started
+        condition: service_healthy
 
   # ─────────────────────────────────────────────────────────────────
   # mak-agent-bot — "Ask Bernard" channel-agnostic bot spine (Epic 6).

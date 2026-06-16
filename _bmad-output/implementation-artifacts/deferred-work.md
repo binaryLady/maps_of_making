@@ -479,3 +479,13 @@ Generating a real openfab.jsonld against the `space-jsonld-generator` skill expo
 ## Deferred from: review of spec-fix-updated-unknown-liveness (2026-06-11)
 
 - **`_updated_at_absent` ASK fires on every unchanged-content heartbeat cycle forever.** After the one-time backfill has fired, the predicate is present and the write is skipped, but the ASK query still executes each cycle for every space that never changes content. At demo scale (hundreds of spaces) this is negligible; at production scale it adds one SPARQL round-trip per unchanged space per 10-min tick. Fix: cache a per-uid "backfill done" flag in snapshot_store (a nullable column) so the ASK is skipped once the backfill is confirmed. `pipeline.py` / `snapshot_store.py`. → Story 4.x (Epic 4 pipeline work).
+
+## Deferred from: code review of story-6.0 (2026-06-16)
+
+- No allowlist / access control on `!mom` commands — any Matrix user on any federated server can invite/message the bot, and every message triggers a billed LLM completion call. `harness/matrix_adapter.py`, `harness/main_matrix.py`. Deferred: out of scope for Story 6.0 spine; revisit before any public/federated rollout.
+- Router's `unknown_ack()` response is identical for recognized-but-unimplemented intents (`write`/`query`/`nl_discovery`) and genuinely `unknown` ones — misleading wording, but acceptable until Epic 6.1+ skillsets exist. `harness/router.py`. → Epic 6.1+.
+- No automated tests for `router.py`, `matrix_adapter.py`, `main_matrix.py`, or `bernard.py` — only `Message` dataclass and `intent_classifier` are covered. `harness/tests/`.
+- `config.py`/`bernard.py` module-level caching (`_config`/`_voice`) has no concurrency guard against concurrent first-call races. `harness/config.py`, `harness/bernard.py`.
+- Dendrite Postgres credentials are split across `.env` (`DENDRITE_DB_PASSWORD`) and a gitignored `dendrite.yaml`, with no documented sync process. `infra/docker-compose.yml`.
+- No regression test added for either bug fixed in Story 6.0's commit (env-var vs config.yaml precedence, bogus `gemma-4-12b-it` model id) — could silently regress. `harness/main_matrix.py`, `harness/config.py`.
+- Malformed YAML in `config.yaml`/`bernard_voice.yaml` crashes startup uncaught instead of failing gracefully. `harness/config.py`, `harness/bernard.py`.

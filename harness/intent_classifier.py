@@ -24,7 +24,7 @@ async def classify(text: str, session_id: str = "") -> str:
     """Classify a message into one of INTENTS via one compact LLM call."""
     bound = log.bind(session_id=session_id)
     prompt = CLASSIFIER_PROMPT.format(text=text)
-    raw_text, model, latency_ms = await llm_client.complete(prompt)
+    raw_text, model, latency_ms = await llm_client.complete(prompt, session_id=session_id)
     intent = raw_text.strip().lower()
     if intent not in INTENTS:
         intent = "unknown"

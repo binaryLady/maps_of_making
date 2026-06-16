@@ -1,6 +1,6 @@
 # Story 6.0: Bot Infrastructure — Adapters, Intent Router, Bernard Config
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -61,6 +61,29 @@ so that every later Epic 6 skillset plugs into one transport-independent spine w
 - [x] **Task 8 — Done gate** (AC: all)
   - [x] Operator confirmation: `!mom ping` in a real Matrix room returns a Bernard-voice response within 5 s. — **CONFIRMED live, 2026-06-16.** Self-hosted Dendrite homeserver stood up (`@bernard:mapsofmaking.org`); `!mom ping` sent from a second test account, bot received it via real `sync_forever()`, classified `unknown`, and Bernard's ack landed back in the room — round trip ~1-2s. See Completion Notes for the homeserver build and two bugs fixed along the way.
 
+### Review Findings
+
+- [x] [Review][Defer] No allowlist / access control on `!mom` commands — any Matrix user on any federated server can invite/message the bot, and every message triggers an LLM completion call (cost + spam exposure). [harness/matrix_adapter.py, harness/main_matrix.py] — deferred, out of scope for Story 6.0 spine
+- [x] [Review][Resolved] Model swap deviates from spec's two authorized options — Dev Notes' "hard constraint" said Gemma 4 12B via OpenRouter or Haiku as fallback; implementation uses `google/gemma-3-12b-it` since no Gemma-4-12B variant exists on OpenRouter. **Resolved:** Gemma 3 12B accepted as the new model constraint; Dev Notes updated below. [harness/config.yaml, harness/llm_client.py]
+
+- [x] [Review][Patch] Fire-and-forget `asyncio.create_task` in the message loop has no exception handler — unhandled exceptions in `handle_message` are silently swallowed. [harness/main_matrix.py]
+- [x] [Review][Patch] No timeout on the OpenRouter LLM call — a hung request blocks the handling task forever with no caller-side fallback. [harness/llm_client.py]
+- [x] [Review][Patch] `dendrite` service `depends_on: dendrite-postgres` uses `condition: service_started`, not `service_healthy` — Dendrite can race Postgres on first boot. [infra/docker-compose.yml]
+- [x] [Review][Patch] `MATRIX_DEVICE_ID` defaults to empty string instead of `None` when unset, passed straight into `MatrixAdapter`/`AsyncClient` — same class of implicit-default bug the commit's two fixes were patching. [harness/main_matrix.py]
+- [x] [Review][Patch] Test helpers use `tempfile.mktemp()`, which stdlib docs flag as insecure/deprecated (race between path generation and file creation) — swap to `NamedTemporaryFile`/`mkstemp`. [tests/test_materializer_three_tokens.py, tests/test_canary_three_axis_e2e.py]
+- [x] [Review][Patch] `_on_message` filters self-messages via exact `event.sender == self.client.user_id`, with no case normalization, and `matrix_adapter.send()` duck-types `context` as either a `Message` or a bare room-id string via `hasattr` with the string path untested — collapse to one explicit interface. [harness/matrix_adapter.py]
+- [x] [Review][Patch] `adapter.start()` is called outside the `try` block in `main()` — if it raises, `adapter.close()` in the `finally` is never reached and cleanup is skipped. [harness/main_matrix.py]
+- [x] [Review][Patch] The main receive loop has no `try`/`except` around `await adapter.receive()` — an exception there kills the whole bot process instead of being logged and retried. [harness/main_matrix.py]
+- [x] [Review][Patch] `resp.choices[0]` is accessed without checking for an empty `choices` list — an `IndexError` crashes `classify()` if the API returns no choices. [harness/llm_client.py]
+- [x] [Review][Patch] `llm_client.complete()`'s `log.info("llm.completed", ...)` is not bound with `session_id`, breaking full-stack trace correlation that AC9 calls for. [harness/llm_client.py]
+
+- [x] [Review][Defer] Router's `unknown_ack()` response is identical for recognized-but-unimplemented intents (`write`/`query`/`nl_discovery`) and genuinely `unknown` ones — misleading wording, but acceptable until Epic 6.1+ skillsets exist. [harness/router.py] — deferred, pre-existing scope (Epic 6.1+ skills not yet built)
+- [x] [Review][Defer] No automated tests for `router.py`, `matrix_adapter.py`, `main_matrix.py`, or `bernard.py` — only `Message` dataclass and `intent_classifier` are covered. [harness/tests/] — deferred, follow-up coverage work
+- [x] [Review][Defer] `config.py`/`bernard.py` module-level caching (`_config`/`_voice`) has no concurrency guard against concurrent first-call races. [harness/config.py, harness/bernard.py] — deferred, theoretical race not yet exercised
+- [x] [Review][Defer] Dendrite Postgres credentials are split across `.env` (`DENDRITE_DB_PASSWORD`) and a gitignored `dendrite.yaml` with no documented sync process. [infra/docker-compose.yml] — deferred, infra/ops follow-up
+- [x] [Review][Defer] No regression test added for either bug fixed in this commit (env-var vs config.yaml precedence, bogus `gemma-4-12b-it` model id) — could silently regress. [harness/main_matrix.py, harness/config.py] — deferred, test debt
+- [x] [Review][Defer] Malformed YAML in `config.yaml`/`bernard_voice.yaml` crashes startup uncaught instead of failing gracefully. [harness/config.py, harness/bernard.py] — deferred, low likelihood
+
 ## Dev Notes
 
 ### What this story is (and is NOT)
@@ -74,7 +97,7 @@ so that every later Epic 6 skillset plugs into one transport-independent spine w
 - `harness/requirements.txt` — `discord.py`, `openai`, `httpx`, `structlog`, `python-dotenv`. Add `matrix-nio` (only truly-new dep for 6.0) + `pyyaml`.
 
 ### Model policy (hard constraint)
-Gemma 4 12B via OpenRouter for classification + formatting (slot-filling, not reasoning; **Haiku acceptable fallback**). Do NOT use a heavier model for routing/formatting. Sonnet (`temperature=0.0`) is reserved for NL→SPARQL in 6.4 only. [Source: architecture.md#ADR-017 "Models"; handoff §LLM]
+Gemma 3 12B via OpenRouter for classification + formatting (slot-filling, not reasoning; **Haiku acceptable fallback**). **Updated 2026-06-16 (code review of Story 6.0):** no Gemma 4 12B variant exists on OpenRouter, so `google/gemma-3-12b-it` is the accepted model — confirmed as the new constraint, not a stopgap. Do NOT use a heavier model for routing/formatting. Sonnet (`temperature=0.0`) is reserved for NL→SPARQL in 6.4 only. [Source: architecture.md#ADR-017 "Models"; handoff §LLM]
 
 ### Compose / network reconciliation (RESOLVED — AC 2 wording is a Nanobot-era leftover)
 The AC/handoff say join `maps_of_making_internal` with `external: true`. **Traced:** that is the *same* network as the `internal:` declared in `infra/docker-compose.yml`. The file sets `name: maps_of_making` (line 1) and declares `internal: {driver: bridge}` (lines 108–109); Compose prefixes the project name, so at runtime `internal` *is* `maps_of_making_internal`. The literal `maps_of_making_internal` appears exactly once in the repo — line 56, the **commented-out Nanobot block**, describing Nanobot as a *separate compose project* joining from outside via `external: true`.

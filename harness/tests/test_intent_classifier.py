@@ -20,7 +20,7 @@ import llm_client
     ("", "unknown"),              # empty completion
 ])
 async def test_classify_always_returns_one_of_four_intents(monkeypatch, raw_reply, expected):
-    async def fake_complete(prompt, model=None, max_tokens=64):
+    async def fake_complete(prompt, model=None, max_tokens=64, session_id=""):
         return raw_reply, "fake-model", 1
 
     monkeypatch.setattr(llm_client, "complete", fake_complete)

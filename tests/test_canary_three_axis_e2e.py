@@ -191,7 +191,8 @@ def _materialize_feature() -> tuple[dict, dict]:
     import main as link_handler_main
 
     link_handler_main.OXIGRAPH_ENDPOINT = OXIGRAPH_URL
-    out_path = tempfile.mktemp(suffix=".geojson")
+    fd, out_path = tempfile.mkstemp(suffix=".geojson")
+    os.close(fd)
     link_handler_main.GEOJSON_OUTPUT = out_path
     try:
         # asyncio.run() (not used here) closes its loop on exit, which breaks the

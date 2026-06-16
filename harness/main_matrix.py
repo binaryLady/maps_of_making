@@ -20,6 +20,12 @@ log = structlog.get_logger()
 COMMAND_PREFIX = "!mom"
 
 
+def _log_task_exception(task: asyncio.Task) -> None:
+    exc = task.exception() if not task.cancelled() else None
+    if exc:
+        log.error("handle_message.failed", exc_info=exc)
+
+
 async def handle_message(adapter: MatrixAdapter, message) -> None:
     if not message.text.startswith(COMMAND_PREFIX):
         return
@@ -45,20 +51,25 @@ async def main() -> None:
     homeserver = os.environ.get("MATRIX_HOMESERVER") or bot_cfg.get("matrix_homeserver")
     user_id = os.environ.get("MATRIX_USER_ID")
     access_token = os.environ.get("MATRIX_ACCESS_TOKEN")
-    device_id = os.environ.get("MATRIX_DEVICE_ID", "")
+    device_id = os.environ.get("MATRIX_DEVICE_ID") or None
     if not (homeserver and user_id and access_token):
         raise ValueError("MATRIX_HOMESERVER/MATRIX_USER_ID/MATRIX_ACCESS_TOKEN must be set in .env or environment")
 
     sparql_client.OXIGRAPH_ENDPOINT = os.environ.get("OXIGRAPH_ENDPOINT", "http://localhost:7878")
 
     adapter = MatrixAdapter(homeserver, user_id, access_token, device_id)
-    await adapter.start()
-    log.info("bot.ready", platform="matrix", model=llm_client.MODEL)
-
     try:
+        await adapter.start()
+        log.info("bot.ready", platform="matrix", model=llm_client.MODEL)
+
         while True:
-            message = await adapter.receive()
-            asyncio.create_task(handle_message(adapter, message))
+            try:
+                message = await adapter.receive()
+            except Exception:
+                log.exception("adapter.receive_failed")
+                continue
+            task = asyncio.create_task(handle_message(adapter, message))
+            task.add_done_callback(_log_task_exception)
     finally:
         await adapter.close()
 
