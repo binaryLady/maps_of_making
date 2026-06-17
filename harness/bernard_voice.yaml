@@ -8,7 +8,7 @@ bot:
   unknown_ack: "Not sure what you're after there — try asking about a space, or registering one."
   link_tutorial: "Here's your key.\n\n{tutorial}"
   link_failed_ack: "I couldn't generate a key for that space — check the space slug is registered, then try again."
-  no_deploy_key_ack: "I can read your profile but I can't edit it yet — run `!mom link {space}` first so I get write access."
+  no_deploy_key_ack: "I can read your profile but I can't edit it yet — run `!mom link` first so I get write access."
   update_failed_ack: "That update didn't go through — check the field path and value, then try again."
   update_succeeded_ack: "Done. Committed as {sha}."
 

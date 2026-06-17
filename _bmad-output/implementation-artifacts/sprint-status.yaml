@@ -1,5 +1,5 @@
 # generated: 2026-05-01
-# last_updated: 2026-06-16 (Story 6.1 deploy-key-provisioning-ssh-git-access → done, code review patches applied)
+# last_updated: 2026-06-17 (Story 6.2 write-skillset → done, 6 code review patches applied)
 # project: maps_of_making
 # project_key: NOKEY
 # tracking_system: file-system
@@ -185,7 +185,7 @@ development_status:
   epic-6: in-progress
   6-0-bot-infrastructure-adapters-intent-router-bernard-config: done
   6-1-deploy-key-provisioning-ssh-git-access: done  # 2026-06-16: Task 8 live done gate confirmed; code review found 6 patch + 6 defer findings, all 6 patches applied (auth header, SPARQL escaping, per-space asyncio locking, partial-key-state fix, patch_json guard, public key accessor); 29 tests passing
-  6-2-write-skillset-json-patch-git-commit-permission-model: review
+  6-2-write-skillset-json-patch-git-commit-permission-model: done  # 2026-06-17: code review complete — 6 patches applied (status gate, permission fall-through, heartbeat json guard, verify_setup short-circuit, format injection, no_deploy_key_ack copy fix); 34+14 tests passing
   6-3-read-query-command-set-isochrone-tool: backlog
   6-4-nl-sparql-natural-language-iop-ontology: backlog
   6-5-graceful-failure-bernard-voice-pass: backlog

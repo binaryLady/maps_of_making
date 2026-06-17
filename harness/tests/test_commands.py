@@ -417,7 +417,8 @@ async def test_status_verb_happy_path(monkeypatch):
     monkeypatch.setattr(git_ops, "resolve_space_for_room", fake_resolve)
     monkeypatch.setattr(git_ops, "verify_setup", fake_verify)
 
-    result = await commands.try_handle("status", "@u:x", "!room:x", "sid")
+    ctx = _make_context(power_level=100)
+    result = await commands.try_handle("status", "@u:x", "!room:x", "sid", context=ctx)
     assert "Remote" in result
     assert "main" in result
 
@@ -440,7 +441,8 @@ async def test_status_verb_error_path(monkeypatch):
     monkeypatch.setattr(git_ops, "resolve_space_for_room", fake_resolve)
     monkeypatch.setattr(git_ops, "verify_setup", fake_verify)
 
-    result = await commands.try_handle("status", "@u:x", "!room:x", "sid")
+    ctx = _make_context(power_level=100)
+    result = await commands.try_handle("status", "@u:x", "!room:x", "sid", context=ctx)
     assert "issue" in result.lower() or "!mom link" in result
 
 

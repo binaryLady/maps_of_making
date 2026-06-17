@@ -2,7 +2,7 @@
 
 **Epic:** 6 — Bernard Bot (one voice, two skillsets)
 **Story ID:** 6.2
-**Status:** review
+**Status:** done
 
 ---
 
@@ -495,6 +495,16 @@ claude-sonnet-4-6
 - `infra/bot/test_git_ops.py` — added 5 `verify_setup` tests (happy path + 4 failure modes)
 - `infra/bot/bot_keys.py` — shim: loads `infra/link_handler/bot_keys.py` via importlib for local tests
 - `infra/bot/schema.py` — shim: loads `infra/link_handler/schema.py` via importlib for local tests
+
+### Review Findings
+
+- [x] [Review][Decision] `!mom status` — **gated: power_level ≥ 100** — AC5 says "coordinator types `!mom status`"; gating confirms permission model is consistently enforced; useful PoC that gating works end-to-end [harness/commands.py:_handle_status]
+- [x] [Review][Patch] `no_deploy_key_ack` YAML still has `{space}` placeholder — fixed: removed `{space}` from YAML string [harness/bernard_voice.yaml:11]
+- [x] [Review][Patch] `_handle_update` permission check fall-through — fixed: added `return bernard.update_failed_ack()` as catch-all after known reasons [harness/commands.py:_handle_update]
+- [x] [Review][Patch] `_trigger_heartbeat` `.json()` on 429 response unguarded — fixed: wrapped in try/except, defaults retry to 60s [harness/commands.py:_trigger_heartbeat]
+- [x] [Review][Patch] `verify_setup` Check 3 runs when Check 2 (key absent) is False — fixed: early return after Check 2 failure, sets `checks["remote"]=False` with clear skip message [infra/bot/git_ops.py:verify_setup]
+- [x] [Review][Patch] `status_report` format injection risk — fixed: error block uses `.replace()` instead of `str.format()` to avoid interpreting `{...}` in URL-derived error strings [harness/bernard.py:status_report]
+- [x] [Review][Defer] `COORDINATOR_ONLY_FIELDS` not defined as explicit guard — spec mentions `frozenset({"space.name", "url"})` as a separation sentinel; omitted from implementation; safe today since those fields aren't in `ALLOWED_FIELDS`, but no guard prevents future accidental promotion — deferred, not load-bearing for current PoC
 
 ### Change Log
 - 2026-06-17: Story 6.2 implemented — permission model (power_level gate + field whitelist), CDN-aware two-message commit flow (immediate ack + background poll), open/close/status verbs, verify_setup, field value validation. 32 new tests pass, 0 regressions.

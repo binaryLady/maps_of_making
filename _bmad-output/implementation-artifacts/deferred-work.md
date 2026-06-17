@@ -2,6 +2,10 @@
 
 ## Deferred from: code review of story-6.1 (2026-06-16)
 
+## Deferred from: code review of story-6.2 (2026-06-17)
+
+- `COORDINATOR_ONLY_FIELDS` not defined as explicit guard — spec names `frozenset({"space.name", "url"})` as a separation sentinel; safe today since those fields aren't in `ALLOWED_FIELDS`, but no code prevents future accidental promotion. Add guard when `ALLOWED_FIELDS` is next modified.
+
 - `StrictHostKeyChecking=no` / no `IdentitiesOnly=yes` on `git_ops.py`'s SSH calls — specified verbatim in Story 6.1's own Dev Notes crypto snippet; weakens host-key verification for the bot's git operations (MITM risk), revisit if/when a known_hosts pinning strategy is adopted.
 - `!mom update` failure messages collapse `NoEndpointError`/`UnsupportedHostError`/schema-validation/git-SSH failures into one generic `update_failed_ack()` — hides the real cause already present in logs. Self-acknowledged in story Completion Notes; candidate for Epic 6.5 (graceful failure / Bernard voice pass) or 6.2.
 - GitHub raw-URL regex in `_repo_remote_for` handles `refs/heads/{branch}/{path}` but not `refs/tags/{tag}/{path}` — consistent with the story's documented "GitHub/Gitea best-effort, untested" scope; will need a regex case if/when a tag-based raw URL is registered.

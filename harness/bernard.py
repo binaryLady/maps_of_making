@@ -103,10 +103,10 @@ def status_report(verify: dict) -> str:
             branch=verify.get("branch", ""),
             file_path=verify.get("file_path", ""),
         )
-    errors = "\n".join(f"• {e}" for e in verify.get("errors", []))
-    return _bot(
+    error_list = verify.get("errors", [])
+    errors = "\n".join(f"• {e}" for e in error_list)
+    template = load_voice().get("bot", {}).get(
         "status_error_ack",
-        "Setup check found {n} issue(s):\n{errors}",
-        n=len(verify.get("errors", [])),
-        errors=errors,
+        "Setup check found {n} issue(s):\n{errors}\nRun `!mom link` to fix the key or re-register with the correct URL.",
     )
+    return template.replace("{n}", str(len(error_list))).replace("{errors}", errors)

@@ -265,6 +265,10 @@ async def verify_setup(space_id: str) -> dict:
     result["checks"]["key"] = bot_keys.key_exists(space_id)
     if not result["checks"]["key"]:
         result["errors"].append("No deploy key found. Run `!mom link` to generate one.")
+        result["checks"]["remote"] = False
+        result["errors"].append("Remote check skipped — no deploy key.")
+        result["ok"] = False
+        return result
 
     # Check 3: git ls-remote (proves SSH auth + branch exists; read-only, no write proof)
     try:

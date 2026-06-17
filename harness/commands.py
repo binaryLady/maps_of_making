@@ -101,7 +101,10 @@ async def _trigger_heartbeat(space_id: str) -> str:
         if r.status_code == 200:
             return "Endpoint refresh triggered."
         if r.status_code == 429:
-            retry = r.json().get("retry_after_seconds", 60)
+            try:
+                retry = r.json().get("retry_after_seconds", 60)
+            except Exception:
+                retry = 60
             return f"A refresh was already triggered recently — re-ingest will complete within {retry}s."
         return f"Endpoint refresh returned {r.status_code} — map will re-ingest on next scheduled cycle (every ~60s+)."
     except httpx.HTTPError as e:
@@ -209,6 +212,7 @@ async def _handle_update(field_path: str, value: str, authorized_by: str, room_i
             return bernard.read_only_ack()
         if reason == "field_not_allowed":
             return bernard.field_not_allowed_ack(sorted(ALLOWED_FIELDS))
+        return bernard.update_failed_ack()
 
     valid, err = _validate_value(field_path, value)
     if not valid:
@@ -265,6 +269,8 @@ async def _handle_open_close(field_path: str, value: str, authorized_by: str, ro
 
 
 async def _handle_status(room_id: str, power_level: int, bound) -> str:
+    if power_level < 100:
+        return bernard.read_only_ack()
     try:
         space_id = await git_ops.resolve_space_for_room(room_id)
     except NoEndpointError:
