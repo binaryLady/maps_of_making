@@ -935,7 +935,7 @@ function glyphColorExpr(surface) {
     if (kind !== 'seeded') {
       const dotClass = ['aging', 'zombie'].includes(kind) ? 'sp-dot sp-dot-stale'
         : kind === 'broken' ? 'sp-dot sp-dot-error' : 'sp-dot';
-      const statusPhrases = { open: 'Open right now', shut: 'Closed right now', confirmed: 'Claimed', broken: 'Endpoint issue', aging: 'Going quiet', zombie: 'Unreachable', dead: 'Permanently closed' };
+      const statusPhrases = { open: 'Reports open now', shut: 'Reports close now', confirmed: 'Claimed', broken: 'Endpoint issue', aging: 'Going quiet', zombie: 'Unreachable', dead: 'Permanently closed' };
       const phrase = statusPhrases[kind] || kind;
       const lastMs = _lastActivity(s);
       body.appendChild(el('div', { class: 'sp-status-bar' }, [

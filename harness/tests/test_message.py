@@ -6,9 +6,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from message import Message
 
 
-def test_message_has_exactly_five_fields():
+def test_message_fields():
     fields = {f.name for f in Message.__dataclass_fields__.values()}
-    assert fields == {"text", "user_id", "room_id", "platform", "raw"}
+    assert fields == {"text", "user_id", "room_id", "platform", "raw", "power_level"}
 
 
 def test_message_normalises_matrix_event():

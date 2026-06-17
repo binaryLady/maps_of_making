@@ -185,7 +185,7 @@ development_status:
   epic-6: in-progress
   6-0-bot-infrastructure-adapters-intent-router-bernard-config: done
   6-1-deploy-key-provisioning-ssh-git-access: done  # 2026-06-16: Task 8 live done gate confirmed; code review found 6 patch + 6 defer findings, all 6 patches applied (auth header, SPARQL escaping, per-space asyncio locking, partial-key-state fix, patch_json guard, public key accessor); 29 tests passing
-  6-2-write-skillset-json-patch-git-commit-permission-model: ready-for-dev
+  6-2-write-skillset-json-patch-git-commit-permission-model: review
   6-3-read-query-command-set-isochrone-tool: backlog
   6-4-nl-sparql-natural-language-iop-ontology: backlog
   6-5-graceful-failure-bernard-voice-pass: backlog

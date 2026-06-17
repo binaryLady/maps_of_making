@@ -80,8 +80,8 @@ trust a claim from a source we can't reach.
 | `zombie` | 🧟 | emoji only | content silent past zombie threshold |
 | `aging` | ⚠️ | emoji only | content going stale |
 | `broken` | ❌ | red circle + X| endpoint unreachable / stale beyond broken |
-| `open` | 🟢 | green circle + pulse ring | reachable, fresh, declared open |
-| `shut` | ⚫ | black circle | reachable, fresh, declared closed-right-now |
+| `open` | 🟢 | bright green circle + pulse ring | reachable, fresh, declared open |
+| `shut` | 🟢 | deep green circle | reachable, fresh, declared closed-right-now |
 | `confirmed` | 🔵 | blue circle | reachable, fresh, opted out of open/close |
 | `seeded` | ⚪ | grey circle | known space, no tokens yet (never fetched) |
 

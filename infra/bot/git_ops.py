@@ -231,6 +231,70 @@ async def patch_json(space_id: str, field_path: str, value) -> dict:
         return data
 
 
+def _ssh_cmd(space_id: str) -> str:
+    """Build GIT_SSH_COMMAND value from the space's decrypted key in a tempfile.
+    Caller is responsible for cleanup (use _run_git_ssh for the common case)."""
+    priv_pem = bot_keys.load_private_key(space_id)
+    tmp = tempfile.NamedTemporaryFile(delete=False)
+    tmp.write(priv_pem)
+    tmp.close()
+    os.chmod(tmp.name, 0o600)
+    return f"ssh -i {tmp.name} -o StrictHostKeyChecking=no"
+
+
+async def verify_setup(space_id: str) -> dict:
+    """Non-destructive setup check. Runs automatically after !mom link and on !mom status."""
+    result: dict = {"ok": False, "checks": {}, "remote": None, "branch": None, "file_path": None, "errors": []}
+
+    # Check 1: endpoint URL registered and parseable
+    try:
+        endpoint_url = await _lookup_endpoint_url(space_id)
+        remote, branch, file_path = _repo_remote_for(endpoint_url)
+        result["checks"]["url"] = True
+        result.update(remote=remote, branch=branch, file_path=file_path)
+    except NoEndpointError:
+        result["checks"]["url"] = False
+        result["errors"].append("No endpoint URL registered. Run `!mom link` first.")
+        return result
+    except UnsupportedHostError as e:
+        result["checks"]["url"] = False
+        result["errors"].append(f"Endpoint URL can't be used for git writes: {e}. Re-register with the raw file URL.")
+        return result
+
+    # Check 2: deploy key present
+    result["checks"]["key"] = bot_keys.key_exists(space_id)
+    if not result["checks"]["key"]:
+        result["errors"].append("No deploy key found. Run `!mom link` to generate one.")
+
+    # Check 3: git ls-remote (proves SSH auth + branch exists; read-only, no write proof)
+    try:
+        priv_pem = bot_keys.load_private_key(space_id)
+        tmp = tempfile.NamedTemporaryFile(delete=False)
+        try:
+            tmp.write(priv_pem)
+            tmp.close()
+            os.chmod(tmp.name, 0o600)
+            ssh_cmd = f"ssh -i {tmp.name} -o StrictHostKeyChecking=no"
+            proc = await asyncio.create_subprocess_exec(
+                "git", "ls-remote", "--heads", remote, branch,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                env={**os.environ, "GIT_SSH_COMMAND": ssh_cmd},
+            )
+            stdout, _ = await proc.communicate()
+            result["checks"]["remote"] = proc.returncode == 0 and branch.encode() in stdout
+            if not result["checks"]["remote"]:
+                result["errors"].append(f"Branch '{branch}' not found at remote, or key not accepted.")
+        finally:
+            os.unlink(tmp.name)
+    except Exception as e:
+        result["checks"]["remote"] = False
+        result["errors"].append(f"Remote check failed: {e}")
+
+    result["ok"] = all(result["checks"].values())
+    return result
+
+
 async def commit_json(space_id: str, field_path: str, value, authorized_by: str) -> str:
     """Write the patched file, git add/commit/push over the deploy key, return the commit SHA.
 

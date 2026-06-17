@@ -25,44 +25,88 @@ def load_voice() -> dict:
     return _voice
 
 
+def _bot(key: str, default: str, **kwargs) -> str:
+    text = load_voice().get("bot", {}).get(key, default)
+    return text.format(**kwargs) if kwargs else text
+
+
 def ping_ack() -> str:
-    return load_voice().get("bot", {}).get("ping_ack", "Still here.")
+    return _bot("ping_ack", "Still here.")
 
 
 def unknown_ack() -> str:
-    return load_voice().get("bot", {}).get("unknown_ack", "Not sure what you mean by that.")
+    return _bot("unknown_ack", "Not sure what you mean by that.")
 
 
 def link_tutorial(public_key: str, tutorial_md: str) -> str:
-    template = load_voice().get("bot", {}).get(
-        "link_tutorial", "{tutorial}"
-    )
-    return template.format(public_key=public_key, tutorial=tutorial_md)
+    return _bot("link_tutorial", "{tutorial}", public_key=public_key, tutorial=tutorial_md)
 
 
 def link_failed_ack() -> str:
-    return load_voice().get("bot", {}).get(
-        "link_failed_ack",
-        "I couldn't generate a key for that space — check the space slug is registered, then try again.",
-    )
+    return _bot("link_failed_ack", "I couldn't generate a key for that space — check the space slug is registered, then try again.")
 
 
 def no_deploy_key_ack() -> str:
-    return load_voice().get("bot", {}).get(
-        "no_deploy_key_ack",
-        "I can read your profile but I can't edit it yet — run `!mom link {space}` first so I get write access.",
-    )
+    return _bot("no_deploy_key_ack", "I can read your profile but I can't edit it yet — run `!mom link` first so I get write access.")
 
 
 def update_failed_ack() -> str:
-    return load_voice().get("bot", {}).get(
-        "update_failed_ack",
-        "That update didn't go through — check the field path and value, then try again.",
-    )
+    return _bot("update_failed_ack", "That update didn't go through — check the field path and value, then try again.")
 
 
 def update_succeeded_ack(sha: str) -> str:
-    template = load_voice().get("bot", {}).get(
-        "update_succeeded_ack", "Done. Committed as {sha}."
+    return _bot("update_succeeded_ack", "Done. Committed as {sha}.", sha=sha[:8])
+
+
+def update_committed_ack(sha: str, field_path: str, value: str) -> str:
+    return _bot("update_committed_ack", "Saved — committed as {sha}. Waiting for CDN propagation…", sha=sha[:8])
+
+
+def propagation_confirmed_ack(refresh_note: str) -> str:
+    return _bot("propagation_confirmed_ack", "Map updated. {refresh_note} Hard-refresh your browser.", refresh_note=refresh_note)
+
+
+def propagation_timeout_ack(sha: str) -> str:
+    return _bot("propagation_timeout_ack", "Commit {sha} landed but CDN hasn't propagated after 10 minutes — the map will catch up on its own.", sha=sha[:8])
+
+
+def open_ack(sha: str) -> str:
+    return _bot("open_ack", "Marked as open — committed as {sha}. Waiting for CDN propagation…", sha=sha[:8])
+
+
+def close_ack(sha: str) -> str:
+    return _bot("close_ack", "Marked as closed — committed as {sha}. Waiting for CDN propagation…", sha=sha[:8])
+
+
+def read_only_ack() -> str:
+    return _bot("read_only_ack", "That's a write command — only the space coordinator can make changes.")
+
+
+def field_not_allowed_ack(fields: list) -> str:
+    return _bot("field_not_allowed_ack", "That field isn't editable through me.", fields=", ".join(fields))
+
+
+def invalid_bool_ack() -> str:
+    return _bot("invalid_bool_ack", "state.open needs to be `true`, `false`, or `null`.")
+
+
+def invalid_matrix_id_ack() -> str:
+    return _bot("invalid_matrix_id_ack", "contact.matrix should look like `@username:server`.")
+
+
+def status_report(verify: dict) -> str:
+    if verify["ok"]:
+        return _bot(
+            "status_ok_ack",
+            "Everything looks set up.\n• Remote: {remote}\n• Branch: {branch}\n• File: {file_path}",
+            remote=verify.get("remote", ""),
+            branch=verify.get("branch", ""),
+            file_path=verify.get("file_path", ""),
+        )
+    errors = "\n".join(f"• {e}" for e in verify.get("errors", []))
+    return _bot(
+        "status_error_ack",
+        "Setup check found {n} issue(s):\n{errors}",
+        n=len(verify.get("errors", [])),
+        errors=errors,
     )
-    return template.format(sha=sha[:8])

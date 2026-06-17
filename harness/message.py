@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 
@@ -9,3 +9,4 @@ class Message:
     room_id: str
     platform: str
     raw: Any
+    power_level: int = 0

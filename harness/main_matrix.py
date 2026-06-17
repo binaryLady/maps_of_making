@@ -40,7 +40,10 @@ async def handle_message(adapter: MatrixAdapter, message) -> None:
     # Literal !mom <verb> commands (link, update) are matched before the LLM
     # intent classifier — see Story 6.1 Dev Notes "Command parsing, not intent
     # routing". Only messages that don't match a known verb fall through to route().
-    response = await commands.try_handle(stripped.text, message.user_id, message.room_id, session_id)
+    response = await commands.try_handle(
+        stripped.text, message.user_id, message.room_id, session_id,
+        adapter=adapter, context=message,
+    )
     if response is None:
         response = await route(stripped, session_id)
 

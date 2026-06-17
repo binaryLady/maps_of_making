@@ -41,6 +41,7 @@ class MatrixAdapter:
             room_id=room.room_id,
             platform="matrix",
             raw=event,
+            power_level=room.power_levels.get_user_level(event.sender),
         )
         await self._queue.put(message)
 

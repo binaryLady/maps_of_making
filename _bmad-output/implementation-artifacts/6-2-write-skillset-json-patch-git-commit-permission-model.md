@@ -2,7 +2,7 @@
 
 **Epic:** 6 — Bernard Bot (one voice, two skillsets)
 **Story ID:** 6.2
-**Status:** ready-for-dev
+**Status:** review
 
 ---
 
@@ -465,16 +465,37 @@ No new volumes. Existing `:z` flags sufficient.
 ## Dev Agent Record
 
 ### Agent Model Used
-_to be filled by dev agent_
+claude-sonnet-4-6
 
 ### Debug Log References
-_to be filled by dev agent_
+- `infra/bot/schema.py` and `infra/bot/bot_keys.py` were 0-byte stubs (bind-mounted in container). Required shims to load real modules from `infra/link_handler/` for local test execution. Used `importlib.util.spec_from_file_location` + `sys.modules` replacement for bot_keys so monkeypatching propagates correctly.
+- `harness/tests/test_message.py` had an assertion `== {"text","user_id","room_id","platform","raw"}` that needed updating to include `power_level`.
+- `_values_match` comparison bug in test: `"endpoint URL" in e.lower()` — uppercase URL never matches in lowercased string. Fixed to `"endpoint url"`.
 
 ### Completion Notes List
-_to be filled by dev agent_
+- AC1: Power-level gate implemented via `_can_write(power_level, field_path)`. Default `power_level=0` on Message is backward-compatible — all existing tests without `power_level` correctly deny writes.
+- AC2: `ALLOWED_FIELDS` frozenset enforced in `_can_write`. Bernard responds with editable field list on refusal.
+- AC3: Two-message flow via `asyncio.create_task(_poll_and_refresh(...))`. Immediate ack returns synchronously; follow-up sent from background task via adapter. 5s→60s exponential backoff, 10-min budget. `_trigger_heartbeat` calls unauthenticated `POST /api/heartbeat-space/{space_id}`, handles 200/429/error.
+- AC4: `open`/`close` verbs in `try_handle` route to `_handle_open_close` with field_path="state.open" and value "true"/"false".
+- AC5: `verify_setup` in git_ops.py: 3-check non-destructive audit (URL parse → key present → `git ls-remote`). Auto-appended to `!mom link` response. `!mom status` verb in try_handle.
+- AC6: `_validate_value` enforces bool/null for `state.open`, `@user:server` regex for `contact.matrix`, non-empty for others.
+- Stubs for `infra/bot/bot_keys.py` and `infra/bot/schema.py` fixed to properly proxy link_handler equivalents in test environment.
 
 ### File List
-_to be filled by dev agent_
+- `web/app.js` — "Open right now" → "Reports open", "Closed right now" → "Reports closed" (post-done-gate UX fix — honest framing, axis-C can't vouch for recency)
+- `harness/message.py` — added `power_level: int = 0`
+- `harness/matrix_adapter.py` — set `power_level` from `room.power_levels.get_user_level(event.sender)`
+- `harness/main_matrix.py` — pass `adapter=adapter, context=message` into `try_handle`
+- `harness/commands.py` — complete rewrite: permission gate, field whitelist, open/close/status handlers, CDN poll, heartbeat trigger, all helpers
+- `harness/bernard.py` — refactored to `_bot()` helper; new ack functions for all AC2–AC6 strings
+- `harness/bernard_voice.yaml` — new strings: update_committed_ack, propagation_confirmed_ack, propagation_timeout_ack, open_ack, close_ack, read_only_ack, field_not_allowed_ack, invalid_bool_ack, invalid_matrix_id_ack, status_ok_ack, status_error_ack
+- `harness/tests/test_commands.py` — extended from 5 to 32 tests covering all new behavior
+- `harness/tests/test_message.py` — updated field count assertion to include `power_level`
+- `infra/bot/git_ops.py` — added `verify_setup` async function
+- `infra/bot/test_git_ops.py` — added 5 `verify_setup` tests (happy path + 4 failure modes)
+- `infra/bot/bot_keys.py` — shim: loads `infra/link_handler/bot_keys.py` via importlib for local tests
+- `infra/bot/schema.py` — shim: loads `infra/link_handler/schema.py` via importlib for local tests
 
 ### Change Log
-_to be filled by dev agent_
+- 2026-06-17: Story 6.2 implemented — permission model (power_level gate + field whitelist), CDN-aware two-message commit flow (immediate ack + background poll), open/close/status verbs, verify_setup, field value validation. 32 new tests pass, 0 regressions.
+- 2026-06-17: Done gate confirmed live — `!mom open` from coordinator on Dendrite homeserver: commit landed on GitHub (f4107e5), CDN propagated, Bernard sent follow-up, map hard-refreshed confirmed. Post-gate: "Open right now" → "Reports open" copy fix in web/app.js (honest framing — axis-C cannot vouch for recency of open state).

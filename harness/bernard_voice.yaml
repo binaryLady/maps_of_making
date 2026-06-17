@@ -11,3 +11,24 @@ bot:
   no_deploy_key_ack: "I can read your profile but I can't edit it yet — run `!mom link {space}` first so I get write access."
   update_failed_ack: "That update didn't go through — check the field path and value, then try again."
   update_succeeded_ack: "Done. Committed as {sha}."
+
+  # Commit + CDN flow
+  update_committed_ack: "Saved — committed as {sha}. Waiting for CDN to propagate before the map updates…"
+  propagation_confirmed_ack: "Map updated. {refresh_note} You may need to hard-refresh your browser to see the change."
+  propagation_timeout_ack: "Commit {sha} landed but CDN hasn't propagated after 10 minutes — the map will catch up on its own. Hard-refresh when you see it."
+
+  # Open/close shorthands
+  open_ack: "Marked as open — committed as {sha}. Waiting for CDN propagation…"
+  close_ack: "Marked as closed — committed as {sha}. Waiting for CDN propagation…"
+
+  # Permission refusals
+  read_only_ack: "That's a write command — only the space coordinator (power level 100) can make changes. You can ask them to run it, or ask me anything about the space."
+  field_not_allowed_ack: "That field isn't editable through me. Fields I can update: {fields}."
+
+  # Value validation
+  invalid_bool_ack: "state.open needs to be `true`, `false`, or `null` (to opt out). Example: `!mom update state.open true`"
+  invalid_matrix_id_ack: "contact.matrix should look like `@username:server`. Example: `!mom update contact.matrix @atelier:matrix.org`"
+
+  # Setup / status
+  status_ok_ack: "Everything looks set up.\n• Remote: {remote}\n• Branch: {branch}\n• File: {file_path}\n\nNote: read access confirmed; write access will be confirmed on your first commit."
+  status_error_ack: "Setup check found {n} issue(s):\n{errors}\nRun `!mom link` to fix the key or re-register with the correct URL."
