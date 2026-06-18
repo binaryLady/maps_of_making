@@ -33,6 +33,8 @@ bot:
   status_ok_ack: "Everything looks set up.\n• Remote: {remote}\n• Branch: {branch}\n• File: {file_path}\n\nNote: read access confirmed; write access will be confirmed on your first commit."
   status_error_ack: "Setup check found {n} issue(s):\n{errors}\nRun `!mom link` to fix the key or re-register with the correct URL."
 
+  query_failed_ack: "Couldn't reach the directory right now — try again in a moment."
+
   # Query responses
   status_no_link_ack: "This room isn't linked to a space yet. Register one with `!mom link {slug}` first."
   status_lifecycle: "**{name}** · {state_line}\nLast updated: {updated_at}\n{unlock_line}"
@@ -47,11 +49,11 @@ bot:
   travel_results: "Within {hours} of {origin} by {mode} — {count} confirmed space(s):\n{list}\n{seeded_note}"
   travel_timeout: "ORS took too long — falling back to a bounding box. {fallback_result}"
   travel_ors_unavailable: "Travel search is temporarily unavailable. {fallback_result}"
-  seeded_note: "{count} seeded space(s) also fall in range — they haven't registered an endpoint yet. Want me to list them?"
+  seeded_note: "{count} seeded space(s) also fall in range — they haven't registered an endpoint yet."
   # Help and fuzzy-suggest
   help_header: "Here's what I do."
   did_you_mean: "There's no `{verb}`. Did you mean `!mom {suggestion}`?"
   unknown_command: "I don't know `{verb}`. Try `!mom help`."
-  result_cap_note: "Showing first {n} — narrow it down with `!mom find {tag} {city}`."
+  result_cap_note: "Showing first {n} — use `!mom find` with a tag and city to narrow down."
   # @bernard mention stub (NL deferred to 6.4)
   bernard_nl_stub: "Natural-language questions are on the roadmap. For now: `!mom help` lists what I can do."

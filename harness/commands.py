@@ -231,7 +231,12 @@ async def try_handle(text: str, user_id: str, room_id: str, session_id: str, *, 
 
     # Fuzzy-suggest before falling through to LLM classifier
     if verb in KNOWN_VERBS:
-        # Known verb but missing required args — fall through to None
+        # Known verb but missing required args — return a usage hint instead of
+        # silently falling through to the LLM classifier (which may throw or return
+        # a confusing response).
+        _, _, arg_shape = COMMAND_REGISTRY[verb]
+        if arg_shape:
+            return f"Usage: `!mom {verb} {arg_shape}`"
         return None
     matches = difflib.get_close_matches(verb, KNOWN_VERBS, n=1, cutoff=0.7)
     if matches:
@@ -358,7 +363,7 @@ async def _handle_hours(room_id: str, bound) -> str:
         return await query_commands.hours(space_id)
     except Exception as e:
         bound.warning("commands.hours_failed", error=str(e))
-        return bernard.update_failed_ack()
+        return bernard.query_failed_ack()
 
 
 async def _handle_travel(origin: str, hours_and_mode: str, room_id: str, bound) -> str:
@@ -390,8 +395,13 @@ async def _handle_travel(origin: str, hours_and_mode: str, room_id: str, bound) 
         return bernard.travel_ors_unavailable_ack(str(e))
 
     if result["fallback"]:
-        # ORS timed out — degrade to nearby bounding box
-        fallback = await query_commands.nearby(origin, hours_val * 80)  # rough 80km/h * hours
+        # ORS timed out — degrade to nearby bounding box. Use resolved coords if
+        # available so space-name origins (e.g. "superlab") don't re-hit Nominatim.
+        coords = result.get("coords")
+        if coords:
+            fallback = await query_commands.nearby_from_coords(coords, hours_val * 80)
+        else:
+            fallback = await query_commands.nearby(origin, hours_val * 80)
         return bernard.travel_timeout_ack(fallback)
 
     confirmed = result["confirmed"]

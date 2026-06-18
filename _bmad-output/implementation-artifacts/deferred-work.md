@@ -516,3 +516,8 @@ Generating a real openfab.jsonld against the `space-jsonld-generator` skill expo
 - Dendrite Postgres credentials are split across `.env` (`DENDRITE_DB_PASSWORD`) and a gitignored `dendrite.yaml`, with no documented sync process. `infra/docker-compose.yml`.
 - No regression test added for either bug fixed in Story 6.0's commit (env-var vs config.yaml precedence, bogus `gemma-4-12b-it` model id) — could silently regress. `harness/main_matrix.py`, `harness/config.py`.
 - Malformed YAML in `config.yaml`/`bernard_voice.yaml` crashes startup uncaught instead of failing gracefully. `harness/config.py`, `harness/bernard.py`.
+
+## Deferred from: code review of 6-3-read-query-command-set-isochrone-tool (2026-06-18)
+
+- `sparql_client.run_select` uses total timeout 15s instead of read-only timeout 15s as specified in spec §3 — minor, `httpx.Timeout(15.0, connect=5.0)` vs intended `httpx.Timeout(connect=5.0, read=15.0)`. `harness/sparql_client.py:17`.
+- ORS timeout is 20s in code vs 15s stated in changelog — minor inconsistency. `harness/isochrone.py`.

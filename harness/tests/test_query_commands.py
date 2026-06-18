@@ -239,6 +239,92 @@ async def test_find_injection_attempt_returns_ack_not_exception(monkeypatch):
 
 
 # ---------------------------------------------------------------------------
+# test_network_returns_matching_spaces
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_network_returns_matching_spaces(monkeypatch):
+    fake_bindings = [
+        {"name": {"value": "OpenFab"}, "city": {"value": "Brussels"}, "website": {"value": "https://openfab.be"}},
+        {"name": {"value": "FabLab Ulb"}, "city": {"value": "Brussels"}, "website": {"value": ""}},
+    ]
+
+    monkeypatch.setattr(sparql_client, "run_select", AsyncMock(return_value=(fake_bindings, 10)))
+    result = await query_commands.network("vow")
+    assert "2" in result or "vow" in result.lower()
+    assert "OpenFab" in result
+
+
+@pytest.mark.asyncio
+async def test_network_empty_returns_ack(monkeypatch):
+    monkeypatch.setattr(sparql_client, "run_select", AsyncMock(return_value=([], 5)))
+    result = await query_commands.network("unknownnetwork")
+    assert "unknownnetwork" in result
+
+
+@pytest.mark.asyncio
+async def test_network_command_routes_correctly(monkeypatch):
+    monkeypatch.setattr(sparql_client, "run_select", AsyncMock(return_value=([], 5)))
+    result = await commands.try_handle("network vow", "@u:x", "!room:x", "sid")
+    assert result is not None
+    assert result != ""
+
+
+@pytest.mark.asyncio
+async def test_network_command_missing_arg_returns_usage():
+    result = await commands.try_handle("network", "@u:x", "!room:x", "sid")
+    assert result is not None
+    assert "Usage" in result or "network" in result
+
+
+# ---------------------------------------------------------------------------
+# test_find_only_returns_confirmed_spaces (endpointUrl filter)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_find_query_requires_endpoint_url(monkeypatch):
+    """The confirmed SPARQL query must include mom:endpointUrl as required triple.
+    Seeded spaces (no endpointUrl) must not appear in main results."""
+    captured_queries = []
+
+    async def capture_run_select(query):
+        captured_queries.append(query)
+        return [], 5
+
+    monkeypatch.setattr(sparql_client, "run_select", capture_run_select)
+    await query_commands.find("cnc", "brussels")
+    main_query = captured_queries[0]
+    assert "endpointUrl" in main_query, "find main query must filter on mom:endpointUrl"
+
+
+@pytest.mark.asyncio
+async def test_network_query_requires_endpoint_url(monkeypatch):
+    captured_queries = []
+
+    async def capture_run_select(query):
+        captured_queries.append(query)
+        return [], 5
+
+    monkeypatch.setattr(sparql_client, "run_select", capture_run_select)
+    await query_commands.network("vow")
+    assert "endpointUrl" in captured_queries[0], "network query must filter on mom:endpointUrl"
+
+
+@pytest.mark.asyncio
+async def test_nearby_query_requires_endpoint_url(monkeypatch):
+    monkeypatch.setattr(query_commands, "geocode_city", AsyncMock(return_value=(50.85, 4.35)))
+    captured_queries = []
+
+    async def capture_run_select(query):
+        captured_queries.append(query)
+        return [], 5
+
+    monkeypatch.setattr(sparql_client, "run_select", capture_run_select)
+    await query_commands.nearby("brussels", 10.0)
+    assert "endpointUrl" in captured_queries[0], "nearby query must filter on mom:endpointUrl"
+
+
+# ---------------------------------------------------------------------------
 # Live integration test (requires Oxigraph with mother-sands data)
 # ---------------------------------------------------------------------------
 

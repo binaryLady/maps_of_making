@@ -567,3 +567,23 @@ Canary graph (`urn:mak:canary`) has a subset of these fields. Include it in spat
   - In-memory polygon cache added (24h TTL, key = `(lat2dp, lon2dp, bucket, mode)`) — cache hits bypass ORS and skip cooldown
   - Above-2h requests pass through uncached, logged as `isochrone.above_bucket_range` signal for future regional discovery feature
   - Cooldown now only applies to live ORS calls, not cache hits
+
+---
+
+### Review Findings (2026-06-18)
+
+**Decision needed:**
+- [x] [Review][Decision] `!mom help` write-commands visibility — kept current behavior (show to all users with "not available to you" label); intentional UX transparency.
+
+**Patches (all applied 2026-06-18):**
+- [x] [Review][Patch] `handle_message` has no try/except — LLM classifier exceptions in `router.route()` produce silent no-reply to Matrix user [main_matrix.py:36-62]
+- [x] [Review][Patch] Known verb with missing args returns `None` → LLM path → possible silent fail; no usage hint [commands.py:233-235]
+- [x] [Review][Patch] `find`/`nearby`/`network` main SPARQL queries include seeded (unregistered) spaces in "confirmed" results — missing `?s mom:endpointUrl ?e .` required triple [query_commands.py:129,198,255]
+- [x] [Review][Patch] `result_cap_note` YAML still has `{tag}`/`{city}` placeholders; `result_cap_note_ack(n=n)` crashes with `KeyError: 'tag'` when any result set hits the cap [bernard_voice.yaml:55] — fix #6 landed in bernard.py fallback only, not YAML (SSOT)
+- [x] [Review][Patch] Read command error handlers return `update_failed_ack()` — wrong voice for read ops [query_commands.py, commands.py]
+- [x] [Review][Patch] ORS fallback re-geocodes `origin` via Nominatim — fails for space-name origins; now passes resolved coords via fallback dict [isochrone.py, commands.py, query_commands.py]
+- [x] [Review][Patch] No tests for `!mom network` dispatch or confirmed-filter correctness — 7 new tests added [tests/test_query_commands.py]
+
+**Deferred:**
+- [x] [Review][Defer] `sparql_client.run_select` uses total timeout 15s instead of read timeout 15s as specified [sparql_client.py:17] — deferred, pre-existing minor inconsistency
+- [x] [Review][Defer] ORS timeout is 20s in code vs 15s in changelog note [isochrone.py] — deferred, minor inconsistency

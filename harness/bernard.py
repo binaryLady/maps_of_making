@@ -54,6 +54,10 @@ def update_failed_ack() -> str:
     return _bot("update_failed_ack", "That update didn't go through — check the field path and value, then try again.")
 
 
+def query_failed_ack() -> str:
+    return _bot("query_failed_ack", "Couldn't reach the directory right now — try again in a moment.")
+
+
 def update_succeeded_ack(sha: str) -> str:
     return _bot("update_succeeded_ack", "Done. Committed as {sha}.", sha=sha[:8])
 

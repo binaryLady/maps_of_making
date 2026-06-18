@@ -63,7 +63,7 @@ SELECT ?name ?openNow ?lastOpenChange ?updatedAt ?subset ?nextUnlock WHERE {{
         bindings, _ = await sparql_client.run_select(query)
     except Exception as e:
         log.warning("query_commands.status_failed", error=str(e))
-        return bernard.update_failed_ack()
+        return bernard.query_failed_ack()
 
     if not bindings:
         return bernard.status_no_link_ack()
@@ -109,7 +109,7 @@ SELECT ?name ?openingHours WHERE {{
         bindings, _ = await sparql_client.run_select(query)
     except Exception as e:
         log.warning("query_commands.hours_failed", error=str(e))
-        return bernard.update_failed_ack()
+        return bernard.query_failed_ack()
 
     if not bindings:
         return bernard.status_no_link_ack()
@@ -131,7 +131,8 @@ SELECT ?name ?city ?website WHERE {{
   GRAPH ?g {{
     ?s a mom:Space ;
        schema:name ?name ;
-       schema:knowsAbout ?specialty .
+       schema:knowsAbout ?specialty ;
+       mom:endpointUrl ?e .
     OPTIONAL {{ ?s schema:addressLocality ?city }}
     OPTIONAL {{ ?s schema:url ?website }}
     FILTER(STRSTARTS(STR(?g), "urn:mak:space/"))
@@ -144,7 +145,7 @@ SELECT ?name ?city ?website WHERE {{
         bindings, _ = await sparql_client.run_select(query)
     except Exception as e:
         log.warning("query_commands.find_failed", error=str(e))
-        return bernard.update_failed_ack()
+        return bernard.query_failed_ack()
 
     seeded_count = await _count_seeded_in_find(tag_s, city_s)
 
@@ -200,7 +201,8 @@ SELECT ?name ?lat ?lon ?website WHERE {{
   GRAPH ?g {{
     ?s a mom:Space ;
        schema:name ?name ;
-       schema:geo [schema:latitude ?lat ; schema:longitude ?lon] .
+       schema:geo [schema:latitude ?lat ; schema:longitude ?lon] ;
+       mom:endpointUrl ?e .
     OPTIONAL {{ ?s schema:url ?website }}
     FILTER(STRSTARTS(STR(?g), "urn:mak:space/"))
     FILTER(?lat >= {min_lat} && ?lat <= {max_lat})
@@ -212,7 +214,7 @@ SELECT ?name ?lat ?lon ?website WHERE {{
         bindings, _ = await sparql_client.run_select(query)
     except Exception as e:
         log.warning("query_commands.nearby_failed", error=str(e))
-        return bernard.update_failed_ack()
+        return bernard.query_failed_ack()
 
     seeded_count = await _count_seeded_in_bbox(min_lat, max_lat, min_lon, max_lon)
 
@@ -257,7 +259,8 @@ SELECT ?name ?city ?website WHERE {{
   GRAPH ?g {{
     ?s a mom:Space ;
        schema:name ?name ;
-       mom:memberOf ?net .
+       mom:memberOf ?net ;
+       mom:endpointUrl ?e .
     OPTIONAL {{ ?s schema:addressLocality ?city }}
     OPTIONAL {{ ?s schema:url ?website }}
     FILTER(STRSTARTS(STR(?g), "urn:mak:space/"))
@@ -269,16 +272,41 @@ SELECT ?name ?city ?website WHERE {{
         bindings, _ = await sparql_client.run_select(query)
     except Exception as e:
         log.warning("query_commands.network_failed", error=str(e))
-        return bernard.update_failed_ack()
+        return bernard.query_failed_ack()
+
+    seeded_count = await _count_seeded_in_network(net_s)
 
     if not bindings:
-        return bernard.network_empty_ack(network=network_name)
+        seeded_note = bernard.seeded_note_ack(seeded_count) if seeded_count > 0 else ""
+        return bernard.network_empty_ack(network=network_name) + (f"\n{seeded_note}" if seeded_note else "")
 
     items = _format_space_list(bindings)
     result = bernard.network_results_ack(network=network_name, count=len(bindings), list_text=items)
     if len(bindings) >= 20:
         result += "\n" + bernard.result_cap_note_ack(n=20)
+    if seeded_count > 0:
+        result += "\n" + bernard.seeded_note_ack(seeded_count)
     return result
+
+
+async def _count_seeded_in_network(net_s: str) -> int:
+    """Count seeded (unregistered) spaces matching network criteria."""
+    query = PREFIX + f"""
+SELECT (COUNT(?s) AS ?count) WHERE {{
+  GRAPH ?g {{
+    ?s a mom:Space ;
+       mom:memberOf ?net .
+    FILTER(STRSTARTS(STR(?g), "urn:mak:space/"))
+    FILTER(CONTAINS(LCASE(STR(?net)), LCASE("{net_s}")))
+    FILTER NOT EXISTS {{ ?s mom:endpointUrl ?e }}
+  }}
+}}
+"""
+    try:
+        bindings, _ = await sparql_client.run_select(query)
+        return int(bindings[0].get("count", {}).get("value", 0)) if bindings else 0
+    except Exception:
+        return 0
 
 
 def _format_space_list(bindings: list[dict]) -> str:
@@ -291,6 +319,43 @@ def _format_space_list(bindings: list[dict]) -> str:
         web_part = f" ({website})" if website else ""
         lines.append(f"• {name}{city_part}{web_part}")
     return "\n".join(lines)
+
+
+async def nearby_from_coords(coords: tuple[float, float], radius_km: float) -> str:
+    """Like nearby() but skips geocoding — for use when coords are already resolved."""
+    lat, lon = coords
+    delta = radius_km / 111.0
+    min_lat, max_lat = lat - delta, lat + delta
+    min_lon, max_lon = lon - delta, lon + delta
+
+    query = PREFIX + f"""
+SELECT ?name ?lat ?lon ?website WHERE {{
+  GRAPH ?g {{
+    ?s a mom:Space ;
+       schema:name ?name ;
+       schema:geo [schema:latitude ?lat ; schema:longitude ?lon] ;
+       mom:endpointUrl ?e .
+    OPTIONAL {{ ?s schema:url ?website }}
+    FILTER(STRSTARTS(STR(?g), "urn:mak:space/"))
+    FILTER(?lat >= {min_lat} && ?lat <= {max_lat})
+    FILTER(?lon >= {min_lon} && ?lon <= {max_lon})
+  }}
+}} ORDER BY ?name LIMIT 20
+"""
+    try:
+        bindings, _ = await sparql_client.run_select(query)
+    except Exception as e:
+        log.warning("query_commands.nearby_from_coords_failed", error=str(e))
+        return bernard.query_failed_ack()
+
+    if not bindings:
+        return bernard.nearby_empty_ack(radius=int(radius_km), city="the origin", seeded_note="")
+
+    items = _format_space_list(bindings)
+    result = bernard.nearby_results_ack(radius=int(radius_km), city="the origin", count=len(bindings), list_text=items)
+    if len(bindings) >= 20:
+        result += "\n" + bernard.result_cap_note_ack(n=20)
+    return result
 
 
 async def dispatch(message, session_id: str) -> str:

@@ -144,7 +144,7 @@ async def travel_search(origin: str, hours: float, mode_input: str = "", room_id
             log.warning("isochrone.ors_timeout", origin=origin, hours=bucket)
             if room_id:
                 _set_cooldown(room_id)
-            return {"confirmed": [], "seeded_count": 0, "fallback": True}
+            return {"confirmed": [], "seeded_count": 0, "fallback": True, "coords": coords}
         except IsochroneError:
             raise
         except Exception as e:
