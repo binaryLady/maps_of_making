@@ -1,5 +1,9 @@
 # Deferred Work
 
+## Deferred from: deploy-homeserver-bot-nginx (2026-06-18)
+
+- Bernard cannot operate in E2E-encrypted Matrix rooms — messages arrive as `MegolmEvent` and are silently dropped. Rooms must be created without encryption for now. Fix requires `AsyncClientConfig(encryption_enabled=True)` + a persistent key store (SQLite) + TOFU device verification in matrix-nio. Candidate for Epic 6.5 or a standalone infra story before the public demo.
+
 ## Deferred from: code review of story-6.1 (2026-06-16)
 
 ## Deferred from: code review of story-6.2 (2026-06-17)
