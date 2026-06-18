@@ -1,6 +1,6 @@
 # Story 6.3: Read/Query Command Set + Isochrone Tool
 
-**Status:** ready-for-dev
+**Status:** done
 **Epic:** 6 — Ask Bernard
 **Story ID:** 6-3
 **Depends on:** 6.0 (bot running, adapter + intent router live), Epic 3 (data in Oxigraph)
@@ -548,3 +548,22 @@ Canary graph (`urn:mak:canary`) has a subset of these fields. Include it in spat
 
 - 2026-06-18: Story 6.3 created — comprehensive dev guide for read/query command set + isochrone tool.
 - 2026-06-18: Party-mode review amendments — added `!mom help` (power-level-aware listing), command registry spine (COMMAND_REGISTRY dict as single source for dispatch/help/fuzzy), fuzzy-suggest via `difflib.get_close_matches`, `@bernard` mention stub (→ NL-coming-soon, full NL deferred to 6.4), ORS contract verified against Context7 live docs (body key is `"range"` not `"ranges"`, profile in URL path, auth via `Authorization` header), per-room ORS rate cooldown, `!mom status` security constraint (redact coordinator fields at power_level < 100), result caps with "narrow it down" hint, `!mom info`/`!mom search` deferred to 6.4/NL epic.
+- 2026-06-18: Story 6.3 implemented — all ACs satisfied; 56 tests passing (47 new + 34 existing + 9 prior); no regressions. Files: harness/sparql_client.py (run_select), harness/query_commands.py (new), harness/isochrone.py (new), harness/commands.py (COMMAND_REGISTRY + new verbs + restructured status + fuzzy-suggest), harness/router.py (query intent wired), harness/main_matrix.py (@bernard stub), harness/bernard.py + bernard_voice.yaml (query ack functions), harness/requirements.txt (shapely).
+- 2026-06-18: Post-deploy operator testing exposed and fixed 6 bugs (see Debug Log below):
+  1. `httpx.Timeout(connect=X, read=Y)` invalid — fixed to `httpx.Timeout(Y, connect=X)` in sparql_client.py
+  2. Arg parsing: `find`/`nearby`/`travel` re-split `parts[2]` that split(maxsplit=2) had already separated — fixed to use `parts[1]`/`parts[2]` directly
+  3. Bot replayed buffered messages on restart — fixed with `sync(timeout=0)` boot-time token + `server_timestamp` guard
+  4. `geocode_city` sent `{"query": city}` but endpoint expects `{"address": "", "city": city}` — fixed in query_commands.py
+  5. `ORS_API_KEY` not wired into mak-agent-bot environment block in docker-compose.yml — added
+  6. `result_cap_note_ack` template had `{tag}` placeholder but `nearby` callers don't pass it — fixed to generic text
+- 2026-06-18: Additional post-deploy bug fixes (round 2):
+  7. `bernard_voice.yaml` had `{hours}h` in `travel_results` template — YAML overrides the Python fallback in `_bot()`, so fixing `bernard.py` alone had no effect; fixed in YAML (SSOT for all copy)
+  8. Cooldown error message hardcoded "5 minutes" even after constant was changed to 60s — fixed to use `{ORS_COOLDOWN_SECONDS}` dynamically
+  9. `!mom travel ... by car` → Usage error — "by car" not in mode suffix list; added alongside "by bike"/"by foot"
+  10. Isochrone origin resolution: `_resolve_origin` now queries Oxigraph space names first (fuzzy CONTAINS match), falls back to Nominatim — enables `!mom travel superlab 20min` without knowing exact city name
+- 2026-06-18: Post-testing UX/performance decisions:
+  - ORS timeout bumped 5s → 15s (2h driving isochrone was consistently timing out)
+  - Isochrone hour-bucket snapping added: arbitrary input snaps UP to nearest `[0.15, 0.30, 0.60, 1.0, 2.0]` bucket
+  - In-memory polygon cache added (24h TTL, key = `(lat2dp, lon2dp, bucket, mode)`) — cache hits bypass ORS and skip cooldown
+  - Above-2h requests pass through uncached, logged as `isochrone.above_bucket_range` signal for future regional discovery feature
+  - Cooldown now only applies to live ORS calls, not cache hits

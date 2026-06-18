@@ -94,6 +94,139 @@ def invalid_matrix_id_ack() -> str:
     return _bot("invalid_matrix_id_ack", "contact.matrix should look like `@username:server`.")
 
 
+def status_no_link_ack() -> str:
+    return _bot("status_no_link_ack", "This room isn't linked to a space yet. Register one with `!mom link {slug}` first.")
+
+
+def status_lifecycle_ack(name: str, state_line: str, updated_at: str, subset: str = "", unlock_line: str = "") -> str:
+    text = _bot("status_lifecycle", "**{name}** · {state_line}\nLast updated: {updated_at}\n{unlock_line}",
+                name=name, state_line=state_line, updated_at=updated_at, unlock_line=unlock_line)
+    if subset:
+        text += f"\nTier: {subset}"
+    return text.strip()
+
+
+def hours_found_ack(name: str, hours: str) -> str:
+    return _bot("hours_found", "**{name}** opens: {hours}", name=name, hours=hours)
+
+
+def hours_missing_ack(name: str) -> str:
+    return _bot("hours_missing", "**{name}** hasn't listed opening hours yet.", name=name)
+
+
+def find_results_ack(count: int, tag: str, city: str, list_text: str) -> str:
+    return _bot("find_results", "Found {count} confirmed space(s) matching '{tag}' in {city}:\n{list}",
+                count=count, tag=tag, city=city, list=list_text)
+
+
+def find_empty_ack(tag: str, city: str, seeded_note: str = "") -> str:
+    return _bot("find_empty", "No confirmed spaces match '{tag}' in {city}. {seeded_note}",
+                tag=tag, city=city, seeded_note=seeded_note)
+
+
+def nearby_results_ack(radius: int, city: str, count: int, list_text: str) -> str:
+    return _bot("nearby_results", "Within {radius}km of {city} — {count} confirmed space(s):\n{list}",
+                radius=radius, city=city, count=count, list=list_text)
+
+
+def nearby_empty_ack(radius: int, city: str, seeded_note: str = "") -> str:
+    return _bot("nearby_empty", "Nothing confirmed within {radius}km of {city}. {seeded_note}",
+                radius=radius, city=city, seeded_note=seeded_note)
+
+
+def network_results_ack(network: str, count: int, list_text: str) -> str:
+    return _bot("network_results", "**{network}** — {count} confirmed member(s):\n{list}",
+                network=network, count=count, list=list_text)
+
+
+def network_empty_ack(network: str) -> str:
+    return _bot("network_empty", "No confirmed spaces list '{network}' as a network. Check the exact name.",
+                network=network)
+
+
+def _fmt_hours(hours: float) -> str:
+    mins = round(hours * 60)
+    if mins < 60:
+        return f"{mins}min"
+    h = mins // 60
+    m = mins % 60
+    return f"{h}h{m:02d}min" if m else f"{h}h"
+
+
+_MODE_LABELS = {
+    "driving-car": "car",
+    "cycling-regular": "bike",
+    "foot-walking": "foot",
+}
+
+
+def travel_results_ack(hours: float, origin: str, mode: str, count: int, list_text: str, seeded_note: str = "") -> str:
+    label = _MODE_LABELS.get(mode, mode)
+    return _bot("travel_results",
+                "Within {hours} of {origin} by {mode} — {count} confirmed space(s):\n{list}\n{seeded_note}",
+                hours=_fmt_hours(hours), origin=origin, mode=label, count=count, list=list_text, seeded_note=seeded_note)
+
+
+def travel_timeout_ack(fallback_result: str) -> str:
+    return _bot("travel_timeout", "ORS took too long — falling back to a bounding box. {fallback_result}",
+                fallback_result=fallback_result)
+
+
+def travel_ors_unavailable_ack(fallback_result: str = "") -> str:
+    return _bot("travel_ors_unavailable", "Travel search is temporarily unavailable. {fallback_result}",
+                fallback_result=fallback_result)
+
+
+def seeded_note_ack(count: int) -> str:
+    return _bot("seeded_note",
+                "{count} seeded space(s) also fall in range — they haven't registered an endpoint yet. Want me to list them?",
+                count=count)
+
+
+def result_cap_note_ack(n: int) -> str:
+    return _bot("result_cap_note", "Showing first {n} results — use `!mom find` with a tag and city to narrow down.", n=n)
+
+
+def did_you_mean_ack(verb: str, suggestion: str) -> str:
+    return _bot("did_you_mean", "There's no `{verb}`. Did you mean `!mom {suggestion}`?",
+                verb=verb, suggestion=suggestion)
+
+
+def unknown_command_ack(verb: str) -> str:
+    return _bot("unknown_command", "I don't know `{verb}`. Try `!mom help`.", verb=verb)
+
+
+def bernard_nl_stub_ack() -> str:
+    return _bot("bernard_nl_stub", "Natural-language questions are on the roadmap. For now: `!mom help` lists what I can do.")
+
+
+def help(power_level: int, verb_arg: str, registry: dict) -> str:
+    """Render !mom help output. If verb_arg is a known verb, show details for just that verb."""
+    if verb_arg and verb_arg in registry:
+        min_pl, description, arg_shape = registry[verb_arg]
+        arg_str = f" {arg_shape}" if arg_shape else ""
+        return f"`!mom {verb_arg}{arg_str}` — {description}"
+
+    header = _bot("help_header", "Here's what I do.")
+    read_lines = []
+    write_lines = []
+    for verb, (min_pl, description, arg_shape) in registry.items():
+        arg_str = f" {arg_shape}" if arg_shape else ""
+        line = f"• `!mom {verb}{arg_str}` — {description}"
+        if min_pl < 100:
+            read_lines.append(line)
+        else:
+            write_lines.append(line)
+
+    parts = [header, "", "**Look things up:**", "\n".join(read_lines)]
+    if power_level >= 100:
+        parts += ["", "**Changes things:**", "\n".join(write_lines)]
+    else:
+        parts += ["", "**Changes things** (coordinator only — not available to you):",
+                  "\n".join(write_lines)]
+    return "\n".join(parts)
+
+
 def status_report(verify: dict) -> str:
     if verify["ok"]:
         return _bot(

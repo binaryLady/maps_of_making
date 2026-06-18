@@ -1,6 +1,7 @@
 import asyncio
 import dataclasses
 import os
+import re
 import uuid
 
 from dotenv import load_dotenv
@@ -27,7 +28,17 @@ def _log_task_exception(task: asyncio.Task) -> None:
         log.error("handle_message.failed", exc_info=exc)
 
 
+def _is_bernard_mention(text: str) -> bool:
+    """Match @bernard or display-name mention at start of message."""
+    return bool(re.match(r"^@?bernard[\s,:]+", text, re.IGNORECASE))
+
+
 async def handle_message(adapter: MatrixAdapter, message) -> None:
+    # @bernard mention stub — intercept before !mom prefix check (NL deferred to 6.4)
+    if message.text and _is_bernard_mention(message.text):
+        await adapter.send(bernard.bernard_nl_stub_ack(), message)
+        return
+
     if not message.text.startswith(COMMAND_PREFIX):
         return
 

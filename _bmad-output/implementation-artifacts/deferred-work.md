@@ -1,5 +1,15 @@
 # Deferred Work
 
+## Deferred from: Story 6.3 operator testing (2026-06-18)
+
+- **"One space just outside the range" teaser** — After a travel search, surface the nearest confirmed space that falls *just outside* the isochrone polygon (shapely `poly.exterior.distance(Point)` for each non-member space). Bernard copy: "There's a space Xmin past your limit — worth the detour?" High UX value, medium effort. → future Epic 6 story.
+
+- **Pre-warm isochrone cache per claimed space at heartbeat** — At heartbeat time, for each claimed space, pre-compute the `[0.30, 1.0]` driving-car polygons and populate the in-memory cache. First user to ask `!mom travel <city>` near a registered space gets instant results. This is the "tier reward" angle: the map is richer for spaces that have registered. → future Epic 6 story, post-traction.
+
+- **Regional discovery lens (above-2h travel)** — `!mom travel Marseille 15h by train` → not a polygon search, but a city-list answer: "Within 15h of Marseille by train: Paris (12 spaces), Lyon (4 spaces), …". Requires a different query shape (cluster by city/region, not point-in-polygon). Logged today as `isochrone.above_bucket_range` signal to measure actual demand before designing. → new story, Epic 6 or later.
+
+- **`!mom network fabtafel` returned no response during testing** — Command was sent but no Bernard reply observed in the export. No error in logs either — likely the space graph exists but `mom:memberOf` predicate is absent for fabtafel spaces in Oxigraph. Investigate data vs query mismatch. → check data quality before marking network command fully done.
+
 ## Deferred from: deploy-homeserver-bot-nginx (2026-06-18)
 
 - Bernard cannot operate in E2E-encrypted Matrix rooms — messages arrive as `MegolmEvent` and are silently dropped. Rooms must be created without encryption for now. Fix requires `AsyncClientConfig(encryption_enabled=True)` + a persistent key store (SQLite) + TOFU device verification in matrix-nio. Candidate for Epic 6.5 or a standalone infra story before the public demo.

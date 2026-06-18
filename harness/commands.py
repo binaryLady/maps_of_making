@@ -4,6 +4,7 @@ and `!mom update` are deterministic, argument-parsed commands, not slot-filled
 classifications, so they never go through router.route()/intent_classifier.
 """
 import asyncio
+import difflib
 import os
 from typing import Optional
 
@@ -11,10 +12,29 @@ import httpx
 import structlog
 
 import bernard
+import query_commands
+import isochrone
 from bot import git_ops
 from bot.git_ops import NoDeployKeyError, NoEndpointError, UnsupportedHostError
 
 log = structlog.get_logger()
+
+# Single registry for dispatch, !mom help, and fuzzy-suggest — they can never drift.
+# Each entry: verb → (min_power_level, one_line_description, arg_shape)
+COMMAND_REGISTRY = {
+    "status":  (0,   "Lifecycle state of this room's linked space", ""),
+    "hours":   (0,   "Opening hours of this room's linked space", ""),
+    "find":    (0,   "Search confirmed spaces by tag and city", "{tag} {city}"),
+    "nearby":  (0,   "Spaces within a radius of a city", "{city} {radius_km}"),
+    "network": (0,   "Confirmed spaces in a named network", "{network_name}"),
+    "travel":  (0,   "Spaces reachable within N hours (ORS isochrone)", "{origin} {hours}[h] [by bike|by foot|by car]"),
+    "help":    (0,   "List available commands", "[verb]"),
+    "link":    (100, "Link this room to a space endpoint", "{space_slug}"),
+    "update":  (100, "Update a field in this space's JSON", "{field} {value}"),
+    "open":    (100, "Mark this space as open", ""),
+    "close":   (100, "Mark this space as closed", ""),
+}
+KNOWN_VERBS = frozenset(COMMAND_REGISTRY)
 
 LINK_HANDLER_URL = os.environ.get("LINK_HANDLER_URL", "http://mak-link-handler:8000")
 # Shared secret proving this call came from the bot, not an internet caller —
@@ -149,13 +169,23 @@ async def try_handle(text: str, user_id: str, room_id: str, session_id: str, *, 
     """Return a response string if `text` matches a known literal command,
     else None (caller falls through to the intent classifier)."""
     parts = text.split(maxsplit=2)
-    if not parts:
-        return None
+
+    # bare !mom with no verb → help
+    if not parts or not parts[0]:
+        return bernard.help(
+            getattr(context, "power_level", 0) if context is not None else 0,
+            "",
+            COMMAND_REGISTRY,
+        )
 
     verb = parts[0]
     bound = log.bind(session_id=session_id, room_id=room_id, verb=verb)
 
     power_level = getattr(context, "power_level", 0) if context is not None else 0
+
+    if verb == "help":
+        arg = parts[1] if len(parts) > 1 else ""
+        return bernard.help(power_level, arg, COMMAND_REGISTRY)
 
     if verb == "link" and len(parts) >= 2:
         return await _handle_link(parts[1], room_id, bound)
@@ -176,6 +206,36 @@ async def try_handle(text: str, user_id: str, room_id: str, session_id: str, *, 
     if verb == "status":
         return await _handle_status(room_id, power_level, bound)
 
+    if verb == "hours":
+        return await _handle_hours(room_id, bound)
+
+    if verb == "find" and len(parts) >= 3:
+        # parts[1]=tag, parts[2]=city (split(maxsplit=2) already separated them)
+        return await query_commands.find(parts[1], parts[2])
+
+    if verb == "nearby" and len(parts) >= 3:
+        city = parts[1]
+        try:
+            radius = float(parts[2])
+        except ValueError:
+            return "Usage: `!mom nearby {city} {radius_km}` — radius must be a number."
+        return await query_commands.nearby(city, radius)
+
+    if verb == "network" and len(parts) >= 2:
+        network_name = parts[1] if len(parts) == 2 else parts[1] + " " + parts[2]
+        return await query_commands.network(network_name)
+
+    if verb == "travel" and len(parts) >= 3:
+        # parts[1]=origin, parts[2]="2h [by bike|by foot]"
+        return await _handle_travel(parts[1], parts[2], room_id, bound)
+
+    # Fuzzy-suggest before falling through to LLM classifier
+    if verb in KNOWN_VERBS:
+        # Known verb but missing required args — fall through to None
+        return None
+    matches = difflib.get_close_matches(verb, KNOWN_VERBS, n=1, cutoff=0.7)
+    if matches:
+        return bernard.did_you_mean_ack(verb, matches[0])
     return None
 
 
@@ -269,13 +329,85 @@ async def _handle_open_close(field_path: str, value: str, authorized_by: str, ro
 
 
 async def _handle_status(room_id: str, power_level: int, bound) -> str:
-    if power_level < 100:
-        return bernard.read_only_ack()
     try:
         space_id = await git_ops.resolve_space_for_room(room_id)
     except NoEndpointError:
+        return bernard.status_no_link_ack()
+
+    # Fetch lifecycle data — public-safe fields for all users
+    lifecycle_report = await query_commands.space_status(space_id)
+    bound.info("commands.status_checked")
+
+    # Coordinators additionally see deploy-key setup status (no key material shown to non-coordinators)
+    if power_level >= 100:
+        try:
+            verify = await git_ops.verify_setup(space_id)
+            return lifecycle_report + "\n\n" + bernard.status_report(verify)
+        except Exception as e:
+            bound.warning("commands.status_verify_failed", error=str(e))
+            return lifecycle_report
+    return lifecycle_report
+
+
+async def _handle_hours(room_id: str, bound) -> str:
+    try:
+        space_id = await git_ops.resolve_space_for_room(room_id)
+    except NoEndpointError:
+        return bernard.status_no_link_ack()
+    try:
+        return await query_commands.hours(space_id)
+    except Exception as e:
+        bound.warning("commands.hours_failed", error=str(e))
         return bernard.update_failed_ack()
 
-    verify = await git_ops.verify_setup(space_id)
-    bound.info("commands.status_checked", ok=verify["ok"])
-    return bernard.status_report(verify)
+
+async def _handle_travel(origin: str, hours_and_mode: str, room_id: str, bound) -> str:
+    """Parse hours+mode from '!mom travel {origin} {hours}[h] [by bike|by foot]'."""
+    # Parse mode suffix from hours_and_mode
+    mode = ""
+    lower_hm = hours_and_mode.lower()
+    for suffix in ("by bike", "by foot", "by car"):
+        if lower_hm.endswith(suffix):
+            mode = suffix
+            hours_and_mode = hours_and_mode[:len(hours_and_mode) - len(suffix)].strip()
+            break
+
+    lower_time = hours_and_mode.lower()
+    if lower_time.endswith("min"):
+        hours_str = hours_and_mode[:-3].strip()
+        divisor = 60.0
+    else:
+        hours_str = hours_and_mode.rstrip("hH")
+        divisor = 1.0
+    try:
+        hours_val = float(hours_str) / divisor
+    except ValueError:
+        return "Usage: `!mom travel {origin} {hours}h` — hours must be a number (e.g. `2h` or `30min`)."
+
+    try:
+        result = await isochrone.travel_search(origin, hours_val, mode_input=mode, room_id=room_id)
+    except isochrone.IsochroneError as e:
+        return bernard.travel_ors_unavailable_ack(str(e))
+
+    if result["fallback"]:
+        # ORS timed out — degrade to nearby bounding box
+        fallback = await query_commands.nearby(origin, hours_val * 80)  # rough 80km/h * hours
+        return bernard.travel_timeout_ack(fallback)
+
+    confirmed = result["confirmed"]
+    seeded_count = result["seeded_count"]
+    mode_label = isochrone.MODE_MAP.get(mode.lower().strip(), "car")
+
+    if not confirmed:
+        seeded_note = bernard.seeded_note_ack(seeded_count) if seeded_count > 0 else ""
+        return bernard.nearby_empty_ack(radius=int(hours_val * 80), city=origin, seeded_note=seeded_note)
+
+    list_text = "\n".join(f"• {s['name']}" for s in confirmed)
+    seeded_note = bernard.seeded_note_ack(seeded_count) if seeded_count > 0 else ""
+    result_text = bernard.travel_results_ack(
+        hours=hours_val, origin=origin, mode=mode_label,
+        count=len(confirmed), list_text=list_text, seeded_note=seeded_note,
+    )
+    if len(confirmed) >= 15:
+        result_text += "\n" + bernard.result_cap_note_ack(n=15)
+    return result_text
