@@ -122,8 +122,15 @@ SELECT ?name ?openingHours WHERE {{
     return bernard.hours_missing_ack(name=name)
 
 
+_STATE_KEYWORDS = {"open": "true", "closed": "false"}
+
+
 async def find(tag: str, city: str) -> str:
-    """Search confirmed spaces by tag and city."""
+    """Search confirmed spaces by tag and city, or by open/closed state and city."""
+    state = _STATE_KEYWORDS.get(tag.lower())
+    if state is not None:
+        return await _find_by_state(state, city)
+
     tag_s = _sanitize(tag)
     city_s = _sanitize(city)
     query = PREFIX + f"""
@@ -155,6 +162,44 @@ SELECT ?name ?city ?website WHERE {{
 
     items = _format_space_list(bindings)
     result = bernard.find_results_ack(count=len(bindings), tag=tag, city=city, list_text=items)
+    if len(bindings) >= 10:
+        result += "\n" + bernard.result_cap_note_ack(n=10)
+    if seeded_count > 0:
+        result += "\n" + bernard.seeded_note_ack(seeded_count)
+    return result
+
+
+async def _find_by_state(state: str, city: str) -> str:
+    """Find confirmed spaces currently open or closed in a city."""
+    city_s = _sanitize(city)
+    query = "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n" + PREFIX + f"""
+SELECT ?name ?city ?website WHERE {{
+  GRAPH ?g {{
+    ?s a mom:Space ;
+       schema:name ?name ;
+       mom:openNow "{state}"^^xsd:boolean ;
+       mom:endpointUrl ?e .
+    OPTIONAL {{ ?s schema:addressLocality ?city }}
+    OPTIONAL {{ ?s schema:url ?website }}
+    FILTER(STRSTARTS(STR(?g), "urn:mak:space/"))
+    FILTER(CONTAINS(LCASE(STR(?city)), LCASE("{city_s}")))
+  }}
+}} LIMIT 10
+"""
+    try:
+        bindings, _ = await sparql_client.run_select(query)
+    except Exception as e:
+        log.warning("query_commands.find_by_state_failed", error=str(e))
+        return bernard.query_failed_ack()
+
+    seeded_count = await _count_seeded_in_find("", city_s)
+
+    if not bindings:
+        seeded_note = bernard.seeded_note_ack(seeded_count) if seeded_count > 0 else ""
+        return bernard.find_open_empty_ack(city=city, seeded_note=seeded_note)
+
+    items = _format_space_list(bindings)
+    result = bernard.find_open_results_ack(count=len(bindings), city=city, list_text=items)
     if len(bindings) >= 10:
         result += "\n" + bernard.result_cap_note_ack(n=10)
     if seeded_count > 0:
@@ -356,6 +401,37 @@ SELECT ?name ?lat ?lon ?website WHERE {{
     if len(bindings) >= 20:
         result += "\n" + bernard.result_cap_note_ack(n=20)
     return result
+
+
+async def fetch_space_json(space_slug: str) -> dict | None:
+    """Fetch and parse the public endpoint JSON for a space slug. Returns None if not found or unreachable."""
+    slug_s = _sanitize(space_slug)
+    query = PREFIX + f"""
+SELECT ?endpoint WHERE {{
+  GRAPH <urn:mak:space/{slug_s}> {{
+    ?s mom:endpointUrl ?endpoint .
+  }}
+}}
+"""
+    try:
+        bindings, _ = await sparql_client.run_select(query)
+    except Exception as e:
+        log.warning("query_commands.fetch_space_json_sparql_failed", slug=space_slug, error=str(e))
+        return None
+    if not bindings:
+        return None
+    endpoint_url = bindings[0].get("endpoint", {}).get("value")
+    if not endpoint_url:
+        return None
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(endpoint_url)
+            resp.raise_for_status()
+            return resp.json()
+    except Exception as e:
+        log.warning("query_commands.fetch_space_json_http_failed", slug=space_slug, url=endpoint_url, error=str(e))
+        return None
 
 
 async def dispatch(message, session_id: str) -> str:

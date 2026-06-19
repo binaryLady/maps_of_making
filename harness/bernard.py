@@ -82,8 +82,13 @@ def close_ack(sha: str) -> str:
     return _bot("close_ack", "Marked as closed — committed as {sha}. Waiting for CDN propagation…", sha=sha[:8])
 
 
-def read_only_ack() -> str:
-    return _bot("read_only_ack", "That's a write command — only the space coordinator can make changes.")
+def already_set_ack(state: str) -> str:
+    return _bot("already_set_ack", "Already {state}. No commit needed.", state=state)
+
+
+def read_only_ack(user: str = "") -> str:
+    display = user[1:user.index(":")] if user.startswith("@") and ":" in user else user or "friend"
+    return _bot("read_only_ack", "I'm sorry, {user}, I'm afraid I can't do that. You don't have the right permissions.", user=display)
 
 
 def field_not_allowed_ack(fields: list) -> str:
@@ -118,6 +123,68 @@ def hours_missing_ack(name: str) -> str:
     return _bot("hours_missing", "**{name}** hasn't listed opening hours yet.", name=name)
 
 
+def _get_nested(data: dict, field: str):
+    """Navigate a dot-path into a dict. Returns (value, found: bool)."""
+    parts = field.split(".")
+    node = data
+    for part in parts:
+        if not isinstance(node, dict) or part not in node:
+            return None, False
+        node = node[part]
+    return node, True
+
+
+# Known readable fields in display order: (dot-path, label)
+_READ_FIELDS = [
+    ("space",              "name"),
+    ("url",                "website"),
+    ("state.open",         "state.open"),
+    ("contact.matrix",     "contact.matrix"),
+    ("contact.irc",        "contact.irc"),
+    ("contact.twitter",    "contact.twitter"),
+    ("mom.memberOf",       "mom.memberOf"),
+]
+
+
+def read_list_ack(data: dict) -> str:
+    """List all known fields with their current values — like env for the space JSON."""
+    lines = [f"Fields for **{data.get('space') or data.get('name', '(unnamed)')}**:"]
+    for path, label in _READ_FIELDS:
+        val, found = _get_nested(data, path)
+        lines.append(f"• `{label}` = {val!r}" if found else f"• `{label}` = (not set)")
+    # Flag broken mom:memberOf shape if present
+    if "mom:memberOf" in data:
+        lines.append(f"• ⚠ `mom:memberOf` = {data['mom:memberOf']!r}  ← literal key, not parsed — use `mom.memberOf`")
+    return "\n".join(lines)
+
+
+
+
+def read_field_ack(field: str, data: dict) -> str:
+    """Return the exact raw value at a dot-path field. Special diagnostic for mom.memberOf."""
+    if field == "mom.memberOf":
+        mom_block = data.get("mom") or {}
+        nested = mom_block.get("memberOf")
+        bare = data.get("memberOf")
+        broken = data.get("mom:memberOf")
+        if nested is not None:
+            return f"`mom.memberOf` = {nested!r}"
+        if bare is not None:
+            return f"`mom.memberOf` (bare fallback) = {bare!r}  — works, but prefer nesting under `\"mom\": {{\"memberOf\": [...]}}`"
+        if broken is not None:
+            return (f"⚠ `\"mom:memberOf\"` = {broken!r}  — literal key, **not parsed**.\n"
+                    f"Fix: `!mom update mom.memberOf {broken!r}`")
+        return "`mom.memberOf` is not set."
+    val, found = _get_nested(data, field)
+    if not found:
+        return f"`{field}` is not set in this space's JSON."
+    return f"`{field}` = {val!r}"
+
+
+def read_slug_not_found_ack(slug: str) -> str:
+    return _bot("read_slug_not_found", "No confirmed space found for slug '{slug}' — check the name and try again.", slug=slug)
+
+
 def find_results_ack(count: int, tag: str, city: str, list_text: str) -> str:
     return _bot("find_results", "Found {count} confirmed space(s) matching '{tag}' in {city}:\n{list}",
                 count=count, tag=tag, city=city, list=list_text)
@@ -126,6 +193,16 @@ def find_results_ack(count: int, tag: str, city: str, list_text: str) -> str:
 def find_empty_ack(tag: str, city: str, seeded_note: str = "") -> str:
     return _bot("find_empty", "No confirmed spaces match '{tag}' in {city}. {seeded_note}",
                 tag=tag, city=city, seeded_note=seeded_note)
+
+
+def find_open_results_ack(count: int, city: str, list_text: str) -> str:
+    return _bot("find_open_results", "Found {count} confirmed space(s) open right now in {city}:\n{list}",
+                count=count, city=city, list=list_text)
+
+
+def find_open_empty_ack(city: str, seeded_note: str = "") -> str:
+    return _bot("find_open_empty", "No confirmed spaces are reporting open right now in {city}. {seeded_note}",
+                city=city, seeded_note=seeded_note)
 
 
 def nearby_results_ack(radius: int, city: str, count: int, list_text: str) -> str:
@@ -204,9 +281,34 @@ def bernard_nl_stub_ack() -> str:
     return _bot("bernard_nl_stub", "Natural-language questions are on the roadmap. For now: `!mom help` lists what I can do.")
 
 
+_READ_HELP = """`!mom read` — Show this space's known fields and current values
+`!mom read {field}` — Exact raw value of a dot-path field (e.g. `state.open`, `contact.matrix`, `mom.memberOf`)
+`!mom read {slug}` — Same field summary for any registered space (e.g. `!mom read superlab`)
+
+Field paths use dot notation matching the JSON structure.
+For `mom.memberOf`, Bernard also diagnoses broken key shapes."""
+
+_UPDATE_FIELD_HELP = """`!mom update {field} {value}` — Update a field in this space's JSON (coordinator only)
+
+Editable fields:
+• `state.open` — `true` / `false` / `null`
+• `contact.matrix` — `@username:server`
+• `contact.irc` — IRC nick or channel
+• `contact.twitter` — Twitter/X handle
+• `mom.memberOf` — full network list (always replaces the whole array)
+  Single name:  `!mom update mom.memberOf FabTafel`
+  Multiple:     `!mom update mom.memberOf ["urn:mak:network/fabtafel","urn:mak:network/vulca"]`
+  Bare names are auto-expanded to `urn:mak:network/<slug>`.
+  To add or remove individual entries, use `@bernard` (coming in 6.4)."""
+
+
 def help(power_level: int, verb_arg: str, registry: dict) -> str:
     """Render !mom help output. If verb_arg is a known verb, show details for just that verb."""
     if verb_arg and verb_arg in registry:
+        if verb_arg == "update":
+            return _UPDATE_FIELD_HELP
+        if verb_arg == "read":
+            return _READ_HELP
         min_pl, description, arg_shape = registry[verb_arg]
         arg_str = f" {arg_shape}" if arg_shape else ""
         return f"`!mom {verb_arg}{arg_str}` — {description}"

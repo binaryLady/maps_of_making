@@ -15,7 +15,7 @@ import bernard
 import query_commands
 import isochrone
 from bot import git_ops
-from bot.git_ops import NoDeployKeyError, NoEndpointError, UnsupportedHostError
+from bot.git_ops import NoChangeError, NoDeployKeyError, NoEndpointError, UnsupportedHostError
 
 log = structlog.get_logger()
 
@@ -24,10 +24,11 @@ log = structlog.get_logger()
 COMMAND_REGISTRY = {
     "status":  (0,   "Lifecycle state of this room's linked space", ""),
     "hours":   (0,   "Opening hours of this room's linked space", ""),
-    "find":    (0,   "Search confirmed spaces by tag and city", "{tag} {city}"),
+    "find":    (0,   "Search confirmed spaces by tag and city, or open/closed state", "{tag|open|closed} {city}"),
     "nearby":  (0,   "Spaces within a radius of a city", "{city} {radius_km}"),
     "network": (0,   "Confirmed spaces in a named network", "{network_name}"),
     "travel":  (0,   "Spaces reachable within N hours (ORS isochrone)", "{origin} {hours}[h] [by bike|by foot|by car]"),
+    "read":    (0,   "Read fields from a space's JSON", "[{field}|{slug}]"),
     "help":    (0,   "List available commands", "[verb]"),
     "link":    (100, "Link this room to a space endpoint", "{space_slug}"),
     "update":  (100, "Update a field in this space's JSON", "{field} {value}"),
@@ -42,7 +43,7 @@ LINK_HANDLER_URL = os.environ.get("LINK_HANDLER_URL", "http://mak-link-handler:8
 # (Story 6.1 code review finding; same value as link_handler's BOT_KEY_SECRET).
 BOT_KEY_SECRET = os.environ.get("BOT_KEY_SECRET", "")
 
-ALLOWED_FIELDS = frozenset({"state.open", "contact.irc", "contact.matrix", "contact.twitter"})
+ALLOWED_FIELDS = frozenset({"state.open", "contact.irc", "contact.matrix", "contact.twitter", "mom.memberOf"})
 
 
 def _can_write(power_level: int, field_path: str) -> tuple[bool, str]:
@@ -78,6 +79,11 @@ def _coerce_value(field_path: str, value: str):
         if value.lower() == "false":
             return False
         return None  # "null"
+    if field_path == "mom.memberOf":
+        import json as _json
+        if value.strip().startswith("["):
+            return _json.loads(value)  # full JSON array — parse as list
+        return [value.strip()]  # single name/URI — wrap in list
     return value
 
 
@@ -203,6 +209,10 @@ async def try_handle(text: str, user_id: str, room_id: str, session_id: str, *, 
     if verb == "close":
         return await _handle_open_close("state.open", "false", user_id, room_id, power_level, bound, adapter, context)
 
+    if verb == "read":
+        arg = parts[1] if len(parts) >= 2 else None
+        return await _handle_read(arg, room_id, bound)
+
     if verb == "status":
         return await _handle_status(room_id, power_level, bound)
 
@@ -274,7 +284,7 @@ async def _handle_update(field_path: str, value: str, authorized_by: str, room_i
     allowed, reason = _can_write(power_level, field_path)
     if not allowed:
         if reason == "read_only":
-            return bernard.read_only_ack()
+            return bernard.read_only_ack(authorized_by)
         if reason == "field_not_allowed":
             return bernard.field_not_allowed_ack(sorted(ALLOWED_FIELDS))
         return bernard.update_failed_ack()
@@ -307,7 +317,7 @@ async def _handle_open_close(field_path: str, value: str, authorized_by: str, ro
     allowed, reason = _can_write(power_level, field_path)
     if not allowed:
         if reason == "read_only":
-            return bernard.read_only_ack()
+            return bernard.read_only_ack(authorized_by)
         return bernard.field_not_allowed_ack(sorted(ALLOWED_FIELDS))
 
     coerced = _coerce_value(field_path, value)
@@ -315,6 +325,8 @@ async def _handle_open_close(field_path: str, value: str, authorized_by: str, ro
         space_id = await git_ops.resolve_space_for_room(room_id)
         # Build commit message with open/close shorthand voice
         sha = await git_ops.commit_json(space_id, field_path, coerced, authorized_by)
+    except NoChangeError:
+        return bernard.already_set_ack(state="open" if value == "true" else "closed")
     except NoDeployKeyError:
         bound.warning("commands.open_close_no_key")
         return bernard.no_deploy_key_ack()
@@ -364,6 +376,53 @@ async def _handle_hours(room_id: str, bound) -> str:
     except Exception as e:
         bound.warning("commands.hours_failed", error=str(e))
         return bernard.query_failed_ack()
+
+
+async def _handle_read(arg: str | None, room_id: str, bound) -> str:
+    # arg with a dot → field path on the linked space JSON
+    if arg is not None and "." in arg:
+        return await _handle_read_field(arg, room_id, bound)
+    # arg without a dot → space slug (public fetch); no arg → linked space self-read
+    if arg is not None:
+        return await _handle_read_slug(arg, bound)
+    return await _handle_read_self(room_id, bound)
+
+
+async def _handle_read_self(room_id: str, bound) -> str:
+    try:
+        space_id = await git_ops.resolve_space_for_room(room_id)
+    except NoEndpointError:
+        return bernard.status_no_link_ack()
+    try:
+        data = await git_ops.read_json(space_id)
+    except NoDeployKeyError:
+        return bernard.no_deploy_key_ack()
+    except Exception as e:
+        bound.warning("commands.read_self_failed", error=str(e))
+        return bernard.query_failed_ack()
+    return bernard.read_list_ack(data)
+
+
+async def _handle_read_field(field: str, room_id: str, bound) -> str:
+    try:
+        space_id = await git_ops.resolve_space_for_room(room_id)
+    except NoEndpointError:
+        return bernard.status_no_link_ack()
+    try:
+        data = await git_ops.read_json(space_id)
+    except NoDeployKeyError:
+        return bernard.no_deploy_key_ack()
+    except Exception as e:
+        bound.warning("commands.read_field_failed", field=field, error=str(e))
+        return bernard.query_failed_ack()
+    return bernard.read_field_ack(field, data)
+
+
+async def _handle_read_slug(slug: str, bound) -> str:
+    data = await query_commands.fetch_space_json(slug)
+    if data is None:
+        return bernard.read_slug_not_found_ack(slug)
+    return bernard.read_list_ack(data)
 
 
 async def _handle_travel(origin: str, hours_and_mode: str, room_id: str, bound) -> str:

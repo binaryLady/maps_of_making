@@ -55,6 +55,10 @@ class NoEndpointError(Exception):
     """Raised when a space has no registered mom:endpointUrl in Oxigraph."""
 
 
+class NoChangeError(Exception):
+    """Raised when a commit_json call would produce no diff (value already set)."""
+
+
 async def resolve_space_for_room(room_id: str) -> str:
     """Resolve the space_id linked to a Matrix room via the mom:botRoom mapping
     written by `!mom link` (POST /api/bot/deploy-key/{space_id}, see Story 6.1
@@ -309,8 +313,12 @@ async def commit_json(space_id: str, field_path: str, value, authorized_by: str)
     _require_key(space_id)
     async with _space_locks[space_id]:
         repo_dir, branch, file_path = await _resolve_repo_unlocked(space_id)
-        data = json.loads((repo_dir / file_path).read_text())
+        raw = (repo_dir / file_path).read_text()
+        data = json.loads(raw)
+        before = json.dumps(data, sort_keys=True)
         patched = _patch_dict(data, field_path, value)
+        if json.dumps(patched, sort_keys=True) == before:
+            raise NoChangeError(f"{field_path} is already set to {value!r}")
         SpaceAPISchema.model_validate(patched)  # raises if the patched shape is invalid
 
         (repo_dir / file_path).write_text(json.dumps(patched, indent=2) + "\n")

@@ -47,6 +47,7 @@ class MatrixAdapter:
             platform="matrix",
             raw=event,
             power_level=room.power_levels.get_user_level(event.sender),
+            event_id=event.event_id,
         )
         await self._queue.put(message)
 
@@ -65,10 +66,16 @@ class MatrixAdapter:
         return await self._queue.get()
 
     async def send(self, response: str, context: Message) -> None:
+        content: dict = {"msgtype": "m.text", "body": response}
+        if context.event_id:
+            content["m.relates_to"] = {
+                "rel_type": "m.thread",
+                "event_id": context.event_id,
+            }
         await self.client.room_send(
             room_id=context.room_id,
             message_type="m.room.message",
-            content={"msgtype": "m.text", "body": response},
+            content=content,
         )
 
     async def close(self) -> None:

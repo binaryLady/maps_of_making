@@ -10,3 +10,4 @@ class Message:
     platform: str
     raw: Any
     power_level: int = 0
+    event_id: str = ""

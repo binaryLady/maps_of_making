@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8" />
+<title>ZieZo — Activiteiten (mockup)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Caveat:wght@600;700&display=swap" rel="stylesheet" />
+
+<template id="__bundler_thumbnail" data-bg-color="#080A80">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <!-- nav bar -->
+    <rect width="1200" height="800" fill="#080A80"/>
+    <rect y="0" width="880" height="56" fill="#080A80"/>
+    <!-- ZieZo spark + wordmark -->
+    <text x="48" y="38" font-family="sans-serif" font-weight="900" font-size="26" fill="white">✦ ZieZo</text>
+    <!-- right panel -->
+    <rect x="880" width="320" height="800" fill="#1a1d2e"/>
+    <rect x="900" y="80" width="280" height="14" rx="4" fill="#2a2d3e"/>
+    <rect x="900" y="110" width="130" height="32" rx="6" fill="#080A80"/>
+    <rect x="1040" y="110" width="130" height="32" rx="6" fill="#1F9E57" opacity=".6"/>
+    <rect x="900" y="160" width="280" height="14" rx="4" fill="#2a2d3e"/>
+    <rect x="900" y="190" width="130" height="32" rx="6" fill="#333654"/>
+    <rect x="1040" y="190" width="130" height="32" rx="6" fill="#333654"/>
+    <!-- main content area -->
+    <rect x="0" y="56" width="880" height="744" fill="#f4f5f7"/>
+    <!-- page title -->
+    <rect x="40" y="80" width="220" height="28" rx="5" fill="#1a1d2e" opacity=".85"/>
+    <rect x="40" y="122" width="380" height="16" rx="4" fill="#c9cde0" opacity=".5"/>
+    <!-- map embed block -->
+    <rect x="40" y="170" width="800" height="480" rx="12" fill="#e8e9f8" stroke="#080A80" stroke-width="2"/>
+    <!-- map pin cluster -->
+    <circle cx="320" cy="370" r="10" fill="#080A80"/>
+    <circle cx="420" cy="320" r="10" fill="#080A80"/>
+    <circle cx="500" cy="400" r="12" fill="#080A80" opacity=".9"/>
+    <circle cx="580" cy="350" r="8" fill="#080A80" opacity=".7"/>
+    <circle cx="660" cy="300" r="10" fill="#080A80"/>
+    <circle cx="260" cy="420" r="8" fill="#080A80" opacity=".6"/>
+    <circle cx="700" cy="430" r="9" fill="#080A80" opacity=".8"/>
+    <!-- brand chip -->
+    <rect x="56" y="606" width="180" height="38" rx="8" fill="white" opacity=".95"/>
+    <rect x="62" y="612" width="80" height="26" rx="3" fill="#080A80"/>
+    <text x="72" y="630" font-family="sans-serif" font-weight="900" font-size="13" fill="white">VLAIO</text>
+    <text x="152" y="631" font-family="serif" font-size="14" fill="#1a1d2e" font-style="italic">Maps of Making</text>
+    <!-- toolbar chips -->
+    <rect x="56" y="186" width="100" height="30" rx="15" fill="white" opacity=".9"/>
+    <rect x="164" y="186" width="110" height="30" rx="15" fill="white" opacity=".9"/>
+    <rect x="282" y="186" width="120" height="30" rx="15" fill="white" opacity=".9"/>
+    <!-- MoM wordmark bottom -->
+    <text x="440" y="690" font-family="serif" font-size="18" fill="#080A80" font-style="italic" text-anchor="middle" opacity=".6">Maps of Making</text>
+  </svg>
+</template>
+<style>
+/* ── reset ── */
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; font-family: 'Nunito', system-ui, sans-serif; background: #f4f5f7; color: #1a1d2e; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; cursor: pointer; border: 0; background: none; }
+.hand { font-family: 'Caveat', cursive; font-weight: 700; }
+
+/* ── brand tokens (driven by panel) ── */
+:root {
+  --brand: #080A80;
+  --brand-d: #06074f;
+  --brand-soft: #e8e9f8;
+  --brand-ink: #fff;
+}
+.green { --brand: #1F9E57; --brand-d: #156b3a; --brand-soft: #e5f7ec; --brand-ink: #fff; }
+
+/* ── mockup notice ── */
+.notice { background: #1a1d2e; color: #fff; font-size: 11.5px; padding: 6px 18px;
+  display: flex; align-items: center; gap: 14px; letter-spacing: .01em; z-index: 90; position: relative; }
+.notice b { background: #FFB800; color: #000; padding: 2px 7px; border-radius: 4px; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; font-weight: 800; }
+.notice .sp { flex: 1; }
+
+/* ── ZieZo site shell ── */
+.site { margin-right: 320px; min-height: 100vh; }
+
+/* nav */
+.z-nav { background: var(--brand); color: var(--brand-ink); display: flex; align-items: center;
+  gap: 0; padding: 0 28px; height: 60px; position: sticky; top: 0; z-index: 50; transition: background .35s, color .35s; }
+.z-logo { font-weight: 900; font-size: 22px; letter-spacing: -.02em; margin-right: 32px;
+  display: flex; align-items: center; gap: 8px; }
+.z-logo .spark { font-size: 17px; }
+.z-navlinks { display: flex; gap: 2px; height: 100%; }
+.z-navlinks a { padding: 0 14px; font-size: 14px; font-weight: 600; display: flex; align-items: center;
+  opacity: .82; transition: opacity .15s; border-bottom: 3px solid transparent; }
+.z-navlinks a:hover { opacity: 1; }
+.z-navlinks a.active { opacity: 1; border-bottom-color: rgba(255,255,255,.7); }
+.z-sp { flex: 1; }
+.z-cta { background: rgba(255,255,255,.18); border: 1.5px solid rgba(255,255,255,.35);
+  color: var(--brand-ink); border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 700;
+  transition: background .15s; }
+.z-cta:hover { background: rgba(255,255,255,.28); }
+
+/* page header */
+.z-page-header { background: #fff; border-bottom: 1px solid #e4e6f0; padding: 28px 40px 22px; }
+.z-breadcrumb { font-size: 12px; color: #8b8fa8; margin-bottom: 10px; display: flex; gap: 6px; align-items: center; }
+.z-breadcrumb span { opacity: .55; }
+.z-page-title { font-size: 30px; font-weight: 900; margin: 0 0 8px; letter-spacing: -.02em; }
+.z-page-sub { font-size: 15px; color: #525568; max-width: 560px; line-height: 1.55; margin: 0; }
+
+/* map section */
+.z-map-section { padding: 32px 40px; }
+.z-section-head { margin-bottom: 18px; }
+.z-section-head h2 { font-size: 22px; font-weight: 900; margin: 0 0 6px; letter-spacing: -.01em; }
+.z-section-head p { font-size: 14px; color: #525568; margin: 0; line-height: 1.55; }
+
+/* ── embed shell ── */
+.embed-shell { border-radius: 14px; overflow: hidden; box-shadow: 0 4px 28px rgba(16,18,60,.14);
+  border: 2px solid transparent; transition: border-color .35s; }
+.embed-shell.green { border-color: transparent; }
+
+/* brand bar — full mode only */
+.brand-bar { display: none; align-items: center; gap: 16px; padding: 13px 20px;
+  background: var(--brand); color: var(--brand-ink); transition: background .35s; }
+[data-mode="full"] .brand-bar { display: flex; }
+.brand-bar .logo { display: flex; align-items: center; height: 28px; }
+.brand-bar .logo svg { height: 28px; width: auto; display: block; }
+.brand-bar .title { font-weight: 800; font-size: 16px; letter-spacing: -.01em; }
+.brand-bar .sub { font-size: 12px; opacity: .78; }
+.brand-bar .sp { flex: 1; }
+.brand-bar .by { font-size: 12px; opacity: .9; display: flex; align-items: center; gap: 6px; }
+.brand-bar .by .wm { font-family: 'Caveat', cursive; font-size: 20px; line-height: 1; font-weight: 700; }
+
+/* iframe wrap */
+.iframe-wrap { position: relative; }
+.embed-shell iframe { display: block; width: 100%; height: 540px; border: 0; }
+
+/* brand chip — light mode, bottom-left over iframe */
+.brand-chip { position: absolute; bottom: 14px; left: 14px; z-index: 20; pointer-events: none;
+  background: #fff; border-radius: 10px; box-shadow: 0 2px 12px rgba(0,0,0,.16);
+  border: 1px solid rgba(0,0,0,.08); padding: 8px 12px;
+  display: flex; align-items: center; gap: 10px; }
+[data-mode="full"] .brand-chip { display: none; }
+.brand-chip .badge svg { height: 28px; width: auto; display: block; }
+.brand-chip .sep { width: 1px; height: 24px; background: #e4e6f0; }
+.brand-chip .cap { display: flex; flex-direction: column; gap: 1px; line-height: 1; }
+.brand-chip .cap .k { font-size: 9px; text-transform: uppercase; letter-spacing: .1em; color: #aab; font-weight: 700; }
+.brand-chip .cap .wm { font-family: 'Caveat', cursive; font-size: 19px; font-weight: 700; color: #1a1d2e; }
+
+/* brand footer — full mode only */
+.brand-foot { display: none; background: var(--brand-d); color: var(--brand-ink); padding: 9px 20px;
+  font-size: 12.5px; align-items: center; gap: 8px; transition: background .35s; }
+[data-mode="full"] .brand-foot { display: flex; }
+.brand-foot .wm { font-family: 'Caveat', cursive; font-size: 19px; font-weight: 700; }
+.brand-foot .sp { flex: 1; }
+.brand-foot a { color: var(--brand-ink); text-decoration: underline; opacity: .8; font-size: 11px; }
+
+/* ── annotations ── */
+.annot { position: absolute; pointer-events: none; display: flex; align-items: center; gap: 7px; z-index: 25; opacity: 1; transition: opacity .25s; }
+body.no-annots .annot { opacity: 0; }
+.annot .dot { width: 22px; height: 22px; border-radius: 50%; background: #FFB800; color: #000;
+  font-weight: 900; font-size: 12px; display: flex; align-items: center; justify-content: center;
+  border: 2.5px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,.3); flex-shrink: 0; }
+.annot .lbl { background: rgba(22,24,46,.88); color: #fff; font-size: 11.5px; font-weight: 700;
+  padding: 5px 10px; border-radius: 7px; white-space: nowrap; line-height: 1.3; }
+.annot .lbl small { font-weight: 500; opacity: .78; display: block; font-size: 10px; }
+/* positioning — relative to .iframe-wrap */
+#a1 { bottom: 58px; left: 14px; flex-direction: column; align-items: flex-start; }
+#a1 .lbl { order: -1; }
+#a2 { top: 58px; left: 180px; flex-direction: column; }
+#a2 .lbl { order: -1; }
+#a3 { top: 14px; right: 14px; flex-direction: row-reverse; }
+#a4 { top: 52px; right: 14px; flex-direction: row-reverse; }
+#a5 { bottom: 14px; right: 120px; flex-direction: column; }
+#a5 .lbl { order: -1; }
+
+/* close-up section */
+.closeup-section { display: none; }
+body.view-closeup .closeup-section { display: block; }
+body.view-closeup .context-only { display: none; }
+
+/* data note */
+.data-note { font-size: 11.5px; color: #9fa3ba; margin: 10px 0 0; line-height: 1.5; }
+
+/* activity cards */
+.z-cards-section { padding: 0 40px 40px; }
+.z-cards-section h3 { font-size: 18px; font-weight: 800; margin: 0 0 16px; }
+.z-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.z-card { background: #fff; border-radius: 12px; padding: 18px; border: 1px solid #e4e6f0;
+  transition: box-shadow .15s; }
+.z-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.09); }
+.z-card .tag { display: inline-flex; background: var(--brand-soft); color: var(--brand); font-size: 11px;
+  font-weight: 700; padding: 3px 9px; border-radius: 999px; margin-bottom: 10px;
+  text-transform: uppercase; letter-spacing: .04em; transition: background .35s, color .35s; }
+.z-card h4 { font-size: 15px; font-weight: 800; margin: 0 0 6px; line-height: 1.2; }
+.z-card p { font-size: 13px; color: #525568; margin: 0 0 12px; line-height: 1.5; }
+.z-card .meta { font-size: 11.5px; color: #9fa3ba; display: flex; gap: 10px; }
+
+/* close-up section design */
+.cu-title { font-size: 22px; font-weight: 900; margin: 0 0 6px; letter-spacing: -.01em; }
+.cu-sub { font-size: 13.5px; color: #525568; margin: 0 0 28px; }
+.cu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.cu-card { background: #fff; border-radius: 14px; border: 1px solid #e4e6f0; padding: 22px; }
+.cu-card h4 { font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em;
+  color: #9fa3ba; margin: 0 0 16px; }
+.cu-chip { display: inline-flex; align-items: center; gap: 9px; background: #fff;
+  border-radius: 10px; box-shadow: 0 2px 12px rgba(0,0,0,.14); border: 1px solid #e4e6f0;
+  padding: 10px 14px; margin-bottom: 8px; }
+.cu-chip svg { height: 28px; width: auto; }
+.cu-chip .sep { width: 1px; height: 22px; background: #e4e6f0; }
+.cu-chip .wm { font-family: 'Caveat', cursive; font-size: 20px; font-weight: 700; }
+.cu-bar { background: var(--brand); border-radius: 9px; padding: 12px 16px;
+  display: flex; align-items: center; gap: 12px; margin-bottom: 8px; transition: background .35s; }
+.cu-bar svg { height: 26px; width: auto; }
+.cu-bar .t { color: #fff; font-weight: 800; font-size: 14.5px; }
+.cu-bar .by { margin-left: auto; font-family: 'Caveat', cursive; font-size: 18px; font-weight: 700; color: rgba(255,255,255,.9); }
+.cu-lbl { font-size: 12px; color: #525568; margin: 0 0 16px; line-height: 1.5; padding-left: 4px; }
+.cu-lbl b { color: #1a1d2e; }
+.cu-code { background: #1a1d2e; border-radius: 9px; padding: 14px 16px; font-family: monospace;
+  font-size: 12px; line-height: 1.7; color: #c9cde0; margin-top: 20px; }
+.cu-code .k { color: #7dd3fc; } .cu-code .v { color: #86efac; } .cu-code .c { color: #6b7280; }
+
+/* ── mockup panel ── */
+.panel { position: fixed; right: 0; top: 0; bottom: 0; width: 320px; background: #1a1d2e;
+  color: #c9cde0; display: flex; flex-direction: column; z-index: 80;
+  box-shadow: -4px 0 24px rgba(0,0,0,.25); overflow-y: auto; }
+.panel-head { padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,.1); flex-shrink: 0; }
+.panel-head h2 { margin: 0; font-size: 14px; font-weight: 800; color: #fff; letter-spacing: -.01em; }
+.panel-head p { margin: 4px 0 0; font-size: 11px; color: #6b7280; }
+.panel-body { padding: 16px 20px; flex: 1; display: flex; flex-direction: column; gap: 20px; }
+.p-group { display: flex; flex-direction: column; gap: 8px; }
+.p-label { font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: #6b7280; font-weight: 700; }
+.p-opts { display: flex; gap: 6px; flex-wrap: wrap; }
+.p-btn { border: 1.5px solid rgba(255,255,255,.15); border-radius: 8px; padding: 7px 14px;
+  font-size: 12.5px; font-weight: 700; color: #c9cde0; background: rgba(255,255,255,.07);
+  transition: all .15s; }
+.p-btn:hover { background: rgba(255,255,255,.14); }
+.p-btn.on { background: var(--brand); border-color: var(--brand); color: #fff; }
+.p-btn.blue.on { background: #080A80; border-color: #080A80; }
+.p-btn.green.on { background: #1F9E57; border-color: #1F9E57; }
+.p-sep { height: 1px; background: rgba(255,255,255,.1); }
+.p-config { background: rgba(0,0,0,.3); border-radius: 10px; padding: 14px 16px;
+  font-family: monospace; font-size: 11.5px; line-height: 1.9; color: #c9cde0; }
+.p-config .k { color: #7dd3fc; } .p-config .v { color: #86efac; } .p-config .c { color: #4b5563; }
+.p-copy { width: 100%; background: rgba(255,255,255,.09); border: 1.5px solid rgba(255,255,255,.18);
+  border-radius: 8px; padding: 8px; font-size: 12px; font-weight: 700; color: #c9cde0;
+  transition: background .15s; margin-top: 8px; }
+.p-copy:hover { background: rgba(255,255,255,.18); }
+.p-note { font-size: 11px; color: #4b5563; line-height: 1.6; padding: 0 2px; }
+
+/* green theming on nav */
+.green-nav { background: var(--brand) !important; }
+</style>
+</head>
+<body>
+
+<!-- ── MOCKUP NOTICE ── -->
+<div class="notice">
+  <b>Mockup</b>
+  ZieZo × Maps of Making — wittelabelembed · voor handoff, niet voor productie
+  <span class="sp"></span>
+  Kaartmotor: <strong style="color:#fff">Maps of Making.html</strong> (live iframe · bestaande engine)
+</div>
+
+<!-- ── ZIEZO SITE ── -->
+<div class="site">
+
+  <!-- nav -->
+  <nav class="z-nav" id="znav">
+    <div class="z-logo"><span class="spark">✦</span> ZieZo</div>
+    <div class="z-navlinks">
+      <a href="#" class="active">Activiteiten</a>
+      <a href="#">Over ZieZo</a>
+      <a href="#">Onze aanpak</a>
+      <a href="#">STEM doe-het-zelf</a>
+      <a href="#">Partners</a>
+    </div>
+    <span class="z-sp"></span>
+    <button class="z-cta">Organisatie aanmelden</button>
+  </nav>
+
+  <!-- page header -->
+  <div class="z-page-header context-only">
+    <div class="z-breadcrumb">Home <span>›</span> Activiteiten</div>
+    <h1 class="z-page-title">Activiteiten</h1>
+    <p class="z-page-sub">Ontdek workshops, fablabs en STEM-werkplaatsen in jouw buurt. Leren door te maken — dat is de ZieZo-manier.</p>
+  </div>
+
+  <!-- map section -->
+  <div class="z-map-section">
+    <div class="z-section-head context-only">
+      <h2>Vind een STEM-plek in je buurt</h2>
+      <p>Klik op een pin om een makerspace, fablab of techniekacademie te ontdekken. Filteren op specialiteit of open nu werkt ook.</p>
+    </div>
+
+    <!-- close-up intro (only in closeup view) -->
+    <div class="closeup-section" style="padding-bottom: 28px;">
+      <div class="cu-title">Brandingbehandeling — close-up</div>
+      <div class="cu-sub">Hoe VLAIO-branding op de ingebedde MoM-kaart wordt verwerkt · gebruik het controlepaneel om te wisselen tussen licht en volledig.</div>
+      <div class="cu-grid">
+        <div class="cu-card">
+          <h4>① Licht · Logo-chip</h4>
+          <div class="cu-chip" id="cu-chip">
+            <!-- VLAIO badge -->
+            <svg viewBox="0 0 149 49" xmlns="http://www.w3.org/2000/svg" height="28">
+              <rect width="149" height="49" rx="3" fill="#080A80"/>
+              <path d="M51.7455 10.7H42V38.1762H51.7455V10.7Z" fill="#fff"/>
+              <path d="M99 28.7L108 10.7L80 10.7L80 19.7L90.134 19.7L80 38.18L84.4925 38.18L108 38.18L108 28.7L99 28.7Z" fill="#fff"/>
+              <path d="M29 28.7L38 10.7L9.99999 10.7L9.99999 19.7L20.134 19.7L9.99999 38.18L14.4925 38.18L38 38.18L38 28.7L29 28.7Z" fill="#fff"/>
+              <path d="M55 38.1762H75.8629V28.7H64.5799V25.2476H73.7577V23.4619H64.5799V19.7H75.8629V10.7H55V38.1762Z" fill="#fff"/>
+              <path d="M124.5 10C133 10 139 16 139 24.5C139 33 133 39 124.5 39C116 39 110 33 110 24.5C110 16 116.492 10 124.5 10ZM124.5 21.5996C122.898 21.5996 121.6 22.8984 121.6 24.5C121.6 26.1016 122.898 27.4004 124.5 27.4004C126.102 27.4004 127.4 26.1016 127.4 24.5C127.4 22.8984 126.102 21.5996 124.5 21.5996Z" fill="#fff"/>
+            </svg>
+            <span class="sep"></span>
+            <span style="display:flex;flex-direction:column;gap:2px">
+              <span style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:#aab;font-weight:700">kaart door</span>
+              <span class="wm" style="font-size:18px;color:#1a1d2e">Maps of Making</span>
+            </span>
+          </div>
+          <p class="cu-lbl">Zweeft over de kaart, linksonder. <b>Partner-logo</b> rechts van een scheidingslijn, <b>"kaart door Maps of Making"</b> in het handgeschreven lettertype. Neutraal, discreet — de kaart staat centraal.</p>
+        </div>
+        <div class="cu-card">
+          <h4>② Volledig · Co-brand header</h4>
+          <div class="cu-bar" id="cu-bar">
+            <svg viewBox="9 10 130 29" xmlns="http://www.w3.org/2000/svg" height="26" fill="white" style="color:white">
+              <path d="M51.7455 10.7H42V38.1762H51.7455V10.7Z"/>
+              <path d="M99 28.7L108 10.7L80 10.7L80 19.7L90.134 19.7L80 38.18L84.4925 38.18L108 38.18L108 28.7L99 28.7Z"/>
+              <path d="M29 28.7L38 10.7L9.99999 10.7L9.99999 19.7L20.134 19.7L9.99999 38.18L14.4925 38.18L38 38.18L38 28.7L29 28.7Z"/>
+              <path d="M55 38.1762H75.8629V28.7H64.5799V25.2476H73.7577V23.4619H64.5799V19.7H75.8629V10.7H55V38.1762Z"/>
+              <path d="M124.5 10C133 10 139 16 139 24.5C139 33 133 39 124.5 39C116 39 110 33 110 24.5C110 16 116.492 10 124.5 10ZM124.5 21.5996C122.898 21.5996 121.6 22.8984 121.6 24.5C121.6 26.1016 122.898 27.4004 124.5 27.4004C126.102 27.4004 127.4 26.1016 127.4 24.5C127.4 22.8984 126.102 21.5996 124.5 21.5996Z"/>
+            </svg>
+            <span class="t">STEM-plekken in je buurt</span>
+            <span class="by">kaart door Maps of Making</span>
+          </div>
+          <p class="cu-lbl">Volledige balk bovenaan de widget in de <b>merkkleur</b>. VLAIO-woordmerk in wit. Rechts: <b>Maps of Making</b>-attributie in het handschriftlettertype. Toont ook een voettekst onderaan in donkerdere toon.</p>
+        </div>
+        <div class="cu-card" style="grid-column: span 2;">
+          <h4>③ Dev handoff — embed config params</h4>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div>
+              <div style="font-size:12px;font-weight:700;color:#525568;margin-bottom:8px;">Licht (aanbevolen)</div>
+              <div class="cu-code"><span class="c">// mapsofmaking.org live URL</span><br>
+                mapsofmaking.org/?<br>
+                <span class="k">&nbsp;preset</span>=<span class="v">vlaio-ziezo</span><br>
+                <span class="k">&nbsp;country</span>=<span class="v">BE</span><br>
+                <span class="k">&nbsp;bbox</span>=<span class="v">2.28,50..51.44</span><br>
+                <span class="k">&nbsp;accent</span>=<span class="v" id="cu-hex1">080A80</span><br>
+                <span class="k">&nbsp;mode</span>=<span class="v">light</span>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:12px;font-weight:700;color:#525568;margin-bottom:8px;">Volledig co-brand</div>
+              <div class="cu-code"><span class="c">// &lt;mom-map&gt; web component</span><br>
+                &lt;mom-map<br>
+                <span class="k">&nbsp;preset</span>=<span class="v">"vlaio-ziezo"</span><br>
+                <span class="k">&nbsp;accent</span>=<span class="v" id="cu-hex2">"#080A80"</span><br>
+                <span class="k">&nbsp;mode</span>=<span class="v">"full"</span><br>
+                <span class="k">&nbsp;partner</span>=<span class="v">"vlaio"</span>&gt;<br>
+                &lt;/mom-map&gt;
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── THE EMBED WIDGET ── -->
+    <div class="embed-shell" id="embed-shell" data-mode="light">
+
+      <!-- full mode: header bar -->
+      <div class="brand-bar">
+        <span class="logo" id="bar-logo">
+          <svg viewBox="9 10 130 29" xmlns="http://www.w3.org/2000/svg" height="28" fill="currentColor">
+            <path d="M51.7455 10.7H42V38.1762H51.7455V10.7Z"/>
+            <path d="M99 28.7L108 10.7L80 10.7L80 19.7L90.134 19.7L80 38.18L84.4925 38.18L108 38.18L108 28.7L99 28.7Z"/>
+            <path d="M29 28.7L38 10.7L9.99999 10.7L9.99999 19.7L20.134 19.7L9.99999 38.18L14.4925 38.18L38 38.18L38 28.7L29 28.7Z"/>
+            <path d="M55 38.1762H75.8629V28.7H64.5799V25.2476H73.7577V23.4619H64.5799V19.7H75.8629V10.7H55V38.1762Z"/>
+            <path d="M124.5 10C133 10 139 16 139 24.5C139 33 133 39 124.5 39C116 39 110 33 110 24.5C110 16 116.492 10 124.5 10ZM124.5 21.5996C122.898 21.5996 121.6 22.8984 121.6 24.5C121.6 26.1016 122.898 27.4004 124.5 27.4004C126.102 27.4004 127.4 26.1016 127.4 24.5C127.4 22.8984 126.102 21.5996 124.5 21.5996Z"/>
+          </svg>
+        </span>
+        <div>
+          <div class="title">STEM-plekken in je buurt</div>
+          <div class="sub">aangeboden door VLAIO · ZieZo-netwerk</div>
+        </div>
+        <span class="sp"></span>
+        <span class="by">kaart door <span class="wm">Maps of Making</span></span>
+      </div>
+
+      <!-- iframe + brand chip + annotations -->
+      <div class="iframe-wrap">
+        <iframe src="https://mapsofmaking.org/?preset=untitled-preset&country=BE&bbox=2.28,50.28,6.09,51.44"
+                width="100%" height="520"
+                style="border:0;display:block"
+                title="Maps of Making — STEM-plekken Vlaanderen"
+                loading="lazy"></iframe>
+
+        <!-- light mode brand chip -->
+        <div class="brand-chip">
+          <span class="badge">
+            <svg viewBox="0 0 149 49" xmlns="http://www.w3.org/2000/svg" height="28" width="auto">
+              <rect width="149" height="49" rx="3" fill="#080A80" id="chip-bg"/>
+              <path d="M51.7455 10.7H42V38.1762H51.7455V10.7Z" fill="#fff"/>
+              <path d="M99 28.7L108 10.7L80 10.7L80 19.7L90.134 19.7L80 38.18L84.4925 38.18L108 38.18L108 28.7L99 28.7Z" fill="#fff"/>
+              <path d="M29 28.7L38 10.7L9.99999 10.7L9.99999 19.7L20.134 19.7L9.99999 38.18L14.4925 38.18L38 38.18L38 28.7L29 28.7Z" fill="#fff"/>
+              <path d="M55 38.1762H75.8629V28.7H64.5799V25.2476H73.7577V23.4619H64.5799V19.7H75.8629V10.7H55V38.1762Z" fill="#fff"/>
+              <path d="M124.5 10C133 10 139 16 139 24.5C139 33 133 39 124.5 39C116 39 110 33 110 24.5C110 16 116.492 10 124.5 10ZM124.5 21.5996C122.898 21.5996 121.6 22.8984 121.6 24.5C121.6 26.1016 122.898 27.4004 124.5 27.4004C126.102 27.4004 127.4 26.1016 127.4 24.5C127.4 22.8984 126.102 21.5996 124.5 21.5996Z" fill="#fff"/>
+            </svg>
+          </span>
+          <span class="sep"></span>
+          <span class="cap">
+            <span class="k">kaart door</span>
+            <span class="wm">Maps of Making</span>
+          </span>
+        </div>
+
+        <!-- annotations (toggle via panel) -->
+        <div class="annot" id="a1">
+          <div class="dot">①</div>
+          <div class="lbl">Partner logo + attributie<small>Brand chip · linksonder · lichtmodus</small></div>
+        </div>
+        <div class="annot" id="a2">
+          <div class="dot">②</div>
+          <div class="lbl">Accentkleur via --brand<small>Pins, actieve chips, knoppen</small></div>
+        </div>
+        <div class="annot" id="a3">
+          <div class="dot">③</div>
+          <div class="lbl">Kaartzoeker<small>MoM-engine ongewijzigd</small></div>
+        </div>
+        <div class="annot" id="a4">
+          <div class="dot">④</div>
+          <div class="lbl">Filters &amp; resultaten<small>Ingebouwde UX van MoM</small></div>
+        </div>
+      </div>
+
+      <!-- full mode footer -->
+      <div class="brand-foot">
+        <span>Aangeboden door VLAIO ·</span>
+        <span class="wm">Maps of Making</span>
+        <span class="sp"></span>
+        <a href="https://mapsofmaking.org" target="_blank">mapsofmaking.org</a>
+      </div>
+
+    </div>
+
+    <figure style="margin:0"><figcaption class="data-note context-only">Bron: <a href="https://mapsofmaking.org" target="_blank" rel="noopener">Maps of Making</a> · Apache 2.0 · gefilterd op BE (<code>country=BE</code>, bbox Vlaanderen)</figcaption></figure>
+  </div>
+
+  <!-- static activity cards for context -->
+  <div class="z-cards-section context-only">
+    <h3>Uitgelichte activiteiten</h3>
+    <div class="z-cards">
+      <div class="z-card">
+        <span class="tag">Robotica</span>
+        <h4>Bouw je eerste robot — beginners</h4>
+        <p>Van motortje tot bewegende arm: ontdek hoe robots werken in deze hands-on namiddag.</p>
+        <div class="meta"><span>📍 Gent</span><span>Za 14:00</span><span>Gratis</span></div>
+      </div>
+      <div class="z-card">
+        <span class="tag">3D-printen</span>
+        <h4>3D-printen voor jongeren (12–16 j.)</h4>
+        <p>Ontwerp en print je eigen object mee. Alles inbegrepen, geen voorkennis nodig.</p>
+        <div class="meta"><span>📍 Leuven</span><span>Wo 13:00</span><span>€ 5</span></div>
+      </div>
+      <div class="z-card">
+        <span class="tag">Houtbewerking</span>
+        <h4>Tiny huis bouwen — STEM voor gezinnen</h4>
+        <p>Zaag, schroef en verbind: samen bouwen jullie een miniatuur houten huis.</p>
+        <div class="meta"><span>📍 Brugge</span><span>Zo 10:00</span><span>€ 8</span></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /site -->
+
+<!-- ── MOCKUP CONTROL PANEL ── -->
+<aside class="panel">
+  <div class="panel-head">
+    <h2>🎨 Mockup controls</h2>
+    <p>Niet zichtbaar voor eindgebruikers · voor presentatie &amp; handoff</p>
+  </div>
+  <div class="panel-body">
+
+    <div class="p-group">
+      <div class="p-label">Accentkleur partner</div>
+      <div class="p-opts">
+        <button class="p-btn blue on" id="btn-blue">VLAIO blauw</button>
+        <button class="p-btn green" id="btn-green">VLAIO groen</button>
+      </div>
+    </div>
+
+    <div class="p-group">
+      <div class="p-label">Merkintegratiemodus</div>
+      <div class="p-opts">
+        <button class="p-btn on" id="btn-light">Licht</button>
+        <button class="p-btn" id="btn-full">Volledig co-brand</button>
+      </div>
+    </div>
+
+    <div class="p-sep"></div>
+
+    <div class="p-group">
+      <div class="p-label">Weergave</div>
+      <div class="p-opts">
+        <button class="p-btn on" id="btn-ctx">In context</button>
+        <button class="p-btn" id="btn-cu">Close-up</button>
+      </div>
+    </div>
+
+    <div class="p-group">
+      <div class="p-label">Aantekeningen</div>
+      <div class="p-opts">
+        <button class="p-btn on" id="btn-ann-on">Aan</button>
+        <button class="p-btn" id="btn-ann-off">Uit</button>
+      </div>
+    </div>
+
+    <div class="p-sep"></div>
+
+    <div class="p-group">
+      <div class="p-label">Embed config — voor devs</div>
+      <div class="p-config" id="p-config">
+        <span class="c">// mapsofmaking.org embed URL</span><br>
+        <span class="k">preset</span>=<span class="v">vlaio-ziezo</span><br>
+        <span class="k">country</span>=<span class="v">BE</span><br>
+        <span class="k">bbox</span>=<span class="v">2.28,50.28,6.09,51.44</span><br>
+        <span class="k">accent</span>=<span class="v" id="p-hex">080A80</span><br>
+        <span class="k">mode</span>=<span class="v" id="p-mode">light</span><br>
+        <span class="k">partner</span>=<span class="v">vlaio</span>
+      </div>
+      <button class="p-copy" id="btn-copy">📋 Kopieer configuratie</button>
+    </div>
+
+    <div class="p-sep"></div>
+
+    <div class="p-note">
+      <b style="color:#c9cde0">Workflow:</b><br>
+      1. MoM levert een publiek <code style="color:#7dd3fc">?preset=vlaio-ziezo</code> URL<br>
+      2. ZieZo plakt de &lt;iframe&gt; in de activiteitenpagina<br>
+      3. <code style="color:#7dd3fc">accent=</code>, <code style="color:#7dd3fc">mode=</code> en <code style="color:#7dd3fc">partner=</code> sturen branding<br>
+      4. MoM-engine blijft ongewijzigd — enkel chrome verandert
+    </div>
+
+  </div>
+</aside>
+
+<script>
+  const shell  = document.getElementById('embed-shell');
+  const nav    = document.getElementById('znav');
+  const cuBar  = document.getElementById('cu-bar');
+  const pHex   = document.getElementById('p-hex');
+  const pMode  = document.getElementById('p-mode');
+  const cuHex1 = document.getElementById('cu-hex1');
+  const cuHex2 = document.getElementById('cu-hex2');
+  const chipBg = document.getElementById('chip-bg');
+
+  const COLORS = { blue: '#080A80', green: '#1F9E57' };
+  let curColor = 'blue', curMode = 'light';
+
+  function applyBrand() {
+    const hex = COLORS[curColor];
+    // set CSS var on shell and whole doc
+    document.documentElement.style.setProperty('--brand', hex);
+    document.documentElement.style.setProperty('--brand-d', curColor==='blue' ? '#06074f' : '#156b3a');
+    document.documentElement.style.setProperty('--brand-soft', curColor==='blue' ? '#e8e9f8' : '#e5f7ec');
+    nav.style.background = hex;
+    cuBar.style.background = hex;
+    chipBg.setAttribute('fill', hex);
+    pHex.textContent = hex.replace('#','');
+    if (cuHex1) cuHex1.textContent = hex.replace('#','');
+    if (cuHex2) cuHex2.textContent = hex;
+  }
+
+  function setMode(m) {
+    curMode = m;
+    shell.setAttribute('data-mode', m);
+    pMode.textContent = m;
+    document.getElementById('btn-light').classList.toggle('on', m==='light');
+    document.getElementById('btn-full').classList.toggle('on', m==='full');
+  }
+
+  // brand
+  document.getElementById('btn-blue').addEventListener('click', () => {
+    curColor = 'blue';
+    document.getElementById('btn-blue').classList.add('on');
+    document.getElementById('btn-green').classList.remove('on');
+    applyBrand();
+  });
+  document.getElementById('btn-green').addEventListener('click', () => {
+    curColor = 'green';
+    document.getElementById('btn-green').classList.add('on');
+    document.getElementById('btn-blue').classList.remove('on');
+    applyBrand();
+  });
+
+  // mode
+  document.getElementById('btn-light').addEventListener('click', () => setMode('light'));
+  document.getElementById('btn-full').addEventListener('click', () => setMode('full'));
+
+  // view
+  document.getElementById('btn-ctx').addEventListener('click', () => {
+    document.body.classList.remove('view-closeup');
+    document.getElementById('btn-ctx').classList.add('on');
+    document.getElementById('btn-cu').classList.remove('on');
+  });
+  document.getElementById('btn-cu').addEventListener('click', () => {
+    document.body.classList.add('view-closeup');
+    document.getElementById('btn-cu').classList.add('on');
+    document.getElementById('btn-ctx').classList.remove('on');
+  });
+
+  // annotations
+  document.getElementById('btn-ann-on').addEventListener('click', () => {
+    document.body.classList.remove('no-annots');
+    document.getElementById('btn-ann-on').classList.add('on');
+    document.getElementById('btn-ann-off').classList.remove('on');
+  });
+  document.getElementById('btn-ann-off').addEventListener('click', () => {
+    document.body.classList.add('no-annots');
+    document.getElementById('btn-ann-off').classList.add('on');
+    document.getElementById('btn-ann-on').classList.remove('on');
+  });
+
+  // copy config
+  document.getElementById('btn-copy').addEventListener('click', async () => {
+    const hex = COLORS[curColor].replace('#','');
+    const text = `https://mapsofmaking.org/?preset=vlaio-ziezo&country=BE&bbox=2.28,50.28,6.09,51.44&accent=${hex}&mode=${curMode}&partner=vlaio`;
+    try { await navigator.clipboard.writeText(text); document.getElementById('btn-copy').textContent = '✓ Gekopieerd!'; setTimeout(()=>document.getElementById('btn-copy').textContent='📋 Kopieer configuratie',1600); }
+    catch { document.getElementById('btn-copy').textContent = text; }
+  });
+
+  applyBrand();
+</script>
+</body>
+</html>

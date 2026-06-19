@@ -20,9 +20,10 @@ bot:
   # Open/close shorthands
   open_ack: "Marked as open — committed as {sha}. Waiting for CDN propagation…"
   close_ack: "Marked as closed — committed as {sha}. Waiting for CDN propagation…"
+  already_set_ack: "Already {state}. No commit needed."
 
   # Permission refusals
-  read_only_ack: "That's a write command — only the space coordinator (power level 100) can make changes. You can ask them to run it, or ask me anything about the space."
+  read_only_ack: "I'm sorry, {user}, I'm afraid I can't do that. You don't have the right permissions."
   field_not_allowed_ack: "That field isn't editable through me. Fields I can update: {fields}."
 
   # Value validation
@@ -42,6 +43,9 @@ bot:
   hours_missing: "**{name}** hasn't listed opening hours yet."
   find_results: "Found {count} confirmed space(s) matching '{tag}' in {city}:\n{list}"
   find_empty: "No confirmed spaces match '{tag}' in {city}. {seeded_note}"
+  find_open_results: "Found {count} confirmed space(s) open right now in {city}:\n{list}"
+  find_open_empty: "No confirmed spaces are reporting open right now in {city}. {seeded_note}"
+  read_slug_not_found: "No confirmed space found for slug '{slug}' — check the name and try again."
   nearby_results: "Within {radius}km of {city} — {count} confirmed space(s):\n{list}"
   nearby_empty: "Nothing confirmed within {radius}km of {city}. {seeded_note}"
   network_results: "**{network}** — {count} confirmed member(s):\n{list}"

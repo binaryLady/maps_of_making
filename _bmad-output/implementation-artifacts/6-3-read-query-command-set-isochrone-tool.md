@@ -587,3 +587,41 @@ Canary graph (`urn:mak:canary`) has a subset of these fields. Include it in spat
 **Deferred:**
 - [x] [Review][Defer] `sparql_client.run_select` uses total timeout 15s instead of read timeout 15s as specified [sparql_client.py:17] — deferred, pre-existing minor inconsistency
 - [x] [Review][Defer] ORS timeout is 20s in code vs 15s in changelog note [isochrone.py] — deferred, minor inconsistency
+
+---
+
+### Post-Story Follow-up (2026-06-19)
+
+Operator testing during Story 6.3 demo period surfaced gaps and prompted a focused follow-up batch. All changes land in `harness/` and `infra/bot/git_ops.py` with no new deps.
+
+**New commands:**
+
+- `!mom read` — compact summary of known fields + current values from the linked space's raw JSON (deploy key required). Flags broken `"mom:memberOf"` literal-key shape inline.
+- `!mom read {field}` — exact raw value of any dot-path field (e.g. `state.open`, `contact.matrix`, `mom.memberOf`). Special diagnostic for `mom.memberOf`: detects nested/bare/broken/missing shapes and gives the exact fix.
+- `!mom read {slug}` — same compact field summary for any registered space, fetched from their public endpoint URL via Oxigraph lookup + HTTP GET. Open to all (no deploy key).
+- `!mom help read` — dedicated three-variant help block with examples.
+
+**`!mom find` open/closed state filter:**
+
+- `!mom find open {city}` / `!mom find closed {city}` — `open`/`closed` are now reserved state keywords; filter by `mom:openNow "true"^^xsd:boolean` instead of `schema:knowsAbout`. Dedicated copy: `find_open_results` / `find_open_empty`. Regular tag search unchanged.
+
+**`!mom update mom.memberOf`:**
+
+- `mom.memberOf` added to `ALLOWED_FIELDS`. Always full-array replacement (never partial add/remove — deferred to 6.4 NL `@bernard` mode).
+- Accepts single bare name (`FabTafel` → `["FabTafel"]`) or full JSON array (`["urn:mak:network/fabtafel","urn:mak:network/vulca"]`). Bare names auto-expanded to `urn:mak:network/<slug>` by the ingestion pipeline.
+- `!mom help update` expanded from one-liner to full per-field reference including the array replacement rule and explicit 6.4 deferral note for add/remove semantics.
+
+**Permission refusal copy (HAL 9000):**
+
+- `read_only_ack` now takes the caller's Matrix user ID and strips the local part (`@jason_p:matrix.org` → `jason_p`). Copy: `"I'm sorry, {user}, I'm afraid I can't do that. You don't have the right permissions."` — Bernard is a Kubrick nerd sometimes.
+
+**`!mom open` / `!mom close` idempotency fix:**
+
+- `commit_json` now snapshots `before = json.dumps(data, sort_keys=True)` before calling `_patch_dict` (which mutates in place). Comparing `before` vs post-patch correctly detects no-change and raises `NoChangeError`. Previously the comparison was always `True` (same object reference), causing Bernard to report "already open" even when the state had changed.
+- Response: `"Already {state}. No commit needed."`
+
+**Matrix thread replies:**
+
+- `Message` dataclass gains `event_id: str = ""`. `matrix_adapter._on_message` populates it. `adapter.send()` includes `m.relates_to: {rel_type: "m.thread", event_id: ...}` on every reply — Bernard always replies in-thread to the triggering command. Each `!mom` command in the main timeline starts a new thread; persistent session threads deferred to 6.4.
+
+**Files changed:** `harness/bernard.py`, `harness/bernard_voice.yaml`, `harness/commands.py`, `harness/matrix_adapter.py`, `harness/message.py`, `harness/query_commands.py`, `infra/bot/git_ops.py`
