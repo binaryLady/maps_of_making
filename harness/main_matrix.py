@@ -85,6 +85,11 @@ async def main() -> None:
     adapter = MatrixAdapter(homeserver, user_id, access_token, device_id)
     try:
         await adapter.start()
+        profile_cfg = bot_cfg.get("profile") or {}
+        await adapter.ensure_profile(
+            display_name=profile_cfg.get("display_name"),
+            avatar_path=profile_cfg.get("avatar_path"),
+        )
         log.info("bot.ready", platform="matrix", model=llm_client.MODEL)
 
         while True:

@@ -23,6 +23,34 @@ This story is a **spike**: investigate + prototype, produce a decision record, o
 
 ---
 
+## Field Evidence (2026-06-19): the "verification spinner" symptom
+
+While setting Bernard's Matrix profile (display name + avatar, now live), a second visible symptom of the missing crypto identity was confirmed: **Bernard's profile shows a perpetual loading spinner in Element**, in the verification-status slot directly under his Matrix ID.
+
+This is NOT presence (presence was enabled in `dendrite.yaml` — `enable_inbound/outbound: true` — and verified working: Bernard reports `presence: online, currently_active: true`). It is the **cross-signing / verification lookup** that never resolves.
+
+Confirmed by querying Dendrite `/_matrix/client/v3/keys/query` for `@bernard:mapsofmaking.org`:
+
+```
+devices with keys: []
+master_keys:       []
+self_signing:      []
+```
+
+Bernard has uploaded **no device keys and no cross-signing identity** — because matrix-nio runs without the `[e2e]` (olm) extra. Element queries his cross-signing keys to render the verification slot, gets nothing, and spins indefinitely.
+
+Side-by-side comparison in the same room (Element profile panel):
+
+| User | Verification slot | Why |
+|------|-------------------|-----|
+| `@nicolasdb:matrix.org` | green **✓ Verified** badge | cross-signed + verified |
+| `@jason_p:matrix.org` | **Verify User** link | has cross-signing identity, not yet verified |
+| `@bernard:mapsofmaking.org` | **perpetual spinner** | no cross-signing identity at all |
+
+**Implication for this spike:** bootstrapping cross-signing (currently Deferred Item #1) is what makes that slot resolve. With a cross-signing identity, Bernard would show **Verify User** like `jason_p` (and could be verified into a green ✓). This is cosmetic in unencrypted rooms — nothing is broken, all `!mom` commands work — but it's the most user-visible artifact of the missing E2E stack, so the spike should explicitly note whether the chosen path clears it.
+
+---
+
 ## Acceptance Criteria
 
 **Given** the spike is complete
@@ -123,7 +151,7 @@ _(Fill in during spike execution)_
 
 ## Deferred Items
 
-1. **Cross-signing / verified devices** — PoC can use auto-trust. Full verification model deferred.
+1. **Cross-signing / verified devices** — PoC can use auto-trust. Full verification model deferred. NOTE: cross-signing is also what clears the profile verification spinner (see Field Evidence above); a message-only PoC using auto-trust will NOT clear the spinner unless it also bootstraps a cross-signing identity.
 2. **Key backup / recovery** — if key store is lost, past messages are unrecoverable. Backup strategy deferred.
 3. **Multi-device coordinator UX** — coordinator may need to verify bot on each device. Deferred.
 
@@ -132,3 +160,4 @@ _(Fill in during spike execution)_
 ## Change Log
 
 - 2026-06-18: Story 6.8 created — E2E encrypted room spike with go/no-go decision gate.
+- 2026-06-19: Added Field Evidence — confirmed Bernard's perpetual profile-verification spinner is the missing cross-signing identity (`keys/query` returns empty device + cross-signing keys), not presence. Flagged that a message-only auto-trust PoC won't clear the spinner without bootstrapping cross-signing.

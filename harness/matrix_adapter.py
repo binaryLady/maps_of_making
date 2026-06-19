@@ -1,8 +1,9 @@
 import asyncio
 import time
+from pathlib import Path
 
 import structlog
-from nio import AsyncClient, InviteMemberEvent, MatrixRoom, RoomMessageText
+from nio import AsyncClient, InviteMemberEvent, MatrixRoom, RoomMessageText, UploadResponse
 
 from message import Message
 
@@ -61,6 +62,40 @@ class MatrixAdapter:
             self.client.sync_forever(timeout=30000, since=since)
         )
         log.info("matrix.sync_started", since=since, start_ts_ms=self._start_ts_ms)
+
+    async def ensure_profile(self, display_name: str | None = None,
+                             avatar_path: str | None = None) -> None:
+        """Idempotently assert Bernard's Matrix profile on boot. Display name is
+        set only when it differs from the current value; the avatar is uploaded
+        only when none is set yet (a fresh homeserver). To force-swap an existing
+        avatar later, run harness/set_profile.py."""
+        if display_name:
+            resp = await self.client.get_displayname(self.client.user_id)
+            current = getattr(resp, "displayname", None)
+            if current != display_name:
+                await self.client.set_displayname(display_name)
+                log.info("matrix.displayname_set", name=display_name)
+
+        if avatar_path:
+            resp = await self.client.get_avatar(self.client.user_id)
+            existing = getattr(resp, "avatar_url", None)
+            if existing:
+                log.info("matrix.avatar_present_skip", avatar_url=existing)
+                return
+            path = Path(avatar_path)
+            if not path.is_file():
+                log.warning("matrix.avatar_missing", path=str(path))
+                return
+            with path.open("rb") as f:
+                upload, _ = await self.client.upload(
+                    f, content_type="image/png",
+                    filename=path.name, filesize=path.stat().st_size,
+                )
+            if isinstance(upload, UploadResponse):
+                await self.client.set_avatar(upload.content_uri)
+                log.info("matrix.avatar_set", avatar_url=upload.content_uri)
+            else:
+                log.warning("matrix.avatar_upload_failed", resp=str(upload))
 
     async def receive(self) -> Message:
         return await self._queue.get()
