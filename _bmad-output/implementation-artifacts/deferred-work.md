@@ -1,5 +1,52 @@
 # Deferred Work
 
+## Deferred from: party-mode roundtable on Epic 6 bot UX + IoP/OKW (2026-06-19)
+
+### RESOLVED + REFRAMED: "IoP" = Internet of Production Alliance → OKW interop opportunity
+
+The earlier "IoP naming ambiguity (Internet of Places vs Internet of Production)" is **resolved and superseded.** "IoP" = the **Internet of Production Alliance** (internetofproduction.org) — a network contact who **supports MoM and would replace their stale Open Know-Where (OKW) map with it**, because their map suffers the exact staleness phenomenon MoM's heartbeat/freshness model solves. This is the strongest external validation the project has had.
+
+The IoP Alliance maintains a family of open standards:
+- **OKW (Open Know-Where)** — open data model + mapping standard for facility/makerspace/fab-lab **location, capacity, capabilities**. THE established standard for MoM's exact domain. Spec: https://standards.internetofproduction.org/pub/okw/release/2 (rel. 2, launched Apr 2021). Five linked classes (Facility anchor); fields: GPS coords, postal address, contact, machines-per-facility with a controlled classification tag list (CNC/Router/Power tool/Drill/Saw…), materials worked. Delivery formats: CSV / SQLite / JSON.
+- **OKH (Open Know-How)** — hardware design + manufacturing-instruction metadata ("HOW to fabricate"). The sleeper value: OKW (where) + OKH (how) → Bernard answers "which live, verified makerspace near X can build this design?"
+- **IoP Ontology** — semantic manufacturing framework (machines, parts, materials, workflows).
+
+**Agreed architectural model — the "crosswalk cartridge":** mom: stays the canonical, audience-neutral core (freshness/heartbeat is the universal value). Each customer/community slots in a **swappable per-audience ontology overlay** — OKW for the IoP Alliance, **OSLO** for Flemish education, and whatever the next community brings. Implemented as Winston's three layers, sequenced:
+1. **Crosswalk file (no code, first step):** `ontology/crosswalks/mom-to-okw.ttl` — static RDF (`skos:closeMatch`/`relatedMatch`, OKW version pinned in a header comment). Zero runtime dependency, fully reversible. This is the "compliance receipt."
+2. **`ext_okw` vertical (when real OKW-native data exists):** store OKW-native fields as-is under `ext_okw:`; don't coerce mom fields into OKW shape. Additive — spaces without OKW data unaffected.
+3. **Export endpoint (the thing IoP actually wants):** `infra/link_handler/routers/export_okw.py` — SPARQL-queries Oxigraph, serializes to OKW JSON via **explicit Python mapping, no reasoner**. MVP proof-of-partnership = one GET → one MoM space as valid OKW JSON.
+- **OKW ingestion = separate parallel importer** (`scripts/import_okw.py`, mirrors `seed_csv.py`), NOT the heartbeat (heartbeat's contract is SpaceAPI endpoints). Write to a separate graph (`urn:mak:okw/...`); space-identity reconciliation is the hardest part — defer it.
+
+**Coupling traps to avoid:** don't import OKW namespace at the core layer; don't make OKW fields required in ingest; don't run query-time inference; pin OKW version in the crosswalk so a v2 bump forks the file, not the schema. MoM stays OKW-*interoperable*, not OKW-*native* — it serves SpaceAPI sources that will never speak OKW.
+
+**Two questions to resolve WITH the Alliance before building (Mary + John):**
+1. *Why* did their OKW map stale — a heartbeat problem (MoM solves) or a contributor-adoption problem (MoM does NOT)? Diagnose before committing, or inherit their failure conditions.
+2. Does "compliance" obligate MoM to follow OKW spec changes forever? Who owns MoM's schema when OKW v2 drops? Position as "an OKW-compliant implementation," NOT "the official OKW reference implementation" (compliance ≠ stewardship).
+
+**Consequence already applied to Story 6.4:** `iop.ttl` scoped down to minimal spatial-only vocabulary; `iop:Equipment` left as a bare stub (capability semantics belong in the OKW crosswalk, not minted under `iop:`); `iop.ttl` NOT published to the ontology repo yet. OKH + IoP-Ontology integration explicitly deferred — separate from bounded OKW compliance.
+
+→ Seeded as an epic stub in epics.md ("OKW / multi-ontology crosswalk interoperability"). This is a **partnership feature track**, distinct from core user work.
+
+### Bernard thread-reply bug → patch on Story 6.3 (do before 6.4 ships)
+
+`harness/matrix_adapter.py` `send()` always sets `m.relates_to.event_id = msg.event_id`. Correct for a root-message trigger; **broken when the trigger is itself already inside a thread** — it points the thread root at a non-root event_id, which Matrix clients reject/mishandle silently. Low impact for one-shot `!mom`, but every multi-turn `@bernard` NL conversation (6.4) hits it. Fix (Amelia, citable):
+- `harness/message.py`: add `thread_root_id: str | None = None` to `Message`.
+- `harness/matrix_adapter.py` `_on_message`: read incoming `content["m.relates_to"]`; if `rel_type == "m.thread"`, `thread_root_id = relates["event_id"]` (per Matrix spec this IS the thread root — no recursion), else `None`.
+- `send()`: `root = msg.thread_root_id or msg.event_id` → thread the reply to `root`.
+- ACs: root-message flow unchanged (None → today's behavior); unit test asserts a follow-up-in-thread emits the root id, not the follow-up's id.
+
+### @bernard rate-limit → guard before any public/federated rollout
+
+Every `@bernard` mention triggers a billed Sonnet completion (6.4). No rate-limit = unbounded spend in a busy/federated room. Minimum guard: per-user cooldown (new `harness/rate_limiter.py`) or room-level token budget. Pairs with the still-open Story 6.0 deferral "no allowlist/access control on `!mom` commands." Not 6.4 scope; required before public exposure.
+
+### Bernard prompt + guardrail quality → its own story (post-6.4)
+
+`nl_to_sparql.py` is the NL→SPARQL translation layer (closest thing to an agentic "skill") but is a pure translation function, not a guardrail-tuning surface. Refining Bernard's system prompt, injection guardrails, and voice consistency is a distinct prompt-engineering/safety story — different AC shape and risk surface than 6.4's wiring. **Don't write it until 6.4 ships and produces 2–3 real bad answers to fix** (John: triggered by observed failure, not anticipation).
+
+### Multi-platform `Message` contract hardening → seed with the multi-platform adapter epic
+
+Before a second adapter (Discord/Telegram) exists, harden the boundary so platform-specific identity (MXID format, room vs guild/channel) never leaks past the adapter. Add to `Message` now: sender display name, room/channel ID, a platform enum. Verify `router.py`/`commands.py` have **zero imports from `matrix_adapter.py`** (precondition for the mini-API to import `harness/` core without pulling Matrix deps). Permission model is the trap: `read_only_ack` is gated on MXID parsing — Discord/Telegram have different identity shapes, so a naive port could bypass the read-only gate. → epic stub in epics.md.
+
 ## Deferred from: Story 6.3 operator testing (2026-06-18)
 
 - **"One space just outside the range" teaser** — After a travel search, surface the nearest confirmed space that falls *just outside* the isochrone polygon (shapely `poly.exterior.distance(Point)` for each non-member space). Bernard copy: "There's a space Xmin past your limit — worth the detour?" High UX value, medium effort. → future Epic 6 story.

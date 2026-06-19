@@ -2310,3 +2310,44 @@ Story 3.5 ships `core.ttl` + `crosswalk.csv` — the static foundation of the th
 **Open product concerns carried here:** managed hosting *and* managed-ontology as monetization lanes (Phase 3+ product brief); Solid-pod direction for node sovereignty; governance of concept promotion (local → commons).
 
 **Depends on:** Story 3.5 (`core.ttl`, `crosswalk.csv`, ADR-016). Parallel to Epics 5–8. Not demo-blocking.
+
+> **Update 2026-06-19:** the OKW/IoP-Alliance partnership (see Epic 11) makes this epic's "crosswalk cartridge" vision concrete — OKW is the first real cartridge, OSLO (Flemish education) a likely second. The parenthetical above ("OKH/IoP Alliance — Internet of Production, distinct from the repo's `iop:` Internet of Places") is **resolved**: IoP = Internet of Production Alliance, the repo will map *toward* OKW rather than mint homegrown equipment terms.
+
+---
+
+## Epic 11: OKW / Multi-Ontology Crosswalk Interoperability *(stub — partnership track; 2026-06-19)*
+
+> **Added 2026-06-19** from the party-mode roundtable on Epic 6 bot UX. Triggered by a concrete adoption opportunity, not speculation: the **Internet of Production Alliance** (internetofproduction.org) supports MoM and would **replace their stale Open Know-Where (OKW) map with it**, because their map suffers the exact staleness phenomenon MoM's heartbeat/freshness model solves. Full strategic + architectural detail in `deferred-work.md` ("IoP = Internet of Production Alliance → OKW interop opportunity").
+
+As the MoM operator pursuing network partnerships,
+I want MoM to express its data in a partner's ontology (starting with OKW) via a swappable per-audience "crosswalk cartridge,"
+So that established communities adopt MoM as their live, trustworthy map without MoM forking its canonical schema or becoming a spec-contractor.
+
+**The model — "crosswalk cartridge":** `mom:` stays the canonical, audience-neutral core (freshness/heartbeat = the universal value). Each customer slots in a swappable ontology overlay — **OKW** (IoP Alliance), **OSLO** (Flemish education), per-community next. Three layers, sequenced:
+1. **Crosswalk file (no code, first step):** `ontology/crosswalks/mom-to-okw.ttl` — static `skos:closeMatch`/`relatedMatch`, OKW version pinned in header. The "compliance receipt."
+2. **`ext_okw` vertical:** store OKW-native fields as-is; don't coerce `mom:` fields. Additive.
+3. **Export endpoint:** `infra/link_handler/routers/export_okw.py` — SPARQL → OKW JSON, explicit Python mapping, no reasoner. MVP proof-of-partnership = one GET → one space as valid OKW JSON.
+- **Ingestion = separate importer** (`scripts/import_okw.py`, NOT the heartbeat); separate graph; identity reconciliation deferred.
+
+**Two questions to resolve WITH the Alliance before building:** (1) why did their OKW map stale — heartbeat-fixable or contributor-adoption problem? (2) Who owns MoM's schema on OKW version bumps? Position as "an OKW-compliant implementation," not "the reference implementation."
+
+**Explicitly deferred:** OKH (Open Know-How, "how to fabricate") + IoP-Ontology integration — valuable (Bernard answering "which live space can build this design?") but a separate, later track from bounded OKW compliance.
+
+**Depends on:** Epic 3.5 (freshness contract), Story 1.4 (Oxigraph + crosswalk pattern from `crosswalk.csv`). Overlaps Epic 10's bundle vision. Partnership track — parallel, not demo-blocking.
+
+---
+
+## Epic 12: Bernard Everywhere — Multi-Platform Adapters + Query API *(stub; 2026-06-19)*
+
+> **Added 2026-06-19** from the same roundtable. Forward-looking; seed-only so the intent isn't lost. Each sub-thread is triggered by a concrete demand signal, not built ahead of it.
+
+As a makerspace community,
+I want to reach Bernard where we already are (Discord, Telegram) and to embed MoM answers in non-chat surfaces (map-UI drawer, partner sites),
+So that discovery isn't locked to Matrix.
+
+**Scope sketch (sub-tracks, each demand-gated):**
+- **Multi-platform adapters** — `PlatformAdapter` ABC with `normalize(raw_event) → Message`; Discord/Telegram adapters as additional consumers of the same `harness/` core. **Precondition (harden now, see deferred-work.md):** platform-specific identity must never leak past the adapter; `Message` gains sender display name + channel ID + platform enum; `router.py`/`commands.py` must have zero imports from `matrix_adapter.py`. Permission trap: `read_only_ack` is MXID-gated — decouple before a second adapter bypasses the read-only gate. *Trigger: someone asks for Bernard on an unsupported channel.*
+- **Query API (mini-API)** — a thin FastAPI service (`bernard_api`) importing `harness/` core, with a `response_format: chat|json|ui` param. **Do NOT extend `link_handler`** (it already owns geocode + registration + materialization). First consumer = a map-UI drawer; this is close to Epic 4 (operator tool) — check fit there first. *Trigger: the map UI needs to answer a question Bernard already answers.*
+- **ext_* feature surface** — the API + crosswalk cartridges (Epic 11) together open the "marketplace of features on new `ext_*` field sets." **Do NOT seed a plugin-execution/marketplace epic yet** — that needs a reasoner + schema registry + trust model; build only after a schema registry has real adoption data. Schema extensibility (add `ext_foo`) ≠ behavioral extensibility (auto-generated commands/cards).
+
+**Depends on:** Epic 6 (Bernard core), the `harness/` import-boundary cleanup. Parallel, post-demo, non-blocking.
