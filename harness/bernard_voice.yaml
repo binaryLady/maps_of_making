@@ -61,3 +61,9 @@ bot:
   result_cap_note: "Showing first {n} — use `!mom find` with a tag and city to narrow down."
   # @bernard mention stub (NL deferred to 6.4)
   bernard_nl_stub: "Natural-language questions are on the roadmap. For now: `!mom help` lists what I can do."
+
+  # NL discovery (Story 6.4)
+  nl_result_ack: "Found {count} space(s) matching your question.\n\n{list_text}\n\n> How I searched\n> ```sparql\n> {sparql_block}\n> ```"
+  nl_empty_ack: "Nothing in the directory matches that — the question's logged so it can inform what gets added. Try `!mom find {tag} {city}` for a targeted search, or browse the map."
+  nl_gap_ack: "I couldn't form a query that fits the directory — your question's logged as a gap for ontology curation. Could you rephrase? For example: `!mom find laser Berlin` or `!mom nearby Brussels 50`."
+  nl_invalid_sparql_ack: "That question produced something I'm not allowed to run. Try rephrasing, or use `!mom help` for the commands I support."

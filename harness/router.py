@@ -2,6 +2,7 @@ import structlog
 
 import bernard
 import intent_classifier
+import nl_to_sparql
 import query_commands
 from message import Message
 
@@ -18,6 +19,9 @@ async def route(message: Message, session_id: str) -> str:
     if intent == "query":
         return await query_commands.dispatch(message, session_id=session_id)
 
-    # write | nl_discovery: not implemented yet (6.4+)
+    if intent == "nl_discovery":
+        return await nl_to_sparql.dispatch(message, session_id=session_id)
+
+    # write: not implemented yet
     log.warning("router.intent_not_implemented", intent=intent, session_id=session_id)
     return bernard.unknown_ack()

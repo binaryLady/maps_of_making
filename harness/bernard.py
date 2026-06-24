@@ -281,6 +281,27 @@ def bernard_nl_stub_ack() -> str:
     return _bot("bernard_nl_stub", "Natural-language questions are on the roadmap. For now: `!mom help` lists what I can do.")
 
 
+def nl_result_ack(count: int, list_text: str, sparql_block: str) -> str:
+    return _bot("nl_result_ack",
+                "Found {count} space(s) matching your question.\n\n{list_text}\n\n> How I searched\n> ```sparql\n> {sparql_block}\n> ```",
+                count=count, list_text=list_text, sparql_block=sparql_block)
+
+
+def nl_empty_ack() -> str:
+    return _bot("nl_empty_ack",
+                "Nothing in the directory matches that — the question's logged so it can inform what gets added.")
+
+
+def nl_gap_ack() -> str:
+    return _bot("nl_gap_ack",
+                "I couldn't form a query that fits the directory — your question's logged as a gap for ontology curation. Could you rephrase?")
+
+
+def nl_invalid_sparql_ack() -> str:
+    return _bot("nl_invalid_sparql_ack",
+                "That question produced something I'm not allowed to run. Try rephrasing, or use `!mom help` for the commands I support.")
+
+
 _READ_HELP = """`!mom read` — Show this space's known fields and current values
 `!mom read {field}` — Exact raw value of a dot-path field (e.g. `state.open`, `contact.matrix`, `mom.memberOf`)
 `!mom read {slug}` — Same field summary for any registered space (e.g. `!mom read superlab`)

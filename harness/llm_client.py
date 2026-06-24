@@ -46,3 +46,45 @@ async def complete(
     text = resp.choices[0].message.content or ""
     bound.info("llm.completed", model=resp.model, latency_ms=latency)
     return text, resp.model, latency
+
+
+async def complete_with_system(
+    system: str,
+    user: str,
+    model: str,
+    temperature: float = 1.0,
+    max_tokens: int = 512,
+    session_id: str = "",
+) -> tuple[str, str, int]:
+    """LLM completion with separate system + user messages. Returns (text, model_used, latency_ms)."""
+    bound = log.bind(session_id=session_id)
+    api_key = os.environ.get("OPENROUTER_API_KEY")
+    if not api_key:
+        raise ValueError("OPENROUTER_API_KEY not set in .env or environment")
+
+    client = AsyncOpenAI(
+        api_key=api_key,
+        base_url="https://openrouter.ai/api/v1",
+        timeout=REQUEST_TIMEOUT_SECONDS,
+        default_headers={
+            "HTTP-Referer": "https://mapsofmaking.org",
+            "X-Title": "maps-of-making spike",
+        },
+    )
+    t0 = time.monotonic()
+    resp = await client.chat.completions.create(
+        model=model,
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ],
+        temperature=temperature,
+        max_tokens=max_tokens,
+    )
+    latency = int((time.monotonic() - t0) * 1000)
+    if not resp.choices:
+        bound.error("llm.empty_choices", model=resp.model, latency_ms=latency)
+        return "", resp.model, latency
+    text = resp.choices[0].message.content or ""
+    bound.info("llm.completed", model=resp.model, latency_ms=latency)
+    return text, resp.model, latency

@@ -1,6 +1,6 @@
 # Story 6.4: NL→SPARQL — Full Natural Language with IoP Ontology Guardrail
 
-**Status:** ready-for-dev
+**Status:** review
 **Epic:** 6 — Ask Bernard
 **Story ID:** 6-4
 **Depends on:** 6.3 (template queries working, `sparql_client.run_select()` live), Story 1.4 (IoP ontology loaded in Oxigraph)
@@ -341,14 +341,14 @@ Do NOT implement in this story:
 
 ## Implementation Checklist
 
-- [ ] Expand `ontology/iop/iop.ttl` from stub to minimal usable vocabulary
-- [ ] Add `run_construct()` and `run_update()` to `harness/sparql_client.py`
-- [ ] Add `complete_with_system()` to `harness/llm_client.py`
-- [ ] Create `harness/nl_to_sparql.py` with ontology cache, SPARQL validation, gap triple emission, Bernard formatting
-- [ ] Add 4 new voice keys to `harness/bernard_voice.yaml`; add corresponding `_bot()` accessors in `harness/bernard.py`
-- [ ] Update `harness/router.py` — wire `nl_discovery` intent
-- [ ] Create `harness/tests/test_nl_to_sparql.py` (6 tests)
-- [ ] Run full test suite (`pytest harness/tests/ -v`) — must stay ≥ 63 passing
+- [x] Expand `ontology/iop/iop.ttl` from stub to minimal usable vocabulary
+- [x] Add `run_construct()` and `run_update()` to `harness/sparql_client.py`
+- [x] Add `complete_with_system()` to `harness/llm_client.py`
+- [x] Create `harness/nl_to_sparql.py` with ontology cache, SPARQL validation, gap triple emission, Bernard formatting
+- [x] Add 4 new voice keys to `harness/bernard_voice.yaml`; add corresponding `_bot()` accessors in `harness/bernard.py`
+- [x] Update `harness/router.py` — wire `nl_discovery` intent
+- [x] Create `harness/tests/test_nl_to_sparql.py` (6 tests)
+- [x] Run full test suite (`pytest harness/tests/ -v`) — must stay ≥ 63 passing (65 pass; 4 pre-existing failures unchanged)
 - [ ] Operator done gate: French/English/German free-form question → grounded answer + SPARQL block; unanswerable → gap triple in `<urn:mak:gaps>` + Bernard clarification
 
 ---
@@ -371,3 +371,37 @@ The earlier "IoP naming ambiguity" question is **resolved and superseded**. "IoP
 - **Do NOT publish `iop.ttl` to the ontology repo yet.** It stays load-only/local until the OKW interop direction is decided.
 
 → Full strategic context + the pluggable "crosswalk cartridge" architecture (OKW, OSLO, per-community overlays) is logged in deferred-work.md and seeded as an epic stub in epics.md.
+
+---
+
+## File List
+
+- `ontology/iop/iop.ttl` — expanded from 12-line stub to full minimal spatial vocabulary
+- `harness/sparql_client.py` — added `run_construct()` and `run_update()`
+- `harness/llm_client.py` — added `complete_with_system()`
+- `harness/nl_to_sparql.py` — new module (NL→SPARQL dispatch, ontology cache, gap triple emission)
+- `harness/bernard_voice.yaml` — added 4 NL discovery voice keys
+- `harness/bernard.py` — added 4 accessor functions for NL discovery keys
+- `harness/router.py` — wired `nl_discovery` → `nl_to_sparql.dispatch()`
+- `harness/tests/test_nl_to_sparql.py` — new test file (6 tests)
+
+---
+
+## Dev Agent Record
+
+### Completion Notes
+
+Implemented Story 6.4 in full. All 8 implementation checklist items complete. Test suite: 65 passing (was 59 + 6 new NL tests); 4 pre-existing failures in test_commands.py/test_message.py unchanged and pre-date this story.
+
+Key decisions executed as specified:
+- `FORBIDDEN` regex covers `DROP|INSERT|DELETE|UPDATE|CLEAR|CREATE|LOAD|MOVE|COPY|ADD` — broader than minimum spec to prevent all SPARQL write/mutate patterns
+- `run_update()` derives URL from `OXIGRAPH_ENDPOINT.rstrip("/") + "/update"` (no new env var)
+- ONTOLOGY_CONSTRUCT pulls both `<urn:mak:ontology/iop>` and `<urn:mak:ontology/mom>` graphs
+- `iop:Equipment` kept as bare stub per OKW interop decision
+- `_ONTOLOGY_CACHE` reset on `RELOAD_ONTOLOGY=1`; user message sanitized before LLM injection
+
+**Operator done gate (not automated — requires live VPS):** run `make load-ontology` after expanding `iop.ttl`, then test with a multilingual free-form question. See Implementation Checklist item 9.
+
+### Change Log
+
+- 2026-06-24: Story 6.4 implementation complete — NL→SPARQL full dispatch, IoP ontology expansion, gap triple emission, 6 new tests (65 total passing)
