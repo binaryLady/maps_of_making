@@ -49,8 +49,8 @@ QUERY_URL = f"{OXIGRAPH_ENDPOINT}/query"
 MOM_NS = "https://nicolasdb.github.io/mapsofmaking_ontology/ns#"
 SCHEMA_NS = "https://schema.org/"
 
-# Same Europe bbox as seed_spaceapi.py / app.js maxBounds
-BBOX_WEST, BBOX_SOUTH, BBOX_EAST, BBOX_NORTH = -25, 34, 45, 72
+# Europe bbox kept for seed_spaceapi.py; seed_bundle.py accepts global coordinates
+BBOX_WEST, BBOX_SOUTH, BBOX_EAST, BBOX_NORTH = -180, -90, 180, 90
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("seed_bundle")

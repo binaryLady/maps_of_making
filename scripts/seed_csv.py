@@ -65,7 +65,8 @@ def valid_http_url(u: str | None) -> bool:
         p = urlparse(u.strip())
     except ValueError:
         return False
-    return p.scheme in ("http", "https") and bool(p.netloc)
+    u2 = u.strip()
+    return p.scheme in ("http", "https") and bool(p.netloc) and " " not in u2
 
 
 # ── to-bundle ────────────────────────────────────────────────────────────────
@@ -89,7 +90,7 @@ def row_to_record(row: dict, line: int, counters: dict) -> dict | None:
 
     if not (BBOX_SOUTH <= lat <= BBOX_NORTH and BBOX_WEST <= lon <= BBOX_EAST):
         log.warning(f"row {line} ({name}): WARN — coords outside Europe bbox "
-                    f"({lat},{lon}); the seeder will SKIP this. Check lat/lon order.")
+                    f"({lat},{lon}); verify lat/lon order is correct.")
         counters["out_of_bbox"] += 1
 
     rec: dict = {
