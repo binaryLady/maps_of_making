@@ -34,19 +34,22 @@ def _is_bernard_mention(text: str) -> bool:
 
 
 async def handle_message(adapter: MatrixAdapter, message) -> None:
-    # @bernard mention stub — intercept before !mom prefix check (NL deferred to 6.4)
-    if message.text and _is_bernard_mention(message.text):
-        await adapter.send(bernard.bernard_nl_stub_ack(), message)
-        return
-
-    if not message.text.startswith(COMMAND_PREFIX):
+    if not message.text:
         return
 
     session_id = str(uuid.uuid4())
     bound = log.bind(session_id=session_id, adapter="matrix", room_id=message.room_id)
-    bound.info("message.received", text=message.text)
 
-    stripped = dataclasses.replace(message, text=message.text[len(COMMAND_PREFIX):].strip())
+    if _is_bernard_mention(message.text):
+        # Strip @bernard prefix and route as natural-language NL discovery
+        nl_text = re.sub(r"^@?bernard[\s,:]+", "", message.text, flags=re.IGNORECASE).strip()
+        stripped = dataclasses.replace(message, text=nl_text)
+        bound.info("message.received", text=nl_text, via="bernard_mention")
+    elif message.text.startswith(COMMAND_PREFIX):
+        stripped = dataclasses.replace(message, text=message.text[len(COMMAND_PREFIX):].strip())
+        bound.info("message.received", text=message.text)
+    else:
+        return
 
     try:
         # Literal !mom <verb> commands (link, update) are matched before the LLM

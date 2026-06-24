@@ -1,4 +1,5 @@
 import asyncio
+import re
 import time
 from pathlib import Path
 
@@ -35,20 +36,34 @@ class MatrixAdapter:
         await self.client.join(room.room_id)
         log.info("matrix.invite_joined", room_id=room.room_id)
 
+    # Matrix fallback quote: lines starting with "> " followed by a blank line
+    _FALLBACK_RE = re.compile(r"^(>[^\n]*\n)+\n", re.MULTILINE)
+
     async def _on_message(self, room: MatrixRoom, event: RoomMessageText) -> None:
         if event.sender.lower() == self.client.user_id.lower():
             return
         if self._start_ts_ms and event.server_timestamp < self._start_ts_ms:
             log.debug("matrix.event_skipped_pre_boot", event_id=event.event_id, ts=event.server_timestamp)
             return
+
+        # Strip Matrix fallback quote prefix that clients add to threaded replies
+        body = self._FALLBACK_RE.sub("", event.body).strip()
+
+        # Extract thread root event_id if this message is inside a thread
+        relates = (event.source or {}).get("content", {}).get("m.relates_to", {})
+        thread_id = ""
+        if relates.get("rel_type") == "m.thread":
+            thread_id = relates.get("event_id", "")
+
         message = Message(
-            text=event.body,
+            text=body,
             user_id=event.sender,
             room_id=room.room_id,
             platform="matrix",
             raw=event,
             power_level=room.power_levels.get_user_level(event.sender),
             event_id=event.event_id,
+            thread_id=thread_id,
         )
         await self._queue.put(message)
 
@@ -102,10 +117,11 @@ class MatrixAdapter:
 
     async def send(self, response: str, context: Message) -> None:
         content: dict = {"msgtype": "m.text", "body": response}
-        if context.event_id:
+        thread_root = context.thread_id or context.event_id
+        if thread_root:
             content["m.relates_to"] = {
                 "rel_type": "m.thread",
-                "event_id": context.event_id,
+                "event_id": thread_root,
             }
         await self.client.room_send(
             room_id=context.room_id,

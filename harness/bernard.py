@@ -281,7 +281,7 @@ def bernard_nl_stub_ack() -> str:
     return _bot("bernard_nl_stub", "Natural-language questions are on the roadmap. For now: `!mom help` lists what I can do.")
 
 
-def nl_result_ack(count: int, list_text: str, sparql_block: str) -> str:
+def nl_result_ack(count: str | int, list_text: str, sparql_block: str) -> str:
     return _bot("nl_result_ack",
                 "Found {count} space(s) matching your question.\n\n{list_text}\n\n> How I searched\n> ```sparql\n> {sparql_block}\n> ```",
                 count=count, list_text=list_text, sparql_block=sparql_block)

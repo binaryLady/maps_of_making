@@ -11,3 +11,4 @@ class Message:
     raw: Any
     power_level: int = 0
     event_id: str = ""
+    thread_id: str = ""  # thread root event_id; set when message arrives inside a Matrix thread

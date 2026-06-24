@@ -1,6 +1,6 @@
 # Story 6.4: NL→SPARQL — Full Natural Language with IoP Ontology Guardrail
 
-**Status:** review
+**Status:** done
 **Epic:** 6 — Ask Bernard
 **Story ID:** 6-4
 **Depends on:** 6.3 (template queries working, `sparql_client.run_select()` live), Story 1.4 (IoP ontology loaded in Oxigraph)
@@ -407,3 +407,30 @@ Key decisions executed as specified:
 ### Change Log
 
 - 2026-06-24: Story 6.4 implementation complete — NL→SPARQL full dispatch, IoP ontology expansion, gap triple emission, 6 new tests (65 total passing)
+
+---
+
+## Review Findings (2026-06-24)
+
+### Decision-Needed
+
+- [x] [Review][Decision] D1: empty result returns `nl_empty_ack` but AC5 specifies `nl_gap_ack` — RESOLVED: keep the split intentionally. `nl_empty_ack` = valid query, no data; `nl_gap_ack` = can't form query. AC5 note: this is a deliberate UX refinement beyond spec.
+- [x] [Review][Decision] D2: FORBIDDEN regex includes CLEAR/CREATE/LOAD/MOVE/COPY/ADD beyond spec — RESOLVED: keep broader set. String-literal false positives deferred (W4).
+
+### Patches (applied 2026-06-24)
+
+- [x] [Review][Patch] P1: LLM output not stripped of markdown fence — added `_strip_fence()` applied to raw LLM output before FORBIDDEN check. `harness/nl_to_sparql.py`
+- [x] [Review][Patch] P2: `_escape_sparql_literal` doesn't escape `{`/`}` → silent gap loss — added brace doubling (`{{`/`}}`). `harness/nl_to_sparql.py`
+- [x] [Review][Patch] P3: `_escape_sparql_literal` doesn't escape `\t` — added tab → space replacement. `harness/nl_to_sparql.py`
+- [x] [Review][Patch] P4: Result formatting `AttributeError` on `None` binding value — replaced inline `.get().get()` chains with `_val()` helper that checks `isinstance(v, dict)`. `harness/nl_to_sparql.py`
+- [x] [Review][Patch] P5: count vs display mismatch — `count` now shows "15 of 42" when truncated. `harness/nl_to_sparql.py`, `harness/bernard.py`
+- [x] [Review][Patch] P6: RELOAD_ONTOLOGY after failed load doesn't retry — failed load now leaves `_ONTOLOGY_CACHE = None` instead of `""`, so next request retries. `harness/nl_to_sparql.py`
+- [x] [Review][Patch] P7: Empty ontology cache → silent LLM degradation — added early-return guard: logs warning, emits gap triple, returns `nl_gap_ack` when cache unavailable. `harness/nl_to_sparql.py`
+
+### Deferred
+
+- [x] [Review][Defer] W1: `main_matrix.py:38-40` @bernard stub intercepts before `route()` — self-reported by dev agent; NL dispatch unreachable until fixed; tracked in Dev Agent Record above — deferred, pre-existing (planned separate fix)
+- [x] [Review][Defer] W2: `complete_with_system` default `temperature=1.0` — latent footgun; `nl_to_sparql.py` passes `0.0` explicitly so not a current bug — deferred, pre-existing
+- [x] [Review][Defer] W3: `AsyncOpenAI` client instantiated per call (no connection pooling) — pre-existing pattern from `complete()`, not new in 6.4 — deferred, pre-existing
+- [x] [Review][Defer] W4: FORBIDDEN regex false positives on string literals — proper fix requires SPARQL AST parsing; out of scope for 6.4 — deferred
+- [x] [Review][Defer] W5: `_ONTOLOGY_CACHE` race condition under concurrent coroutines — double CONSTRUCT query only; Matrix bot is effectively single-threaded per room — deferred, low risk

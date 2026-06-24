@@ -1,5 +1,34 @@
 # Deferred Work
 
+## Deferred from: @bernard write-path testing (2026-06-24)
+
+### ORPHANED: NL→write slot-filling (the `write` intent has no handler)
+
+**Status:** untracked gap, surfaced during 6.4 live testing. Needs a story (to be created from a clean session). Logically sequences **before Story 6.5** — 6.5 is the graceful-failure/voice pass over *functional* paths, and this path is not yet functional, so 6.5 would have nothing to polish here.
+
+**Symptom (observed live on VPS, 2026-06-24):**
+- `@bernard close` → ✅ committed `529e5dce` (literal verb → `commands.try_handle` → `_handle_open_close`)
+- `@bernard set openfab as closed now` → ❌ `unknown_ack`
+- `@bernard I want you to update the JSON file of the current space to close` → ❌ `unknown_ack`
+
+**Root cause:** the write *mechanism* is complete and power-gated (Stories 6.1/6.2 → deploy-key → git commit → heartbeat re-ingest; permission gate `_can_write` at `harness/commands.py:49`), but it is **only reachable via literal `!mom <verb>` commands**. NL-phrased writes fall through `commands.try_handle` → `router.route()`, where the intent classifier *correctly* returns `write` — but `harness/router.py` has `# write: not implemented yet` → `bernard.unknown_ack()`. So the `write` branch is a stub.
+
+**This contradicts the original Epic 6 vision**, which explicitly promised NL writes via slot-filling:
+- `epics.md:1683` — *"A coordinator typing 'update our Tuesday hours to 10–18' … reach[es] the same Bernard — a different skill fires."*
+- `epics.md:1693` — *"Gemma … for slot-filling + formatting."*
+- `epics.md:1714` — classifier returns `write|query|nl_discovery|unknown` (the classifier half shipped; the slot-filling half never did).
+
+**Scope of the missing piece (smaller than 6.4 — machinery + gate already exist):**
+A `write` intent handler that:
+1. Slot-fills `(field_path, value)` from the NL message using Gemma (constrained to `ALLOWED_FIELDS`: `state.open`, `contact.irc/matrix/twitter`, `mom.memberOf`).
+2. Calls the existing `_handle_update` / `_handle_open_close` with the **sender's Matrix power level** — so the permission gate (`_can_write`, ≥100) is unchanged and simply becomes reachable via NL.
+3. Confirms intent before committing (writes are irreversible-ish via git history; a slot-fill misread should not silently commit). Bernard voice: echo back the parsed `(field → value)` for confirmation, or commit-then-report with the SHA + revert path.
+4. Graceful failure when slot-filling is ambiguous (→ folds into 6.5 voice pass once functional).
+
+**Note:** write skillset is **Matrix-only** for the PoC (room power-level model has no Discord/Telegram equivalent — `epics.md:1845`). Keep the NL→write handler behind the same Matrix-only guard.
+
+---
+
 ## Deferred from: party-mode roundtable on Epic 6 bot UX + IoP/OKW (2026-06-19)
 
 ### RESOLVED + REFRAMED: "IoP" = Internet of Production Alliance → OKW interop opportunity
@@ -563,6 +592,14 @@ Generating a real openfab.jsonld against the `space-jsonld-generator` skill expo
 - Dendrite Postgres credentials are split across `.env` (`DENDRITE_DB_PASSWORD`) and a gitignored `dendrite.yaml`, with no documented sync process. `infra/docker-compose.yml`.
 - No regression test added for either bug fixed in Story 6.0's commit (env-var vs config.yaml precedence, bogus `gemma-4-12b-it` model id) — could silently regress. `harness/main_matrix.py`, `harness/config.py`.
 - Malformed YAML in `config.yaml`/`bernard_voice.yaml` crashes startup uncaught instead of failing gracefully. `harness/config.py`, `harness/bernard.py`.
+
+## Deferred from: code review of 6-4-nl-sparql-natural-language-iop-ontology (2026-06-24)
+
+- **W1 `main_matrix.py:38-40` @bernard stub** — intercepts `@bernard` mentions before `route()` is called; NL dispatch unreachable until fixed. Self-reported by dev agent; fix = replace early-return with `route()` call stripping `@bernard` prefix.
+- **W2 `complete_with_system` default `temperature=1.0`** — latent footgun; callers currently pass `0.0` explicitly so no current bug. Should default to `0.0` or remove default.
+- **W3 `AsyncOpenAI` client instantiated per call** — no connection pooling; pre-existing pattern from `complete()`. Low-traffic bot tolerates it; fix if throughput becomes a concern.
+- **W4 FORBIDDEN regex false positives on SPARQL string literals** — regex matches forbidden words inside quoted values (e.g., `FILTER(?x = "ADD makerspace")`). Proper fix = SPARQL AST parsing. Pre-existing limitation of the string-scan approach.
+- **W5 `_ONTOLOGY_CACHE` race condition** — concurrent `dispatch()` calls before cache is warm trigger N simultaneous CONSTRUCT queries. Double-load only, no data corruption. Matrix bot is effectively single-threaded per room.
 
 ## Deferred from: code review of 6-3-read-query-command-set-isochrone-tool (2026-06-18)
 
