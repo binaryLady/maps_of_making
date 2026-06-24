@@ -393,6 +393,8 @@ The earlier "IoP naming ambiguity" question is **resolved and superseded**. "IoP
 
 Implemented Story 6.4 in full. All 8 implementation checklist items complete. Test suite: 65 passing (was 59 + 6 new NL tests); 4 pre-existing failures in test_commands.py/test_message.py unchanged and pre-date this story.
 
+**Known bug (found during operator done gate test):** `main_matrix.py:38-40` intercepts `@bernard` mentions with a hard-coded stub (`bernard_nl_stub_ack()`) before `route()` is ever called. This was a "deferred to 6.4" comment that was not updated as part of this story. Fix: replace the early-return block with a `route()` call that strips the `@bernard` prefix and passes the remainder as the message text. The `nl_discovery` intent classifier and `nl_to_sparql.dispatch()` are correct — only the entry point is wrong.
+
 Key decisions executed as specified:
 - `FORBIDDEN` regex covers `DROP|INSERT|DELETE|UPDATE|CLEAR|CREATE|LOAD|MOVE|COPY|ADD` — broader than minimum spec to prevent all SPARQL write/mutate patterns
 - `run_update()` derives URL from `OXIGRAPH_ENDPOINT.rstrip("/") + "/update"` (no new env var)
