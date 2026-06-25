@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-01
-last_updated: "2026-06-24 (6-4 → done: code review complete — 7 patches applied)"
+last_updated: "2026-06-24 (6-5 → ready-for-dev: graceful failure + Bernard voice pass story created)"
 project: maps_of_making
 project_key: NOKEY
 tracking_system: file-system
@@ -189,7 +189,7 @@ development_status:
   6-deploy-homeserver-bot-nginx: done  # 2026-06-18: Dendrite + bot deployed to VPS; nginx /_matrix/ + /.well-known/matrix/ routes added; @bernard registered; E2E: ping ✓ link ✓ !mom open → commit 736a02e9 ✓; finding: rooms must be unencrypted (MegolmEvent not handled), E2E key store deferred
   6-3-read-query-command-set-isochrone-tool: done  # 2026-06-18: code review complete — 7 patches applied; 63 tests passing
   6-4-nl-sparql-natural-language-iop-ontology: done  # 2026-06-24: code review complete — 7 patches applied (fence-strip, brace/tab escape, None-safe binding, count label, cache retry, empty-cache guard); 65 tests passing
-  6-5-graceful-failure-bernard-voice-pass: backlog
+  6-5-graceful-failure-bernard-voice-pass: superseded  # 2026-06-25: course-corrected — voice-table approach dissolved by tool-calling reframe; story file carries banner; successor story "Bernard as tool-calling agent" to be created
   6-6-additional-channel-adapters-discord-telegram-mattermost: backlog
   6-7-dev-env-separation-vps-test-stance: ready-for-dev
   6-8-e2e-encrypted-rooms-spike: ready-for-dev
