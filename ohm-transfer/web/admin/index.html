@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en" data-ttm-theme="ttm">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mission Control — Hardware</title>
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" href="/icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/apple-icon.png" />
+<link rel="stylesheet" href="/ttm/tokens.css" />
+<link rel="stylesheet" href="/ttm/components.css" />
+</head>
+<body class="ttm-page">
+<main class="ttm-main">
+  <header class="ttm-header">
+    <h1>Mission Control <span class="gradient-text-rainbow">· hardware</span></h1>
+    <span class="ttm-crumb">telemetry · visitors · operator-only</span>
+  </header>
+
+  <div class="ttm-grid">
+    <section class="ttm-card" aria-labelledby="h-stats">
+      <h2 class="ttm-card__title" id="h-stats">Last 24 hours</h2>
+      <div class="ttm-kv"><span class="k">page views</span><span class="v" id="st-views">—</span></div>
+      <div class="ttm-kv"><span class="k">sessions</span><span class="v" id="st-sessions">—</span></div>
+      <div class="ttm-kv"><span class="k">gate completions</span><span class="v" id="st-gates">—</span></div>
+      <div class="ttm-kv"><span class="k">events (all time)</span><span class="v" id="st-total">—</span></div>
+    </section>
+
+    <section class="ttm-card" aria-labelledby="h-visitors">
+      <h2 class="ttm-card__title" id="h-visitors">Visitors</h2>
+      <div class="ttm-tablewrap" id="visitors"><p class="ttm-note">loading…</p></div>
+    </section>
+
+    <section class="ttm-card full" aria-labelledby="h-tele">
+      <h2 class="ttm-card__title" id="h-tele">Telemetry — latest events</h2>
+      <div class="ttm-tablewrap" id="events"><p class="ttm-note">loading…</p></div>
+    </section>
+  </div>
+</main>
+
+<script src="/ttm/config.js"></script>
+<script src="/vendor/supabase.js"></script>
+<script src="/ttm/theme.js"></script>
+<script src="/ttm/toast.js"></script>
+<script src="/ttm/stack.js"></script>
+<script>
+// Admin guard: operator-only. Content stays hidden until TTMStack.isAdmin()
+// confirms the signed-in visitor's row has is_admin=true; otherwise the page
+// body is replaced with an access card. The data script below only boots on
+// confirmation, so telemetry/visitor reads never fire for non-admins.
+(function(){
+  'use strict';
+  var veil = document.createElement('style');
+  veil.textContent = 'main{visibility:hidden}';
+  document.head.appendChild(veil);
+  function deny(){
+    var m = document.querySelector('main');
+    m.innerHTML =
+      '<header class="ttm-header"><h1>Mission Control</h1>' +
+      '<span class="ttm-crumb">operator access required</span></header>' +
+      '<section class="ttm-card"><h2 class="ttm-card__title">This area is gated</h2>' +
+      '<p>Telemetry and visitor info are operator-only. Sign in through the ' +
+      'gate, then ask the site operator to grant your email admin status ' +
+      '(<code>supabase/schema.sql</code> has the one-liner).</p>' +
+      '<div class="ttm-row"><a class="ttm-btn-outline" href="/">Back to the dashboard</a>' +
+      '<button type="button" class="ttm-btn-primary" id="admin-retry">Access granted — retry</button>' +
+      '</div></section>';
+    veil.remove();
+    document.getElementById('admin-retry').addEventListener('click', function(){ location.reload(); });
+  }
+  function decide(){
+    window.TTMStack.isAdmin().then(function(ok){
+      if (ok) { veil.remove(); if (window.__ttmAdminBoot) window.__ttmAdminBoot(); }
+      else deny();
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', decide);
+  else decide();
+})();
+</script>
+<script>
+(function(){
+  'use strict';
+  window.__ttmAdminBoot = function(){
+  var $ = function(s){ return document.querySelector(s); };
+  var sb = window.TTMStack.supabase();
+  var esc = function(s){ return String(s == null ? '' : s).replace(/[&<>"]/g,
+    function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); };
+
+  if (!sb) {
+    ['#visitors', '#events'].forEach(function(sel){
+      $(sel).innerHTML = '<p class="ttm-note">local-only mode — connect Supabase ' +
+        '(SUPABASE_URL / SUPABASE_ANON_KEY env vars) to collect data.</p>';
+    });
+    return;
+  }
+
+  var dayAgo = new Date(Date.now() - 24*3600*1000).toISOString();
+
+  sb.from('ohm_telemetry_events').select('event,session_id', { count: 'exact' })
+    .gte('ts', dayAgo).limit(1000)
+    .then(function(r){
+      if (r.error) throw r.error;
+      var rows = r.data || [];
+      $('#st-views').textContent = rows.filter(function(e){ return e.event === 'page_view'; }).length;
+      $('#st-sessions').textContent = new Set(rows.map(function(e){ return e.session_id; })).size;
+      $('#st-gates').textContent = rows.filter(function(e){ return e.event === 'gate_complete'; }).length;
+    })
+    .catch(function(e){ console.warn('[admin] stats failed:', e.message); });
+
+  sb.from('ohm_telemetry_events').select('*', { count: 'exact', head: true })
+    .then(function(r){ if (!r.error) $('#st-total').textContent = r.count; });
+
+  sb.from('ohm_visitors')
+    .select('name,email,first_seen,last_seen,is_admin')
+    .order('last_seen', { ascending: false }).limit(50)
+    .then(function(r){
+      if (r.error) throw r.error;
+      var rows = r.data || [];
+      if (!rows.length) { $('#visitors').innerHTML = '<p class="ttm-note">no sign-ins yet</p>'; return; }
+      var html = '<table class="ttm-table"><thead><tr><th>name</th><th>email</th><th>last seen</th><th>admin</th></tr></thead><tbody>';
+      rows.forEach(function(v){
+        html += '<tr><td>' + esc(v.name) + '</td><td class="mono">' + esc(v.email) + '</td>' +
+          '<td class="mono">' + esc((v.last_seen || '').slice(0, 16).replace('T', ' ')) + '</td>' +
+          '<td>' + (v.is_admin ? '<span class="ttm-badge ttm-badge--success">admin</span>' : '') + '</td></tr>';
+      });
+      $('#visitors').innerHTML = html + '</tbody></table>';
+    })
+    .catch(function(e){ $('#visitors').innerHTML = '<p class="ttm-note">visitors read failed: ' + esc(e.message) + '</p>'; });
+
+  sb.from('ohm_telemetry_events')
+    .select('ts,event,page,session_id,visitor_email')
+    .order('ts', { ascending: false }).limit(100)
+    .then(function(r){
+      if (r.error) throw r.error;
+      var rows = r.data || [];
+      if (!rows.length) { $('#events').innerHTML = '<p class="ttm-note">no events yet</p>'; return; }
+      var html = '<table class="ttm-table"><thead><tr><th>when</th><th>event</th><th>page</th><th>session</th><th>visitor</th></tr></thead><tbody>';
+      rows.forEach(function(e){
+        html += '<tr><td class="mono">' + esc((e.ts || '').slice(5, 16).replace('T', ' ')) + '</td>' +
+          '<td>' + esc(e.event) + '</td><td class="mono">' + esc(e.page) + '</td>' +
+          '<td class="mono">' + esc((e.session_id || '').slice(0, 10)) + '</td>' +
+          '<td class="mono">' + esc(e.visitor_email || '') + '</td></tr>';
+      });
+      $('#events').innerHTML = html + '</tbody></table>';
+    })
+    .catch(function(e){ $('#events').innerHTML = '<p class="ttm-note">telemetry read failed: ' + esc(e.message) + '</p>'; });
+  };
+})();
+</script>
+</body>
+</html>
