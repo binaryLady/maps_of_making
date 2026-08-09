@@ -40,7 +40,7 @@
     if (!(cfg.supabaseUrl && cfg.supabaseAnonKey && window.supabase)) return Promise.resolve(null);
     try {
       var sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
-      return sb.from('site_config').select('key, value').then(function (r) {
+      return sb.from('maps_site_config').select('key, value').then(function (r) {
         if (r.error || !r.data) return null;
         return merge(r.data);
       });

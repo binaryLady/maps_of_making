@@ -4,7 +4,7 @@
 -- (the /admin/ dashboard reads with the anon key). Before real traffic,
 -- tighten the SELECT policies to an authenticated admin role.
 
-create table if not exists public.visitors (
+create table if not exists public.maps_visitors (
   id          bigint generated always as identity primary key,
   email       text not null unique,
   name        text not null,
@@ -13,7 +13,7 @@ create table if not exists public.visitors (
   user_agent  text
 );
 
-create table if not exists public.telemetry_events (
+create table if not exists public.maps_telemetry_events (
   id          bigint generated always as identity primary key,
   event       text not null,
   props       jsonb not null default '{}'::jsonb,
@@ -22,22 +22,22 @@ create table if not exists public.telemetry_events (
   visitor_email text,
   ts          timestamptz not null default now()
 );
-create index if not exists telemetry_events_ts_idx on public.telemetry_events (ts desc);
-create index if not exists telemetry_events_event_idx on public.telemetry_events (event);
+create index if not exists maps_telemetry_events_ts_idx on public.maps_telemetry_events (ts desc);
+create index if not exists maps_telemetry_events_event_idx on public.maps_telemetry_events (event);
 
-alter table public.visitors enable row level security;
-alter table public.telemetry_events enable row level security;
+alter table public.maps_visitors enable row level security;
+alter table public.maps_telemetry_events enable row level security;
 
 -- Gate writes (anon)
-create policy "anon can insert visitors" on public.visitors
+create policy "anon can insert visitors" on public.maps_visitors
   for insert to anon with check (true);
-create policy "anon can update own visitor row" on public.visitors
+create policy "anon can update own visitor row" on public.maps_visitors
   for update to anon using (true) with check (true);
-create policy "anon can insert telemetry" on public.telemetry_events
+create policy "anon can insert telemetry" on public.maps_telemetry_events
   for insert to anon with check (true);
 
 -- Admin dashboard reads (DEMO: anon; tighten before real traffic)
-create policy "anon can read visitors (demo)" on public.visitors
+create policy "anon can read visitors (demo)" on public.maps_visitors
   for select to anon using (true);
-create policy "anon can read telemetry (demo)" on public.telemetry_events
+create policy "anon can read telemetry (demo)" on public.maps_telemetry_events
   for select to anon using (true);
