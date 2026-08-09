@@ -1,0 +1,9 @@
+{
+  "name": "maps of making",
+  "tagline": "v0.2 · demo",
+  "page_title": "Maps of Making",
+  "theme_default": "",
+  "tokens": {
+    "--mom-accent-2": "oklch(55% 0.17 250)"
+  }
+}
