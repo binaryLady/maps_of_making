@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en" data-ttm-theme="ttm">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hardware — live sensors</title>
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" href="/icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/apple-icon.png" />
+<link rel="stylesheet" href="/ttm/tokens.css" />
+<link rel="stylesheet" href="/ttm/components.css" />
+<script src="/ttm/config.js"></script>
+<script src="/vendor/supabase.js"></script>
+<script src="/ttm/theme.js"></script>
+<script src="/ttm/toast.js"></script>
+<script src="/ttm/stack.js"></script>
+</head>
+<body class="ttm-page">
+<main class="ttm-main">
+  <header class="ttm-header">
+    <h1>Hardware <span class="gradient-text-rainbow">· thetechmargin</span></h1>
+    <span class="ttm-crumb">open hardware monitor · live sensors</span>
+  </header>
+
+  <div class="ttm-srcbar">
+    <input type="url" class="ttm-input" id="src-url" placeholder="http://machine:8085/data.json" aria-label="Open Hardware Monitor data URL">
+    <button class="ttm-btn-primary" id="connect">Connect</button>
+    <button class="ttm-btn-outline" id="demo">Demo data</button>
+    <span class="ttm-badge" id="status">idle</span>
+  </div>
+
+  <div class="ttm-grid ttm-grid--wide">
+    <section class="ttm-card full" aria-labelledby="h-sensors">
+      <h2 class="ttm-card__title" id="h-sensors">Sensors</h2>
+      <div id="tree" class="ttm-grid ttm-grid--wide"><p class="ttm-note">Connect to a machine running Open Hardware Monitor's remote web server, or load demo data.</p></div>
+    </section>
+
+    <section class="ttm-card full" aria-labelledby="h-map">
+      <h2 class="ttm-card__title" id="h-map">Map bridge — publish this machine as a space signal</h2>
+      <p class="ttm-note">Generates a SpaceAPI-style fragment from the live sensors: the machine's activity
+      becomes <code>state.open</code>, temperatures and fans become <code>sensors</code>. Host it at a URL
+      you control and register it on Maps of Making — the heartbeat does the rest.</p>
+      <pre class="ttm-receipt" id="bridge">— connect or load demo data first —</pre>
+      <div class="ttm-row">
+        <button class="ttm-btn-outline" id="copy-bridge" disabled>Copy JSON</button>
+      </div>
+    </section>
+  </div>
+
+  <footer class="ttm-footer">sensors read locally · nothing leaves your machine
+    unless you publish the bridge</footer>
+</main>
+
+<script src="/demo-data.js"></script>
+<script src="/dashboard.js"></script>
+</body>
+</html>
