@@ -24,8 +24,14 @@
     } catch (e) { return 'ts_anon'; }
   })();
 
+  var SESSION_MS = 24 * 3600 * 1000; // access window: 24h, then the gate asks again
   function visitor() {
-    try { return JSON.parse(localStorage.getItem('ttm_visitor')); } catch (e) { return null; }
+    try {
+      var v = JSON.parse(localStorage.getItem('ttm_visitor'));
+      if (!v) return null;
+      if (v.ts && Date.now() - v.ts > SESSION_MS) return null; // expired
+      return v;
+    } catch (e) { return null; }
   }
 
   // ── telemetry ──────────────────────────────────────────────────────────────
@@ -59,9 +65,9 @@
     var g = (window.TTMBrand && window.TTMBrand.get('gate')) || {};
     return {
       enabled: g.enabled !== false,
-      title: g.title || 'Before you explore',
-      body: g.body || 'Tell us who you are — one time, this browser only. It helps us understand who the map serves.',
-      fine: g.fine || 'Stored with the site operator (The Tech Margin). No third parties, no newsletter unless you ask for one.',
+      title: g.title || 'Sign in',
+      body: g.body || 'Name and email to enter. Valid for 24 hours on this device.',
+      fine: g.fine || 'Stored by the site operator.',
     };
   }
   function showGate() {
@@ -112,29 +118,23 @@
         errEl.textContent = !name ? 'Please tell us your name.' : 'That email doesn’t look complete.';
         return;
       }
-      var rec = { name: name, email: email, first_seen: new Date().toISOString() };
+      var rec = { name: name, email: email, ts: Date.now() };
       try { localStorage.setItem('ttm_visitor', JSON.stringify(rec)); } catch (err) {}
-      var done = function (saved) {
+      var done = function () {
         track('gate_complete', {});
         wrap.remove();
-        if (window.TTMToast) {
-          window.TTMToast.show(
-            saved ? 'Welcome, ' + name + ' — you\'re in. Enjoy the map.'
-                  : 'Welcome, ' + name + ' — you\'re in. (Saved on this device; the server will catch up.)',
-            { type: 'success' });
-        }
+        if (window.TTMToast) window.TTMToast.show('Welcome, ' + name + '.', { type: 'success', timeout: 3000 });
       };
+      done(); // clear the modal immediately — entry never waits on the network
       if (sb) {
-        sb.from('maps_visitors').upsert(
-          { name: name, email: email, last_seen: new Date().toISOString(), user_agent: navigator.userAgent.slice(0, 250) },
-          { onConflict: 'email' }
-        ).then(function (r) {
-          if (r.error) console.warn('[ttm] visitor save failed (kept locally):', r.error.message);
-          done(!r.error);
-        });
-      } else {
-        console.debug('[ttm gate local-only]', rec);
-        done(false);
+        try {
+          sb.from('maps_visitors').upsert(
+            { name: name, email: email, last_seen: new Date().toISOString(), user_agent: navigator.userAgent.slice(0, 250) },
+            { onConflict: 'email' }
+          ).then(function (r) {
+            if (r.error) console.warn('[ttm] visitor save failed (kept locally):', r.error.message);
+          }).catch(function (e) { console.warn('[ttm] visitor save failed (kept locally):', e.message); });
+        } catch (e) { console.warn('[ttm] visitor save failed (kept locally):', e.message); }
       }
     });
   }

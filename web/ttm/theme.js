@@ -86,8 +86,8 @@
     var visitorName = '';
     try { visitorName = (JSON.parse(localStorage.getItem('ttm_visitor')) || {}).name || ''; } catch (e) {}
     var greeting = visitorName
-      ? '— ' + visitorName + '. Good, you\'re here. Bernard (they/them), keeper of \'Mother Sands\'. The workshop\'s open — I\'ll get your space on the map.'
-      : '— Hi, I\'m Bernard (they/them), from \'Mother Sands\'. Step into the workshop and I\'ll get your space on the map.';
+      ? '— ' + visitorName + '. Bernard (they/them), keeper of \'Mother Sands\'. The workshop\'s open.'
+      : '— Bernard (they/them), keeper of \'Mother Sands\'. The workshop\'s open.';
     var html = '<a class="ttm-menu__bernard" href="/genjson/"><span class="voice"></span></a>';
     html += '<nav aria-label="Site sections"><ul class="ttm-menu__list">';
     ROUTES.forEach(function (r) {
@@ -143,8 +143,7 @@
       try { localStorage.setItem('ttm_theme', e.target.value); } catch (err) {}
       apply(e.target.value);
       if (window.TTMToast) window.TTMToast.show(
-        (THEME_LABELS[e.target.value] || 'Zine') + ' theme on — this browser remembers.',
-        { type: 'success', timeout: 3500 });
+        (THEME_LABELS[e.target.value] || 'Zine') + ' theme.', { type: 'success', timeout: 2500 });
       if (window.TTMStack) window.TTMStack.track('theme_change', { theme: e.target.value || 'zine' });
     });
 
@@ -162,7 +161,6 @@
       if (pendingG && Date.now() - pendingG < 1500 && routes[e.key]) {
         e.preventDefault();
         pendingG = 0;
-        if (window.TTMToast) window.TTMToast.show('Heading over…', { timeout: 1500 });
         location.href = routes[e.key];
         return;
       }

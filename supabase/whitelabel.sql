@@ -36,5 +36,5 @@ create policy "anon can update site_config (demo)" on public.maps_site_config
 insert into public.maps_site_config (key, value) values
   ('brand', '{"name": "maps of making", "tagline": "v0.2 · demo", "footer_name": "thetechmargin", "footer_hidden": false, "page_title": "Maps of Making — demo"}'),
   ('theme', '{"default": "ttm", "tokens": {}}'),
-  ('gate',  '{"enabled": true, "title": "Before you explore", "body": "Tell us who you are — one time, this browser only. It helps us understand who the map serves.", "fine": "Stored with the site operator (The Tech Margin). No third parties, no newsletter unless you ask for one."}')
+  ('gate',  '{"enabled": true, "title": "Sign in", "body": "Name and email to enter. Valid for 24 hours on this device.", "fine": "Stored by the site operator."}')
 on conflict (key) do nothing;

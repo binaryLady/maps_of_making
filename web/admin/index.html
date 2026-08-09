@@ -36,9 +36,9 @@
 
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); grid-auto-flow: dense; gap: 1rem; }
 
-  :focus-visible { outline: 2px solid var(--ttm-pink); outline-offset: 2px; }
+  :focus-visible { outline: 2px solid var(--ttm-focus); outline-offset: 2px; }
 
-  ::selection { background: var(--ttm-pink); color: var(--ttm-on-accent); }
+  ::selection { background: var(--ttm-control); color: var(--ttm-on-accent); }
 
   /* ── TTM form components (spec: tokens only, no raw OS widgets) ── */
   .ttm-select { position: relative; display: inline-block; }
@@ -327,7 +327,7 @@
         var e = EDITABLE.filter(function(x){ return x.t === inp.dataset.token; })[0];
         if (e) {
           var ratio = contrast(toHex(custom[e.t] || tok(e.t)), toHex(custom[e.vs] || tok(e.vs)));
-          if (ratio < 4.5) TTMToast.show('Heads up: ' + e.lab + ' now sits below AA contrast (' + ratio.toFixed(1) + ':1).', { type: 'warning' });
+          if (ratio < 4.5) TTMToast.show(e.lab + ' below AA (' + ratio.toFixed(1) + ':1).', { type: 'warning' });
         }
         window.TTMStack.track('theme_customize', { token: inp.dataset.token, value: inp.value });
       });
@@ -367,17 +367,17 @@
   function wlPublish(rows, label){
     if (!sb) {
       $('#wl-status').textContent = 'Supabase not configured — set env vars and run supabase/whitelabel.sql first.';
-      TTMToast.show('Supabase isn\'t connected yet — nothing was published.', { type: 'warning' });
+      TTMToast.show('Supabase not connected.', { type: 'warning' });
       return;
     }
     sb.from('maps_site_config').upsert(rows, { onConflict: 'key' }).then(function(r){
       if (r.error) {
         $('#wl-status').textContent = 'Publish failed: ' + r.error.message + ' (did you run supabase/whitelabel.sql?)';
-        TTMToast.show('Couldn\'t publish — is maps_site_config set up in Supabase?', { type: 'danger' });
+        TTMToast.show('Publish failed — check Supabase.', { type: 'danger' });
         return;
       }
       $('#wl-status').textContent = label + ' published — live for all visitors within a minute.';
-      TTMToast.show(label + ' published — visitors see it within a minute.', { type: 'success' });
+      TTMToast.show('Published.', { type: 'success' });
       try { localStorage.removeItem('ttm_site_config'); } catch(e){}
       window.TTMBrand.refresh();
       window.TTMStack.track('whitelabel_publish', { what: label });
@@ -460,9 +460,7 @@
     var h = history(); h.unshift(rec);
     try { localStorage.setItem('ttm_a11y_history', JSON.stringify(h.slice(0,20))); } catch(e){}
     renderHistory();
-    TTMToast.show(score >= 90
-      ? 'Accessibility audit: ' + score + '/100 — looking sharp.'
-      : 'Accessibility audit: ' + score + '/100 — ' + results.violations.length + ' thing(s) to fix, listed below.',
+    TTMToast.show('Audit: ' + score + '/100' + (results.violations.length ? ' — ' + results.violations.length + ' issue(s).' : '.'),
       { type: score >= 90 ? 'success' : 'warning' });
     window.TTMStack.track('a11y_audit', rec);
   }
