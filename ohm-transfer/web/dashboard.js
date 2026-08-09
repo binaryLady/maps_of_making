@@ -155,7 +155,7 @@
       },
       sensors: { temperature: temps, fan_speed: fans },
       contact: {},
-      'x-source': 'open hardware monitor /data.json via thetechmargin dashboard'
+      'x-source': 'open hardware monitor /data.json web dashboard'
     };
     return JSON.stringify(doc, null, 2);
   }
