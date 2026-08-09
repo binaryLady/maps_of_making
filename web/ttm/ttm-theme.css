@@ -51,6 +51,30 @@ html[data-ttm-theme] ::selection {
   color: var(--ttm-on-accent);
 }
 
+/* ── ttm-nav (theme.js): routes to wizard / test bench / admin ── */
+.ttm-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--drawer-bg, var(--ttm-surface));
+  border: 1.5px solid var(--rule, var(--ttm-border));
+  box-shadow: var(--shadow, var(--ttm-shadow));
+  border-radius: var(--radius, var(--radius-md));
+  height: var(--btn-h, 36px);
+  padding: 0 4px;
+}
+.ttm-nav a {
+  color: var(--muted, var(--ttm-text-muted));
+  text-decoration: none;
+  font: 600 12px/1 var(--ttm-font-sans);
+  padding: 8px 9px;
+  border-radius: var(--radius-sm);
+}
+.ttm-nav a:hover {
+  color: var(--ink, var(--ttm-text));
+  background: var(--status-bg, var(--ttm-surface-alt));
+}
+
 /* ── ttm-toggle (theme.js) ── */
 .ttm-toggle {
   background: var(--drawer-bg, var(--ttm-surface));

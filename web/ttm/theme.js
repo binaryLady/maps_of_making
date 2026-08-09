@@ -50,6 +50,18 @@
   document.addEventListener('DOMContentLoaded', function () {
     var topbar = document.querySelector('.topbar');
     if (topbar) {
+      // Nav to the stack's other routes — the map previously had no way to
+      // reach them from the UI.
+      var nav = document.createElement('nav');
+      nav.className = 'ttm-nav';
+      nav.setAttribute('aria-label', 'Site sections');
+      [['Wizard', '/genjson/'], ['Test', '/test/'], ['Admin', '/admin/']].forEach(function (r) {
+        var a = document.createElement('a');
+        a.href = r[1];
+        a.textContent = r[0];
+        nav.appendChild(a);
+      });
+      topbar.appendChild(nav);
       var btn = document.createElement('button');
       btn.className = 'ttm-toggle';
       btn.type = 'button';
