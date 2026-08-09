@@ -1,0 +1,63 @@
+/* ============================================================================
+   Maps of Making — optional theming layer: design tokens.
+   OFF BY DEFAULT: with no data-mom-theme attribute on <html>, nothing here
+   changes the site — the default token values simply mirror the existing
+   zine palette. A deployer opts in per docs in web/theming/README.md.
+   Deployer overrides cascade through these tokens (see theme.js).
+   ========================================================================== */
+:root {
+  /* Surfaces (defaults = the zine paper look already shipped) */
+  --mom-bg: #f7f2e7;
+  --mom-bg-alt: #efe9d9;
+  --mom-surface: #faf6ea;
+  --mom-surface-alt: #f1ebd9;
+  /* Text */
+  --mom-text: #1a1a1a;
+  --mom-text-secondary: #2a2a2a;
+  --mom-text-muted: #6a6357;
+  --mom-text-faint: #bfb7a4;
+  /* Rules & elevation */
+  --mom-border: #2a2a2a;
+  --mom-shadow: 3px 3px 0 var(--mom-border);
+  --mom-radius: 2px;
+  /* Accents (unchanged semantic hues) */
+  --mom-accent: oklch(62% 0.18 25);
+  --mom-accent-2: oklch(55% 0.17 250);
+  --mom-green: oklch(60% 0.14 150);
+  --mom-yellow: oklch(82% 0.15 90);
+}
+
+/* Neutral dark theme — graphite, taste-free; deployers retint via tokens */
+[data-mom-theme="dark"] {
+  --mom-bg: #131312;
+  --mom-bg-alt: #1b1b19;
+  --mom-surface: #1b1b19;
+  --mom-surface-alt: #242422;
+  --mom-text: #eceae4;
+  --mom-text-secondary: #cfccc4;
+  --mom-text-muted: #96938a;
+  --mom-text-faint: #57554e;
+  --mom-border: #3a3934;
+  --mom-shadow: 0 0 0 1.5px var(--mom-border), 0 8px 24px rgba(0, 0, 0, 0.5);
+  --mom-radius: 4px;
+}
+
+/* When a theme is active, the map's existing chrome variables resolve
+   through the tokens. No attribute → this block never applies. */
+html[data-mom-theme] {
+  --paper: var(--mom-bg);
+  --paper-2: var(--mom-bg-alt);
+  --ink: var(--mom-text);
+  --ink-soft: var(--mom-text-secondary);
+  --muted: var(--mom-text-muted);
+  --faint: var(--mom-text-faint);
+  --rule: var(--mom-border);
+  --accent: var(--mom-accent);
+  --accent-2: var(--mom-accent-2);
+  --green: var(--mom-green);
+  --yellow: var(--mom-yellow);
+  --shadow: var(--mom-shadow);
+  --drawer-bg: var(--mom-surface);
+  --status-bg: var(--mom-surface-alt);
+  --radius: var(--mom-radius);
+}
