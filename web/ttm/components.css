@@ -574,3 +574,26 @@ html[data-ttm-theme] .topbar { overflow: visible; }
   font: inherit;
   cursor: pointer;
 }
+
+/* ── ttm-theme-toggle — binary light/dark switch in the header chrome ── */
+.ttm-theme-toggle {
+  position: fixed;
+  top: 14px;
+  right: 66px;
+  z-index: var(--z-header);
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ttm-surface);
+  color: var(--ttm-text);
+  border: 1.5px solid var(--ttm-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--ttm-shadow);
+  cursor: pointer;
+  font-size: 1.15rem;
+  line-height: 1;
+  padding: 0;
+}
+.ttm-theme-toggle:hover { border-color: var(--ttm-control); color: var(--ttm-control); }

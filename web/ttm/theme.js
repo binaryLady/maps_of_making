@@ -50,9 +50,13 @@
   function apply(theme) {
     if (theme) document.documentElement.setAttribute('data-ttm-theme', theme);
     else document.documentElement.removeAttribute('data-ttm-theme');
-    document.querySelectorAll('.ttm-menu__theme input').forEach(function (r) {
-      r.checked = r.value === theme;
-    });
+    var t = document.querySelector('.ttm-theme-toggle');
+    if (t) {
+      var dark = theme !== 'terminal';
+      t.textContent = dark ? '☀' : '☾';
+      t.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
+      t.setAttribute('aria-pressed', String(dark));
+    }
   }
 
   apply(currentTheme());
@@ -117,13 +121,6 @@
         '<span class="ttm-menu__desc">' + r.desc + '</span></a></li>';
     });
     html += '</ul></nav>';
-    html += '<fieldset class="ttm-menu__theme"><legend>Theme</legend>';
-    THEMES.forEach(function (t) {
-      var id = 'ttm-theme-' + (t || 'zine');
-      html += '<label for="' + id + '"><input type="radio" id="' + id + '" name="ttm-theme-pick" value="' + t + '"' +
-        (currentTheme() === t ? ' checked' : '') + '><span>' + THEME_LABELS[t] + '</span></label>';
-    });
-    html += '</fieldset>';
     html += '<div class="ttm-menu__keys" aria-label="Keyboard shortcuts">' +
       '<kbd>?</kbd> open this menu &nbsp; <kbd>Esc</kbd> close<br>' +
       '<kbd>g</kbd> then <kbd>m</kbd> map · <kbd>w</kbd> workshop · ' +
@@ -167,18 +164,21 @@
       var target = document.getElementById(btn.dataset.proxy);
       if (target) { target.click(); target.focus(); }
     });
-    panel.addEventListener('change', function (e) {
-      if (e.target.name !== 'ttm-theme-pick') return;
-      try { localStorage.setItem('ttm_theme', e.target.value); } catch (err) {}
-      apply(e.target.value);
-      if (window.TTMToast) window.TTMToast.show(
-        (THEME_LABELS[e.target.value] || 'Zine') + ' theme.', { type: 'success', timeout: 2500 });
-      if (window.TTMStack) window.TTMStack.track('theme_change', { theme: e.target.value || 'zine' });
+    var toggle = document.createElement('button');
+    toggle.className = 'ttm-theme-toggle';
+    toggle.type = 'button';
+    toggle.addEventListener('click', function () {
+      var next = currentTheme() === 'terminal' ? 'ttm' : 'terminal';
+      try { localStorage.setItem('ttm_theme', next); } catch (err) {}
+      apply(next);
+      if (window.TTMStack) window.TTMStack.track('theme_change', { theme: next });
     });
 
     document.body.appendChild(backdrop);
     document.body.appendChild(burger);
+    document.body.appendChild(toggle);
     document.body.appendChild(panel);
+    apply(currentTheme()); // paint the toggle's initial icon
 
     // ── Keyboard shortcuts: ? lands you in the menu; g-then-key navigates ──
     var pendingG = 0;
