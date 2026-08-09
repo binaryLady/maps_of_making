@@ -1,0 +1,22 @@
+{
+  "@context": "https://schema.org/",
+  "@type": "LocalBusiness",
+  "schema:name": "The Tech Margin Lab",
+  "schema:description": "Studio lab for responsive installations — mmWave presence sensing, physical computing, GAN-driven portraiture that knows when it is being watched. Technology at the margin, on purpose.",
+  "schema:geo": {
+    "@type": "schema:GeoCoordinates",
+    "schema:latitude": 39.9526,
+    "schema:longitude": -75.1652
+  },
+  "schema:url": "https://thetechmargin.com",
+  "schema:openingHours": "By appointment",
+  "specialties": [
+    "physical computing",
+    "mmwave presence sensing",
+    "responsive installation art",
+    "raspberry pi",
+    "creative ai",
+    "analog synthesis"
+  ],
+  "networks": ["TheTechMargin"]
+}

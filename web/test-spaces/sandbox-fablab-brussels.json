@@ -1,0 +1,13 @@
+{
+  "@context": "https://schema.org/",
+  "@type": "LocalBusiness",
+  "schema:name": "Sandbox FabLab Brussels",
+  "schema:description": "Test space \u2014 live local endpoint",
+  "schema:geo": {
+    "@type": "schema:GeoCoordinates",
+    "schema:latitude": 50.8467,
+    "schema:longitude": 4.3499
+  },
+  "schema:url": "https://example.org/brussels",
+  "schema:openingHours": "Mo-Sa 10:00-18:00"
+}

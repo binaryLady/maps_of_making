@@ -1,0 +1,13 @@
+{
+  "@context": "https://schema.org/",
+  "@type": "LocalBusiness",
+  "schema:name": "Openwerkplaats Gent",
+  "schema:description": "Test space \u2014 live local endpoint",
+  "schema:geo": {
+    "@type": "schema:GeoCoordinates",
+    "schema:latitude": 51.0543,
+    "schema:longitude": 3.7174
+  },
+  "schema:url": "https://example.org/gent",
+  "schema:openingHours": "We-Fr 14:00-22:00"
+}
