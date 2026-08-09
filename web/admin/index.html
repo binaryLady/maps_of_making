@@ -220,16 +220,51 @@
     m.innerHTML =
       '<header class="ttm-header"><h1>Mission Control</h1>' +
       '<span class="crumb">operator access required</span></header>' +
-      '<section class="ttm-card"><h2 style="margin-top:0">This area is gated</h2>' +
-      '<p>Telemetry, visitor info and site controls are operator-only. ' +
-      'Sign in through the gate, then ask the site operator to grant your ' +
-      'email admin status (<code>supabase/admin.sql</code> has the one-liner).</p>' +
+      '<section class="ttm-card" style="max-width:26rem">' +
+      '<h2 style="margin-top:0">Operator sign-in</h2>' +
+      '<p>Telemetry, visitor info and site controls are admin-tier. ' +
+      'Enter your operator email to receive a 6-digit code.</p>' +
+      '<form id="adm-email-form">' +
+      '<label for="adm-email">Email</label> ' +
+      '<input class="wl" id="adm-email" type="email" autocomplete="email" required style="width:100%;margin:.3rem 0 .7rem">' +
       '<div class="row" style="display:flex;gap:.6rem;flex-wrap:wrap">' +
-      '<a class="ttm-btn-outline" href="/">Back to the map</a>' +
-      '<button type="button" class="ttm-btn-primary" id="admin-retry">Access granted — retry</button>' +
-      '</div></section>';
+      '<button type="submit" class="ttm-btn-primary">Send code</button>' +
+      '<a class="ttm-btn-outline" href="/">Back to the map</a></div></form>' +
+      '<form id="adm-code-form" hidden>' +
+      '<label for="adm-code">Code from your email</label> ' +
+      '<input class="wl" id="adm-code" inputmode="numeric" autocomplete="one-time-code" maxlength="8" required style="width:100%;margin:.3rem 0 .7rem">' +
+      '<div class="row" style="display:flex;gap:.6rem;flex-wrap:wrap">' +
+      '<button type="submit" class="ttm-btn-primary">Verify</button></div></form>' +
+      '<p class="note" style="margin-top:.8rem">Admins are enrolled in the ' +
+      '<code>ttm_admins</code> table (see <code>supabase/rls.sql</code>). ' +
+      'A code sent to an un-enrolled email signs in but unlocks nothing.</p>' +
+      '</section>';
     veil.remove();
-    document.getElementById('admin-retry').addEventListener('click', function(){ location.reload(); });
+    var emailForm = document.getElementById('adm-email-form');
+    var codeForm = document.getElementById('adm-code-form');
+    emailForm.addEventListener('submit', function(e){
+      e.preventDefault();
+      var email = document.getElementById('adm-email').value.trim();
+      window.TTMStack.adminSignIn(email).then(function(r){
+        if (r.error) throw r.error;
+        emailForm.hidden = true; codeForm.hidden = false;
+        document.getElementById('adm-code').focus();
+        if (window.TTMToast) TTMToast.show('Code sent to ' + email + '.', { type: 'success' });
+      }).catch(function(err){
+        if (window.TTMToast) TTMToast.show('Could not send code: ' + err.message, { type: 'error' });
+      });
+    });
+    codeForm.addEventListener('submit', function(e){
+      e.preventDefault();
+      var email = document.getElementById('adm-email').value.trim();
+      var code = document.getElementById('adm-code').value.trim();
+      window.TTMStack.adminVerify(email, code).then(function(r){
+        if (r.error) throw r.error;
+        location.reload(); // re-runs the guard with the authenticated session
+      }).catch(function(err){
+        if (window.TTMToast) TTMToast.show('Verification failed: ' + err.message, { type: 'error' });
+      });
+    });
   }
   function decide(){
     window.TTMStack.isAdmin().then(function(ok){
