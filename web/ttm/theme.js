@@ -71,14 +71,13 @@
 
     var backdrop = document.createElement('div');
     backdrop.className = 'ttm-menu__backdrop';
-    backdrop.hidden = true;
 
     var panel = document.createElement('div');
     panel.className = 'ttm-menu';
     panel.id = 'ttm-menu';
-    panel.hidden = true;
     panel.setAttribute('role', 'dialog');
     panel.setAttribute('aria-label', 'Site menu');
+    panel.setAttribute('aria-hidden', 'true');
 
     // Meet Bernard — the keeper greets you at the door, by the name you gave
     // at the gate. Voice per the character bible: em-dash, typewriter, amber,
@@ -88,7 +87,9 @@
     var greeting = visitorName
       ? '— ' + visitorName + '. Bernard (they/them), keeper of \'Mother Sands\'. The workshop\'s open.'
       : '— Bernard (they/them), keeper of \'Mother Sands\'. The workshop\'s open.';
-    var html = '<a class="ttm-menu__bernard" href="/genjson/"><span class="voice"></span></a>';
+    var html = '<div class="ttm-menu__head"><span class="ttm-menu__title">Menu</span>' +
+      '<button type="button" class="ttm-menu__close" aria-label="Close menu">×</button></div>';
+    html += '<a class="ttm-menu__bernard" href="/genjson/"><span class="voice"></span></a>';
     // This page's actions (map): the topbar collapses here — one header, any
     // viewport. Buttons proxy the app's own (hidden) controls.
     var ACTIONS = [
@@ -130,32 +131,36 @@
     panel.innerHTML = html;
     panel.querySelector('.ttm-menu__bernard .voice').textContent = greeting;
 
+    function isOpen() { return panel.classList.contains('is-open'); }
     function open() {
-      panel.hidden = false; backdrop.hidden = false;
+      panel.classList.add('is-open'); backdrop.classList.add('is-open');
+      panel.setAttribute('aria-hidden', 'false');
       burger.setAttribute('aria-expanded', 'true');
       document.body.classList.add('ttm-menu-open');
-      var first = panel.querySelector('a, input');
+      var first = panel.querySelector('a, button, input');
       if (first) first.focus();
     }
     function close(returnFocus) {
-      panel.hidden = true; backdrop.hidden = true;
+      panel.classList.remove('is-open'); backdrop.classList.remove('is-open');
+      panel.setAttribute('aria-hidden', 'true');
       burger.setAttribute('aria-expanded', 'false');
       document.body.classList.remove('ttm-menu-open');
       if (returnFocus !== false) burger.focus();
     }
     burger.addEventListener('click', function () {
-      panel.hidden ? open() : close();
+      isOpen() ? close() : open();
     });
     backdrop.addEventListener('click', function () { close(); });
     panel.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') { e.stopPropagation(); close(); return; }
       if (e.key !== 'Tab') return;
-      var els = panel.querySelectorAll('a, input');
+      var els = panel.querySelectorAll('a, button, input');
       var first = els[0], last = els[els.length - 1];
       if (e.shiftKey && document.activeElement === first) { last.focus(); e.preventDefault(); }
       else if (!e.shiftKey && document.activeElement === last) { first.focus(); e.preventDefault(); }
     });
     panel.addEventListener('click', function (e) {
+      if (e.target.closest('.ttm-menu__close')) { close(); return; }
       var btn = e.target.closest('.ttm-menu__action');
       if (!btn) return;
       close(false);
@@ -180,7 +185,7 @@
     document.addEventListener('keydown', function (e) {
       var tag = (document.activeElement && document.activeElement.tagName) || '';
       if (/INPUT|TEXTAREA|SELECT/.test(tag) || e.metaKey || e.ctrlKey || e.altKey) return;
-      if (e.key === '?') { e.preventDefault(); panel.hidden ? open() : close(); return; }
+      if (e.key === '?') { e.preventDefault(); isOpen() ? close() : open(); return; }
       var routes = { m: '/', w: '/genjson/', t: '/test/', a: '/admin/' };
       if (pendingG && Date.now() - pendingG < 1500 && routes[e.key]) {
         e.preventDefault();
