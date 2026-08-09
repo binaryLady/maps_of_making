@@ -51,48 +51,125 @@ html[data-ttm-theme] ::selection {
   color: var(--ttm-on-accent);
 }
 
-/* ── ttm-nav (theme.js): routes to wizard / test bench / admin ── */
-.ttm-nav {
+/* ── ttm-burger + ttm-menu (theme.js) — all routes + theme, collapsed ── */
+.ttm-burger {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: var(--z-header);
+  width: 44px;
+  height: 44px;
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
-  gap: 2px;
-  background: var(--drawer-bg, var(--ttm-surface));
-  border: 1.5px solid var(--rule, var(--ttm-border));
-  box-shadow: var(--shadow, var(--ttm-shadow));
-  border-radius: var(--radius, var(--radius-md));
-  height: var(--btn-h, 36px);
-  padding: 0 4px;
-}
-.ttm-nav a {
-  color: var(--muted, var(--ttm-text-muted));
-  text-decoration: none;
-  font: 600 12px/1 var(--ttm-font-sans);
-  padding: 8px 9px;
+  justify-content: center;
+  gap: 5px;
+  background: var(--ttm-surface);
+  border: 1.5px solid var(--ttm-border);
   border-radius: var(--radius-sm);
-}
-.ttm-nav a:hover {
-  color: var(--ink, var(--ttm-text));
-  background: var(--status-bg, var(--ttm-surface-alt));
-}
-
-/* ── ttm-toggle (theme.js) ── */
-.ttm-toggle {
-  background: var(--drawer-bg, var(--ttm-surface));
-  border: 1.5px solid var(--rule, var(--ttm-border));
-  box-shadow: var(--shadow, var(--ttm-shadow));
-  border-radius: var(--radius, var(--radius-md));
-  color: var(--ink, var(--ttm-text));
-  font: 600 12px/1 var(--ttm-font-sans);
-  height: var(--btn-h, 36px);
-  padding: 0 12px;
+  box-shadow: var(--ttm-shadow);
   cursor: pointer;
+  padding: 0;
+}
+.ttm-burger span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: var(--ttm-text);
+  border-radius: 1px;
+  transition: transform .18s ease, opacity .18s ease;
+}
+.ttm-burger[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.ttm-burger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+.ttm-burger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+.ttm-menu__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  background: var(--ttm-overlay);
+}
+.ttm-menu {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--z-modal);
+  width: min(100vw, 21rem);
+  background: var(--ttm-surface);
+  border-left: 1.5px solid var(--ttm-border);
+  box-shadow: var(--ttm-shadow);
+  padding: 4.6rem 1.1rem 1.25rem;
+  overflow-y: auto;
+  font-family: var(--ttm-font-sans);
+  color: var(--ttm-text);
+}
+.ttm-menu__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.ttm-menu__group {
+  font: 600 var(--ttm-fs-caption)/1 var(--ttm-font-mono);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ttm-text-faint);
+  margin: 1.1rem 0 .35rem;
+  padding: 0 .75rem;
+}
+.ttm-menu__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: .6rem .75rem;
+  min-height: 44px;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: var(--ttm-text);
+  border: 1.5px solid transparent;
+}
+.ttm-menu__item:hover { background: var(--ttm-surface-alt); }
+.ttm-menu__item[aria-current="page"] {
+  border-color: var(--ttm-pink);
+  background: var(--ttm-surface-alt);
+}
+.ttm-menu__name { font-weight: 600; font-size: var(--ttm-fs-small); }
+.ttm-menu__desc { font-size: var(--ttm-fs-caption); color: var(--ttm-text-muted); }
+.ttm-menu__theme {
+  margin: 1.4rem 0 0;
+  padding: .9rem .75rem .75rem;
+  border: 1.5px solid var(--ttm-border);
+  border-radius: var(--radius-sm);
+  display: flex;
+  gap: .35rem;
+}
+.ttm-menu__theme legend {
+  font: 600 var(--ttm-fs-caption)/1 var(--ttm-font-mono);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ttm-text-faint);
+  padding: 0 .3rem;
+}
+.ttm-menu__theme label {
+  flex: 1;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  min-height: 40px;
+  border: 1.5px solid var(--ttm-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--ttm-fs-caption);
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--ttm-text-secondary);
 }
-.ttm-toggle:hover { background: var(--status-bg, var(--ttm-surface-alt)); }
-/* legacy alias */
-.ttm-theme-toggle { all: unset; }
+.ttm-menu__theme input { position: absolute; opacity: 0; pointer-events: none; }
+.ttm-menu__theme input:checked + span { color: var(--ttm-pink); }
+.ttm-menu__theme label:has(input:checked) { border-color: var(--ttm-pink); color: var(--ttm-pink); }
+.ttm-menu__theme label:has(input:focus-visible) {
+  outline: 2px solid var(--ttm-pink);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ttm-burger span { transition: none; }
+}
 
 /* ── ttm-footer badge (required brand footer, TTM modes only) ── */
 .ttm-footer-badge {
