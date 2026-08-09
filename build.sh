@@ -20,6 +20,11 @@ mkdir -p public/data
 cp web/demo-data/spaces.snapshot.geojson public/data/spaces.geojson
 # Vercel needs an index at the root; keep the original filename working too
 cp public/maps-of-making.html public/index.html
+# bernard_copy.json is generated from the YAML source (gitignored, so a fresh
+# clone doesn't have it — this is what broke the first Vercel build)
+if [ ! -f public/genjson/bernard_copy.json ]; then
+  npx --yes js-yaml web/genjson/bernard_copy.yaml > public/genjson/bernard_copy.json
+fi
 # genjson fetches /bernard_copy.json from the site root (it lives on its own
 # subdomain in production) — mirror it to the root here
 cp public/genjson/bernard_copy.json public/bernard_copy.json
