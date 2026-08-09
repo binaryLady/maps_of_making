@@ -11,12 +11,15 @@
 <link rel="icon" href="/icon.svg" type="image/svg+xml" />
 <link rel="apple-touch-icon" href="/apple-icon.png" />
 <style>
+  /* page aliases only — every color resolves through /ttm/tokens.css */
   :root{
-    --paper:#f7f2e7; --ink:#1b1b18; --rule:#1b1b18; --muted:#6d675c; --card:#fffdf6;
-    --cobalt:#1d4ed8; --alive:#0F6E56; --amber:#a16207; --error:#c0392b;
-    --shadow:3px 3px 0 var(--ink); --radius:2px;
-    --mono:ui-monospace,'JetBrains Mono',Menlo,Consolas,monospace;
-    --sans:'Inter Tight','Inter',system-ui,sans-serif;
+    --paper:var(--ttm-bg); --ink:var(--ttm-text); --rule:var(--ttm-border);
+    --muted:var(--ttm-text-muted); --card:var(--ttm-surface);
+    --cobalt:var(--ttm-state-confirmed); --alive:var(--ttm-success);
+    --amber:var(--ttm-warning); --error:var(--ttm-danger);
+    --shadow:var(--ttm-shadow); --radius:var(--radius-sm);
+    --mono:var(--ttm-font-mono);
+    --sans:var(--ttm-font-sans);
   }
   body{background:var(--paper);color:var(--ink);font-family:var(--sans);
     line-height:1.5;margin:0;padding:1.5rem 1rem 4rem;font-size:14px;}
@@ -117,21 +120,21 @@
 
   // Each scenario: how to build the space, and the marker the map must derive.
   const SCENARIOS = [
-    {key:'seeded',    color:'#b9b3a6', desc:'directory import, never observed', expect:'seeded',
+    {key:'seeded',    color:'var(--ttm-state-seeded)', desc:'directory import, never observed', expect:'seeded',
       make:()=>({})},
-    {key:'confirmed', color:'#1d4ed8', desc:'live endpoint, no open/closed claim', expect:'confirmed',
+    {key:'confirmed', color:'var(--ttm-state-confirmed)', desc:'live endpoint, no open/closed claim', expect:'confirmed',
       make:()=>({observed_at:iso(2*MIN), updated_at:iso(1*DAY)})},
-    {key:'open',      color:'#0F6E56', desc:'reporting open right now', expect:'open',
+    {key:'open',      color:'var(--ttm-state-open)', desc:'reporting open right now', expect:'open',
       make:()=>({observed_at:iso(2*MIN), updated_at:iso(1*DAY), open_now:true})},
-    {key:'shut',      color:'#7aa695', desc:'operator says closed right now', expect:'shut',
+    {key:'shut',      color:'var(--ttm-state-shut)', desc:'operator says closed right now', expect:'shut',
       make:()=>({observed_at:iso(2*MIN), updated_at:iso(1*DAY), open_now:false})},
-    {key:'aging',     color:'#a16207', desc:'content unchanged 30–90 days', expect:'aging',
+    {key:'aging',     color:'var(--ttm-state-aging)', desc:'content unchanged 30–90 days', expect:'aging',
       make:()=>({observed_at:iso(2*MIN), updated_at:iso(45*DAY)})},
-    {key:'zombie',    color:'#8a5a00', desc:'unchanged 90–180 days', expect:'zombie',
+    {key:'zombie',    color:'var(--ttm-state-zombie)', desc:'unchanged 90–180 days', expect:'zombie',
       make:()=>({observed_at:iso(2*MIN), updated_at:iso(120*DAY)})},
-    {key:'dead',      color:'#57534e', desc:'unchanged 180+ days', expect:'dead',
+    {key:'dead',      color:'var(--ttm-state-dead)', desc:'unchanged 180+ days', expect:'dead',
       make:()=>({observed_at:iso(2*MIN), updated_at:iso(200*DAY)})},
-    {key:'broken',    color:'#c0392b', desc:'endpoint unreachable (fetch 60+ min stale)', expect:'broken',
+    {key:'broken',    color:'var(--ttm-state-broken)', desc:'endpoint unreachable (fetch 60+ min stale)', expect:'broken',
       make:()=>({observed_at:iso(2*HOUR), updated_at:iso(1*DAY), last_fetch_status:'unreachable'})},
   ];
 
