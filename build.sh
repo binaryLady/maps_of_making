@@ -11,10 +11,19 @@ mkdir -p public
 cp -r web/. public/
 # Not servable statically / not needed in the demo
 # (test-fixtures and test-spaces stay in — they're the worked examples of what
-#  a space publishes, useful for demos and for pasting into validators)
-rm -rf public/mothersands public/admin public/canary \
+#  a space publishes; admin/ ships too — it's the TTM Mission Control dashboard)
+rm -rf public/mothersands public/canary \
        public/demo-data public/design-canvas.jsx "public/ZieZo Activiteiten.html" \
        public/genjson/bernard_copy.yaml
+
+# TTM stack: inject Supabase credentials from the Vercel project env.
+# Unset env → placeholders stay → the stack runs local-only by design.
+if [ -n "${SUPABASE_URL:-}" ]; then
+  sed -i "s|%SUPABASE_URL%|${SUPABASE_URL}|" public/ttm/config.js
+fi
+if [ -n "${SUPABASE_ANON_KEY:-}" ]; then
+  sed -i "s|%SUPABASE_ANON_KEY%|${SUPABASE_ANON_KEY}|" public/ttm/config.js
+fi
 # The committed snapshot becomes the path the app fetches
 mkdir -p public/data
 cp web/demo-data/spaces.snapshot.geojson public/data/spaces.geojson
