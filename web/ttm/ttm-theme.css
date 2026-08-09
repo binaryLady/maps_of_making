@@ -1,0 +1,159 @@
+/* ============================================================================
+   The Tech Margin theme layer for Maps of Making
+   Skins the CHROME ONLY by overriding the map's own CSS variables under
+   html[data-ttm-theme="..."]. The lifecycle pin colors (green=alive,
+   red=broken, cobalt=confirmed, grey=seeded) are semantic and PROTECTED —
+   they are painted by MapLibre layers from app.js and are not touched here.
+
+   Themes:  (none)      → original zine paper (upstream look, untouched)
+            "ttm"       → TTM dark (#0d1117 ground, neon accents)
+            "terminal"  → TTM terminal (cream ground, mono, muted accents)
+   ========================================================================== */
+
+html[data-ttm-theme="ttm"] {
+  --paper: #0d1117;
+  --paper-2: #161b22;
+  --ink: #f0f6fc;
+  --ink-soft: #c9d1d9;
+  --muted: #8b949e;
+  --faint: #484f58;
+  --rule: #30363d;
+  --accent: #ff0080;        /* hot red — errors/alerts (TTM danger) */
+  --accent-2: #09FFF0;      /* cyan — links/secondary (TTM info) */
+  --green: #a1ff00;         /* lime — success highlights in chrome */
+  --yellow: #ff9500;        /* goldenrod — warnings/featured */
+  --shadow: 0 0 0 1.5px #30363d, 0 8px 24px rgba(0, 0, 0, 0.5);
+  --drawer-bg: #161b22;
+  --status-bg: #21262d;
+  --radius: 0.7rem;
+}
+html[data-ttm-theme="terminal"] {
+  --paper: #f2ede1;
+  --paper-2: #e9e2d2;
+  --ink: #2b2a28;
+  --ink-soft: #4a4844;
+  --muted: #6f6b63;
+  --faint: #a09a8c;
+  --rule: #c9c0aa;
+  --accent: #ff5555;
+  --accent-2: #09d3c5;
+  --green: #7c9f35;
+  --yellow: #f1a942;
+  --shadow: 3px 3px 0 #2b2a28;
+  --drawer-bg: #e9e2d2;
+  --status-bg: #ddd4c0;
+  --radius: 2px;
+}
+
+/* Brand wordmark: rainbow gradient in TTM mode, mono in terminal mode */
+html[data-ttm-theme="ttm"] .brand .logo {
+  font-family: 'Pacifico', 'Caveat', cursive;
+  background: linear-gradient(90deg, #09FFF0, #ff0080, #E904E5, #a1ff00, #ff9500);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+html[data-ttm-theme="terminal"] .brand .logo,
+html[data-ttm-theme="terminal"] body {
+  font-family: 'Geist Mono', 'JetBrains Mono', ui-monospace, monospace;
+}
+
+/* Focus ring switches to TTM pink in TTM modes (2px offset per TTM a11y spec) */
+html[data-ttm-theme="ttm"] :focus-visible,
+html[data-ttm-theme="terminal"] :focus-visible {
+  outline: 2px solid #E904E5 !important;
+  outline-offset: 2px;
+}
+html[data-ttm-theme="ttm"] ::selection { background: #E904E5; color: #0d1117; }
+
+/* ── Theme toggle button (injected into the topbar by theme.js) ── */
+.ttm-theme-toggle {
+  background: var(--drawer-bg);
+  border: 1.5px solid var(--rule);
+  box-shadow: var(--shadow);
+  border-radius: var(--radius);
+  color: var(--ink);
+  font: 600 12px/1 'Inter Tight', system-ui, sans-serif;
+  height: var(--btn-h, 36px);
+  padding: 0 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ttm-theme-toggle:hover { background: var(--status-bg); }
+
+/* ── Required TTM footer badge (injected by theme.js, TTM modes only) ── */
+.ttm-footer-badge {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 6px;
+  z-index: 15;
+  font: 400 11px/1 'Geist Mono', 'JetBrains Mono', ui-monospace, monospace;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--paper) 82%, transparent);
+  border-radius: var(--radius);
+  padding: 4px 10px;
+  pointer-events: none;
+}
+.ttm-footer-badge .heart { color: #ff0080; }
+.ttm-footer-badge .brand-name {
+  font-family: 'Pacifico', cursive;
+  background: linear-gradient(90deg, #09FFF0, #ff0080, #E904E5, #a1ff00, #ff9500);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+html:not([data-ttm-theme]) .ttm-footer-badge { display: none; }
+
+/* ── Entry gate (gate.js) ── */
+.ttm-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(13, 17, 23, 0.82);
+  backdrop-filter: blur(4px);
+}
+.ttm-gate__card {
+  background: var(--drawer-bg, #161b22);
+  color: var(--ink, #f0f6fc);
+  border: 1.5px solid var(--rule, #30363d);
+  border-radius: var(--radius, 0.7rem);
+  box-shadow: var(--shadow, 0 8px 24px rgba(0,0,0,.5));
+  width: min(92vw, 26rem);
+  padding: 1.6rem 1.6rem 1.3rem;
+  font-family: 'Inter Tight', system-ui, sans-serif;
+}
+.ttm-gate__card h2 { margin: 0 0 .35rem; font-size: 1.35rem; }
+.ttm-gate__card p { margin: .3rem 0 .9rem; font-size: .875rem; color: var(--muted, #8b949e); }
+.ttm-gate__card label { display: block; font-size: .8rem; font-weight: 600; margin: .7rem 0 .25rem; }
+.ttm-gate__card input {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--status-bg, #21262d);
+  color: var(--ink, #f0f6fc);
+  border: 1.5px solid var(--rule, #30363d);
+  border-radius: calc(var(--radius, 0.7rem) - 2px);
+  font: 400 14px/1.4 'Inter Tight', system-ui, sans-serif;
+  padding: .6rem .75rem;
+  min-height: 44px;
+}
+.ttm-gate__card input[aria-invalid="true"] { border-color: #ff0080; }
+.ttm-gate__err { color: #ff0080; font-size: .78rem; min-height: 1em; margin: .35rem 0 0; }
+.ttm-gate__submit {
+  margin-top: 1rem;
+  width: 100%;
+  min-height: 44px;
+  border: none;
+  border-radius: calc(var(--radius, 0.7rem) - 2px);
+  background: #E904E5;
+  color: #0d1117;
+  font: 600 15px/1 'Inter Tight', system-ui, sans-serif;
+  cursor: pointer;
+}
+.ttm-gate__submit:hover { box-shadow: 0 0 20px rgba(233, 4, 229, 0.5); }
+.ttm-gate__fine { font-size: .7rem; color: var(--faint, #484f58); margin-top: .7rem; }

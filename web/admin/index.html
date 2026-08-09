@@ -1,116 +1,347 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="en" data-ttm-theme="ttm">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maps of Making — Mission Control</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 1rem;
-        }
-
-        .container {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 500px;
-            width: 100%;
-            padding: 3rem;
-            text-align: center;
-        }
-
-        h1 {
-            color: #333;
-            margin-bottom: 1rem;
-            font-size: 2rem;
-        }
-
-        .subtitle {
-            color: #667eea;
-            font-weight: 600;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 2rem;
-        }
-
-        .placeholder {
-            color: #666;
-            line-height: 1.6;
-            margin-bottom: 2rem;
-            font-size: 1rem;
-        }
-
-        .status-badge {
-            display: inline-block;
-            background: #ffeaa7;
-            color: #d63031;
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            margin-bottom: 2rem;
-        }
-
-        .footer {
-            margin-top: 2rem;
-            padding-top: 2rem;
-            border-top: 1px solid #e0e0e0;
-        }
-
-        .footer a {
-            display: inline-block;
-            margin-top: 1rem;
-            color: #667eea;
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.2s;
-        }
-
-        .footer a:hover {
-            color: #764ba2;
-        }
-
-        .icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            animation: float 3s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-    </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mission Control — Maps of Making</title>
+<link rel="icon" href="/favicon.svg" />
+<link rel="stylesheet" href="/ttm/ttm-theme.css" />
+<style>
+  :root{
+    --paper:#0d1117; --paper-2:#161b22; --ink:#f0f6fc; --ink-soft:#c9d1d9;
+    --muted:#8b949e; --faint:#484f58; --rule:#30363d;
+    --accent:#ff0080; --accent-2:#09FFF0; --green:#a1ff00; --yellow:#ff9500;
+    --drawer-bg:#161b22; --status-bg:#21262d; --radius:0.7rem;
+    --mono:'Geist Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
+    --sans:'Poppins','Inter Tight',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font:400 14px/1.55 var(--sans);
+    padding:1.5rem 1.25rem 4rem;}
+  main{max-width:64rem;margin:0 auto;}
+  header{display:flex;align-items:baseline;gap:.8rem;flex-wrap:wrap;margin-bottom:1.4rem;}
+  h1{font-size:1.6rem;margin:0;}
+  h1 .g{background:linear-gradient(90deg,#09FFF0,#ff0080,#E904E5,#a1ff00,#ff9500);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+  .crumb{font-family:var(--mono);font-size:.72rem;color:var(--muted);}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:1rem;}
+  section.card{background:var(--drawer-bg);border:1px solid var(--rule);
+    border-radius:var(--radius);padding:1.1rem 1.25rem;}
+  section.card h2{font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;
+    font-size:.72rem;color:var(--muted);margin:0 0 .8rem;}
+  .big{font-size:1.9rem;font-weight:600;line-height:1.1;}
+  .kv{display:flex;justify-content:space-between;gap:.6rem;padding:.3rem 0;
+    border-bottom:1px solid #21262d;font-size:.85rem;}
+  .kv:last-child{border-bottom:none;}
+  .kv .k{color:var(--muted);}
+  .kv .v{font-family:var(--mono);}
+  .bar{display:flex;align-items:center;gap:.55rem;margin:.3rem 0;font-size:.8rem;}
+  .bar .lab{font-family:var(--mono);width:5.6rem;color:var(--ink-soft);}
+  .bar .track{flex:1;height:10px;background:var(--status-bg);border-radius:5px;overflow:hidden;}
+  .bar .fill{height:100%;border-radius:5px;}
+  .bar .n{font-family:var(--mono);width:3.2rem;text-align:right;color:var(--muted);}
+  .pill{display:inline-block;font:600 .68rem/1 var(--mono);letter-spacing:.05em;
+    text-transform:uppercase;border:1px solid var(--rule);border-radius:5px;
+    padding:.25rem .5rem;}
+  .pill.ok{color:var(--green);border-color:var(--green);}
+  .pill.warn{color:var(--yellow);border-color:var(--yellow);}
+  .pill.bad{color:var(--accent);border-color:var(--accent);}
+  button{font:600 13px/1 var(--sans);background:#E904E5;color:#0d1117;border:none;
+    border-radius:calc(var(--radius) - 2px);padding:.6rem 1rem;min-height:40px;cursor:pointer;}
+  button.alt{background:transparent;color:var(--ink);border:1px solid var(--rule);}
+  button:focus-visible{outline:2px solid #E904E5;outline-offset:2px;}
+  select{background:var(--status-bg);color:var(--ink);border:1px solid var(--rule);
+    border-radius:6px;font:400 13px var(--sans);padding:.45rem .6rem;min-height:40px;}
+  .meter{position:relative;width:130px;height:130px;margin:.4rem auto;}
+  .meter svg{transform:rotate(-90deg);}
+  .meter .val{position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;font-family:var(--mono);}
+  .meter .val b{font-size:1.7rem;}
+  .meter .val span{font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;}
+  table{border-collapse:collapse;width:100%;font-size:.78rem;font-family:var(--mono);}
+  th,td{border-bottom:1px solid #21262d;padding:.35rem .4rem;text-align:left;}
+  th{color:var(--muted);text-transform:uppercase;font-size:.62rem;letter-spacing:.08em;}
+  .note{font-size:.75rem;color:var(--muted);}
+  .full{grid-column:1/-1;}
+  a{color:var(--accent-2);}
+  footer{margin-top:2.5rem;padding-top:1.4rem;border-top:1px solid var(--rule);
+    text-align:center;font:400 .8rem var(--mono);color:var(--muted);}
+  footer .heart{color:#ff0080;}
+  footer .bn{font-family:'Pacifico',cursive;font-size:1rem;
+    background:linear-gradient(90deg,#09FFF0,#ff0080,#E904E5,#a1ff00,#ff9500);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+  @media (prefers-reduced-motion:reduce){*{transition-duration:.01ms!important}}
+</style>
 </head>
 <body>
-    <div class="container">
-        <div class="icon">🛰️</div>
-        <h1>Mission Control</h1>
-        <div class="subtitle">Maps of Making Admin</div>
-        <div class="status-badge">Coming in Epic 4</div>
+<main>
+  <header>
+    <h1>Mission Control <span class="g">· thetechmargin</span></h1>
+    <span class="crumb">maps of making · admin · <a href="/">back to map</a></span>
+  </header>
 
-        <p class="placeholder">
-            The admin dashboard for monitoring Oxigraph ingestion state and comparing space data
-            across seed, live URL, stored triples, and map views is under development.
-        </p>
+  <div class="grid">
+    <section class="card" aria-labelledby="h-mon">
+      <h2 id="h-mon">Monitoring — data freshness</h2>
+      <div id="mon-status"><span class="pill warn">checking…</span></div>
+      <div class="kv"><span class="k">snapshot generated</span><span class="v" id="mon-gen">—</span></div>
+      <div class="kv"><span class="k">age</span><span class="v" id="mon-age">—</span></div>
+      <div class="kv"><span class="k">spaces</span><span class="v" id="mon-count">—</span></div>
+      <div class="kv"><span class="k">live (observed)</span><span class="v" id="mon-live">—</span></div>
+      <div class="kv"><span class="k">mode</span><span class="v" id="mon-mode">static snapshot</span></div>
+    </section>
 
-        <div class="footer">
-            <p>For now, this page confirms your authentication is working.</p>
-            <a href="https://mapsofmaking.org">← Back to Map</a>
-        </div>
-    </div>
+    <section class="card" aria-labelledby="h-dist">
+      <h2 id="h-dist">Lifecycle distribution</h2>
+      <div id="dist"></div>
+      <p class="note">Computed client-side with the shipped <code>freshness.js</code> —
+      the same logic the map renders with.</p>
+    </section>
+
+    <section class="card" aria-labelledby="h-theme">
+      <h2 id="h-theme">Theme controls</h2>
+      <div class="kv"><span class="k">site default</span>
+        <select id="theme-default" aria-label="Default theme">
+          <option value="ttm">TTM dark</option>
+          <option value="terminal">Terminal</option>
+          <option value="">Zine (upstream)</option>
+        </select></div>
+      <div class="kv"><span class="k">this browser</span>
+        <select id="theme-mine" aria-label="My theme override">
+          <option value="__unset__">follow default</option>
+          <option value="ttm">TTM dark</option>
+          <option value="terminal">Terminal</option>
+          <option value="">Zine (upstream)</option>
+        </select></div>
+      <p class="note">Default applies to visitors with no explicit choice, stored in this
+      browser (a Supabase-backed site setting is the natural next step).</p>
+    </section>
+
+    <section class="card" aria-labelledby="h-a11y">
+      <h2 id="h-a11y">W3C accessibility meter (axe-core)</h2>
+      <div class="meter" id="a11y-meter" hidden>
+        <svg width="130" height="130" viewBox="0 0 130 130" aria-hidden="true">
+          <circle cx="65" cy="65" r="56" fill="none" stroke="#21262d" stroke-width="12"/>
+          <circle id="a11y-arc" cx="65" cy="65" r="56" fill="none" stroke="#a1ff00"
+            stroke-width="12" stroke-linecap="round" stroke-dasharray="352" stroke-dashoffset="352"/>
+        </svg>
+        <div class="val"><b id="a11y-score">—</b><span>a11y score</span></div>
+      </div>
+      <div id="a11y-detail"></div>
+      <div style="display:flex;gap:.6rem;margin-top:.7rem;flex-wrap:wrap">
+        <button id="a11y-run">Audit this page</button>
+        <button id="a11y-run-map" class="alt">Audit the map</button>
+      </div>
+      <p class="note" id="a11y-note">WCAG 2.1 A/AA rules via axe-core (vendored, runs in your browser).</p>
+    </section>
+
+    <section class="card full" aria-labelledby="h-tel">
+      <h2 id="h-tel">Telemetry</h2>
+      <div id="tel-body"><p class="note">Connecting…</p></div>
+    </section>
+
+    <section class="card full" aria-labelledby="h-vis">
+      <h2 id="h-vis">Visitors (gate sign-ins)</h2>
+      <div id="vis-body"><p class="note">Connecting…</p></div>
+    </section>
+  </div>
+
+  <footer>made with <span class="heart">❤</span> by <span class="bn">thetechmargin</span></footer>
+</main>
+
+<script src="/ttm/config.js"></script>
+<script src="/vendor/supabase.js"></script>
+<script src="/freshness.js"></script>
+<script src="/ttm/theme.js"></script>
+<script src="/ttm/stack.js"></script>
+<script>
+(function(){
+  'use strict';
+  var $ = function(s){ return document.querySelector(s); };
+  var sb = window.TTMStack.supabase();
+
+  // ── Monitoring ─────────────────────────────────────────────────────────────
+  var STATE_COLORS = { seeded:'#8b949e', confirmed:'#1d4ed8', open:'#0F6E56', shut:'#7aa695',
+    aging:'#a16207', zombie:'#8a5a00', dead:'#57534e', broken:'#c0392b' };
+  fetch('/data/spaces.geojson?t=' + Date.now()).then(function(r){
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  }).then(function(fc){
+    var gen = fc.generated_at ? new Date(fc.generated_at) : null;
+    var ageH = gen ? (Date.now() - gen.getTime())/3600000 : null;
+    $('#mon-gen').textContent = gen ? gen.toISOString().replace('T',' ').slice(0,16)+'Z' : 'unknown';
+    $('#mon-age').textContent = ageH == null ? '—' : (ageH < 48 ? ageH.toFixed(1)+' h' : (ageH/24).toFixed(1)+' d');
+    var feats = fc.features || [];
+    $('#mon-count').textContent = feats.length;
+    var live = feats.filter(function(f){ return f.properties.observed_at; }).length;
+    $('#mon-live').textContent = live;
+    $('#mon-status').innerHTML = '<span class="pill ' + (ageH != null && ageH < 24*7 ? 'ok' : 'warn') + '">' +
+      (ageH != null && ageH < 24*7 ? 'snapshot healthy' : 'snapshot stale — re-export from a running node') + '</span>';
+    // distribution
+    var counts = {};
+    feats.forEach(function(f){
+      var m = MOMFreshness.computeMarker(f.properties, fc.thresholds);
+      counts[m] = (counts[m]||0)+1;
+    });
+    var max = Math.max.apply(null, Object.keys(counts).map(function(k){return counts[k];}));
+    var host = $('#dist');
+    Object.keys(STATE_COLORS).forEach(function(k){
+      if(!counts[k]) return;
+      var row = document.createElement('div'); row.className='bar';
+      row.innerHTML = '<span class="lab">'+k+'</span><div class="track">'+
+        '<div class="fill" style="width:'+Math.max(2,100*counts[k]/max)+'%;background:'+STATE_COLORS[k]+'"></div></div>'+
+        '<span class="n">'+counts[k]+'</span>';
+      host.appendChild(row);
+    });
+  }).catch(function(e){
+    $('#mon-status').innerHTML = '<span class="pill bad">data fetch failed — ' + e.message + '</span>';
+  });
+
+  // ── Theme controls ─────────────────────────────────────────────────────────
+  var defSel = $('#theme-default'), mineSel = $('#theme-mine');
+  try {
+    defSel.value = localStorage.getItem('ttm_theme_default');
+    if (defSel.value === null || defSel.selectedIndex === -1) defSel.value = (window.TTM_CONFIG.defaultTheme || '');
+    var mine = localStorage.getItem('ttm_theme');
+    mineSel.value = mine === null ? '__unset__' : mine;
+  } catch(e) {}
+  defSel.addEventListener('change', function(){
+    try { localStorage.setItem('ttm_theme_default', defSel.value); } catch(e){}
+    window.TTMTheme.apply(window.TTMTheme.current());
+    window.TTMStack.track('admin_theme_default', { theme: defSel.value || 'zine' });
+  });
+  mineSel.addEventListener('change', function(){
+    try {
+      if (mineSel.value === '__unset__') localStorage.removeItem('ttm_theme');
+      else localStorage.setItem('ttm_theme', mineSel.value);
+    } catch(e){}
+    window.TTMTheme.apply(window.TTMTheme.current());
+  });
+
+  // ── A11y meter ─────────────────────────────────────────────────────────────
+  var axeLoaded = false;
+  function withAxe(cb){
+    if (axeLoaded) return cb();
+    var s = document.createElement('script');
+    s.src = '/vendor/axe.min.js';
+    s.onload = function(){ axeLoaded = true; cb(); };
+    document.head.appendChild(s);
+  }
+  function renderAudit(results, label){
+    var weights = { critical: 12, serious: 7, moderate: 3, minor: 1 };
+    var penalty = 0, byImpact = {};
+    results.violations.forEach(function(v){
+      byImpact[v.impact] = (byImpact[v.impact]||0) + v.nodes.length;
+      penalty += (weights[v.impact]||1) * v.nodes.length;
+    });
+    var score = Math.max(0, Math.round(100 - penalty));
+    $('#a11y-meter').hidden = false;
+    $('#a11y-score').textContent = score;
+    var arc = $('#a11y-arc');
+    arc.style.strokeDashoffset = String(352 - 352*score/100);
+    arc.style.stroke = score >= 90 ? '#a1ff00' : score >= 70 ? '#ff9500' : '#ff0080';
+    var d = $('#a11y-detail'); d.innerHTML = '';
+    var head = document.createElement('div'); head.className='kv';
+    head.innerHTML = '<span class="k">audited</span><span class="v">'+label+' · '+results.passes.length+' rules pass</span>';
+    d.appendChild(head);
+    if (!results.violations.length){
+      d.innerHTML += '<div class="kv"><span class="k">violations</span><span class="v" style="color:var(--green)">none 🎉</span></div>';
+    } else {
+      results.violations.slice(0,8).forEach(function(v){
+        var row = document.createElement('div'); row.className='kv';
+        row.innerHTML = '<span class="k">'+v.impact+' · '+v.id+'</span><span class="v">'+v.nodes.length+'×</span>';
+        row.title = v.help;
+        d.appendChild(row);
+      });
+      if (results.violations.length > 8)
+        d.innerHTML += '<p class="note">+'+(results.violations.length-8)+' more — see console.</p>';
+      console.table(results.violations.map(function(v){return {impact:v.impact,id:v.id,nodes:v.nodes.length,help:v.help};}));
+    }
+    window.TTMStack.track('a11y_audit', { target: label, score: score, violations: results.violations.length });
+  }
+  var RUN_OPTS = { runOnly: { type: 'tag', values: ['wcag2a','wcag2aa','wcag21a','wcag21aa'] } };
+  $('#a11y-run').addEventListener('click', function(){
+    $('#a11y-note').textContent = 'Auditing this page…';
+    withAxe(function(){
+      axe.run(document, RUN_OPTS).then(function(r){
+        $('#a11y-note').textContent = 'WCAG 2.1 A/AA — this admin page.';
+        renderAudit(r, 'admin');
+      });
+    });
+  });
+  $('#a11y-run-map').addEventListener('click', function(){
+    $('#a11y-note').textContent = 'Loading the map in a hidden frame and auditing (~15s)…';
+    withAxe(function(){
+      var fr = document.createElement('iframe');
+      fr.src = '/?nogate=1';
+      fr.style.cssText = 'position:fixed;left:-2000px;width:1280px;height:800px;';
+      fr.setAttribute('aria-hidden','true');
+      document.body.appendChild(fr);
+      fr.onload = function(){
+        setTimeout(function(){
+          axe.run(fr.contentDocument, RUN_OPTS).then(function(r){
+            $('#a11y-note').textContent = 'WCAG 2.1 A/AA — the live map page.';
+            renderAudit(r, 'map');
+            fr.remove();
+          }).catch(function(e){
+            $('#a11y-note').textContent = 'Map audit failed: ' + e.message;
+            fr.remove();
+          });
+        }, 9000);
+      };
+    });
+  });
+
+  // ── Telemetry + visitors (Supabase) ────────────────────────────────────────
+  function noSb(el){
+    el.innerHTML = '<p class="note">Supabase not configured — set <code>SUPABASE_URL</code> and ' +
+      '<code>SUPABASE_ANON_KEY</code> in the Vercel project env (and run <code>supabase/schema.sql</code> ' +
+      'in your Supabase project), then redeploy. Until then the gate and telemetry run local-only.</p>';
+  }
+  if (!sb) { noSb($('#tel-body')); noSb($('#vis-body')); }
+  else {
+    var since = new Date(Date.now() - 7*86400000).toISOString();
+    sb.from('telemetry_events').select('event, ts, page').gte('ts', since)
+      .order('ts', {ascending:false}).limit(1000)
+      .then(function(r){
+        var host = $('#tel-body');
+        if (r.error) { host.innerHTML = '<p class="note">Query failed: '+r.error.message+'</p>'; return; }
+        var rows = r.data || [];
+        var counts = {};
+        rows.forEach(function(e){ counts[e.event]=(counts[e.event]||0)+1; });
+        var keys = Object.keys(counts).sort(function(a,b){return counts[b]-counts[a];});
+        if (!keys.length) { host.innerHTML = '<p class="note">No events in the last 7 days yet.</p>'; return; }
+        var max = counts[keys[0]];
+        host.innerHTML = '<div class="kv"><span class="k">events · 7 days</span><span class="v">'+rows.length+'</span></div>';
+        keys.forEach(function(k){
+          var row = document.createElement('div'); row.className='bar';
+          row.innerHTML = '<span class="lab" style="width:9rem">'+k+'</span><div class="track">'+
+            '<div class="fill" style="width:'+Math.max(2,100*counts[k]/max)+'%;background:#09FFF0"></div></div>'+
+            '<span class="n">'+counts[k]+'</span>';
+          host.appendChild(row);
+        });
+      });
+    sb.from('visitors').select('name, email, first_seen, last_seen')
+      .order('last_seen', {ascending:false}).limit(50)
+      .then(function(r){
+        var host = $('#vis-body');
+        if (r.error) { host.innerHTML = '<p class="note">Query failed: '+r.error.message+'</p>'; return; }
+        var rows = r.data || [];
+        if (!rows.length) { host.innerHTML = '<p class="note">No sign-ins yet.</p>'; return; }
+        var t = document.createElement('table');
+        t.innerHTML = '<thead><tr><th>name</th><th>email</th><th>first seen</th><th>last seen</th></tr></thead>';
+        var tb = document.createElement('tbody');
+        rows.forEach(function(v){
+          var tr = document.createElement('tr');
+          tr.innerHTML = '<td>'+v.name.replace(/</g,'&lt;')+'</td><td>'+v.email.replace(/</g,'&lt;')+'</td>'+
+            '<td>'+String(v.first_seen).slice(0,10)+'</td><td>'+String(v.last_seen).slice(0,16).replace('T',' ')+'</td>';
+          tb.appendChild(tr);
+        });
+        t.appendChild(tb);
+        host.innerHTML = ''; host.appendChild(t);
+      });
+  }
+})();
+</script>
 </body>
 </html>
