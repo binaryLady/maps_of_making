@@ -4,7 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Mission Control — Maps of Making</title>
-<link rel="icon" href="/favicon.svg" />
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" href="/icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/apple-icon.png" />
 <link rel="stylesheet" href="/ttm/tokens.css" />
 <link rel="stylesheet" href="/ttm/ttm-theme.css" />
 <style>
@@ -412,7 +414,7 @@
   });
   function wlPublish(rows, label){
     if (!sb) { $('#wl-status').textContent = 'Supabase not configured — set env vars and run supabase/whitelabel.sql first.'; return; }
-    sb.from('site_config').upsert(rows, { onConflict: 'key' }).then(function(r){
+    sb.from('maps_site_config').upsert(rows, { onConflict: 'key' }).then(function(r){
       if (r.error) { $('#wl-status').textContent = 'Publish failed: ' + r.error.message + ' (did you run supabase/whitelabel.sql?)'; return; }
       $('#wl-status').textContent = label + ' published — live for all visitors within a minute.';
       try { localStorage.removeItem('ttm_site_config'); } catch(e){}
@@ -542,7 +544,7 @@
   if (!sb) { noSb($('#tel-body')); noSb($('#vis-body')); }
   else {
     var since = new Date(Date.now() - 7*86400000).toISOString();
-    sb.from('telemetry_events').select('event, ts, page').gte('ts', since)
+    sb.from('maps_telemetry_events').select('event, ts, page').gte('ts', since)
       .order('ts', {ascending:false}).limit(1000)
       .then(function(r){
         var host = $('#tel-body');
@@ -561,7 +563,7 @@
           host.appendChild(row);
         });
       });
-    sb.from('visitors').select('name, email, first_seen, last_seen')
+    sb.from('maps_visitors').select('name, email, first_seen, last_seen')
       .order('last_seen', {ascending:false}).limit(50)
       .then(function(r){
         var host = $('#vis-body');
