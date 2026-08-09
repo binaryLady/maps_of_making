@@ -282,6 +282,19 @@
   window.__ttmAdminBoot = function(){
   var $ = function(s){ return document.querySelector(s); };
   var sb = window.TTMStack.supabase();
+
+  // Tier split: every member sees the dashboards; publishing (site_config
+  // writes) is super-admin only — RLS enforces it server-side, this just
+  // makes the UI honest about it.
+  window.TTMStack.isSuper().then(function(su){
+    if (su) return;
+    ['wl-publish', 'wl-publish-theme'].forEach(function(id){
+      var b = document.getElementById(id);
+      if (b) { b.disabled = true; b.title = 'Super admin only'; }
+    });
+    var st = document.getElementById('wl-status');
+    if (st) st.textContent = 'Read-only for members — whitelabel publishing is super-admin only.';
+  });
   var css = getComputedStyle(document.documentElement);
   var tok = function(name){ return css.getPropertyValue(name).trim(); };
 
