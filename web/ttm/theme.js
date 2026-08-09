@@ -80,7 +80,16 @@
     panel.setAttribute('role', 'dialog');
     panel.setAttribute('aria-label', 'Site menu');
 
-    var html = '<nav aria-label="Site sections"><ul class="ttm-menu__list">';
+    // Meet Bernard — the keeper greets you at the door, by the name you gave
+    // at the gate. Voice per the character bible: em-dash, typewriter, amber,
+    // they/them, short sentences. Name is injected as text, never HTML.
+    var visitorName = '';
+    try { visitorName = (JSON.parse(localStorage.getItem('ttm_visitor')) || {}).name || ''; } catch (e) {}
+    var greeting = visitorName
+      ? '— ' + visitorName + '. Good, you\'re here. Bernard (they/them), keeper of \'Mother Sands\'. The workshop\'s open — I\'ll get your space on the map.'
+      : '— Hi, I\'m Bernard (they/them), from \'Mother Sands\'. Step into the workshop and I\'ll get your space on the map.';
+    var html = '<a class="ttm-menu__bernard" href="/genjson/"><span class="voice"></span></a>';
+    html += '<nav aria-label="Site sections"><ul class="ttm-menu__list">';
     ROUTES.forEach(function (r) {
       if (r.group) { html += '<li class="ttm-menu__group" role="presentation">' + r.group + '</li>'; return; }
       var current = here === r.href;
@@ -97,7 +106,12 @@
         (currentTheme() === t ? ' checked' : '') + '><span>' + THEME_LABELS[t] + '</span></label>';
     });
     html += '</fieldset>';
+    html += '<div class="ttm-menu__keys" aria-label="Keyboard shortcuts">' +
+      '<kbd>?</kbd> open this menu &nbsp; <kbd>Esc</kbd> close<br>' +
+      '<kbd>g</kbd> then <kbd>m</kbd> map · <kbd>w</kbd> workshop · ' +
+      '<kbd>t</kbd> test bench · <kbd>a</kbd> mission control</div>';
     panel.innerHTML = html;
+    panel.querySelector('.ttm-menu__bernard .voice').textContent = greeting;
 
     function open() {
       panel.hidden = false; backdrop.hidden = false;
@@ -128,12 +142,32 @@
       if (e.target.name !== 'ttm-theme-pick') return;
       try { localStorage.setItem('ttm_theme', e.target.value); } catch (err) {}
       apply(e.target.value);
+      if (window.TTMToast) window.TTMToast.show(
+        (THEME_LABELS[e.target.value] || 'Zine') + ' theme on — this browser remembers.',
+        { type: 'success', timeout: 3500 });
       if (window.TTMStack) window.TTMStack.track('theme_change', { theme: e.target.value || 'zine' });
     });
 
     document.body.appendChild(backdrop);
     document.body.appendChild(burger);
     document.body.appendChild(panel);
+
+    // ── Keyboard shortcuts: ? lands you in the menu; g-then-key navigates ──
+    var pendingG = 0;
+    document.addEventListener('keydown', function (e) {
+      var tag = (document.activeElement && document.activeElement.tagName) || '';
+      if (/INPUT|TEXTAREA|SELECT/.test(tag) || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === '?') { e.preventDefault(); panel.hidden ? open() : close(); return; }
+      var routes = { m: '/', w: '/genjson/', t: '/test/', a: '/admin/' };
+      if (pendingG && Date.now() - pendingG < 1500 && routes[e.key]) {
+        e.preventDefault();
+        pendingG = 0;
+        if (window.TTMToast) window.TTMToast.show('Heading over…', { timeout: 1500 });
+        location.href = routes[e.key];
+        return;
+      }
+      pendingG = e.key === 'g' ? Date.now() : 0;
+    });
   }
 
   document.addEventListener('DOMContentLoaded', function () {
