@@ -127,7 +127,10 @@
 
   // ───────────────────────────── map
   // Dev: OpenFreeMap (CORS-enabled, no key). Production: swap TILES_URL to self-hosted PMTiles on VPS.
-  const TILES_URL = 'https://tiles.openfreemap.org/planet';
+  // Sandbox/offline dev (local_run/): nginx serves stub tile endpoints under /tiles/;
+  // production keeps the external CDN sources.
+  const LOCAL_TILES = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  const TILES_URL = LOCAL_TILES ? '/tiles/planet' : 'https://tiles.openfreemap.org/planet';
 
   // Basemap transitions dark→light between z6 (space/organism view) and z9 (street/find view).
   // No manual theme toggle — the zoom level IS the theme.
@@ -141,7 +144,8 @@
     const label = lerp('#cccccc', '#555555');
     return {
       version: 8,
-      glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
+      glyphs: LOCAL_TILES ? '/tiles/fonts/{fontstack}/{range}.pbf'
+        : 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
       sources: {
         ofm: {
           type: 'vector',
@@ -150,7 +154,8 @@
         },
         terrain: {
           type: 'raster-dem',
-          tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+          tiles: [LOCAL_TILES ? '/tiles/terrain/{z}/{x}/{y}.png'
+            : 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
           encoding: 'terrarium',
           tileSize: 256,
           maxzoom: 15,

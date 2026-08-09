@@ -1,0 +1,24 @@
+endpoint_health:
+  unresponsive_minutes_threshold: 10
+  warning_minutes_threshold: 30
+  broken_minutes_threshold: 60
+
+operational_state:
+  aging_days_threshold: 30
+  zombie_days_threshold: 90
+  dead_days_threshold: 180
+
+bandwidth:
+  heartbeat_interval_seconds: 600
+  heartbeat_timeout_seconds: 60
+  # How many spaces to fetch concurrently per cycle. The cycle is network-bound;
+  # parallel fetches cut a multi-minute sequential sweep to seconds. Bounded so we
+  # don't open hundreds of sockets or overwhelm Oxigraph / the heartbeat sqlite.
+  heartbeat_concurrency: 24
+  heartbeat_log_path: "/home/user/maps_of_making/data/tasks/heartbeat_log.db"
+  gap_log_path: "/home/user/maps_of_making/data/tasks/gap_log.txt"
+
+activity_map_path: "/home/user/maps_of_making/scripts/activity_map.yaml"
+
+closure:
+  closed_cycles_threshold: 6

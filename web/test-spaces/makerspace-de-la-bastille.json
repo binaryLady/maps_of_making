@@ -1,0 +1,13 @@
+{
+  "@context": "https://schema.org/",
+  "@type": "LocalBusiness",
+  "schema:name": "Makerspace de la Bastille",
+  "schema:description": "Test space \u2014 live local endpoint",
+  "schema:geo": {
+    "@type": "schema:GeoCoordinates",
+    "schema:latitude": 48.8532,
+    "schema:longitude": 2.3692
+  },
+  "schema:url": "https://example.org/bastille",
+  "schema:openingHours": "Tu-Su 12:00-20:00"
+}
