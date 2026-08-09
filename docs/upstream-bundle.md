@@ -6,14 +6,17 @@ by the fork owner, on their timeline, using the drafts below.
 
 ## Contents
 
-| Branch (this fork) | What it carries | Depends on |
-|---|---|---|
-| `contrib/frontend-test-suite` | First frontend tests: `web/freshness.js` extraction (call sites unchanged), `tests/web/` node suite (16/16), the Test Bench page, the `?mock=1` hook, an nginx `/test/` location | nothing |
-| `contrib/optional-theming` | Opt-in theming/whitelabel mechanism: `--mom-*` tokens defaulting to the existing zine palette, one neutral dark theme, fail-soft `/site.config.json` loader for brand text + token overrides | nothing |
+One branch, **`contrib/upstream-bundle`**, cut from `upstream/mom-demo`,
+carrying the contribution as two clean stacked commits:
 
-Both branches are cut from `upstream/mom-demo` and contain **no fork-specific
-material** — no brand colors, no Supabase, no analytics, no gate. Each is one
-topic, reviewable in one sitting.
+| Commit | What it carries |
+|---|---|
+| `feat(test): frontend test suite …` | First frontend tests: `web/freshness.js` extraction (call sites unchanged), `tests/web/` node suite (16/16), the Test Bench page, the `?mock=1` hook, an nginx `/test/` location |
+| `feat(theming): optional theming …` | Opt-in theming/whitelabel mechanism: `--mom-*` tokens defaulting to the existing zine palette, one neutral dark theme, fail-soft `/site.config.json` loader for brand text + token overrides |
+
+The branch contains **no fork-specific material** — no brand colors, no
+Supabase, no analytics, no gate. Each commit is one topic; maintainers can
+take both, or ask for either commit as its own PR (cherry-pickable as-is).
 
 ## Rationale (the pitch, honestly made)
 
@@ -38,14 +41,13 @@ unchanged. This converts future forks into configurations.
 ## How to submit (when ready)
 
 1. Refresh against upstream first:
-   `git fetch upstream && git rebase upstream/mom-demo contrib/<branch>`
-   then rerun `node --test tests/web/freshness.test.mjs` (suite branch).
+   `git fetch upstream && git rebase upstream/mom-demo contrib/upstream-bundle`
+   then rerun `node --test tests/web/freshness.test.mjs`.
 2. Push the rebased branch to this fork.
-3. Open the pull request from the fork branch against
+3. Open the pull request from `contrib/upstream-bundle` against
    `touchthesun/maps_of_making`, base `mom-demo` (GitHub → New pull request →
-   compare across forks).
-4. Paste the matching draft below. Submit the **test suite first** — it's the
-   least invasive and builds reviewer trust for the theming PR.
+   compare across forks). Use the combined draft below, or offer the two
+   commits as separate PRs if the maintainer prefers smaller reviews.
 
 ## Draft PR #1 — frontend test suite
 
