@@ -101,6 +101,18 @@
   .tokrow .hex { font-family: var(--ttm-font-mono); color: var(--ttm-text-muted); }
   .contrast { font-family: var(--ttm-font-mono); }
   .row { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: .7rem; }
+  input.wl {
+    background: var(--ttm-surface-alt);
+    color: var(--ttm-text);
+    border: 1px solid var(--ttm-border);
+    border-radius: var(--radius-sm);
+    font: 400 13px var(--ttm-font-sans);
+    padding: .4rem .55rem;
+    min-height: 36px;
+    width: 14rem;
+    max-width: 60vw;
+  }
+  input[type="checkbox"] { accent-color: var(--ttm-pink); width: 1.1rem; height: 1.1rem; }
   footer.ttm-footer {
     margin-top: 2.5rem; padding-top: 1.4rem;
     border-top: 1px solid var(--ttm-border);
@@ -173,6 +185,32 @@
       including the gate and the map chrome. Contrast is checked against WCAG AA as you pick.</p>
     </section>
 
+    <section class="ttm-card full" aria-labelledby="h-wl">
+      <h2 id="h-wl">Whitelabel</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:1rem">
+        <div>
+          <div class="kv"><span class="k">wordmark</span><input class="wl" id="wl-name" aria-label="Site wordmark"></div>
+          <div class="kv"><span class="k">tagline</span><input class="wl" id="wl-tagline" aria-label="Tagline"></div>
+          <div class="kv"><span class="k">page title</span><input class="wl" id="wl-title" aria-label="Page title"></div>
+          <div class="kv"><span class="k">footer name</span><input class="wl" id="wl-footer" aria-label="Footer brand name"></div>
+          <div class="kv"><span class="k">hide footer badge</span><input type="checkbox" id="wl-footer-hide" aria-label="Hide footer badge"></div>
+        </div>
+        <div>
+          <div class="kv"><span class="k">gate enabled</span><input type="checkbox" id="wl-gate-on" aria-label="Gate enabled"></div>
+          <div class="kv"><span class="k">gate title</span><input class="wl" id="wl-gate-title" aria-label="Gate title"></div>
+          <div class="kv"><span class="k">gate body</span><input class="wl" id="wl-gate-body" aria-label="Gate body"></div>
+          <div class="kv"><span class="k">gate fine print</span><input class="wl" id="wl-gate-fine" aria-label="Gate fine print"></div>
+        </div>
+      </div>
+      <div class="row">
+        <button class="ttm-btn-primary" id="wl-publish">Publish to Supabase</button>
+        <button class="ttm-btn-outline" id="wl-publish-theme">Publish current theme + tokens as site default</button>
+      </div>
+      <p class="note" id="wl-status">Reads/writes the <code>site_config</code> table
+      (run <code>supabase/whitelabel.sql</code> once). Published config applies to every
+      visitor within a minute; personal choices still win over site defaults.</p>
+    </section>
+
     <section class="ttm-card full" aria-labelledby="h-a11y">
       <h2 id="h-a11y">W3C accessibility meter (axe-core · WCAG 2.1 A/AA)</h2>
       <div style="display:grid;grid-template-columns:150px 1fr;gap:1rem;align-items:start">
@@ -216,6 +254,7 @@
 <script src="/vendor/supabase.js"></script>
 <script src="/freshness.js"></script>
 <script src="/ttm/theme.js"></script>
+<script src="/ttm/brand.js"></script>
 <script src="/ttm/stack.js"></script>
 <script>
 (function(){
@@ -356,6 +395,53 @@
     radiusIn.value = 11; $('#tok-radius-val').textContent = '11px';
     renderCustomizer();
     window.TTMStack.track('theme_customize', { token: 'reset' });
+  });
+
+  // ── Whitelabel editor ─────────────────────────────────────────────────────
+  window.TTMBrand.ready().then(function(){
+    var b = window.TTMBrand.get('brand'), g = window.TTMBrand.get('gate');
+    $('#wl-name').value = b.name || '';
+    $('#wl-tagline').value = b.tagline || '';
+    $('#wl-title').value = b.page_title || '';
+    $('#wl-footer').value = b.footer_name || '';
+    $('#wl-footer-hide').checked = !!b.footer_hidden;
+    $('#wl-gate-on').checked = g.enabled !== false;
+    $('#wl-gate-title').value = g.title || '';
+    $('#wl-gate-body').value = g.body || '';
+    $('#wl-gate-fine').value = g.fine || '';
+  });
+  function wlPublish(rows, label){
+    if (!sb) { $('#wl-status').textContent = 'Supabase not configured — set env vars and run supabase/whitelabel.sql first.'; return; }
+    sb.from('site_config').upsert(rows, { onConflict: 'key' }).then(function(r){
+      if (r.error) { $('#wl-status').textContent = 'Publish failed: ' + r.error.message + ' (did you run supabase/whitelabel.sql?)'; return; }
+      $('#wl-status').textContent = label + ' published — live for all visitors within a minute.';
+      try { localStorage.removeItem('ttm_site_config'); } catch(e){}
+      window.TTMBrand.refresh();
+      window.TTMStack.track('whitelabel_publish', { what: label });
+    });
+  }
+  $('#wl-publish').addEventListener('click', function(){
+    wlPublish([
+      { key: 'brand', value: {
+          name: $('#wl-name').value.trim(),
+          tagline: $('#wl-tagline').value.trim(),
+          page_title: $('#wl-title').value.trim(),
+          footer_name: $('#wl-footer').value.trim() || 'thetechmargin',
+          footer_hidden: $('#wl-footer-hide').checked } },
+      { key: 'gate', value: {
+          enabled: $('#wl-gate-on').checked,
+          title: $('#wl-gate-title').value.trim(),
+          body: $('#wl-gate-body').value.trim(),
+          fine: $('#wl-gate-fine').value.trim() } },
+    ], 'Brand + gate');
+  });
+  $('#wl-publish-theme').addEventListener('click', function(){
+    wlPublish([
+      { key: 'theme', value: {
+          'default': window.TTMTheme.current(),
+          tokens: window.TTMTheme.getCustom() } },
+    ], 'Theme (' + (window.TTMTheme.current() || 'zine') + ' + ' +
+       Object.keys(window.TTMTheme.getCustom()).length + ' custom tokens)');
   });
 
   // ── A11y meter ────────────────────────────────────────────────────────────
