@@ -186,13 +186,7 @@
     });
   }
 
-  document.addEventListener('DOMContentLoaded', function () {
-    buildMenu();
-    var badge = document.createElement('div');
-    badge.className = 'ttm-footer-badge';
-    badge.innerHTML = 'made with <span class="heart">❤</span> by <span class="brand-name gradient-text-rainbow">thetechmargin</span>';
-    document.body.appendChild(badge);
-  });
+  document.addEventListener('DOMContentLoaded', buildMenu);
 
   window.TTMTheme = {
     apply: apply, current: currentTheme, THEMES: THEMES,
