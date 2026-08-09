@@ -55,24 +55,38 @@
 
   // ── gate ───────────────────────────────────────────────────────────────────
   var skipGate = new URLSearchParams(location.search).has('nogate');
+  function gateCopy() {
+    var g = (window.TTMBrand && window.TTMBrand.get('gate')) || {};
+    return {
+      enabled: g.enabled !== false,
+      title: g.title || 'Before you explore',
+      body: g.body || 'Tell us who you are — one time, this browser only. It helps us understand who the map serves.',
+      fine: g.fine || 'Stored with the site operator (The Tech Margin). No third parties, no newsletter unless you ask for one.',
+    };
+  }
   function showGate() {
     var wrap = document.createElement('div');
     wrap.className = 'ttm-gate';
     wrap.setAttribute('role', 'dialog');
     wrap.setAttribute('aria-modal', 'true');
     wrap.setAttribute('aria-labelledby', 'ttm-gate-title');
+    var copy = gateCopy();
     wrap.innerHTML =
       '<form class="ttm-gate__card">' +
-      '<h2 id="ttm-gate-title">Before you explore</h2>' +
-      '<p>Tell us who you are — one time, this browser only. It helps us understand who the map serves.</p>' +
+      '<h2 id="ttm-gate-title"></h2>' +
+      '<p class="ttm-gate__body"></p>' +
       '<label for="ttm-gate-name">Name</label>' +
       '<input id="ttm-gate-name" name="name" autocomplete="name" required maxlength="120">' +
       '<label for="ttm-gate-email">Email</label>' +
       '<input id="ttm-gate-email" name="email" type="email" autocomplete="email" required maxlength="200">' +
       '<p class="ttm-gate__err" role="alert" aria-live="polite"></p>' +
       '<button class="ttm-gate__submit" type="submit">Enter the map</button>' +
-      '<p class="ttm-gate__fine">Stored with the site operator (The Tech Margin). No third parties, no newsletter unless you ask for one.</p>' +
+      '<p class="ttm-gate__fine"></p>' +
       '</form>';
+    // whitelabeled copy as text (never HTML) — operator-provided strings stay inert
+    wrap.querySelector('#ttm-gate-title').textContent = copy.title;
+    wrap.querySelector('.ttm-gate__body').textContent = copy.body;
+    wrap.querySelector('.ttm-gate__fine').textContent = copy.fine;
     document.body.appendChild(wrap);
     var form = wrap.querySelector('form');
     var nameEl = wrap.querySelector('#ttm-gate-name');
@@ -120,7 +134,9 @@
   }
 
   document.addEventListener('DOMContentLoaded', function () {
-    if (!skipGate && !visitor()) showGate();
+    var maybeGate = function () { if (!skipGate && !visitor() && gateCopy().enabled) showGate(); };
+    // wait for whitelabel config (cached: instant) so copy + enabled are right
+    if (window.TTMBrand) window.TTMBrand.ready().then(maybeGate); else maybeGate();
     track('page_view', { theme: (window.TTMTheme && window.TTMTheme.current()) || 'zine' });
   });
 
