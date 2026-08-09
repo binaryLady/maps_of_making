@@ -7,21 +7,21 @@
    (spec API) — theme.js maps the site-wide [data-ttm-theme] attr onto these.
    ========================================================================== */
 :root {
-  /* Surfaces */
-  --ttm-bg: #0d1117;
-  --ttm-bg-alt: #161b22;
-  --ttm-surface: #161b22;
-  --ttm-surface-alt: #21262d;
+  /* Surfaces — dark brown/black scheme */
+  --ttm-bg: #0f0b08;
+  --ttm-bg-alt: #181210;
+  --ttm-surface: #181210;
+  --ttm-surface-alt: #241c17;
 
-  /* Text */
-  --ttm-text: #f0f6fc;
-  --ttm-text-secondary: #c9d1d9;
-  --ttm-text-muted: #8b949e;
-  --ttm-text-faint: #484f58;
+  /* Text — warm ink to match the brown ground */
+  --ttm-text: #f4efe8;
+  --ttm-text-secondary: #d5ccc1;
+  --ttm-text-muted: #9c9184;
+  --ttm-text-faint: #574b40;
 
   /* Borders */
-  --ttm-border: #30363d;
-  --ttm-border-subtle: #21262d;
+  --ttm-border: #3a2f26;
+  --ttm-border-subtle: #241c17;
 
   /* Brand Colors */
   --ttm-pink: #E904E5;
@@ -38,8 +38,8 @@
   --ttm-info: var(--ttm-cyan);
 
   /* Overlays */
-  --ttm-overlay: rgba(13, 17, 23, 0.8);
-  --ttm-glass: rgba(22, 27, 34, 0.9);
+  --ttm-overlay: rgba(15, 11, 8, 0.82);
+  --ttm-glass: rgba(24, 18, 16, 0.9);
   --ttm-wash: rgba(255, 255, 255, 0.05);
   --ttm-wash-hover: rgba(255, 255, 255, 0.08);
 

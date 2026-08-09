@@ -51,6 +51,30 @@ html[data-ttm-theme] ::selection {
   color: var(--ttm-on-accent);
 }
 
+/* ── ttm-nav (theme.js): routes to wizard / test bench / admin ── */
+.ttm-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--drawer-bg, var(--ttm-surface));
+  border: 1.5px solid var(--rule, var(--ttm-border));
+  box-shadow: var(--shadow, var(--ttm-shadow));
+  border-radius: var(--radius, var(--radius-md));
+  height: var(--btn-h, 36px);
+  padding: 0 4px;
+}
+.ttm-nav a {
+  color: var(--muted, var(--ttm-text-muted));
+  text-decoration: none;
+  font: 600 12px/1 var(--ttm-font-sans);
+  padding: 8px 9px;
+  border-radius: var(--radius-sm);
+}
+.ttm-nav a:hover {
+  color: var(--ink, var(--ttm-text));
+  background: var(--status-bg, var(--ttm-surface-alt));
+}
+
 /* ── ttm-toggle (theme.js) ── */
 .ttm-toggle {
   background: var(--drawer-bg, var(--ttm-surface));
@@ -103,10 +127,10 @@ html:not([data-ttm-theme]) .ttm-footer-badge { display: none; }
   background: var(--ttm-surface);
   color: var(--ttm-text);
   border: 1.5px solid var(--ttm-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   box-shadow: var(--ttm-shadow);
   width: min(92vw, 26rem);
-  padding: 1.6rem 1.6rem 1.3rem;
+  padding: 1.75rem 1.75rem 1.4rem;
   font-family: var(--ttm-font-sans);
 }
 .ttm-gate__card h2 { margin: 0 0 .35rem; font-size: var(--ttm-fs-h4); }
@@ -115,7 +139,7 @@ html:not([data-ttm-theme]) .ttm-footer-badge { display: none; }
   display: block;
   font-size: var(--ttm-fs-small);
   font-weight: 600;
-  margin: .7rem 0 .25rem;
+  margin: 1.1rem 0 .4rem;
 }
 .ttm-gate__card input {
   width: 100%;
@@ -123,23 +147,24 @@ html:not([data-ttm-theme]) .ttm-footer-badge { display: none; }
   background: var(--ttm-surface-alt);
   color: var(--ttm-text);
   border: 1.5px solid var(--ttm-border);
-  border-radius: var(--radius-md);
-  font: 400 var(--ttm-fs-small)/1.4 var(--ttm-font-sans);
-  padding: .6rem .75rem;
-  min-height: 44px; /* touch target */
+  border-radius: var(--radius-sm);
+  font: 400 var(--ttm-fs-small)/1.2 var(--ttm-font-sans);
+  padding: 0 .8rem;
+  height: 44px; /* touch target, fixed — padding no longer stacks on top */
 }
 .ttm-gate__card input:focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px var(--ttm-surface), 0 0 0 4px var(--ttm-pink);
 }
 .ttm-gate__card input[aria-invalid="true"] { border-color: var(--ttm-danger); }
-.ttm-gate__err { color: var(--ttm-danger); font-size: var(--ttm-fs-caption); min-height: 1em; margin: .35rem 0 0; }
+.ttm-gate__err { color: var(--ttm-danger); font-size: var(--ttm-fs-caption); margin: 0; }
+.ttm-gate__err:not(:empty) { margin: .55rem 0 0; }
 .ttm-gate__submit {
-  margin-top: 1rem;
+  margin-top: 1.35rem;
   width: 100%;
-  min-height: 44px;
+  height: 44px;
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   background: var(--ttm-pink);
   color: var(--ttm-on-accent);
   font: 600 15px/1 var(--ttm-font-sans);
@@ -148,4 +173,4 @@ html:not([data-ttm-theme]) .ttm-footer-badge { display: none; }
 .ttm-gate__submit:hover {
   box-shadow: 0 0 20px color-mix(in srgb, var(--ttm-pink) 50%, transparent);
 }
-.ttm-gate__fine { font-size: var(--ttm-fs-caption); color: var(--ttm-text-faint); margin-top: .7rem; }
+.ttm-gate__fine { font-size: var(--ttm-fs-caption); color: var(--ttm-text-faint); margin: .85rem 0 0; line-height: 1.5; }
