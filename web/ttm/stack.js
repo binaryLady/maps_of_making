@@ -128,10 +128,10 @@
       done(); // clear the modal immediately — entry never waits on the network
       if (sb) {
         try {
-          sb.from('maps_visitors').upsert(
-            { name: name, email: email, last_seen: new Date().toISOString(), user_agent: navigator.userAgent.slice(0, 250) },
-            { onConflict: 'email' }
-          ).then(function (r) {
+          // RPC is the only write path RLS leaves open — no direct table access
+          sb.rpc('maps_gate_signin', {
+            p_name: name, p_email: email, p_user_agent: navigator.userAgent.slice(0, 250)
+          }).then(function (r) {
             if (r.error) console.warn('[ttm] visitor save failed (kept locally):', r.error.message);
           }).catch(function (e) { console.warn('[ttm] visitor save failed (kept locally):', e.message); });
         } catch (e) { console.warn('[ttm] visitor save failed (kept locally):', e.message); }
@@ -146,17 +146,33 @@
     track('page_view', { theme: (window.TTMTheme && window.TTMTheme.current()) || 'zine' });
   });
 
-  // ── admin status ───────────────────────────────────────────────────────────
-  // True when the signed-in visitor's row has is_admin = true. Local-only
-  // mode (no Supabase configured) resolves true so the demo stays usable.
+  // ── admin tier ─────────────────────────────────────────────────────────────
+  // Real check: a Supabase Auth session (email OTP) whose email is in
+  // ttm_admins — RLS enforces it server-side; this call just mirrors it for
+  // the UI. Local-only mode (no Supabase configured) resolves true so demos
+  // stay usable.
   function isAdmin() {
     if (!sb) return Promise.resolve(true);
-    var v = visitor();
-    if (!v || !v.email) return Promise.resolve(false);
-    return sb.from('maps_visitors').select('is_admin').eq('email', v.email).maybeSingle()
-      .then(function (r) { return !!(r.data && r.data.is_admin); },
-            function () { return false; });
+    return sb.auth.getSession().then(function (s) {
+      if (!s.data || !s.data.session) return false;
+      // readable only when the session's email is enrolled (RLS on ttm_admins)
+      return sb.from('ttm_admins').select('role').limit(1)
+        .then(function (r) { return !!(r.data && r.data.length); },
+              function () { return false; });
+    }).catch(function () { return false; });
+  }
+  // Email-OTP sign-in for the admin tier: request a 6-digit code, verify it.
+  function adminSignIn(email) {
+    if (!sb) return Promise.reject(new Error('no backend configured'));
+    return sb.auth.signInWithOtp({ email: email, options: { shouldCreateUser: true } });
+  }
+  function adminVerify(email, code) {
+    if (!sb) return Promise.reject(new Error('no backend configured'));
+    return sb.auth.verifyOtp({ email: email, token: code, type: 'email' });
+  }
+  function adminSignOut() {
+    return sb ? sb.auth.signOut() : Promise.resolve();
   }
 
-  window.TTMStack = { track: track, flush: flush, visitor: visitor, isAdmin: isAdmin, supabase: function () { return sb; }, sessionId: sessionId };
+  window.TTMStack = { track: track, flush: flush, visitor: visitor, isAdmin: isAdmin, adminSignIn: adminSignIn, adminVerify: adminVerify, adminSignOut: adminSignOut, supabase: function () { return sb; }, sessionId: sessionId };
 })();
