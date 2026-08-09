@@ -513,3 +513,18 @@ html:not([data-ttm-theme]) .ttm-footer-badge { display: none; }
   box-shadow: 0 0 20px color-mix(in srgb, var(--ttm-pink) 50%, transparent);
 }
 .ttm-gate__fine { font-size: var(--ttm-fs-caption); color: var(--ttm-text-faint); margin: .85rem 0 0; line-height: 1.5; }
+
+/* ── Collapsed header (TTM themes): brand + burger only; the topbar's
+      action buttons live in the menu (theme.js proxies them) ── */
+html[data-ttm-theme] .topbar .nav-group,
+html[data-ttm-theme] .topbar #seg-manage {
+  display: none;
+}
+html[data-ttm-theme] .topbar { overflow: visible; }
+.ttm-menu__action {
+  width: 100%;
+  text-align: left;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}

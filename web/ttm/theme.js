@@ -89,6 +89,23 @@
       ? '— ' + visitorName + '. Bernard (they/them), keeper of \'Mother Sands\'. The workshop\'s open.'
       : '— Bernard (they/them), keeper of \'Mother Sands\'. The workshop\'s open.';
     var html = '<a class="ttm-menu__bernard" href="/genjson/"><span class="voice"></span></a>';
+    // This page's actions (map): the topbar collapses here — one header, any
+    // viewport. Buttons proxy the app's own (hidden) controls.
+    var ACTIONS = [
+      { id: 'btn-find',   name: 'Find',           desc: 'search + filters' },
+      { id: 'btn-nearme', name: 'Near me',        desc: 'jump to your location' },
+      { id: 'btn-preset', name: 'Preset & embed', desc: 'save a view · embed it' },
+      { id: 'btn-addurl', name: 'Add your space', desc: 'register an endpoint' },
+    ].filter(function (a) { return document.getElementById(a.id); });
+    if (ACTIONS.length) {
+      html += '<nav aria-label="Map actions"><ul class="ttm-menu__list">';
+      ACTIONS.forEach(function (a) {
+        html += '<li><button type="button" class="ttm-menu__item ttm-menu__action" data-proxy="' + a.id + '">' +
+          '<span class="ttm-menu__name">' + a.name + '</span>' +
+          '<span class="ttm-menu__desc">' + a.desc + '</span></button></li>';
+      });
+      html += '</ul></nav>';
+    }
     html += '<nav aria-label="Site sections"><ul class="ttm-menu__list">';
     ROUTES.forEach(function (r) {
       if (r.group) { html += '<li class="ttm-menu__group" role="presentation">' + r.group + '</li>'; return; }
@@ -137,6 +154,13 @@
       var first = els[0], last = els[els.length - 1];
       if (e.shiftKey && document.activeElement === first) { last.focus(); e.preventDefault(); }
       else if (!e.shiftKey && document.activeElement === last) { first.focus(); e.preventDefault(); }
+    });
+    panel.addEventListener('click', function (e) {
+      var btn = e.target.closest('.ttm-menu__action');
+      if (!btn) return;
+      close(false);
+      var target = document.getElementById(btn.dataset.proxy);
+      if (target) { target.click(); target.focus(); }
     });
     panel.addEventListener('change', function (e) {
       if (e.target.name !== 'ttm-theme-pick') return;
