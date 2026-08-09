@@ -114,9 +114,15 @@
       }
       var rec = { name: name, email: email, first_seen: new Date().toISOString() };
       try { localStorage.setItem('ttm_visitor', JSON.stringify(rec)); } catch (err) {}
-      var done = function () {
+      var done = function (saved) {
         track('gate_complete', {});
         wrap.remove();
+        if (window.TTMToast) {
+          window.TTMToast.show(
+            saved ? 'Welcome, ' + name + ' — you\'re in. Enjoy the map.'
+                  : 'Welcome, ' + name + ' — you\'re in. (Saved on this device; the server will catch up.)',
+            { type: 'success' });
+        }
       };
       if (sb) {
         sb.from('maps_visitors').upsert(
@@ -124,11 +130,11 @@
           { onConflict: 'email' }
         ).then(function (r) {
           if (r.error) console.warn('[ttm] visitor save failed (kept locally):', r.error.message);
-          done();
+          done(!r.error);
         });
       } else {
         console.debug('[ttm gate local-only]', rec);
-        done();
+        done(false);
       }
     });
   }

@@ -24,7 +24,7 @@
   h1 { font-size: var(--ttm-fs-h3); font-weight: 600; margin: 0; }
   .crumb { font-family: var(--ttm-font-mono); font-size: var(--ttm-fs-caption); color: var(--ttm-text-muted); }
   a { color: var(--ttm-info); }
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); grid-auto-flow: dense; gap: 1rem; }
   .ttm-card {
     background: var(--ttm-surface);
     border: 1px solid var(--ttm-border);
@@ -111,8 +111,9 @@
     font: 400 13px var(--ttm-font-sans);
     padding: .4rem .55rem;
     min-height: 36px;
-    width: 14rem;
-    max-width: 60vw;
+    flex: 1 1 12rem;
+    min-width: 0;
+    max-width: 22rem;
   }
   input[type="checkbox"] { accent-color: var(--ttm-pink); width: 1.1rem; height: 1.1rem; }
   footer.ttm-footer {
@@ -256,6 +257,7 @@
 <script src="/vendor/supabase.js"></script>
 <script src="/freshness.js"></script>
 <script src="/ttm/theme.js"></script>
+<script src="/ttm/toast.js"></script>
 <script src="/ttm/brand.js"></script>
 <script src="/ttm/stack.js"></script>
 <script>
@@ -377,6 +379,12 @@
         renderCustomizer();
       });
       inp.addEventListener('change', function(){
+        var custom = window.TTMTheme.getCustom();
+        var e = EDITABLE.filter(function(x){ return x.t === inp.dataset.token; })[0];
+        if (e) {
+          var ratio = contrast(toHex(custom[e.t] || tok(e.t)), toHex(custom[e.vs] || tok(e.vs)));
+          if (ratio < 4.5) TTMToast.show('Heads up: ' + e.lab + ' now sits below AA contrast (' + ratio.toFixed(1) + ':1).', { type: 'warning' });
+        }
         window.TTMStack.track('theme_customize', { token: inp.dataset.token, value: inp.value });
       });
     });
@@ -413,10 +421,19 @@
     $('#wl-gate-fine').value = g.fine || '';
   });
   function wlPublish(rows, label){
-    if (!sb) { $('#wl-status').textContent = 'Supabase not configured — set env vars and run supabase/whitelabel.sql first.'; return; }
+    if (!sb) {
+      $('#wl-status').textContent = 'Supabase not configured — set env vars and run supabase/whitelabel.sql first.';
+      TTMToast.show('Supabase isn\'t connected yet — nothing was published.', { type: 'warning' });
+      return;
+    }
     sb.from('maps_site_config').upsert(rows, { onConflict: 'key' }).then(function(r){
-      if (r.error) { $('#wl-status').textContent = 'Publish failed: ' + r.error.message + ' (did you run supabase/whitelabel.sql?)'; return; }
+      if (r.error) {
+        $('#wl-status').textContent = 'Publish failed: ' + r.error.message + ' (did you run supabase/whitelabel.sql?)';
+        TTMToast.show('Couldn\'t publish — is maps_site_config set up in Supabase?', { type: 'danger' });
+        return;
+      }
       $('#wl-status').textContent = label + ' published — live for all visitors within a minute.';
+      TTMToast.show(label + ' published — visitors see it within a minute.', { type: 'success' });
       try { localStorage.removeItem('ttm_site_config'); } catch(e){}
       window.TTMBrand.refresh();
       window.TTMStack.track('whitelabel_publish', { what: label });
@@ -499,6 +516,10 @@
     var h = history(); h.unshift(rec);
     try { localStorage.setItem('ttm_a11y_history', JSON.stringify(h.slice(0,20))); } catch(e){}
     renderHistory();
+    TTMToast.show(score >= 90
+      ? 'Accessibility audit: ' + score + '/100 — looking sharp.'
+      : 'Accessibility audit: ' + score + '/100 — ' + results.violations.length + ' thing(s) to fix, listed below.',
+      { type: score >= 90 ? 'success' : 'warning' });
     window.TTMStack.track('a11y_audit', rec);
   }
   var RUN_OPTS = { runOnly: { type: 'tag', values: ['wcag2a','wcag2aa','wcag21a','wcag21aa'] } };
