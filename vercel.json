@@ -1,0 +1,12 @@
+{
+  "buildCommand": "bash build.sh",
+  "outputDirectory": "public",
+  "installCommand": "",
+  "framework": null,
+  "headers": [
+    {
+      "source": "/data/spaces.geojson",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=300" }]
+    }
+  ]
+}
