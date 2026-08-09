@@ -58,3 +58,6 @@ web/canary/mother-sands.json
 
 # Generated from bernard_copy.yaml via `make bernard-copy` (do not commit)
 web/genjson/bernard_copy.json
+
+# Vercel build output (assembled by build.sh; never committed)
+public/
