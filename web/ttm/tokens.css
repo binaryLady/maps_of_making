@@ -75,6 +75,13 @@
   --ttm-fs-small: 0.875rem;   /* 14px minimum enforced */
   --ttm-fs-caption: 0.75rem;
 
+  /* Role tokens — taste dials. Pink is reserved for primary CTAs and brand
+     moments; interactive chrome (focus, switches, current-page) runs on the
+     quieter control accent. */
+  --ttm-accent-cta: var(--ttm-pink);
+  --ttm-control: var(--ttm-cyan);
+  --ttm-focus: var(--ttm-cyan);
+
   /* Derived: readable ink on top of each accent (dark ink passes AA on all
      five accents; white fails on pink/cyan/lime — measured, not assumed) */
   --ttm-on-accent: var(--ttm-bg);
