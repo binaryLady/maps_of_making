@@ -7,7 +7,9 @@ set -euo pipefail
 mkdir -p public
 cp -r web/. public/
 # Not servable statically / not needed in the demo
-rm -rf public/mothersands public/admin public/test-fixtures public/canary \
+# (test-fixtures and test-spaces stay in — they're the worked examples of what
+#  a space publishes, useful for demos and for pasting into validators)
+rm -rf public/mothersands public/admin public/canary \
        public/demo-data public/design-canvas.jsx "public/ZieZo Activiteiten.html" \
        public/genjson/bernard_copy.yaml
 # The committed snapshot becomes the path the app fetches
