@@ -44,7 +44,7 @@
     if (!queue.length) return;
     var batch = queue.splice(0, queue.length);
     if (!sb) { console.debug('[ttm telemetry local-only]', batch); return; }
-    sb.from('telemetry_events').insert(batch).then(function (r) {
+    sb.from('maps_telemetry_events').insert(batch).then(function (r) {
       if (r.error) console.warn('[ttm] telemetry insert failed:', r.error.message);
     });
   }
@@ -119,7 +119,7 @@
         wrap.remove();
       };
       if (sb) {
-        sb.from('visitors').upsert(
+        sb.from('maps_visitors').upsert(
           { name: name, email: email, last_seen: new Date().toISOString(), user_agent: navigator.userAgent.slice(0, 250) },
           { onConflict: 'email' }
         ).then(function (r) {
