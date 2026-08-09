@@ -79,6 +79,17 @@
      five accents; white fails on pink/cyan/lime — measured, not assumed) */
   --ttm-on-accent: var(--ttm-bg);
 
+  /* Lifecycle states (the map's semantic vocabulary — themable, but change
+     with care: green=alive, red=broken, cobalt=claimed is load-bearing) */
+  --ttm-state-seeded: #8b949e;
+  --ttm-state-confirmed: #1d4ed8;
+  --ttm-state-open: #0F6E56;
+  --ttm-state-shut: #7aa695;
+  --ttm-state-aging: #a16207;
+  --ttm-state-zombie: #8a5a00;
+  --ttm-state-dead: #57534e;
+  --ttm-state-broken: #c0392b;
+
   /* Elevation */
   --ttm-shadow: 0 0 0 1.5px var(--ttm-border), 0 8px 24px rgba(0, 0, 0, 0.5);
 }
