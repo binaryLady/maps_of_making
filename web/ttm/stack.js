@@ -146,5 +146,17 @@
     track('page_view', { theme: (window.TTMTheme && window.TTMTheme.current()) || 'zine' });
   });
 
-  window.TTMStack = { track: track, flush: flush, visitor: visitor, supabase: function () { return sb; }, sessionId: sessionId };
+  // ── admin status ───────────────────────────────────────────────────────────
+  // True when the signed-in visitor's row has is_admin = true. Local-only
+  // mode (no Supabase configured) resolves true so the demo stays usable.
+  function isAdmin() {
+    if (!sb) return Promise.resolve(true);
+    var v = visitor();
+    if (!v || !v.email) return Promise.resolve(false);
+    return sb.from('maps_visitors').select('is_admin').eq('email', v.email).maybeSingle()
+      .then(function (r) { return !!(r.data && r.data.is_admin); },
+            function () { return false; });
+  }
+
+  window.TTMStack = { track: track, flush: flush, visitor: visitor, isAdmin: isAdmin, supabase: function () { return sb; }, sessionId: sessionId };
 })();

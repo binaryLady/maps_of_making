@@ -205,8 +205,46 @@
 <script src="/ttm/brand.js"></script>
 <script src="/ttm/stack.js"></script>
 <script>
+// Admin guard: Mission Control is operator-only. Content stays hidden until
+// TTMStack.isAdmin() confirms the signed-in visitor's row has is_admin=true;
+// otherwise the page body is replaced with an access card. The data script
+// below only boots on confirmation, so telemetry/visitor reads never fire
+// for non-admins.
 (function(){
   'use strict';
+  var veil = document.createElement('style');
+  veil.textContent = 'main{visibility:hidden}';
+  document.head.appendChild(veil);
+  function deny(){
+    var m = document.querySelector('main');
+    m.innerHTML =
+      '<header class="ttm-header"><h1>Mission Control</h1>' +
+      '<span class="crumb">operator access required</span></header>' +
+      '<section class="ttm-card"><h2 style="margin-top:0">This area is gated</h2>' +
+      '<p>Telemetry, visitor info and site controls are operator-only. ' +
+      'Sign in through the gate, then ask the site operator to grant your ' +
+      'email admin status (<code>supabase/admin.sql</code> has the one-liner).</p>' +
+      '<div class="row" style="display:flex;gap:.6rem;flex-wrap:wrap">' +
+      '<a class="ttm-btn-outline" href="/">Back to the map</a>' +
+      '<button type="button" class="ttm-btn-primary" id="admin-retry">Access granted — retry</button>' +
+      '</div></section>';
+    veil.remove();
+    document.getElementById('admin-retry').addEventListener('click', function(){ location.reload(); });
+  }
+  function decide(){
+    window.TTMStack.isAdmin().then(function(ok){
+      if (ok) { veil.remove(); if (window.__ttmAdminBoot) window.__ttmAdminBoot(); }
+      else deny();
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', decide);
+  else decide();
+})();
+</script>
+<script>
+(function(){
+  'use strict';
+  window.__ttmAdminBoot = function(){
   var $ = function(s){ return document.querySelector(s); };
   var sb = window.TTMStack.supabase();
   var css = getComputedStyle(document.documentElement);
@@ -546,6 +584,7 @@
         host.innerHTML = ''; host.appendChild(t);
       });
   }
+  };
 })();
 </script>
 </body>
