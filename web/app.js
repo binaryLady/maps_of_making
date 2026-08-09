@@ -6,22 +6,10 @@
   'use strict';
 
   // ───────────────────────────── thresholds (Story 3.10)
-  // Single named fallback for the missing-thresholds error path (AC 6).
-  // Numbers mirror infra/link_handler/config.yaml so a missing header degrades visibly
-  // but does not silently render everything `confirmed`. Real values come from the
-  // file-level `thresholds` block in spaces.geojson.
-  const FALLBACK_THRESHOLDS = {
-    endpoint_health: {
-      unresponsive_minutes_threshold: 10,
-      warning_minutes_threshold: 30,
-      broken_minutes_threshold: 60,
-    },
-    operational_state: {
-      aging_days_threshold: 30,
-      zombie_days_threshold: 90,
-      dead_days_threshold: 180,
-    },
-  };
+  // Freshness logic lives in web/freshness.js (shared with the test bench and
+  // the Node test suite — one implementation, three consumers). Real threshold
+  // values come from the file-level `thresholds` block in spaces.geojson.
+  const FALLBACK_THRESHOLDS = MOMFreshness.FALLBACK_THRESHOLDS;
 
   // ───────────────────────────── state
   const state = {
@@ -76,6 +64,22 @@
 
   // ───────────────────────────── data
   async function loadData() {
+    // Test bench hook (web/test/): ?mock=1 loads the FeatureCollection the bench
+    // wrote to localStorage instead of the materialized file. Same-origin only,
+    // explicit opt-in via URL, no effect on normal loads.
+    if (new URLSearchParams(window.location.search).has('mock')) {
+      try {
+        const mock = JSON.parse(localStorage.getItem('mom_mock_geojson'));
+        if (mock && Array.isArray(mock.features)) {
+          document.title += ' · MOCK DATA';
+          ingestGeoJSON(mock);
+          return;
+        }
+        console.error('[loadData] ?mock=1 but no mock data in localStorage — falling through to real data');
+      } catch (e) {
+        console.error('[loadData] mock data parse failed — falling through to real data:', e.message);
+      }
+    }
     const res = await fetch('/data/spaces.geojson?t=' + Date.now());
     if (!res.ok) {
       console.error(`[loadData] Network error: HTTP ${res.status} ${res.statusText}`);
@@ -512,92 +516,14 @@ function glyphColorExpr(surface) {
   }
 
   // ───────────────────────────── live freshness axes (Story 3.10)
-  // f(token, now, thresholds) evaluated at view time. Storage holds raw tokens only.
-  function _ageMinutes(iso) {
-    if (!iso) return null;
-    const t = new Date(iso.endsWith('Z') ? iso : iso + 'Z').getTime();
-    if (isNaN(t)) return null;
-    return (Date.now() - t) / 60000;
-  }
-  function _ageDays(iso) {
-    const m = _ageMinutes(iso);
-    return m == null ? null : m / 1440;
-  }
-
-  // Axis A — endpoint health. Returns 'broken'|'warning'|'unresponsive'|'fresh'.
-  function computeAxisA(s, thresholds) {
-    if (!s) return 'broken';
-    if (s.last_fetch_status === 'unreachable') return 'broken';
-    if (!s.observed_at) return 'broken'; // never-observed → cannot claim healthy
-    const t = (thresholds && thresholds.endpoint_health) || FALLBACK_THRESHOLDS.endpoint_health;
-    const age = _ageMinutes(s.observed_at);
-    if (age == null) return 'broken';
-    if (age >= t.broken_minutes_threshold) return 'broken';
-    if (age >= t.warning_minutes_threshold) return 'warning';
-    if (age >= t.unresponsive_minutes_threshold) return 'unresponsive';
-    return 'fresh';
-  }
-
-  // Returns updated_at as epoch ms, or null. Single anchor for Axis B and the
-  // status-bar "updated X ago" line. updated_at is set by the pipeline at first
-  // fetch (backfill) or on content change — both paths produce reliable ISO timestamps.
-  // last_open_change (state.lastchange) is intentionally excluded: spaces self-report
-  // it unreliably (stale 2013–2019 timestamps) and the pipeline backfill makes it
-  // unnecessary as a fallback.
-  function _lastActivity(s) {
-    if (!s || s.updated_at == null) return null;
-    const v = s.updated_at;
-    const n = Number(v);
-    if (!isNaN(n) && n > 1e8) return n * 1000;
-    const iso = String(v);
-    const t = new Date(iso.endsWith('Z') ? iso : iso + 'Z').getTime();
-    return isNaN(t) ? null : t;
-  }
-
-  // Axis B — content lifecycle. Returns 'dead'|'zombie'|'aging'|'confirmed'.
-  // Null _lastActivity → oldest supported state (never observed to change). Per AC 2
-  // Dev Notes: do NOT crash, do NOT silently render `confirmed`.
-  function computeAxisB(s, thresholds) {
-    // Story 3.10 B1: per-feature override beats the global thresholds.
-    // Used by canary demo mode to compress aging/zombie/dead to seconds-scale
-    // so the bucket walk is observable in a live demo.
-    const override = s && s.thresholds_override && s.thresholds_override.operational_state;
-    const t = override || (thresholds && thresholds.operational_state) || FALLBACK_THRESHOLDS.operational_state;
-    if (!s) return 'dead';
-    const lastMs = _lastActivity(s);
-    if (lastMs == null) return 'dead';
-    const age = (Date.now() - lastMs) / 86400000;
-    if (age >= t.dead_days_threshold) return 'dead';
-    if (age >= t.zombie_days_threshold) return 'zombie';
-    if (age >= t.aging_days_threshold) return 'aging';
-    return 'confirmed';
-  }
-
-  // Axis C — operational liveness. Current source claim, does not age.
-  // 'open'  = state.open=true   → green dot
-  // 'shut'  = state.open=false  → dimmed green dot (operator-declared closed-right-now)
-  // 'opt-out' = state field absent/unknown → C contributes nothing, fall through.
-  function computeAxisC(s) {
-    if (!s || s.open_now === undefined || s.open_now === null) return 'opt-out';
-    return s.open_now === true ? 'open' : 'shut';
-  }
-
-  // Combined marker — precedence (per user, Axis C iteration):
-  //   dead/zombie/aging (B) → broken (A) → open/shut (C) → confirmed → seeded.
-  // Rationale: long-term silence (B) is louder than a transient endpoint blip (A);
-  // a broken endpoint is louder than the current open/shut claim (we can't trust it).
-  function computeMarker(s) {
-    if (!s) return 'seeded';
-    const b = computeAxisB(s, state.thresholds);
-    if (_lastActivity(s) != null && (b === 'dead' || b === 'zombie' || b === 'aging')) return b;
-    const a = computeAxisA(s, state.thresholds);
-    if (a === 'broken' && s.observed_at) return 'broken';
-    const c = computeAxisC(s);
-    if (c === 'open') return 'open';
-    if (c === 'shut') return 'shut';
-    if (_lastActivity(s) != null || s.observed_at) return 'confirmed';
-    return 'seeded';
-  }
+  // Extracted to web/freshness.js — thin aliases keep every call site unchanged.
+  const _ageMinutes = MOMFreshness.ageMinutes;
+  const _ageDays = MOMFreshness.ageDays;
+  const _lastActivity = MOMFreshness.lastActivity;
+  const computeAxisA = MOMFreshness.computeAxisA;
+  const computeAxisB = MOMFreshness.computeAxisB;
+  const computeAxisC = MOMFreshness.computeAxisC;
+  const computeMarker = (s) => MOMFreshness.computeMarker(s, state.thresholds);
 
   // GL feature-state selection (replaces DOM classList). Clears the prior selection,
   // flags the current one. Guarded — the source may not be loaded yet on cold deep-links.

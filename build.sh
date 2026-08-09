@@ -4,6 +4,9 @@ set -euo pipefail
 # Assembles the map + wizard from web/ into public/ with the committed data
 # snapshot. The result is a self-contained, inert demo: no backend, no
 # heartbeat, no polling of any space's endpoint — it reads only its own files.
+# Gate the deploy on the freshness test suite (same logic the map ships)
+node --test tests/web/freshness.test.mjs
+
 mkdir -p public
 cp -r web/. public/
 # Not servable statically / not needed in the demo
