@@ -80,12 +80,15 @@
     panel.setAttribute('role', 'dialog');
     panel.setAttribute('aria-label', 'Site menu');
 
-    // Meet Bernard — the keeper greets you at the door, and the door leads
-    // to their workshop. Voice per the character bible: em-dash, typewriter,
-    // amber, they/them.
-    var html = '<a class="ttm-menu__bernard" href="/genjson/">' +
-      '<span class="voice">— Hi, I\'m Bernard (they/them), from \'Mother Sands\'. ' +
-      'Step into the workshop and I\'ll get your space on the map.</span></a>';
+    // Meet Bernard — the keeper greets you at the door, by the name you gave
+    // at the gate. Voice per the character bible: em-dash, typewriter, amber,
+    // they/them, short sentences. Name is injected as text, never HTML.
+    var visitorName = '';
+    try { visitorName = (JSON.parse(localStorage.getItem('ttm_visitor')) || {}).name || ''; } catch (e) {}
+    var greeting = visitorName
+      ? '— ' + visitorName + '. Good, you\'re here. Bernard (they/them), keeper of \'Mother Sands\'. The workshop\'s open — I\'ll get your space on the map.'
+      : '— Hi, I\'m Bernard (they/them), from \'Mother Sands\'. Step into the workshop and I\'ll get your space on the map.';
+    var html = '<a class="ttm-menu__bernard" href="/genjson/"><span class="voice"></span></a>';
     html += '<nav aria-label="Site sections"><ul class="ttm-menu__list">';
     ROUTES.forEach(function (r) {
       if (r.group) { html += '<li class="ttm-menu__group" role="presentation">' + r.group + '</li>'; return; }
@@ -108,6 +111,7 @@
       '<kbd>g</kbd> then <kbd>m</kbd> map · <kbd>w</kbd> workshop · ' +
       '<kbd>t</kbd> test bench · <kbd>a</kbd> mission control</div>';
     panel.innerHTML = html;
+    panel.querySelector('.ttm-menu__bernard .voice').textContent = greeting;
 
     function open() {
       panel.hidden = false; backdrop.hidden = false;

@@ -74,17 +74,99 @@
   .ttm-btn-outline:hover { background: var(--ttm-wash-hover); }
   :focus-visible { outline: 2px solid var(--ttm-pink); outline-offset: 2px; }
   ::selection { background: var(--ttm-pink); color: var(--ttm-on-accent); }
-  select, input[type="color"], input[type="range"] {
+  /* ── TTM form components (spec: tokens only, no raw OS widgets) ── */
+  .ttm-select { position: relative; display: inline-block; }
+  .ttm-select select {
+    appearance: none;
+    -webkit-appearance: none;
     background: var(--ttm-surface-alt);
     color: var(--ttm-text);
     border: 1px solid var(--ttm-border);
     border-radius: var(--radius-sm);
-    font: 400 13px var(--ttm-font-sans);
-    padding: .45rem .6rem;
-    min-height: 40px;
+    font: 500 13px var(--ttm-font-sans);
+    padding: 0 2rem 0 .7rem;
+    height: 40px;
+    cursor: pointer;
   }
-  input[type="color"] { padding: .15rem; width: 3.2rem; cursor: pointer; }
-  input[type="range"] { padding: 0; min-height: 24px; accent-color: var(--ttm-pink); }
+  .ttm-select::after {
+    content: "▾";
+    position: absolute;
+    right: .65rem;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: var(--ttm-text-muted);
+    font-size: .8rem;
+  }
+  .ttm-select select:hover { background: var(--ttm-plum); border-color: var(--ttm-text-faint); }
+
+  .ttm-switch { position: relative; display: inline-flex; align-items: center; cursor: pointer; }
+  .ttm-switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+  .ttm-switch .track {
+    width: 40px;
+    height: 22px;
+    border-radius: 11px;
+    background: var(--ttm-surface-alt);
+    border: 1.5px solid var(--ttm-border);
+    transition: background .15s ease;
+    position: relative;
+  }
+  .ttm-switch .track::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: var(--ttm-text-muted);
+    transition: transform .15s ease, background .15s ease;
+  }
+  .ttm-switch input:checked + .track { background: color-mix(in srgb, var(--ttm-pink) 35%, var(--ttm-surface-alt)); border-color: var(--ttm-pink); }
+  .ttm-switch input:checked + .track::after { transform: translateX(18px); background: var(--ttm-pink); }
+  .ttm-switch input:focus-visible + .track { outline: 2px solid var(--ttm-pink); outline-offset: 2px; }
+
+  input[type="color"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 44px;
+    height: 32px;
+    padding: 2px;
+    background: var(--ttm-surface-alt);
+    border: 1px solid var(--ttm-border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+  input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+  input[type="color"]::-webkit-color-swatch { border: none; border-radius: calc(var(--radius-sm) - 2px); }
+  input[type="color"]:hover { border-color: var(--ttm-text-faint); }
+
+  input[type="range"] {
+    appearance: none;
+    -webkit-appearance: none;
+    height: 24px;
+    background: transparent;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--ttm-surface-alt);
+    border: 1px solid var(--ttm-border-subtle);
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    margin-top: -7px;
+    border-radius: 50%;
+    background: var(--ttm-pink);
+    border: 2px solid var(--ttm-bg);
+  }
+  input[type="range"]:focus-visible { outline: 2px solid var(--ttm-pink); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    .ttm-switch .track, .ttm-switch .track::after { transition: none; }
+  }
   .meter { position: relative; width: 130px; height: 130px; margin: .4rem auto; }
   .meter svg { transform: rotate(-90deg); }
   .meter .arc-track { stroke: var(--ttm-surface-alt); }
@@ -156,18 +238,18 @@
     <section class="ttm-card" aria-labelledby="h-theme">
       <h2 id="h-theme">Theme</h2>
       <div class="kv"><span class="k">site default</span>
-        <select id="theme-default" aria-label="Default theme">
+        <span class="ttm-select"><select id="theme-default" aria-label="Default theme">
           <option value="ttm">TTM dark</option>
           <option value="terminal">Terminal</option>
           <option value="">Zine (upstream)</option>
-        </select></div>
+        </select></span></div>
       <div class="kv"><span class="k">this browser</span>
-        <select id="theme-mine" aria-label="My theme override">
+        <span class="ttm-select"><select id="theme-mine" aria-label="My theme override">
           <option value="__unset__">follow default</option>
           <option value="ttm">TTM dark</option>
           <option value="terminal">Terminal</option>
           <option value="">Zine (upstream)</option>
-        </select></div>
+        </select></span></div>
       <p class="note">Applies across the whole site (map, wizard, admin) for this browser;
       the default applies to visitors who haven't chosen.</p>
     </section>
@@ -196,10 +278,10 @@
           <div class="kv"><span class="k">tagline</span><input class="wl" id="wl-tagline" aria-label="Tagline"></div>
           <div class="kv"><span class="k">page title</span><input class="wl" id="wl-title" aria-label="Page title"></div>
           <div class="kv"><span class="k">footer name</span><input class="wl" id="wl-footer" aria-label="Footer brand name"></div>
-          <div class="kv"><span class="k">hide footer badge</span><input type="checkbox" id="wl-footer-hide" aria-label="Hide footer badge"></div>
+          <div class="kv"><span class="k">hide footer badge</span><label class="ttm-switch"><input type="checkbox" id="wl-footer-hide" aria-label="Hide footer badge"><span class="track" aria-hidden="true"></span></label></div>
         </div>
         <div>
-          <div class="kv"><span class="k">gate enabled</span><input type="checkbox" id="wl-gate-on" aria-label="Gate enabled"></div>
+          <div class="kv"><span class="k">gate enabled</span><label class="ttm-switch"><input type="checkbox" id="wl-gate-on" aria-label="Gate enabled"><span class="track" aria-hidden="true"></span></label></div>
           <div class="kv"><span class="k">gate title</span><input class="wl" id="wl-gate-title" aria-label="Gate title"></div>
           <div class="kv"><span class="k">gate body</span><input class="wl" id="wl-gate-body" aria-label="Gate body"></div>
           <div class="kv"><span class="k">gate fine print</span><input class="wl" id="wl-gate-fine" aria-label="Gate fine print"></div>
@@ -209,7 +291,7 @@
         <button class="ttm-btn-primary" id="wl-publish">Publish to Supabase</button>
         <button class="ttm-btn-outline" id="wl-publish-theme">Publish current theme + tokens as site default</button>
       </div>
-      <p class="note" id="wl-status">Reads/writes the <code>site_config</code> table
+      <p class="note" id="wl-status">Reads/writes the <code>maps_site_config</code> table
       (run <code>supabase/whitelabel.sql</code> once). Published config applies to every
       visitor within a minute; personal choices still win over site defaults.</p>
     </section>
