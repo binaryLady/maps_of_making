@@ -2,6 +2,10 @@
 
 > Maker spaces are invisible because maps go stale. We're fixing that.
 
+**Live demo:** [maps.thetechmargin.com](https://maps.thetechmargin.com) — a static
+snapshot of the map with the full UI (themes, test bench, operator console).
+Deliberately inert: it does not poll spaces or act as a node on the network.
+
 ---
 
 ## The Problem
