@@ -1,14 +1,25 @@
-// TTM theme controller.
-// Theme precedence: visitor choice (ttm_theme) → admin default
-// (ttm_theme_default) → TTM_CONFIG.defaultTheme. '' = upstream zine look.
-// Custom tokens (admin theme customizer): JSON map of {"--ttm-*": value}
-// stored under ttm_custom_tokens, applied as inline custom properties on
-// <html> — pure-token components pick them up with no further wiring.
+// TTM theme + navigation controller.
+// Injects one accessible hamburger (fixed, top-right, every page that loads
+// this script) collapsing: site routes in hierarchy order, then theme choice.
+// A11y per the TTM spec + ARIA disclosure/menu practices: aria-expanded /
+// aria-controls, focus moves in on open, Tab is trapped, Escape and backdrop
+// close and return focus, aria-current marks the page you are on, 44px
+// targets, reduced-motion honored in CSS.
+// Theme precedence: visitor choice → admin default → config default.
 (function () {
   'use strict';
   var THEMES = ['', 'ttm', 'terminal'];
-  var LABELS = { '': '◑ zine', 'ttm': '◕ ttm', 'terminal': '◱ term' };
+  var THEME_LABELS = { '': 'Zine', 'ttm': 'Dark', 'terminal': 'Terminal' };
   var ALLOWED_TOKEN = /^--(ttm|z|radius)-[a-z-]+$/;
+  // Information hierarchy: the product first, publishing second, operator
+  // tools last, each with a role line so the list reads as a sitemap.
+  var ROUTES = [
+    { href: '/',         name: 'Map',                desc: 'the live atlas of maker spaces' },
+    { href: '/genjson/', name: "Bernard's Workshop", desc: 'publish your space' },
+    { group: 'Operator tools' },
+    { href: '/test/',    name: 'Test Bench',         desc: 'mock lifecycle data + assertions' },
+    { href: '/admin/',   name: 'Mission Control',    desc: 'monitoring · telemetry · theming' },
+  ];
 
   function stored(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function currentTheme() {
@@ -24,7 +35,6 @@
   }
   function applyCustom(tokens) {
     var root = document.documentElement;
-    // clear previously applied inline tokens, then set the new map
     Array.prototype.slice.call(root.style).forEach(function (p) {
       if (ALLOWED_TOKEN.test(p)) root.style.removeProperty(p);
     });
@@ -40,41 +50,94 @@
   function apply(theme) {
     if (theme) document.documentElement.setAttribute('data-ttm-theme', theme);
     else document.documentElement.removeAttribute('data-ttm-theme');
-    var btn = document.querySelector('.ttm-toggle');
-    if (btn) btn.textContent = LABELS[theme];
+    document.querySelectorAll('.ttm-menu__theme input').forEach(function (r) {
+      r.checked = r.value === theme;
+    });
   }
 
-  apply(currentTheme());   // before first paint
+  apply(currentTheme());
   applyCustom(getCustom());
 
-  document.addEventListener('DOMContentLoaded', function () {
-    var topbar = document.querySelector('.topbar');
-    if (topbar) {
-      // Nav to the stack's other routes — the map previously had no way to
-      // reach them from the UI.
-      var nav = document.createElement('nav');
-      nav.className = 'ttm-nav';
-      nav.setAttribute('aria-label', 'Site sections');
-      [['Wizard', '/genjson/'], ['Test', '/test/'], ['Admin', '/admin/']].forEach(function (r) {
-        var a = document.createElement('a');
-        a.href = r[1];
-        a.textContent = r[0];
-        nav.appendChild(a);
-      });
-      topbar.appendChild(nav);
-      var btn = document.createElement('button');
-      btn.className = 'ttm-toggle';
-      btn.type = 'button';
-      btn.setAttribute('aria-label', 'Switch color theme');
-      btn.textContent = LABELS[currentTheme()];
-      btn.addEventListener('click', function () {
-        var next = THEMES[(THEMES.indexOf(currentTheme()) + 1) % THEMES.length];
-        try { localStorage.setItem('ttm_theme', next); } catch (e) {}
-        apply(next);
-        if (window.TTMStack) window.TTMStack.track('theme_change', { theme: next || 'zine' });
-      });
-      topbar.appendChild(btn);
+  function buildMenu() {
+    var here = location.pathname.replace(/index\.html$/, '');
+    var burger = document.createElement('button');
+    burger.className = 'ttm-burger';
+    burger.type = 'button';
+    burger.setAttribute('aria-label', 'Site menu');
+    burger.setAttribute('aria-expanded', 'false');
+    burger.setAttribute('aria-controls', 'ttm-menu');
+    burger.setAttribute('aria-haspopup', 'true');
+    burger.innerHTML = '<span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>';
+
+    var backdrop = document.createElement('div');
+    backdrop.className = 'ttm-menu__backdrop';
+    backdrop.hidden = true;
+
+    var panel = document.createElement('div');
+    panel.className = 'ttm-menu';
+    panel.id = 'ttm-menu';
+    panel.hidden = true;
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-label', 'Site menu');
+
+    var html = '<nav aria-label="Site sections"><ul class="ttm-menu__list">';
+    ROUTES.forEach(function (r) {
+      if (r.group) { html += '<li class="ttm-menu__group" role="presentation">' + r.group + '</li>'; return; }
+      var current = here === r.href;
+      html += '<li><a class="ttm-menu__item" href="' + r.href + '"' +
+        (current ? ' aria-current="page"' : '') + '>' +
+        '<span class="ttm-menu__name">' + r.name + '</span>' +
+        '<span class="ttm-menu__desc">' + r.desc + '</span></a></li>';
+    });
+    html += '</ul></nav>';
+    html += '<fieldset class="ttm-menu__theme"><legend>Theme</legend>';
+    THEMES.forEach(function (t) {
+      var id = 'ttm-theme-' + (t || 'zine');
+      html += '<label for="' + id + '"><input type="radio" id="' + id + '" name="ttm-theme-pick" value="' + t + '"' +
+        (currentTheme() === t ? ' checked' : '') + '><span>' + THEME_LABELS[t] + '</span></label>';
+    });
+    html += '</fieldset>';
+    panel.innerHTML = html;
+
+    function open() {
+      panel.hidden = false; backdrop.hidden = false;
+      burger.setAttribute('aria-expanded', 'true');
+      document.body.classList.add('ttm-menu-open');
+      var first = panel.querySelector('a, input');
+      if (first) first.focus();
     }
+    function close(returnFocus) {
+      panel.hidden = true; backdrop.hidden = true;
+      burger.setAttribute('aria-expanded', 'false');
+      document.body.classList.remove('ttm-menu-open');
+      if (returnFocus !== false) burger.focus();
+    }
+    burger.addEventListener('click', function () {
+      panel.hidden ? open() : close();
+    });
+    backdrop.addEventListener('click', function () { close(); });
+    panel.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { e.stopPropagation(); close(); return; }
+      if (e.key !== 'Tab') return;
+      var els = panel.querySelectorAll('a, input');
+      var first = els[0], last = els[els.length - 1];
+      if (e.shiftKey && document.activeElement === first) { last.focus(); e.preventDefault(); }
+      else if (!e.shiftKey && document.activeElement === last) { first.focus(); e.preventDefault(); }
+    });
+    panel.addEventListener('change', function (e) {
+      if (e.target.name !== 'ttm-theme-pick') return;
+      try { localStorage.setItem('ttm_theme', e.target.value); } catch (err) {}
+      apply(e.target.value);
+      if (window.TTMStack) window.TTMStack.track('theme_change', { theme: e.target.value || 'zine' });
+    });
+
+    document.body.appendChild(backdrop);
+    document.body.appendChild(burger);
+    document.body.appendChild(panel);
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    buildMenu();
     var badge = document.createElement('div');
     badge.className = 'ttm-footer-badge';
     badge.innerHTML = 'made with <span class="heart">❤</span> by <span class="brand-name gradient-text-rainbow">thetechmargin</span>';
