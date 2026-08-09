@@ -1,10 +1,14 @@
-// TTM theme controller. Order of precedence: visitor's explicit choice
-// (localStorage ttm_theme) → admin default (localStorage ttm_theme_default,
-// set from /admin/) → TTM_CONFIG.defaultTheme. '' means the upstream zine look.
+// TTM theme controller.
+// Theme precedence: visitor choice (ttm_theme) → admin default
+// (ttm_theme_default) → TTM_CONFIG.defaultTheme. '' = upstream zine look.
+// Custom tokens (admin theme customizer): JSON map of {"--ttm-*": value}
+// stored under ttm_custom_tokens, applied as inline custom properties on
+// <html> — pure-token components pick them up with no further wiring.
 (function () {
   'use strict';
   var THEMES = ['', 'ttm', 'terminal'];
   var LABELS = { '': '◑ zine', 'ttm': '◕ ttm', 'terminal': '◱ term' };
+  var ALLOWED_TOKEN = /^--(ttm|z|radius)-[a-z-]+$/;
 
   function stored(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function currentTheme() {
@@ -15,21 +19,39 @@
     var c = (window.TTM_CONFIG && window.TTM_CONFIG.defaultTheme) || '';
     return THEMES.indexOf(c) !== -1 ? c : '';
   }
+  function getCustom() {
+    try { return JSON.parse(stored('ttm_custom_tokens')) || {}; } catch (e) { return {}; }
+  }
+  function applyCustom(tokens) {
+    var root = document.documentElement;
+    // clear previously applied inline tokens, then set the new map
+    Array.prototype.slice.call(root.style).forEach(function (p) {
+      if (ALLOWED_TOKEN.test(p)) root.style.removeProperty(p);
+    });
+    Object.keys(tokens || {}).forEach(function (k) {
+      if (ALLOWED_TOKEN.test(k)) root.style.setProperty(k, String(tokens[k]).slice(0, 64));
+    });
+  }
+  function setCustom(tokens) {
+    try { localStorage.setItem('ttm_custom_tokens', JSON.stringify(tokens || {})); } catch (e) {}
+    applyCustom(tokens || {});
+  }
+  function resetCustom() { setCustom({}); }
   function apply(theme) {
     if (theme) document.documentElement.setAttribute('data-ttm-theme', theme);
     else document.documentElement.removeAttribute('data-ttm-theme');
-    var btn = document.querySelector('.ttm-theme-toggle');
+    var btn = document.querySelector('.ttm-toggle');
     if (btn) btn.textContent = LABELS[theme];
   }
 
-  apply(currentTheme()); // before first paint (script runs in <head> order)
+  apply(currentTheme());   // before first paint
+  applyCustom(getCustom());
 
   document.addEventListener('DOMContentLoaded', function () {
-    // Toggle button, appended to the topbar when one exists (the map page)
     var topbar = document.querySelector('.topbar');
     if (topbar) {
       var btn = document.createElement('button');
-      btn.className = 'ttm-theme-toggle';
+      btn.className = 'ttm-toggle';
       btn.type = 'button';
       btn.setAttribute('aria-label', 'Switch color theme');
       btn.textContent = LABELS[currentTheme()];
@@ -41,12 +63,14 @@
       });
       topbar.appendChild(btn);
     }
-    // Required TTM footer badge (visible in TTM themes only, via CSS)
     var badge = document.createElement('div');
     badge.className = 'ttm-footer-badge';
-    badge.innerHTML = 'made with <span class="heart">❤</span> by <span class="brand-name">thetechmargin</span>';
+    badge.innerHTML = 'made with <span class="heart">❤</span> by <span class="brand-name gradient-text-rainbow">thetechmargin</span>';
     document.body.appendChild(badge);
   });
 
-  window.TTMTheme = { apply: apply, current: currentTheme, THEMES: THEMES };
+  window.TTMTheme = {
+    apply: apply, current: currentTheme, THEMES: THEMES,
+    getCustom: getCustom, setCustom: setCustom, resetCustom: resetCustom,
+  };
 })();

@@ -1,0 +1,168 @@
+/* ============================================================================
+   The Tech Margin — design tokens (canonical)
+   Verbatim from the TTM design system spec (§CSS Variables Quick Reference).
+   RULE: components use var(--ttm-*) only — never hardcoded hex — so persona
+   palettes, the terminal theme, and the admin theme customizer all cascade.
+   Dark is default. Terminal activates via .terminal or [data-theme="terminal"]
+   (spec API) — theme.js maps the site-wide [data-ttm-theme] attr onto these.
+   ========================================================================== */
+:root {
+  /* Surfaces */
+  --ttm-bg: #0d1117;
+  --ttm-bg-alt: #161b22;
+  --ttm-surface: #161b22;
+  --ttm-surface-alt: #21262d;
+
+  /* Text */
+  --ttm-text: #f0f6fc;
+  --ttm-text-secondary: #c9d1d9;
+  --ttm-text-muted: #8b949e;
+  --ttm-text-faint: #484f58;
+
+  /* Borders */
+  --ttm-border: #30363d;
+  --ttm-border-subtle: #21262d;
+
+  /* Brand Colors */
+  --ttm-pink: #E904E5;
+  --ttm-lime: #a1ff00;
+  --ttm-cyan: #09FFF0;
+  --ttm-hot-red: #ff0080;
+  --ttm-goldenrod: #ff9500;
+  --ttm-plum: #21262d;
+
+  /* Status */
+  --ttm-success: #22c55e;
+  --ttm-danger: var(--ttm-hot-red);
+  --ttm-warning: var(--ttm-goldenrod);
+  --ttm-info: var(--ttm-cyan);
+
+  /* Overlays */
+  --ttm-overlay: rgba(13, 17, 23, 0.8);
+  --ttm-glass: rgba(22, 27, 34, 0.9);
+  --ttm-wash: rgba(255, 255, 255, 0.05);
+  --ttm-wash-hover: rgba(255, 255, 255, 0.08);
+
+  /* Z-Index — never raw numbers */
+  --z-base: 1;
+  --z-content: 10;
+  --z-controls: 20;
+  --z-dropdown: 30;
+  --z-sticky: 40;
+  --z-header: 50;
+  --z-modal: 60;
+  --z-overlay: 9999;
+
+  /* Radius — 0.7rem everywhere */
+  --ttm-radius: 0.7rem;
+  --radius-sm: calc(var(--ttm-radius) - 4px);
+  --radius-md: calc(var(--ttm-radius) - 2px);
+  --radius-lg: var(--ttm-radius);
+  --radius-xl: calc(var(--ttm-radius) + 4px);
+
+  /* Fonts */
+  --ttm-font-sans: 'Poppins', 'Inter Tight', system-ui, sans-serif;
+  --ttm-font-serif: 'Pacifico', 'Caveat', cursive;
+  --ttm-font-mono: 'Geist Mono', 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
+
+  /* Type scale */
+  --ttm-fs-display: 4.5rem;
+  --ttm-fs-h1: 3rem;
+  --ttm-fs-h2: 2rem;
+  --ttm-fs-h3: 1.5rem;
+  --ttm-fs-h4: 1.25rem;
+  --ttm-fs-body: 1rem;
+  --ttm-fs-small: 0.875rem;   /* 14px minimum enforced */
+  --ttm-fs-caption: 0.75rem;
+
+  /* Derived: readable ink on top of each accent (dark ink passes AA on all
+     five accents; white fails on pink/cyan/lime — measured, not assumed) */
+  --ttm-on-accent: var(--ttm-bg);
+
+  /* Elevation */
+  --ttm-shadow: 0 0 0 1.5px var(--ttm-border), 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* Terminal theme — spec API (.terminal / [data-theme="terminal"]) */
+.terminal,
+[data-theme="terminal"] {
+  --ttm-bg: #f2ede1;
+  --ttm-bg-alt: #e9e2d2;
+  --ttm-surface: #e9e2d2;
+  --ttm-surface-alt: #ddd4c0;
+  --ttm-text: #2b2a28;
+  --ttm-text-secondary: #4a4844;
+  --ttm-text-muted: #6f6b63;
+  --ttm-text-faint: #a09a8c;
+  --ttm-border: #c9c0aa;
+  --ttm-border-subtle: #ddd4c0;
+  --ttm-pink: #e85d9c;
+  --ttm-lime: #7c9f35;
+  --ttm-cyan: #09d3c5;
+  --ttm-hot-red: #ff5555;
+  --ttm-goldenrod: #f1a942;
+  --ttm-overlay: rgba(43, 42, 40, 0.5);
+  --ttm-glass: rgba(242, 237, 225, 0.9);
+  --ttm-wash: rgba(43, 42, 40, 0.04);
+  --ttm-wash-hover: rgba(43, 42, 40, 0.08);
+  --ttm-font-sans: var(--ttm-font-mono);
+  --ttm-font-serif: var(--ttm-font-mono);
+  --ttm-on-accent: #f2ede1;
+  --ttm-shadow: 3px 3px 0 var(--ttm-text);
+}
+
+/* Site-wide theme attr (theme.js) doubles as the spec's terminal selector */
+[data-ttm-theme="terminal"] {
+  --ttm-bg: #f2ede1;
+  --ttm-bg-alt: #e9e2d2;
+  --ttm-surface: #e9e2d2;
+  --ttm-surface-alt: #ddd4c0;
+  --ttm-text: #2b2a28;
+  --ttm-text-secondary: #4a4844;
+  --ttm-text-muted: #6f6b63;
+  --ttm-text-faint: #a09a8c;
+  --ttm-border: #c9c0aa;
+  --ttm-border-subtle: #ddd4c0;
+  --ttm-pink: #e85d9c;
+  --ttm-lime: #7c9f35;
+  --ttm-cyan: #09d3c5;
+  --ttm-hot-red: #ff5555;
+  --ttm-goldenrod: #f1a942;
+  --ttm-overlay: rgba(43, 42, 40, 0.5);
+  --ttm-glass: rgba(242, 237, 225, 0.9);
+  --ttm-wash: rgba(43, 42, 40, 0.04);
+  --ttm-wash-hover: rgba(43, 42, 40, 0.08);
+  --ttm-font-sans: var(--ttm-font-mono);
+  --ttm-font-serif: var(--ttm-font-mono);
+  --ttm-on-accent: #f2ede1;
+  --ttm-shadow: 3px 3px 0 var(--ttm-text);
+}
+
+/* Signature rainbow gradient (spec §Gradients) */
+.gradient-text-rainbow {
+  background: linear-gradient(90deg,
+    var(--ttm-cyan), var(--ttm-hot-red), var(--ttm-pink),
+    var(--ttm-lime), var(--ttm-goldenrod));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glows (spec §Gradients) — color-mix keeps them token-driven */
+.glow-pink { box-shadow: 0 0 20px color-mix(in srgb, var(--ttm-pink) 50%, transparent); }
+.glow-cyan { box-shadow: 0 0 20px color-mix(in srgb, var(--ttm-cyan) 50%, transparent); }
+.glow-lime { box-shadow: 0 0 20px color-mix(in srgb, var(--ttm-lime) 50%, transparent); }
+
+/* A11y baseline (spec §Accessibility) */
+.ttm-focusable:focus-visible,
+[data-theme] :focus-visible,
+.terminal :focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ttm-bg), 0 0 0 4px var(--ttm-pink);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ttm-anim, .ttm-anim *, [data-theme] *, .terminal * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
