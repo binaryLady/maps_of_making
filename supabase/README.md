@@ -13,9 +13,22 @@ In the Supabase dashboard → SQL editor, run both files from this directory:
 2. `whitelabel.sql` — `maps_site_config` (brand / theme / gate copy) with
    seeded starter rows
 
-All tables are prefixed `maps_` (the database may be shared) and idempotent —
-safe to re-run. RLS is enabled with demo-grade policies; the comments in each
-file mark what to tighten before real traffic.
+3. `rls.sql` — member/super-admin tiers and the hardened policies (run last;
+   edit the placeholder super-admin email first)
+
+### Naming rule — this database may be shared
+
+Every object this project creates is **prefixed**, so several apps can live in
+one Supabase project without collision:
+
+| prefix | belongs to | objects |
+|---|---|---|
+| `maps_` | Maps of Making | tables `maps_visitors`, `maps_telemetry_events`, `maps_site_config`; indexes `maps_telemetry_events_ts_idx`, `maps_telemetry_events_event_idx`; function `maps_gate_signin` |
+| `ttm_` | shared across apps | table `ttm_admins`; functions `ttm_is_super`, `ttm_jwt_email`, `ttm_guard_visitor_flags`; trigger `ttm_guard_flags` |
+
+Anything added later must follow the same rule — an unprefixed name in a
+shared project is a collision waiting to happen. Every file here is
+idempotent and safe to re-run.
 
 ## 2 · Wire the deployment
 

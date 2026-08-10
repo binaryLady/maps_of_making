@@ -1,8 +1,9 @@
 // TTM stack: Supabase client + visitor gate + telemetry, fail-soft throughout.
 // - Gate: name + email required once per browser (localStorage ttm_visitor);
-//   saved to Supabase table `visitors` when configured. ?nogate=1 skips it
+//   saved to `maps_visitors` via the maps_gate_signin RPC when configured.
+//   ?nogate=1 skips it
 //   (used by the admin a11y audit iframe and the test bench).
-// - Telemetry: TTMStack.track(event, props) batches to `telemetry_events`
+// - Telemetry: TTMStack.track(event, props) batches to `maps_telemetry_events`
 //   every 5s and on page hide; console-logs in local-only mode.
 (function () {
   'use strict';
