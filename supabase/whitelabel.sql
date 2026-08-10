@@ -6,7 +6,7 @@
 --
 -- Keys the frontend understands:
 --   'brand' : { "name": "maps of making", "tagline": "v0.2 · demo",
---               "footer_name": "thetechmargin", "footer_hidden": false,
+--               "footer_name": "", "footer_hidden": false,
 --               "page_title": "Maps of Making — demo" }
 --   'theme' : { "default": "ttm" | "terminal" | "",
 --               "tokens": { "--ttm-pink": "#E904E5", ... } }
@@ -34,7 +34,7 @@ create policy "anon can update site_config (demo)" on public.maps_site_config
 
 -- Sensible starting rows (idempotent).
 insert into public.maps_site_config (key, value) values
-  ('brand', '{"name": "maps of making", "tagline": "v0.2 · demo", "footer_name": "thetechmargin", "footer_hidden": false, "page_title": "Maps of Making — demo"}'),
+  ('brand', '{"name": "maps of making", "tagline": "v0.2 · demo", "footer_name": "", "footer_hidden": false, "page_title": "Maps of Making — demo"}'),
   ('theme', '{"default": "ttm", "tokens": {}}'),
   ('gate',  '{"enabled": true, "title": "Sign in", "body": "Name and email to enter. Valid for 24 hours on this device.", "fine": "Stored by the site operator."}')
 on conflict (key) do nothing;

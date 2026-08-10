@@ -40,7 +40,7 @@
 
   ::selection { background: var(--ttm-control); color: var(--ttm-on-accent); }
 
-  /* ── TTM form components (spec: tokens only, no raw OS widgets) ── */
+  /* ── Form components (spec: tokens only, no raw OS widgets) ── */
   .ttm-select { position: relative; display: inline-block; }
 
   .full { grid-column: 1 / -1; }
@@ -75,7 +75,7 @@
 <body>
 <main>
   <header class="ttm-header">
-    <h1>Mission Control · <span class="gradient-text-rainbow">thetechmargin</span></h1>
+    <h1>Mission <span class="gradient-text-rainbow">Control</span></h1>
     <span class="crumb">maps of making · admin · <a href="/">back to map</a></span>
   </header>
 
@@ -101,14 +101,14 @@
       <h2 id="h-theme">Theme</h2>
       <div class="kv"><span class="k">site default</span>
         <span class="ttm-select"><select id="theme-default" aria-label="Default theme">
-          <option value="ttm">TTM dark</option>
+          <option value="ttm">Dark</option>
           <option value="terminal">Terminal</option>
           <option value="">Zine (upstream)</option>
         </select></span></div>
       <div class="kv"><span class="k">this browser</span>
         <span class="ttm-select"><select id="theme-mine" aria-label="My theme override">
           <option value="__unset__">follow default</option>
-          <option value="ttm">TTM dark</option>
+          <option value="ttm">Dark</option>
           <option value="terminal">Terminal</option>
           <option value="">Zine (upstream)</option>
         </select></span></div>
@@ -193,8 +193,8 @@
     </section>
   </div>
 
-  <footer class="ttm-footer">made with <span class="heart">❤</span> by
-    <span class="bn gradient-text-rainbow">thetechmargin</span></footer>
+  <footer class="ttm-footer">operator console · this deployment's data stays in
+    your own Supabase project</footer>
 </main>
 
 <script src="/ttm/config.js"></script>
@@ -475,7 +475,7 @@
           name: $('#wl-name').value.trim(),
           tagline: $('#wl-tagline').value.trim(),
           page_title: $('#wl-title').value.trim(),
-          footer_name: $('#wl-footer').value.trim() || 'thetechmargin',
+          footer_name: $('#wl-footer').value.trim(),
           footer_hidden: $('#wl-footer-hide').checked } },
       { key: 'gate', value: {
           enabled: $('#wl-gate-on').checked,

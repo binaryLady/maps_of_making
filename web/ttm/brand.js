@@ -9,7 +9,7 @@
 (function () {
   'use strict';
   var DEFAULTS = {
-    brand: { name: '', tagline: '', footer_name: 'thetechmargin', footer_hidden: false, page_title: '' },
+    brand: { name: '', tagline: '', footer_name: '', footer_hidden: false, page_title: '' },
     theme: { 'default': null, tokens: {} },
     gate: { enabled: true, title: '', body: '', fine: '' },
   };
@@ -55,9 +55,10 @@
     var tag = document.querySelector('.brand .tag');
     if (tag && b.tagline) tag.textContent = b.tagline;
     var badgeName = document.querySelector('.ttm-footer-badge .brand-name');
-    if (badgeName && b.footer_name) badgeName.textContent = b.footer_name;
     var badge = document.querySelector('.ttm-footer-badge');
-    if (badge && b.footer_hidden) badge.style.display = 'none';
+    if (badgeName && b.footer_name) badgeName.textContent = b.footer_name;
+    // shown only when this deployment names itself and hasn't opted out
+    if (badge) badge.hidden = !b.footer_name || !!b.footer_hidden;
   }
   function applyTheme(config) {
     var t = config.theme || {};
