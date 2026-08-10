@@ -85,8 +85,6 @@
       '<input id="ttm-gate-name" name="name" autocomplete="name" required maxlength="120">' +
       '<label for="ttm-gate-email">Email</label>' +
       '<input id="ttm-gate-email" name="email" type="email" autocomplete="email" required maxlength="200">' +
-      '<label for="ttm-gate-code" hidden>Code from your email</label>' +
-      '<input id="ttm-gate-code" inputmode="numeric" autocomplete="one-time-code" maxlength="8" hidden>' +
       '<p class="ttm-gate__err" role="alert" aria-live="polite"></p>' +
       '<button class="ttm-gate__submit" type="submit">Enter the map</button>' +
       '<p class="ttm-gate__fine"></p>' +
@@ -109,10 +107,6 @@
       if (e.shiftKey && document.activeElement === first) { last.focus(); e.preventDefault(); }
       else if (!e.shiftKey && document.activeElement === last) { first.focus(); e.preventDefault(); }
     });
-    var codeEl = wrap.querySelector('#ttm-gate-code');
-    var codeLabel = wrap.querySelector('label[for="ttm-gate-code"]');
-    var submitBtn = wrap.querySelector('.ttm-gate__submit');
-    var phase = 'ask'; // ask -> code
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       var name = nameEl.value.trim();
@@ -124,46 +118,22 @@
         errEl.textContent = !name ? 'Please tell us your name.' : 'That email doesn’t look complete.';
         return;
       }
-      var done = function () {
-        var rec = { name: name, email: email, ts: Date.now() };
-        try { localStorage.setItem('ttm_visitor', JSON.stringify(rec)); } catch (err) {}
-        track('gate_complete', {});
-        wrap.remove();
-        if (window.TTMToast) window.TTMToast.show('Welcome, ' + name + '.', { type: 'success', timeout: 3000 });
-      };
-      if (!sb) { done(); return; } // local-only mode: instant entry, no identity to verify
-      errEl.textContent = '';
-      if (phase === 'ask') {
-        // membership is verified identity: send the 6-digit code
-        submitBtn.disabled = true;
-        sb.auth.signInWithOtp({ email: email, options: { shouldCreateUser: true } })
-          .then(function (r) {
-            submitBtn.disabled = false;
-            if (r.error) { errEl.textContent = r.error.message; return; }
-            phase = 'code';
-            codeEl.hidden = false; codeLabel.hidden = false;
-            nameEl.readOnly = true; mailEl.readOnly = true;
-            submitBtn.textContent = 'Verify code';
-            codeEl.focus();
-          })
-          .catch(function (err) { submitBtn.disabled = false; errEl.textContent = err.message; });
-        return;
-      }
-      var code = codeEl.value.trim();
-      if (!code) { errEl.textContent = 'Enter the code from your email.'; codeEl.focus(); return; }
-      submitBtn.disabled = true;
-      sb.auth.verifyOtp({ email: email, token: code, type: 'email' })
-        .then(function (r) {
-          submitBtn.disabled = false;
-          if (r.error) { errEl.textContent = r.error.message; codeEl.focus(); return; }
-          done(); // verified — clear the modal, then record membership fail-soft
+      var rec = { name: name, email: email, ts: Date.now() };
+      try { localStorage.setItem('ttm_visitor', JSON.stringify(rec)); } catch (err) {}
+      track('gate_complete', {});
+      wrap.remove(); // clear immediately — entry never waits on the network
+      if (window.TTMToast) window.TTMToast.show('Welcome, ' + name + '.', { type: 'success', timeout: 3000 });
+      if (sb) {
+        try {
+          // anon RPC is the only write path RLS leaves open; the email here is
+          // visitor-claimed — verified identity lives at the /admin/ door only
           sb.rpc('maps_gate_signin', {
-            p_name: name, p_user_agent: navigator.userAgent.slice(0, 250)
-          }).then(function (rr) {
-            if (rr.error) console.warn('[ttm] visitor save failed (kept locally):', rr.error.message);
+            p_name: name, p_email: email, p_user_agent: navigator.userAgent.slice(0, 250)
+          }).then(function (r) {
+            if (r.error) console.warn('[ttm] visitor save failed (kept locally):', r.error.message);
           }).catch(function (err) { console.warn('[ttm] visitor save failed (kept locally):', err.message); });
-        })
-        .catch(function (err) { submitBtn.disabled = false; errEl.textContent = err.message; });
+        } catch (err) { console.warn('[ttm] visitor save failed (kept locally):', err.message); }
+      }
     });
   }
 
@@ -171,10 +141,6 @@
     var maybeGate = function () {
       if (skipGate || !gateCopy().enabled) return;
       if (visitor()) return;
-      // 24h local window expired: retire any lingering Auth session, re-gate
-      if (sb) sb.auth.getSession().then(function (s) {
-        if (s.data && s.data.session) sb.auth.signOut();
-      }).catch(function () {});
       showGate();
     };
     // wait for whitelabel config (cached: instant) so copy + enabled are right
