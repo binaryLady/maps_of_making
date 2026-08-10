@@ -199,9 +199,12 @@
 
   document.addEventListener('DOMContentLoaded', function () {
     buildMenu();
+    // Attribution badge is opt-in: no deployer name is baked in. It stays
+    // hidden until site_config.brand.footer_name is set (brand.js reveals it).
     var badge = document.createElement('div');
     badge.className = 'ttm-footer-badge';
-    badge.innerHTML = 'made with <span class="heart">❤</span> by <span class="brand-name gradient-text-rainbow">thetechmargin</span>';
+    badge.hidden = true;
+    badge.innerHTML = 'made with <span class="heart">❤</span> by <span class="brand-name gradient-text-rainbow"></span>';
     document.body.appendChild(badge);
   });
 

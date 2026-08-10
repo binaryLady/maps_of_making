@@ -1,5 +1,5 @@
 /* ============================================================================
-   The Tech Margin — design tokens (canonical)
+   Design tokens (canonical)
    Verbatim from the TTM design system spec (§CSS Variables Quick Reference).
    RULE: components use var(--ttm-*) only — never hardcoded hex — so persona
    palettes, the terminal theme, and the admin theme customizer all cascade.

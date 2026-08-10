@@ -218,7 +218,9 @@ drop function if exists public.is_ttm_admin();
 drop function if exists public.ttm_is_admin();
 
 -- ── enroll the super admin ──────────────────────────────────────────────────
-insert into public.ttm_admins (email, role) values ('sonia@thetechmargin.com', 'super')
+-- EDIT THIS: your own operator email before running, or run the insert
+-- separately. Nothing else in this file is deployment-specific.
+insert into public.ttm_admins (email, role) values ('you@example.com', 'super')
   on conflict (email) do update set role = 'super';
 
 -- ═══ Dashboard settings (not SQL, one-time) ═══
