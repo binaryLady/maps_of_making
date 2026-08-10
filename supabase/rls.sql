@@ -5,10 +5,10 @@
 -- Tiers:
 --   anon           : pre-gate visitors. May insert telemetry and read
 --                    site_config. Read NOTHING personal, write nothing else.
---   admin (member) : anyone who completes the gate — name + email verified
---                    by a 6-digit emailed code (Supabase Auth OTP). May READ
---                    everything (visitors, telemetry) and CRUD their OWN
---                    visitor row only.
+--   admin (member) : the gate itself is instant (name + email, no code).
+--                    Member powers — READ everything, CRUD own visitor row —
+--                    require the OTP sign-in at /admin/ (Supabase Auth), so
+--                    they attach to a verified email.
 --   super admin    : emails enrolled in ttm_admins (ecosystem protection).
 --                    Full CRUD on all our tables, sole writer of site_config.
 --
@@ -51,51 +51,49 @@ create policy "supers manage admin registry" on public.ttm_admins
   using (public.ttm_is_super()) with check (public.ttm_is_super());
 
 -- ── gate sign-in RPCs ───────────────────────────────────────────────────────
--- Called AFTER OTP verification; the email comes from the JWT, so a member
--- cannot register a row under someone else's address. Old 3-arg versions
--- (client-claimed email) are dropped below.
-create or replace function public.maps_gate_signin(p_name text, p_user_agent text)
+-- The gate is deliberately frictionless (name + email, no code), so this RPC
+-- is anon-callable and the email is visitor-claimed. Verified identity lives
+-- at the /admin/ door (OTP) — visitor rows are directory data, not authority.
+create or replace function public.maps_gate_signin(p_name text, p_email text, p_user_agent text)
 returns void
 language plpgsql security definer
 set search_path = public
 as $$
-declare v_email text := public.ttm_jwt_email();
 begin
-  if v_email = '' then raise exception 'not signed in'; end if;
-  if coalesce(length(p_name), 0) not between 1 and 120 then
+  if p_email !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' or length(p_email) > 200
+     or coalesce(length(p_name), 0) not between 1 and 120 then
     raise exception 'invalid gate input';
   end if;
   insert into public.maps_visitors (name, email, user_agent)
-  values (p_name, v_email, left(p_user_agent, 250))
+  values (p_name, lower(p_email), left(p_user_agent, 250))
   on conflict (email) do update
     set name = excluded.name, last_seen = now(), user_agent = excluded.user_agent;
 end;
 $$;
 
-create or replace function public.ohm_gate_signin(p_name text, p_user_agent text)
+create or replace function public.ohm_gate_signin(p_name text, p_email text, p_user_agent text)
 returns void
 language plpgsql security definer
 set search_path = public
 as $$
-declare v_email text := public.ttm_jwt_email();
 begin
-  if v_email = '' then raise exception 'not signed in'; end if;
-  if coalesce(length(p_name), 0) not between 1 and 120 then
+  if p_email !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' or length(p_email) > 200
+     or coalesce(length(p_name), 0) not between 1 and 120 then
     raise exception 'invalid gate input';
   end if;
   insert into public.ohm_visitors (name, email, user_agent)
-  values (p_name, v_email, left(p_user_agent, 250))
+  values (p_name, lower(p_email), left(p_user_agent, 250))
   on conflict (email) do update
     set name = excluded.name, last_seen = now(), user_agent = excluded.user_agent;
 end;
 $$;
 
-drop function if exists public.maps_gate_signin(text, text, text);
-drop function if exists public.ohm_gate_signin(text, text, text);
-revoke all on function public.maps_gate_signin(text, text) from public;
-revoke all on function public.ohm_gate_signin(text, text) from public;
-grant execute on function public.maps_gate_signin(text, text) to authenticated;
-grant execute on function public.ohm_gate_signin(text, text) to authenticated;
+drop function if exists public.maps_gate_signin(text, text);
+drop function if exists public.ohm_gate_signin(text, text);
+revoke all on function public.maps_gate_signin(text, text, text) from public;
+revoke all on function public.ohm_gate_signin(text, text, text) from public;
+grant execute on function public.maps_gate_signin(text, text, text) to anon, authenticated;
+grant execute on function public.ohm_gate_signin(text, text, text) to anon, authenticated;
 
 -- ── visitors: members read all, CRUD own row; supers CRUD all ───────────────
 alter table public.maps_visitors enable row level security;

@@ -597,3 +597,6 @@ html[data-ttm-theme] .topbar { overflow: visible; }
   padding: 0;
 }
 .ttm-theme-toggle:hover { border-color: var(--ttm-control); color: var(--ttm-control); }
+
+/* [hidden] must always win, even over component display rules */
+[hidden] { display: none !important; }
